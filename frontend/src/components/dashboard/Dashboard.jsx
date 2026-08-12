@@ -17,6 +17,7 @@ import {
 import { LEARNING_STYLE_OPTIONS, AVATAR_OPTIONS } from "../../constants/onboarding";
 import { getDashboard, ApiError } from "../../services/api";
 import ConfidenceChart from "../charts/ConfidenceChart";
+import ContinueStrip from "../subjects/ContinueStrip";
 
 function StatCard({ eyebrow, value, cap, icon: Icon }) {
   return (
@@ -92,7 +93,7 @@ const EMPTY_WEEK = {
   questions: "0",
 };
 
-export default function Dashboard({ student, subjects = [] }) {
+export default function Dashboard({ student, subjects = [], onStartLesson }) {
   const [week, setWeek] = useState("this");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -102,6 +103,10 @@ export default function Dashboard({ student, subjects = [] }) {
   const [fetchTick, setFetchTick] = useState(0);
 
   const studentName = student?.name || "Student";
+  const studentId =
+    student?.id != null
+      ? `id_${student.id}`
+      : student?.name?.toLowerCase().replace(/\s+/g, "_") || "anonymous";
   const grade = student?.grade || "—";
   const interestsText = student?.interests?.length
     ? student.interests.slice(0, 2).join(" & ")
@@ -163,6 +168,7 @@ export default function Dashboard({ student, subjects = [] }) {
   }, [data, week]);
 
   const masteryRows = data?.masteryMap || [];
+  const recommendedNextSkill = data?.recommendedNextSkill || null;
   const strengths = data?.strengths || [];
   const focusAreas = data?.focusAreas || [];
   const recentActivity = data?.recentActivity || [];
@@ -217,6 +223,13 @@ export default function Dashboard({ student, subjects = [] }) {
   return (
     <section id="dashboard">
       <div className="dash-wrap">
+        {onStartLesson && (
+          <ContinueStrip
+            studentId={studentId}
+            onContinue={onStartLesson}
+            title="Pick up a lesson"
+          />
+        )}
         {/* Hero header */}
         <div className="dash-hero">
           <div className="dash-hero-main">
@@ -432,20 +445,46 @@ export default function Dashboard({ student, subjects = [] }) {
         <div className="dash-grid">
           <div className="panel">
             <div className="dash-panel-head">
-              <h3>Skill mastery</h3>
+              <h3>Skill sparks</h3>
               <span className="dash-delta">
                 <TrendingUp size={14} /> {stats.masteryDelta || "—"} this week
               </span>
             </div>
+            {recommendedNextSkill && (
+              <div
+                className="note-card"
+                style={{
+                  marginBottom: 12,
+                  borderColor: "rgba(62,138,143,.28)",
+                  background: "rgba(62,138,143,.06)",
+                }}
+              >
+                <b>Ready to spark — </b>
+                Next recommended skill:{" "}
+                <strong>
+                  {recommendedNextSkill.shortLabel || recommendedNextSkill.name}
+                </strong>
+                {recommendedNextSkill.stateLabel
+                  ? ` · ${recommendedNextSkill.stateLabel}`
+                  : ""}
+                {recommendedNextSkill.score != null
+                  ? ` (~${Math.round(recommendedNextSkill.score)}%)`
+                  : ""}
+                . Kindling uses the skill graph so prerequisites light up first.
+              </div>
+            )}
             <div className="mastery-map">
               {masteryRows.length ? (
                 masteryRows.map((m) => (
-                  <MasteryRow key={`${m.subject}-${m.skill}`} {...m} />
+                  <MasteryRow
+                    key={`${m.subject}-${m.skill}-${m.slug || ""}`}
+                    {...m}
+                  />
                 ))
               ) : (
                 <EmptyState
-                  title="No mastery data yet"
-                  body="As exchanges are graded during lessons, topic mastery scores will appear here."
+                  title="No skill sparks yet"
+                  body="Practice Math Foundations topics — Kindling tracks fine-grained skills (not only whole topics) with a knowledge graph."
                 />
               )}
             </div>

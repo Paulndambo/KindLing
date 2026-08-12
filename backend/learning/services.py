@@ -209,6 +209,15 @@ def apply_exchange_to_profile_model(
         mastery.score = max(5, mastery.score - 2)
     mastery.save()
 
+    # Epic A1: skill-graph BKT update when topic maps to pilot skills
+    try:
+        from learning.mastery_engine import update_skills_for_exchange
+
+        update_skills_for_exchange(profile, subject or "", topic or "", signals or {})
+    except Exception:
+        # Never break event ingest on mastery graph errors
+        pass
+
     # Misconceptions
     for mc in signals.get("misconceptions") or []:
         mid = mc.get("id") or mc.get("label")
@@ -377,8 +386,31 @@ def build_personalization_insights(
     for mc in top_mc:
         directives.append(f"Watch for misconception: {mc.label} (seen {mc.count}×).")
 
+    # Epic A1: skill-graph directives + summary spice
+    skill_path = None
+    try:
+        from learning.mastery_engine import (
+            build_topic_skill_path,
+            skill_directives_for_topic,
+        )
+
+        skill_dirs = skill_directives_for_topic(profile, subject or "", topic or "")
+        directives.extend(skill_dirs)
+        skill_path = build_topic_skill_path(profile, subject or "", topic or "")
+    except Exception:
+        skill_path = None
+
     if not directives:
         directives.append("Maintain adaptive Socratic pace; reassess after each answer.")
+
+    # Dedupe directives while preserving order
+    seen = set()
+    deduped = []
+    for d in directives:
+        if d not in seen:
+            seen.add(d)
+            deduped.append(d)
+    directives = deduped[:10]
 
     graded = (
         (totals.get("correct") or 0)
@@ -386,6 +418,17 @@ def build_personalization_insights(
         + (totals.get("incorrect") or 0)
     )
     accuracy = round((totals.get("correct") or 0) / graded * 100) if graded else None
+
+    skill_summary = None
+    if skill_path and skill_path.get("hasGraph"):
+        primary = [s for s in skill_path["skills"] if s.get("isPrimary")]
+        if primary:
+            bits = ", ".join(
+                f"{s.get('shortLabel') or s.get('name')} "
+                f"{int(s.get('score') or 0)} ({s.get('stateLabel')})"
+                for s in primary[:3]
+            )
+            skill_summary = f"Skill sparks: {bits}."
 
     summary_parts = [
         f"{exchanges} observed exchanges across {totals.get('sessions', 0)} sessions.",
@@ -395,6 +438,7 @@ def build_personalization_insights(
             if topic_mastery
             else "No mastery data for this topic yet."
         ),
+        skill_summary,
         (
             f"Avg confidence ~{round(avg_confidence * 100)}%, "
             f"engagement ~{round(avg_engagement * 100)}%."
@@ -414,9 +458,11 @@ def build_personalization_insights(
             "strengths": profile.strengths or [],
             "topMisconceptions": [m.label for m in top_mc],
             "preferredDelivery": top_prefs,
+            "skillPath": skill_path,
+            "topicSkillState": (skill_path or {}).get("topicState"),
+            "recommendedNextSkill": (skill_path or {}).get("recommendedNext"),
         },
     }
-
 
 def profile_to_api_dict(profile: LearningProfile) -> dict:
     """Serialize LearningProfile to the frontend profile shape."""
@@ -449,12 +495,21 @@ def profile_to_api_dict(profile: LearningProfile) -> dict:
         or (profile.student.name.lower().replace(" ", "_") if profile.student else "anonymous")
     )
 
+    skills = {}
+    try:
+        from learning.mastery_engine import all_skill_masteries_dict
+
+        skills = all_skill_masteries_dict(profile)
+    except Exception:
+        skills = {}
+
     return {
         "version": profile.version,
         "studentId": student_id,
         "updatedAt": profile.updated_at.isoformat() if profile.updated_at else None,
         "totals": {**DEFAULT_TOTALS, **(profile.totals or {})},
         "mastery": mastery,
+        "skills": skills,
         "misconceptions": misconceptions,
         "deliveryPreferences": {
             **DEFAULT_DELIVERY,
@@ -468,7 +523,6 @@ def profile_to_api_dict(profile: LearningProfile) -> dict:
         "behavior": {**DEFAULT_BEHAVIOR, **(profile.behavior or {})},
         "lastSession": profile.last_session,
     }
-
 
 @transaction.atomic
 def ingest_events(
@@ -565,16 +619,67 @@ def ingest_events(
                         "started_at": parse_ts(raw.get("timestamp")),
                     },
                 )
-                signals = payload.get("signals") or {}
+                signals = dict(payload.get("signals") or {})
+                student_text = payload.get("studentText") or ""
+                tutor_text = payload.get("tutorText") or ""
+                subject = payload.get("subject") or session.subject or ""
+                topic = payload.get("topic") or session.topic or ""
+
+                # Epic A3: server-side math re-verify (prefer checker for mastery)
+                try:
+                    from learning.math_verify import (
+                        is_math_pilot_context,
+                        parse_check_tags,
+                        resolve_graded_correctness,
+                        verify_math_answer,
+                    )
+
+                    tag = parse_check_tags(tutor_text)
+                    if (
+                        is_math_pilot_context(subject, topic)
+                        or tag.get("expected")
+                        or tag.get("alts")
+                    ) and not signals.get("isHintRequest"):
+                        verification = verify_math_answer(
+                            student_text,
+                            tutor_text=tutor_text,
+                        )
+                        linguistic = (
+                            signals.get("linguisticCorrectness")
+                            or signals.get("correctness")
+                            or Correctness.UNKNOWN
+                        )
+                        graded = resolve_graded_correctness(
+                            linguistic, verification, prefer_checker=True
+                        )
+                        signals["verification"] = verification
+                        signals["linguisticCorrectness"] = linguistic
+                        signals["gradeSource"] = graded["source"]
+                        signals["correctness"] = graded["correctness"]
+                        if verification.get("discrepancy"):
+                            from core.logging_utils import log_event
+                            import logging
+
+                            log_event(
+                                "math.grade_disagreement",
+                                level=logging.WARNING,
+                                linguistic=linguistic,
+                                verified=verification.get("correctness"),
+                                method=verification.get("method"),
+                                session_id=sid,
+                            )
+                except Exception:
+                    pass
+
                 turn_index = session.turn_count
                 SessionTurn.objects.create(
                     session=session,
                     index=turn_index,
                     occurred_at=parse_ts(raw.get("timestamp")),
-                    subject=payload.get("subject") or session.subject,
-                    topic=payload.get("topic") or session.topic,
-                    student_text=payload.get("studentText") or "",
-                    tutor_text=payload.get("tutorText") or "",
+                    subject=subject,
+                    topic=topic,
+                    student_text=student_text,
+                    tutor_text=tutor_text,
                     input_modality=payload.get("inputModality")
                     or signals.get("inputModality")
                     or "text",
@@ -593,14 +698,14 @@ def ingest_events(
                     session.counters = running["counters"]
                 if running.get("accuracy") is not None:
                     session.accuracy = running["accuracy"]
-                session.subject = payload.get("subject") or session.subject
-                session.topic = payload.get("topic") or session.topic
+                session.subject = subject or session.subject
+                session.topic = topic or session.topic
                 session.save()
 
                 apply_exchange_to_profile_model(
                     profile,
-                    subject=payload.get("subject") or session.subject,
-                    topic=payload.get("topic") or session.topic,
+                    subject=subject,
+                    topic=topic,
                     signals=signals,
                 )
 
@@ -777,25 +882,62 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         }
 
     mastery_map = []
+    skill_sparks = []
     if profile:
-        for m in profile.mastery_entries.all().order_by("-updated_at")[:8]:
-            level = int(round(m.score))
-            segs = _mastery_segs(level)
-            if level >= 75:
-                status = "Strong"
-            elif level >= 50:
-                status = "In progress"
-            else:
-                status = "Building"
-            mastery_map.append(
-                {
-                    "subject": m.subject,
-                    "skill": m.topic,
-                    "level": level,
-                    "segs": segs,
-                    "status": status,
-                }
-            )
+        # Prefer fine-grained skill graph rows when present (Epic A1)
+        skill_rows = list(
+            profile.skill_masteries.select_related("skill").order_by(
+                "-updated_at"
+            )[:10]
+        )
+        if skill_rows:
+            from learning.mastery_engine import STATE_LABELS
+
+            for sm in skill_rows:
+                level = int(round(sm.score))
+                segs = _mastery_segs(level)
+                status = STATE_LABELS.get(sm.state, sm.state)
+                mastery_map.append(
+                    {
+                        "subject": sm.skill.get_domain_display(),
+                        "skill": sm.skill.label,
+                        "level": level,
+                        "segs": segs,
+                        "status": status,
+                        "slug": sm.skill.slug,
+                        "state": sm.state,
+                    }
+                )
+                skill_sparks.append(
+                    {
+                        "slug": sm.skill.slug,
+                        "name": sm.skill.name,
+                        "shortLabel": sm.skill.label,
+                        "score": level,
+                        "state": sm.state,
+                        "stateLabel": status,
+                        "domain": sm.skill.domain,
+                    }
+                )
+        else:
+            for m in profile.mastery_entries.all().order_by("-updated_at")[:8]:
+                level = int(round(m.score))
+                segs = _mastery_segs(level)
+                if level >= 75:
+                    status = "Strong"
+                elif level >= 50:
+                    status = "In progress"
+                else:
+                    status = "Building"
+                mastery_map.append(
+                    {
+                        "subject": m.subject,
+                        "skill": m.topic,
+                        "level": level,
+                        "segs": segs,
+                        "status": status,
+                    }
+                )
 
     recent = []
     for s in sessions[:8]:
@@ -869,6 +1011,15 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         or mastery_map
     )
 
+    next_skill = None
+    if profile:
+        try:
+            from learning.mastery_engine import recommend_next_skill
+
+            next_skill = recommend_next_skill(profile)
+        except Exception:
+            next_skill = None
+
     return {
         "hasData": has_data,
         "weekStats": {
@@ -876,6 +1027,8 @@ def build_dashboard(student: StudentProfile | None) -> dict:
             "last": week_block(last_week),
         },
         "masteryMap": mastery_map,
+        "skillSparks": skill_sparks,
+        "recommendedNextSkill": next_skill,
         "recentActivity": recent,
         "strengths": strength_cards,
         "focusAreas": focus_cards,

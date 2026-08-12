@@ -21,7 +21,39 @@ import {
   appendMessageAsync,
   archiveConversationAsync,
   saveTopicShelfAsync,
+  saveResumeSnapshotAsync,
 } from "../services/learning";
+import { reportError } from "../services/telemetry";
+import { classifyFailure } from "../services/connectivity";
+import {
+  detectDistress,
+  escalationCopy,
+  reportSafetyEvent,
+  resolveAgeBand,
+} from "../services/safety";
+
+/** Soft timeout so a hung Gemini stream surfaces a recoverable UX. */
+const STREAM_TIMEOUT_MS = 90_000;
+
+/**
+ * Race a promise against a timeout. Does not cancel the underlying stream
+ * (Gemini SDK limitation) but unblocks the UI with a recoverable error.
+ */
+function withStreamTimeout(promise, ms, label = "Request timed out") {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(label)), ms);
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
 
 /** Strip synthetic / internal user turns that confuse resume. */
 function sanitizeApiHistory(apiHistory = []) {
@@ -74,6 +106,7 @@ export function useChatSession({
   onSessionBegin,
   onExchangeComplete,
   onAwaitingStudent,
+  onResumeSnapshot,
 }) {
   const studentId =
     studentIdProp ||
@@ -95,8 +128,17 @@ export function useChatSession({
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
   const [viewingArchiveId, setViewingArchiveId] = useState(null);
+  /** @type {[null | { code: string, title: string, message: string, recoverable: boolean, phase: string }, Function]} */
+  const [chatError, setChatError] = useState(null);
+  /**
+   * High-severity safety pause (distress). Blocks normal tutoring until dismissed.
+   * @type {[null | { category: string, code: string, copy: object }, Function]}
+   */
+  const [safetyEscalation, setSafetyEscalation] = useState(null);
 
   const chatRef = useRef(null);
+  /** Last failed action so Retry can re-run without re-showing the student bubble. */
+  const lastFailedRef = useRef(null);
   const toolsRef = useRef(tools);
   const insightsRef = useRef(learningInsights);
   const interventionActiveRef = useRef(interventionActive);
@@ -107,6 +149,7 @@ export function useChatSession({
   const onSessionBeginRef = useRef(onSessionBegin);
   const onExchangeCompleteRef = useRef(onExchangeComplete);
   const onAwaitingStudentRef = useRef(onAwaitingStudent);
+  const onResumeSnapshotRef = useRef(onResumeSnapshot);
   const pendingStudentRef = useRef(null);
   const historyRef = useRef([]); // { role: 'user'|'model', text }
   const conversationIdRef = useRef(null);
@@ -143,6 +186,9 @@ export function useChatSession({
   useEffect(() => {
     onAwaitingStudentRef.current = onAwaitingStudent;
   }, [onAwaitingStudent]);
+  useEffect(() => {
+    onResumeSnapshotRef.current = onResumeSnapshot;
+  }, [onResumeSnapshot]);
 
   const studentRef = useRef(student);
   useEffect(() => {
@@ -161,7 +207,52 @@ export function useChatSession({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isStreaming, scrollToBottom]);
+  }, [messages, isStreaming, chatError, scrollToBottom]);
+
+  const clearChatError = useCallback(() => {
+    setChatError(null);
+    lastFailedRef.current = null;
+  }, []);
+
+  /**
+   * Drop empty / partial streaming tutor bubbles after a failed stream.
+   * Never removes the student's message — history must survive.
+   */
+  const stripFailedTutorBubble = useCallback(() => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      while (updated.length) {
+        const last = updated[updated.length - 1];
+        if (
+          last?.role === "tutor" &&
+          (last.streaming || !String(last.text || "").trim())
+        ) {
+          updated.pop();
+          continue;
+        }
+        break;
+      }
+      return updated;
+    });
+  }, []);
+
+  const surfaceAiError = useCallback(
+    (err, { phase, studentText = null, wasHintRequest = false } = {}) => {
+      const classified = classifyFailure(err);
+      lastFailedRef.current = {
+        phase,
+        studentText,
+        wasHintRequest,
+        at: Date.now(),
+      };
+      setChatError({
+        ...classified,
+        phase,
+      });
+      stripFailedTutorBubble();
+    },
+    [stripFailedTutorBubble]
+  );
 
   const refreshJournalList = useCallback(async () => {
     const shelf = await loadTopicShelfAsync(studentId, subjectName, topicName);
@@ -231,6 +322,9 @@ export function useChatSession({
     chatRef.current = null;
     pendingStudentRef.current = null;
     skipPersistRef.current = false;
+    lastFailedRef.current = null;
+    setChatError(null);
+    setSafetyEscalation(null);
 
     onSessionBeginRef.current?.({ subjectName, topicName });
 
@@ -284,9 +378,32 @@ export function useChatSession({
       modeRef.current = hasHistory ? "resume" : "fresh";
       if (thread.id) conversationIdRef.current = thread.id;
 
-      // Never carry intervention across topics — resume is always normal tutoring
-      interventionActiveRef.current = false;
-      interventionContextRef.current = null;
+      // Safe resume of intervention: only if snapshot matches this topic
+      const snap = thread.resumeSnapshot || {};
+      const snapTopic = snap.topic || snap.intervention?.context?.topic;
+      const snapSubject = snap.subject || snap.intervention?.context?.subject;
+      const snapMatchesTopic =
+        (!snapTopic || snapTopic === topicName) &&
+        (!snapSubject || snapSubject === subjectName);
+      const resumeIntervention =
+        hasHistory &&
+        snapMatchesTopic &&
+        snap.intervention &&
+        (snap.intervention.status === "active" ||
+          snap.intervention.status === "offered");
+
+      // Prefer restoring guide mode as *offered* so the student opts in (safer than auto-active)
+      const restoredActive = false;
+      const restoredCtx = resumeIntervention
+        ? snap.intervention.context || {
+            subject: subjectName,
+            topic: topicName,
+            reasonText: snap.intervention.reason,
+          }
+        : null;
+
+      interventionActiveRef.current = restoredActive;
+      interventionContextRef.current = restoredActive ? restoredCtx : null;
 
       const systemPrompt = buildSystemPrompt(
         subjectName,
@@ -295,8 +412,8 @@ export function useChatSession({
         currentStudent,
         insightsRef.current,
         {
-          interventionActive: false,
-          interventionContext: null,
+          interventionActive: restoredActive,
+          interventionContext: restoredActive ? restoredCtx : null,
         }
       );
 
@@ -309,6 +426,7 @@ export function useChatSession({
         isResume: hasHistory,
         archived,
         lastEndedSummary: null,
+        resumeSnapshot: snap,
       });
 
       if (hasHistory) {
@@ -347,6 +465,15 @@ export function useChatSession({
               : "Continuing this topic",
           at: new Date().toISOString(),
         });
+        if (resumeIntervention) {
+          resumeBits.push({
+            id: newMessageId(),
+            role: "system",
+            kind: "intervention_resume",
+            text: "You were in guide mode last time — say if you want step-by-step help again",
+            at: new Date().toISOString(),
+          });
+        }
         const display = [...withDayBoundaries(stored), ...resumeBits];
 
         if (isStale()) return;
@@ -361,7 +488,34 @@ export function useChatSession({
           chatRef.current = createChatSession(systemPrompt, historyRef.current);
         } catch (err) {
           console.error(err);
-          chatRef.current = createChatSession(systemPrompt, []);
+          reportError({
+            kind: "gemini",
+            message: err?.message || "Failed to rebuild chat session",
+            code: err?.name || "CHAT_REBUILD",
+            component: "useChatSession.resume",
+            extra: { subject: subjectName, topic: topicName },
+          });
+          try {
+            chatRef.current = createChatSession(systemPrompt, []);
+          } catch (err2) {
+            chatRef.current = null;
+            surfaceAiError(err2, { phase: "resume" });
+          }
+        }
+
+        // Restore learning-layer intervention as *offered* (safe opt-in)
+        if (resumeIntervention) {
+          onResumeSnapshotRef.current?.({
+            ...snap,
+            intervention: {
+              ...snap.intervention,
+              status: "offered",
+              context: restoredCtx,
+              restoredFromSnapshot: true,
+            },
+          });
+        } else if (snap && Object.keys(snap).length) {
+          onResumeSnapshotRef.current?.(snap);
         }
 
         onAwaitingStudentRef.current?.();
@@ -374,14 +528,32 @@ export function useChatSession({
       if (isStale()) return;
       setMessages([]);
       setMsgCount(0);
-      const chat = createChatSession(systemPrompt, []);
-      chatRef.current = chat;
-      setIsStreaming(true);
+      let chat;
       try {
-        const greetingPrompt = `Start the lesson on "${topicName}" for ${studentName}. Introduce yourself warmly, acknowledge the ${currentStudent?.curriculum || "curriculum"} and ${currentStudent?.grade || "grade"} level, then ask a compelling opening question. Keep it concise.`;
-        const response = await chat.sendMessageStream({
-          message: greetingPrompt,
+        chat = createChatSession(systemPrompt, []);
+        chatRef.current = chat;
+      } catch (err) {
+        console.error(err);
+        reportError({
+          kind: "gemini",
+          message: err?.message || "Failed to create chat session",
+          code: err?.name || "CHAT_CREATE",
+          component: "useChatSession.greeting",
+          extra: { subject: subjectName, topic: topicName },
         });
+        surfaceAiError(err, { phase: "greeting" });
+        return;
+      }
+      setIsStreaming(true);
+      const greetingPrompt = `Start the lesson on "${topicName}" for ${studentName}. Introduce yourself warmly, acknowledge the ${currentStudent?.curriculum || "curriculum"} and ${currentStudent?.grade || "grade"} level, then ask a compelling opening question. Keep it concise.`;
+      try {
+        const response = await withStreamTimeout(
+          chat.sendMessageStream({
+            message: greetingPrompt,
+          }),
+          STREAM_TIMEOUT_MS,
+          "Greeting timed out"
+        );
         let full = "";
         const startAt = new Date().toISOString();
         if (!isStale()) {
@@ -401,8 +573,12 @@ export function useChatSession({
             },
           ]);
         }
+        const streamDeadline = Date.now() + STREAM_TIMEOUT_MS;
         for await (const chunk of response) {
           if (isStale()) break;
+          if (Date.now() > streamDeadline) {
+            throw new Error("Greeting timed out");
+          }
           const piece = typeof chunk?.text === "string" ? chunk.text : "";
           if (!piece) continue;
           full += piece;
@@ -419,6 +595,9 @@ export function useChatSession({
         }
         if (!isStale()) {
           const at = new Date().toISOString();
+          if (!full.trim()) {
+            throw new Error("Empty tutor greeting");
+          }
           setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = {
@@ -433,18 +612,29 @@ export function useChatSession({
             { role: "user", text: greetingPrompt },
             { role: "model", text: full },
           ];
-          if (full.trim()) {
-            persistUiMessage(
-              { role: "tutor", text: full, at },
-              { user: greetingPrompt, model: full }
-            );
-            onTutorReplyRef.current?.(full);
-          }
+          persistUiMessage(
+            { role: "tutor", text: full, at },
+            { user: greetingPrompt, model: full }
+          );
+          onTutorReplyRef.current?.(full);
           onAwaitingStudentRef.current?.();
           setMsgCount(1);
+          setChatError(null);
+          lastFailedRef.current = null;
         }
       } catch (err) {
         console.error(err);
+        reportError({
+          kind: "gemini",
+          message: err?.message || "Lesson greeting stream failed",
+          code: err?.name || "GREETING_STREAM",
+          component: "useChatSession.greeting",
+          extra: { subject: subjectName, topic: topicName },
+        });
+        if (!isStale()) {
+          stripFailedTutorBubble();
+          surfaceAiError(err, { phase: "greeting" });
+        }
       } finally {
         if (!isStale()) setIsStreaming(false);
       }
@@ -499,18 +689,32 @@ export function useChatSession({
           text: showStudentText,
           wasHintRequest,
         };
-      } else {
-        pendingStudentRef.current = null;
       }
+      // else: leave pendingStudentRef as set by retryLastFailed (do not clear)
 
       setIsStreaming(true);
+      setChatError(null);
       try {
-        const chat = chatRef.current;
-        if (!chat || !stillCurrent()) return false;
+        if (!stillCurrent()) return false;
 
-        const response = await chat.sendMessageStream({
-          message: apiMessage,
-        });
+        let chat = chatRef.current;
+        if (!chat) {
+          chat = rebuildChatWithHistory(
+            interventionActiveRef.current,
+            interventionContextRef.current
+          );
+        }
+        if (!chat || !stillCurrent()) {
+          throw new Error("Chat session unavailable");
+        }
+
+        const response = await withStreamTimeout(
+          chat.sendMessageStream({
+            message: apiMessage,
+          }),
+          STREAM_TIMEOUT_MS,
+          "Tutor reply timed out"
+        );
         let full = "";
         const tutorId = newMessageId();
         if (stillCurrent()) {
@@ -525,8 +729,12 @@ export function useChatSession({
             },
           ]);
         }
+        const streamDeadline = Date.now() + STREAM_TIMEOUT_MS;
         for await (const chunk of response) {
           if (!stillCurrent()) break;
+          if (Date.now() > streamDeadline) {
+            throw new Error("Tutor reply timed out");
+          }
           const piece = typeof chunk?.text === "string" ? chunk.text : "";
           if (!piece) continue;
           full += piece;
@@ -551,6 +759,10 @@ export function useChatSession({
           return false;
         }
 
+        if (!full.trim()) {
+          throw new Error("Empty tutor reply");
+        }
+
         const at = new Date().toISOString();
         setMessages((prev) => {
           const updated = [...prev];
@@ -572,13 +784,11 @@ export function useChatSession({
           { role: "model", text: full },
         ];
 
-        if (full.trim()) {
-          persistUiMessage(
-            { role: "tutor", text: full, at },
-            { user: apiMessage, model: full }
-          );
-          onTutorReplyRef.current?.(full);
-        }
+        persistUiMessage(
+          { role: "tutor", text: full, at },
+          { user: apiMessage, model: full }
+        );
+        onTutorReplyRef.current?.(full);
 
         const pending = pendingStudentRef.current;
         pendingStudentRef.current = null;
@@ -592,19 +802,133 @@ export function useChatSession({
 
         onAwaitingStudentRef.current?.();
         setMsgCount((c) => c + 1);
+        setChatError(null);
+        lastFailedRef.current = null;
         return true;
       } catch (err) {
         console.error(err);
+        reportError({
+          kind: "gemini",
+          message: err?.message || "Tutor stream failed",
+          code: err?.name || "TUTOR_STREAM",
+          component: "useChatSession.stream",
+          extra: {
+            subject: subjectName,
+            topic: topicName,
+            hadStudentText: Boolean(showStudentText),
+          },
+        });
+        const pending = pendingStudentRef.current;
         pendingStudentRef.current = null;
-        if (showStudentText && stillCurrent()) {
-          setMessages((prev) => prev.slice(0, -1));
+        // Keep the student message in UI + storage — never drop history on failure
+        if (stillCurrent()) {
+          surfaceAiError(err, {
+            phase: "stream",
+            studentText: pending?.text || showStudentText || null,
+            wasHintRequest: pending?.wasHintRequest || wasHintRequest,
+          });
         }
         return false;
       } finally {
         if (stillCurrent()) setIsStreaming(false);
       }
     },
-    [isStreaming, scrollToBottom, persistUiMessage]
+    [
+      isStreaming,
+      scrollToBottom,
+      persistUiMessage,
+      subjectName,
+      topicName,
+      surfaceAiError,
+      rebuildChatWithHistory,
+    ]
+  );
+
+  /**
+   * Homework photo remediation (Epic A4).
+   * Shows a student homework bubble (with preview) and streams a guided tutor reply.
+   */
+  const sendHomeworkHelp = useCallback(
+    async ({
+      caption,
+      apiMessage,
+      imageUrl = null,
+      homeworkId = null,
+      analysis = null,
+    } = {}) => {
+      if (
+        isStreaming ||
+        modeRef.current === "archive_view" ||
+        safetyEscalation ||
+        !apiMessage?.trim()
+      ) {
+        return false;
+      }
+
+      if (!ai) {
+        surfaceAiError(new Error("API key missing"), { phase: "config" });
+        return false;
+      }
+
+      if (!chatRef.current) {
+        try {
+          rebuildChatWithHistory(
+            interventionActiveRef.current,
+            interventionContextRef.current
+          );
+        } catch (err) {
+          surfaceAiError(err, { phase: "stream" });
+          return false;
+        }
+      }
+
+      const showText =
+        caption?.trim() || "I uploaded a photo of my work.";
+
+      // Custom UI message with homework attachment
+      const childMsg = {
+        id: newMessageId(),
+        role: "child",
+        text: showText,
+        kind: "homework",
+        homework: {
+          id: homeworkId,
+          imageUrl,
+          analysis: analysis
+            ? {
+                problem: analysis.problem,
+                studentWork: analysis.studentWork,
+                errors: analysis.errors,
+                focusSkill: analysis.focusSkill,
+              }
+            : null,
+        },
+        at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, childMsg]);
+      if (conversationIdRef.current) {
+        persistUiMessage(childMsg);
+      }
+
+      pendingStudentRef.current = {
+        text: showText,
+        wasHintRequest: false,
+        homeworkId,
+      };
+
+      return streamTutorFromMessage(apiMessage.trim(), {
+        showStudentText: null,
+        wasHintRequest: false,
+      });
+    },
+    [
+      isStreaming,
+      safetyEscalation,
+      surfaceAiError,
+      rebuildChatWithHistory,
+      persistUiMessage,
+      streamTutorFromMessage,
+    ]
   );
 
   const sendMessage = useCallback(
@@ -613,10 +937,70 @@ export function useChatSession({
       if (
         !trimmed ||
         isStreaming ||
-        !chatRef.current ||
-        modeRef.current === "archive_view"
+        modeRef.current === "archive_view" ||
+        safetyEscalation
       )
         return false;
+
+      // —— Child safety floor: high-severity distress stops the AI path ——
+      const distress = detectDistress(trimmed);
+      if (distress.severity === "high") {
+        const at = new Date().toISOString();
+        const childMsg = {
+          id: newMessageId(),
+          role: "child",
+          text: trimmed,
+          at,
+        };
+        setMessages((prev) => [...prev, childMsg]);
+        if (conversationIdRef.current) {
+          persistUiMessage(childMsg);
+        }
+        const copy = escalationCopy(distress);
+        setSafetyEscalation({
+          category: distress.category,
+          code: distress.code,
+          copy,
+        });
+        const ageBand = resolveAgeBand(studentRef.current?.grade);
+        void reportSafetyEvent({
+          category: distress.category,
+          code: distress.code,
+          severity: "high",
+          ageBand,
+          component: "useChatSession",
+          sessionId: conversationIdRef.current || undefined,
+          extra: { subject: subjectName, topic: topicName },
+        });
+        scrollToBottom(true);
+        return false;
+      }
+
+      if (!ai) {
+        surfaceAiError(new Error("API key missing"), { phase: "config" });
+        return false;
+      }
+
+      // Rebuild chat if a prior failure left us without a session
+      if (!chatRef.current) {
+        try {
+          rebuildChatWithHistory(
+            interventionActiveRef.current,
+            interventionContextRef.current
+          );
+        } catch (err) {
+          surfaceAiError(err, { phase: "stream", studentText: trimmed });
+          return false;
+        }
+      }
+
+      if (!chatRef.current) {
+        surfaceAiError(new Error("Chat session unavailable"), {
+          phase: "stream",
+          studentText: trimmed,
+        });
+        return false;
+      }
 
       const wasHintRequest = Boolean(
         options.wasHintRequest ||
@@ -634,8 +1018,110 @@ export function useChatSession({
         wasHintRequest,
       });
     },
-    [isStreaming, streamTutorFromMessage, topicName]
+    [
+      isStreaming,
+      streamTutorFromMessage,
+      topicName,
+      subjectName,
+      surfaceAiError,
+      rebuildChatWithHistory,
+      safetyEscalation,
+      persistUiMessage,
+      scrollToBottom,
+    ]
   );
+
+  /** Student acknowledges safety pause — keep tutoring stopped (lesson chrome only). */
+  const acknowledgeSafetyPause = useCallback(() => {
+    setSafetyEscalation((prev) =>
+      prev
+        ? {
+            ...prev,
+            acknowledged: true,
+            paused: true,
+          }
+        : null
+    );
+  }, []);
+
+  /** Student chooses to return to the lesson after a high-severity pause. */
+  const resumeAfterSafety = useCallback(() => {
+    setSafetyEscalation(null);
+    const sysMsg = {
+      id: newMessageId(),
+      role: "system",
+      kind: "safety_resume",
+      text: "Back to the lesson — whenever you're ready",
+      at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, sysMsg]);
+    if (conversationIdRef.current) {
+      persistUiMessage(sysMsg);
+    }
+  }, [persistUiMessage]);
+
+  /**
+   * Retry the last failed greeting or student turn without losing history.
+   */
+  const retryLastFailed = useCallback(async () => {
+    if (isStreaming || modeRef.current === "archive_view") return false;
+    const failed = lastFailedRef.current;
+    if (!failed) {
+      setChatError(null);
+      return false;
+    }
+
+    setChatError(null);
+
+    if (failed.phase === "greeting" || failed.phase === "resume") {
+      // Re-boot the session effect (history already on shelf for resume)
+      setSessionTrigger((n) => n + 1);
+      return true;
+    }
+
+    if (failed.phase === "stream" && failed.studentText) {
+      // Rebuild chat with history, then re-send without duplicating the child bubble
+      try {
+        rebuildChatWithHistory(
+          interventionActiveRef.current,
+          interventionContextRef.current
+        );
+      } catch (err) {
+        surfaceAiError(err, {
+          phase: "stream",
+          studentText: failed.studentText,
+          wasHintRequest: failed.wasHintRequest,
+        });
+        return false;
+      }
+
+      const wasHintRequest = Boolean(failed.wasHintRequest);
+      const trimmed = failed.studentText;
+      const apiMessage = interventionActiveRef.current
+        ? `[Still in step-by-step guide mode for "${topicName}". Continue explaining/demonstrating as needed. Student says:]\n${trimmed}`
+        : trimmed;
+
+      pendingStudentRef.current = {
+        text: trimmed,
+        wasHintRequest,
+      };
+
+      return streamTutorFromMessage(apiMessage, {
+        showStudentText: null,
+        wasHintRequest,
+      });
+    }
+
+    // Generic recovery: restart stream path
+    setSessionTrigger((n) => n + 1);
+    return true;
+  }, [
+    isStreaming,
+    rebuildChatWithHistory,
+    streamTutorFromMessage,
+    surfaceAiError,
+    topicName,
+  ]);
 
   const enterInterventionMode = useCallback(
     async (context = {}) => {
@@ -976,5 +1462,25 @@ export function useChatSession({
     viewingArchiveId,
     isArchiveView: Boolean(viewingArchiveId),
     hasAi: Boolean(ai),
+    chatError,
+    clearChatError,
+    retryLastFailed,
+    safetyEscalation,
+    acknowledgeSafetyPause,
+    resumeAfterSafety,
+    conversationId: conversationMeta?.id || null,
+    sendHomeworkHelp,
+    /** Persist intervention/tools snapshot for cross-session resume (Epic A2). */
+    persistResumeSnapshot: async (snapshot) => {
+      const id = conversationIdRef.current;
+      if (!id) return;
+      await saveResumeSnapshotAsync(
+        studentId,
+        subjectName,
+        topicName,
+        id,
+        snapshot
+      );
+    },
   };
 }

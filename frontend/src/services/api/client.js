@@ -1,4 +1,5 @@
 import { API_BASE_URL, getAccessToken, setStoredTokens } from "./config";
+import { reportError } from "../telemetry";
 
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {
@@ -43,11 +44,29 @@ export async function apiRequest(path, options = {}) {
     }
   }
 
-  const res = await fetch(buildUrl(path), {
-    ...rest,
-    headers,
-    body: json !== undefined ? JSON.stringify(json) : rest.body,
-  });
+  // Avoid recursive telemetry posts if the telemetry endpoint itself fails
+  const isTelemetryPath =
+    typeof path === "string" && path.includes("/api/telemetry/");
+
+  let res;
+  try {
+    res = await fetch(buildUrl(path), {
+      ...rest,
+      headers,
+      body: json !== undefined ? JSON.stringify(json) : rest.body,
+    });
+  } catch (networkErr) {
+    if (!isTelemetryPath) {
+      reportError({
+        kind: "api",
+        message: networkErr?.message || "Network request failed",
+        code: "NETWORK",
+        component: "apiRequest",
+        path: typeof path === "string" ? path.split("?")[0] : "",
+      });
+    }
+    throw networkErr;
+  }
 
   // Clear tokens on unauthorized so the UI can re-auth
   if (res.status === 401 && auth) {
@@ -63,10 +82,21 @@ export async function apiRequest(path, options = {}) {
       (data && (data.detail || data.error || data.message)) ||
       (typeof data === "string" && data) ||
       `Request failed (${res.status})`;
-    throw new ApiError(
+    const err = new ApiError(
       typeof message === "string" ? message : JSON.stringify(message),
       { status: res.status, data }
     );
+    if (!isTelemetryPath && res.status >= 400) {
+      reportError({
+        kind: "api",
+        message: err.message,
+        code: String(res.status),
+        component: "apiRequest",
+        path: typeof path === "string" ? path.split("?")[0] : "",
+        extra: { status: res.status },
+      });
+    }
+    throw err;
   }
 
   return data;

@@ -241,6 +241,10 @@ class ConversationUpsertSerializer(serializers.Serializer):
     apiHistory = serializers.ListField(required=False, default=list)
     messages = ConversationMessageWriteSerializer(many=True, required=False)
     messageCount = serializers.IntegerField(required=False)
+    resumeSnapshot = serializers.DictField(required=False)
+    previewText = serializers.CharField(
+        required=False, allow_blank=True, max_length=240
+    )
 
 
 class AppendMessageSerializer(serializers.Serializer):
@@ -260,6 +264,19 @@ class ArchiveConversationSerializer(serializers.Serializer):
     )
     nextStep = serializers.CharField(required=False, allow_blank=True, default="")
     endedAt = serializers.CharField(required=False, allow_blank=True)
+
+
+class ResumeSnapshotSerializer(serializers.Serializer):
+    """Partial resume state: intervention, tools, personalization, sessionId."""
+
+    intervention = serializers.DictField(required=False)
+    tools = serializers.DictField(required=False)
+    personalization = serializers.DictField(required=False)
+    sessionId = serializers.CharField(
+        required=False, allow_blank=True, max_length=64
+    )
+    topic = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    subject = serializers.CharField(required=False, allow_blank=True, max_length=160)
 
 
 class TopicShelfSerializer(serializers.Serializer):

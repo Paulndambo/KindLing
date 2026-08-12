@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, X, ArrowRight, BookOpen, Loader2, LogIn, Sparkles } from "lucide-react";
 import { ICON_MAP } from "../../constants/icons";
+import { listContinuableAsync } from "../../services/learning";
 import NewSubjectModal from "./NewSubjectModal";
+import ContinueStrip from "./ContinueStrip";
+import TranscriptSearch from "./TranscriptSearch";
 
 export default function MySubjects({
   subjects,
@@ -22,10 +25,45 @@ export default function MySubjects({
   const [drafts, setDrafts] = useState({});
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [continueKeys, setContinueKeys] = useState(() => new Set());
 
   const studentName = student?.name?.trim() || "you";
   const hasProfile = Boolean(student?.id || student?.isOnboarded);
   const displayError = actionError || error;
+  const studentId =
+    student?.id != null
+      ? `id_${student.id}`
+      : student?.name?.toLowerCase().replace(/\s+/g, "_") || "anonymous";
+
+  useEffect(() => {
+    if (!isLoggedIn || !hasProfile) {
+      setContinueKeys(new Set());
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const items = await listContinuableAsync(studentId, { limit: 40 });
+        if (cancelled) return;
+        const keys = new Set(
+          (items || []).map(
+            (i) => `${(i.subject || "").toLowerCase()}::${(i.topic || "").toLowerCase()}`
+          )
+        );
+        setContinueKeys(keys);
+      } catch {
+        if (!cancelled) setContinueKeys(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, hasProfile, studentId, subjects]);
+
+  const canContinue = (subjectName, topicName) =>
+    continueKeys.has(
+      `${(subjectName || "").toLowerCase()}::${(topicName || "").toLowerCase()}`
+    );
 
   const setDraft = (subjId, val) =>
     setDrafts((d) => ({ ...d, [subjId]: val }));
@@ -181,6 +219,10 @@ export default function MySubjects({
           </button>
         </div>
 
+        <ContinueStrip studentId={studentId} onContinue={onStartLesson} />
+
+        <TranscriptSearch studentId={studentId} onOpenLesson={onStartLesson} />
+
         {displayError && (
           <div
             style={{
@@ -257,15 +299,18 @@ export default function MySubjects({
                         No topics yet — add one below.
                       </p>
                     )}
-                    {topics.map((t) => (
+                    {topics.map((t) => {
+                      const resume = canContinue(s.name, t.name);
+                      return (
                       <div className="topic-chip" key={t.id}>
                         <span className="tname">{t.name}</span>
                         <div className="topic-actions">
                           <button
-                            className="start-chip-btn"
+                            className={`start-chip-btn${resume ? " continue" : ""}`}
                             onClick={() => onStartLesson(s.name, t.name)}
                           >
-                            Start <ArrowRight size={12} />
+                            {resume ? "Continue" : "Start"}{" "}
+                            <ArrowRight size={12} />
                           </button>
                           <button
                             className="icon-x"
@@ -277,7 +322,8 @@ export default function MySubjects({
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="add-topic-row">

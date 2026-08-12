@@ -22,3 +22,24 @@ export async function getLearningProfile({ subject, topic } = {}) {
     auth: true,
   });
 }
+
+/** Pilot skill catalog (nodes + prereqs). */
+export async function getSkillCatalog() {
+  return apiRequest("/api/learning/skills/", {
+    method: "GET",
+    auth: false,
+  });
+}
+
+/** Skills + readiness for a lesson topic. */
+export async function getSkillPath({ subject, topic, studentId } = {}) {
+  const params = new URLSearchParams();
+  if (subject) params.set("subject", subject);
+  if (topic) params.set("topic", topic);
+  if (studentId) params.set("studentId", studentId);
+  const qs = params.toString();
+  return apiRequest(`/api/learning/skills/path/${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+    auth: true,
+  });
+}

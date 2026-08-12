@@ -4,6 +4,7 @@ import {
   pcmToWavBlob,
   sampleRateFromMime,
 } from "../utils/audio";
+import { reportError } from "./telemetry";
 
 /** Warm, natural tutor voice — "Sulafat" is described as Warm by Gemini. */
 export const KINDING_VOICE = "Sulafat";
@@ -39,6 +40,9 @@ function buildSpeechPrompt(text) {
 
 export function stripMarkdown(text) {
   return String(text || "")
+    // machine math check tags (Epic A3) — never speak
+    .replace(/⟦\s*check\b[^⟧]*⟧/gi, " ")
+    .replace(/\[\[\s*check\s*:?[^\]]*\]\]/gi, " ")
     // fenced / inline code (keep short inline content for speech)
     .replace(/```[\w+-]*\n?([\s\S]*?)```/g, (_, body) => {
       // Skip pure diagrams / long code in speech
@@ -228,6 +232,13 @@ export async function synthesizeSpeech(text, { retries = 1 } = {}) {
 
   if (lastError) {
     console.warn("TTS gave up for chunk:", clean.slice(0, 60), lastError);
+    reportError({
+      kind: "tts",
+      message: lastError?.message || "TTS synthesis failed",
+      code: lastError?.name || "TTS_FAIL",
+      component: "synthesizeSpeech",
+      extra: { textLen: clean.length, retries },
+    });
   }
   return null;
 }

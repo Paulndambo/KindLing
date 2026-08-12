@@ -17,6 +17,13 @@ import {
   evaluateInterventionTrigger,
   describeInterventionContext,
 } from "../services/learning";
+import {
+  markSessionStarted,
+  markSessionFirstMessage,
+  markSessionDropOff,
+  trackMetric,
+  reportError,
+} from "../services/telemetry";
 
 /**
  * Orchestrates Kindling's student-understanding loop:
@@ -87,6 +94,14 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
   const beginSession = useCallback(() => {
     if (trackerRef.current) {
       const summary = trackerRef.current.summarize();
+      // Drop-off: previous session ended without a student turn
+      if (!summary.turnCount) {
+        markSessionDropOff(summary.sessionId, {
+          subject: summary.subject,
+          topic: summary.topic,
+          reason: "session_replaced",
+        });
+      }
       const ended = applySessionEnd(profileRef.current, summary);
       persistProfile(ended);
       submitLearningEvents(
@@ -142,6 +157,11 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
         { studentId, sessionId }
       )
     );
+
+    markSessionStarted(sessionId, {
+      subject: subjectName,
+      topic: topicName,
+    });
 
     return sessionId;
   }, [studentId, subjectName, topicName, student, persistProfile, syncInterventionState]);
@@ -331,7 +351,55 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
         responseMs,
         wasHintRequest,
         inputModality,
+        subject: tracker.subject || subjectName,
+        topic: tracker.topic || topicName,
       });
+
+      // Epic A3: log when math checker overrides / disagrees with tutor language
+      if (signals.verification?.discrepancy) {
+        trackMetric("math.grade_disagreement", {
+          sessionId: tracker.id,
+          tags: {
+            linguistic: signals.linguisticCorrectness,
+            verified: signals.verification.correctness,
+            method: signals.verification.method,
+            subject: tracker.subject,
+            topic: tracker.topic,
+          },
+        });
+        reportError({
+          kind: "lesson",
+          code: "MATH_GRADE_DISCREPANCY",
+          message: "Math verifier disagreed with tutor linguistic grade",
+          component: "mathVerifier",
+          sessionId: tracker.id,
+          extra: {
+            linguistic: signals.linguisticCorrectness,
+            verified: signals.verification.correctness,
+            method: signals.verification.method,
+          },
+        });
+      } else if (
+        signals.gradeSource === "math_verifier" &&
+        signals.verification?.checked
+      ) {
+        trackMetric("math.grade_verified", {
+          sessionId: tracker.id,
+          tags: {
+            result: signals.correctness,
+            method: signals.verification.method,
+          },
+        });
+      }
+
+      // Funnel: first real student message in this session
+      if ((tracker.snapshot.turns?.length || 0) === 0) {
+        markSessionFirstMessage(tracker.id, {
+          subject: tracker.subject,
+          topic: tracker.topic,
+          modality: inputModality,
+        });
+      }
 
       tracker.recordTurn({
         studentText,
@@ -411,6 +479,15 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
             reason: decision.reason,
             autoEnter: decision.shouldAutoEnter,
           });
+          trackMetric(
+            decision.shouldAutoEnter
+              ? "intervention.auto_entered"
+              : "intervention.offered",
+            {
+              sessionId: tracker.id,
+              tags: { reason: decision.reason },
+            }
+          );
         }
       }
 
@@ -471,6 +548,13 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
     if (!tracker) return null;
 
     const summary = tracker.summarize();
+    if (!summary.turnCount) {
+      markSessionDropOff(summary.sessionId, {
+        subject: summary.subject,
+        topic: summary.topic,
+        reason: "session_end",
+      });
+    }
     const ended = applySessionEnd(profileRef.current, summary);
     persistProfile(ended);
     setSessionSummary(summary);
@@ -511,6 +595,13 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
     return () => {
       if (trackerRef.current) {
         const summary = trackerRef.current.summarize();
+        if (!summary.turnCount) {
+          markSessionDropOff(summary.sessionId, {
+            subject: summary.subject,
+            topic: summary.topic,
+            reason: "unmount",
+          });
+        }
         const ended = applySessionEnd(profileRef.current, summary);
         saveLearningProfile(ended);
         submitLearningEvents(
@@ -525,6 +616,54 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Apply a saved resume snapshot (Epic A2).
+   * Intervention is restored as *offered* when it was active — student opts in.
+   */
+  const applyResumeSnapshot = useCallback(
+    (snapshot) => {
+      if (!snapshot) return;
+      const inter = snapshot.intervention;
+      if (
+        inter &&
+        (inter.status === "active" ||
+          inter.status === "offered" ||
+          inter.restoredFromSnapshot)
+      ) {
+        const context =
+          inter.context ||
+          describeInterventionContext({
+            subject: subjectName,
+            topic: topicName,
+            consecutiveIncorrect: 0,
+            reason: inter.reason || "resume",
+          });
+        syncInterventionState({
+          status: InterventionStatus.OFFERED,
+          reason: inter.reason || "resume",
+          context: {
+            ...context,
+            headline: context.headline || "Welcome back",
+            body:
+              context.body ||
+              "You were working with step-by-step help last time. Want to continue that guide, or practice on your own?",
+          },
+          autoEntered: false,
+          restoredFromSnapshot: true,
+        });
+      }
+      if (snapshot.tools && trackerRef.current) {
+        trackerRef.current.setTools(snapshot.tools);
+      }
+    },
+    [subjectName, topicName, syncInterventionState]
+  );
+
+  const getSessionId = useCallback(
+    () => trackerRef.current?.sessionId || trackerRef.current?.id || null,
+    []
+  );
 
   return {
     profile,
@@ -543,5 +682,7 @@ export function useStudentLearning({ student, subjectName, topicName, tools }) {
     acceptIntervention,
     declineIntervention,
     exitIntervention,
+    applyResumeSnapshot,
+    getSessionId,
   };
 }

@@ -9,7 +9,10 @@ from .conversation_service import (
     archive_conversation,
     build_shelf,
     conversation_to_dict,
+    list_continuable,
     replace_topic_shelf,
+    search_transcripts,
+    update_resume_snapshot,
     upsert_conversation,
 )
 from .models import LearningEvent, LessonSession, TopicConversation
@@ -21,8 +24,10 @@ from .serializers import (
     LearningEventSerializer,
     LessonSessionListSerializer,
     LessonSessionSerializer,
+    ResumeSnapshotSerializer,
     TopicShelfSerializer,
 )
+from .mastery_engine import build_topic_skill_path, recommend_next_skill
 from .services import (
     build_dashboard,
     build_personalization_insights,
@@ -30,7 +35,6 @@ from .services import (
     ingest_events,
     profile_to_api_dict,
 )
-
 
 class LearningEventIngestView(APIView):
     """
@@ -158,6 +162,137 @@ class HealthView(APIView):
 
     def get(self, request):
         return Response({"status": "ok", "service": "kindling-api"})
+
+
+class SkillPathView(APIView):
+    """
+    GET /api/learning/skills/path/?subject=&topic=
+
+    Skills linked to a lesson topic + readiness + recommended next skill.
+    Auth optional so demo/local clients still get the catalog graph.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        subject = request.query_params.get("subject") or ""
+        topic = request.query_params.get("topic") or ""
+        student = None
+        if request.user and request.user.is_authenticated:
+            student = get_student_profile(request.user)
+        client_id = request.query_params.get("studentId", "")
+        profile = None
+        if student or client_id:
+            profile = get_or_create_profile(student, client_id)
+        path = build_topic_skill_path(profile, subject, topic)
+        return Response(path)
+
+
+class SkillRecommendView(APIView):
+    """GET /api/learning/skills/next/ — next recommended skill for the learner."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        student = get_student_profile(request.user)
+        profile = get_or_create_profile(
+            student, request.query_params.get("studentId", "")
+        )
+        rec = recommend_next_skill(
+            profile,
+            request.query_params.get("subject", ""),
+            request.query_params.get("topic", ""),
+        )
+        return Response({"recommended": rec})
+
+
+class SkillCatalogView(APIView):
+    """GET /api/learning/skills/ — pilot skill catalog (graph nodes + prereqs)."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from curriculum.models import Skill, SkillPrerequisite
+
+        skills = []
+        for s in Skill.objects.filter(is_pilot=True).order_by("sort_order"):
+            prereqs = list(
+                SkillPrerequisite.objects.filter(skill=s).values_list(
+                    "prerequisite__slug", "strength"
+                )
+            )
+            skills.append(
+                {
+                    "slug": s.slug,
+                    "name": s.name,
+                    "shortLabel": s.label,
+                    "domain": s.domain,
+                    "description": s.description,
+                    "standardCodes": s.standard_codes or [],
+                    "sortOrder": s.sort_order,
+                    "prerequisites": [
+                        {"slug": slug, "strength": strength}
+                        for slug, strength in prereqs
+                    ],
+                }
+            )
+        return Response({"skills": skills, "pilot": True})
+
+
+class MathVerifyView(APIView):
+    """
+    POST /api/learning/verify-math/
+
+    Independent math check for a student answer vs expected forms.
+    Used for debugging and optional server-side re-grade.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from learning.math_verify import (
+            resolve_graded_correctness,
+            verify_math_answer,
+        )
+
+        student_text = request.data.get("studentText") or request.data.get(
+            "student_answer"
+        ) or ""
+        tutor_text = request.data.get("tutorText") or ""
+        expected = request.data.get("expected")
+        alts = request.data.get("alts") or request.data.get("expectedAlts") or []
+        linguistic = request.data.get("linguistic") or request.data.get(
+            "linguisticCorrectness"
+        )
+
+        verification = verify_math_answer(
+            student_text,
+            expected=expected,
+            alts=list(alts) if isinstance(alts, (list, tuple)) else [],
+            tutor_text=tutor_text,
+        )
+        graded = None
+        if linguistic:
+            graded = resolve_graded_correctness(linguistic, verification)
+
+        if verification.get("discrepancy"):
+            from core.logging_utils import log_event
+            import logging
+
+            log_event(
+                "math.grade_disagreement",
+                level=logging.WARNING,
+                linguistic=linguistic,
+                verified=verification.get("correctness"),
+                method=verification.get("method"),
+            )
+
+        return Response(
+            {
+                "verification": verification,
+                "graded": graded,
+            }
+        )
 
 
 class TopicConversationShelfView(APIView):
@@ -390,3 +525,88 @@ class TopicConversationArchiveView(APIView):
         conv.refresh_from_db()
         conv = TopicConversation.objects.prefetch_related("messages").get(pk=conv.pk)
         return Response(conversation_to_dict(conv))
+
+
+class ConversationContinueListView(APIView):
+    """
+    GET /api/learning/conversations/continue/
+
+    Active threads with transcript content — power "Continue where we left off".
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        student = get_student_profile(request.user)
+        if not student:
+            return Response({"items": [], "count": 0})
+        try:
+            limit = min(50, max(1, int(request.query_params.get("limit", 20))))
+        except (TypeError, ValueError):
+            limit = 20
+        items = list_continuable(student, limit=limit)
+        return Response({"items": items, "count": len(items)})
+
+
+class ConversationSearchView(APIView):
+    """
+    GET /api/learning/conversations/search/?q=&subject=&topic=
+
+    Transcript keyword search (Epic A2.4).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        student = get_student_profile(request.user)
+        q = request.query_params.get("q") or ""
+        if not student:
+            return Response({"results": [], "query": q, "count": 0})
+        if len(q.strip()) < 2:
+            return Response(
+                {"detail": "Query must be at least 2 characters.", "results": []},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        results = search_transcripts(
+            student,
+            q,
+            subject=request.query_params.get("subject") or "",
+            topic=request.query_params.get("topic") or "",
+        )
+        return Response({"results": results, "query": q, "count": len(results)})
+
+
+class ConversationResumeSnapshotView(APIView):
+    """
+    PUT /api/learning/conversations/<client_id>/resume/
+
+    Save intervention / tools / personalization snapshot for safe resume.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request, client_id):
+        student = get_student_profile(request.user)
+        if not student:
+            return Response(
+                {"detail": "Complete student onboarding first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        conv = TopicConversation.objects.filter(
+            student=student, client_id=client_id
+        ).first()
+        if not conv:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        ser = ResumeSnapshotSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        update_resume_snapshot(conv, ser.validated_data)
+        conv.refresh_from_db()
+        return Response(
+            {
+                "ok": True,
+                "id": conv.client_id,
+                "resumeSnapshot": conv.resume_snapshot or {},
+                "updatedAt": conv.updated_at.isoformat() if conv.updated_at else None,
+            }
+        )

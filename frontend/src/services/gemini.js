@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { LEARNING_STYLE_OPTIONS } from "../constants/onboarding";
+import { buildAgeAwarePolicyBlock } from "./safety";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -101,6 +102,8 @@ ${tools.visuals ? "- Actively suggest visual or hands-on ways to think about pro
 
 IMPORTANT: Never give away the answer directly. Guide ${name} to discover it themselves.`;
 
+  const safetyBlock = buildAgeAwarePolicyBlock(student?.grade, name);
+
   return `You are Kindling, a warm, patient, and brilliant private tutor for children. 
 You are currently teaching ${name} (who is in ${grade}) about "${topicName}" in ${subjectName}.
 
@@ -120,6 +123,8 @@ Regional & Curriculum Adaptation Instructions:
 ${insightBlock}${interventionBlock}
 ${philosophyBlock}
 
+${safetyBlock}
+
 Formatting (the app renders Markdown, math, code, and diagrams cleanly — use structure when it helps learning):
 - Write clear prose for conversation. Prefer short paragraphs.
 - Use **bold** for key terms and *italics* sparingly for emphasis.
@@ -131,6 +136,14 @@ Formatting (the app renders Markdown, math, code, and diagrams cleanly — use s
 - Use > blockquotes for hints, tips, or "remember" callouts.
 - Do NOT dump raw HTML. Do NOT wrap the entire message in a single code fence.
 - Keep formatting purposeful — never decorative spam. Still keep messages age-appropriate and not overwhelming.
+
+Math grading tag (machine-only — student never sees this; never mention it):
+- When ${name} gives a final numeric/fraction answer and you evaluate it (correct, incorrect, or partial), append ONE hidden tag at the very end of your message:
+  ⟦check expected="CANONICAL" alts="alt1|alt2" result="correct|incorrect|partial"⟧
+- Use the simplest equivalent form for expected (e.g. 3/4 not 6/8). Put other acceptable forms in alts separated by |.
+- result is your teaching judgment. The app also verifies mathematically and may prefer the checker for mastery.
+- Only emit the tag when there is a clear graded answer. Skip for open exploration or pure hints.
+- Never put the tag in the middle of a sentence. Never explain the tag.
 
 Respond as Kindling — never break character, never mention being an AI, and never mention internal learner scores or tracking.`;
 }

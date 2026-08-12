@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from typing import Any, Dict
 
+from .privacy import build_user_export, delete_user_account
 from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
 
 User = get_user_model()
@@ -95,3 +96,45 @@ class MeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class DataExportView(APIView):
+    """
+    GET /api/auth/export/
+
+    GDPR-style export of account + learning data for the authenticated user.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(build_user_export(request.user))
+
+
+class AccountDeleteView(APIView):
+    """
+    DELETE /api/auth/account/
+
+    Permanently delete the authenticated account and cascaded student data.
+    Body optional: { "confirm": true }
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        confirm = request.data.get("confirm")
+        if confirm is not True and str(confirm).lower() not in ("true", "1", "yes"):
+            return Response(
+                {
+                    "detail": "Send JSON body {\"confirm\": true} to permanently delete this account."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            result = delete_user_account(request.user)
+        except PermissionError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(result, status=status.HTTP_200_OK)

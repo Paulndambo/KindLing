@@ -1,37 +1,70 @@
 import { STORAGE_KEYS } from "./types";
+import { API_BASE_URL } from "../api/config";
 
 /**
  * Learning analytics transport.
  *
- * Until the real Kindling backend exists, events are:
- * 1. Queued in localStorage (survive refresh)
- * 2. POSTed to VITE_LEARNING_API_URL when set
- * 3. Otherwise POSTed to a public dummy sink (httpbin) in dev-friendly mode,
- *    or accepted as a local mock so the product never blocks on network
+ * Events are:
+ * 1. Queued in localStorage when offline or API fails (survive refresh)
+ * 2. POSTed to learning events endpoint when reachable
+ * 3. local-mock when VITE_LEARNING_API_URL is "mock"/"local"
  *
- * Payload shape is backend-ready: { schemaVersion, source, events[] }.
+ * Payload shape: { schemaVersion, source, events[] }.
  */
 
 const SCHEMA_VERSION = 1;
 const SOURCE = "kindling-web";
 
-/** Default dummy endpoint — swap via VITE_LEARNING_API_URL when backend is ready. */
+/** Default dummy endpoint — opt-in via VITE_LEARNING_USE_HTTPBIN */
 const DEFAULT_DUMMY_URL = "https://httpbin.org/post";
+
+/** @type {Set<(count: number) => void>} */
+const queueListeners = new Set();
+
+function notifyQueueListeners() {
+  const count = getQueuedEventCount();
+  queueListeners.forEach((fn) => {
+    try {
+      fn(count);
+    } catch {
+      /* ignore subscriber errors */
+    }
+  });
+}
+
+/**
+ * Subscribe to learning queue depth changes.
+ * @param {(count: number) => void} listener
+ * @returns {() => void} unsubscribe
+ */
+export function subscribeLearningQueue(listener) {
+  if (typeof listener !== "function") return () => {};
+  queueListeners.add(listener);
+  return () => queueListeners.delete(listener);
+}
+
+export function getQueuedEventCount() {
+  return loadQueue().length;
+}
 
 function getEndpoint() {
   const configured = import.meta.env.VITE_LEARNING_API_URL;
   if (configured === "mock" || configured === "local") return null;
   if (configured) return configured;
-  // Default to Kindling API when VITE_API_URL is set
-  const apiBase = import.meta.env.VITE_API_URL;
+  // Prefer explicit VITE_API_URL, else SPA default API base (local Django)
+  const apiBase = import.meta.env.VITE_API_URL || API_BASE_URL;
   if (apiBase) {
     return `${String(apiBase).replace(/\/$/, "")}/api/learning/events/`;
   }
-  // Opt-in dummy remote sink so you can inspect payloads in Network tab
   if (import.meta.env.VITE_LEARNING_USE_HTTPBIN === "true") {
     return DEFAULT_DUMMY_URL;
   }
-  return null; // pure local mock by default (no flaky external deps)
+  return null;
+}
+
+/** Whether events are expected to leave the device (vs pure local mock). */
+export function isLearningRemoteEnabled() {
+  return Boolean(getEndpoint());
 }
 
 function getAuthHeaders() {
@@ -48,7 +81,6 @@ function getAuthHeaders() {
   return {};
 }
 
-
 function loadQueue() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.eventQueue);
@@ -60,10 +92,27 @@ function loadQueue() {
 
 function saveQueue(queue) {
   try {
-    localStorage.setItem(STORAGE_KEYS.eventQueue, JSON.stringify(queue.slice(-200)));
+    localStorage.setItem(
+      STORAGE_KEYS.eventQueue,
+      JSON.stringify(queue.slice(-200))
+    );
   } catch (err) {
     console.warn("Learning event queue save failed:", err);
   }
+  notifyQueueListeners();
+}
+
+function enqueueEvents(list) {
+  if (!list?.length) return;
+  const queue = loadQueue();
+  // Dedupe by event id when re-queuing
+  const seen = new Set(queue.map((e) => e?.id).filter(Boolean));
+  for (const evt of list) {
+    if (evt?.id && seen.has(evt.id)) continue;
+    queue.push(evt);
+    if (evt?.id) seen.add(evt.id);
+  }
+  saveQueue(queue);
 }
 
 function makeEnvelope(events) {
@@ -75,9 +124,13 @@ function makeEnvelope(events) {
   };
 }
 
+function isBrowserOffline() {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
 /**
  * Submit one or more learning events. Always non-blocking for the UI.
- * Returns a result summary for debugging / future UI badges.
+ * Offline or API failure → durable local queue (survives refresh).
  */
 export async function submitLearningEvents(events) {
   const list = Array.isArray(events) ? events : [events];
@@ -86,7 +139,6 @@ export async function submitLearningEvents(events) {
   const envelope = makeEnvelope(list);
   const endpoint = getEndpoint();
 
-  // Always mirror to console in development for inspectability
   if (import.meta.env.DEV) {
     console.info(
       "%c[Kindling Learning]",
@@ -98,7 +150,6 @@ export async function submitLearningEvents(events) {
 
   // Local mock path — treat as success, keep offline queue drained
   if (!endpoint) {
-    // Store last payload for debugging / future admin panel
     try {
       localStorage.setItem(
         "kindling_learning_last_payload",
@@ -108,6 +159,18 @@ export async function submitLearningEvents(events) {
       /* ignore */
     }
     return { ok: true, delivered: list.length, mode: "local-mock" };
+  }
+
+  // Fast path: don't wait on fetch when the browser knows we're offline
+  if (isBrowserOffline()) {
+    enqueueEvents(list);
+    return {
+      ok: false,
+      delivered: 0,
+      mode: "queued",
+      error: "offline",
+      queued: list.length,
+    };
   }
 
   try {
@@ -120,7 +183,6 @@ export async function submitLearningEvents(events) {
         ...getAuthHeaders(),
       },
       body: JSON.stringify(envelope),
-      // Don't send cookies to dummy third parties
       credentials: "omit",
       keepalive: true,
     });
@@ -132,12 +194,15 @@ export async function submitLearningEvents(events) {
     // Drain any previously failed queue on success
     await flushEventQueue();
 
-    return { ok: true, delivered: list.length, mode: "remote", status: res.status };
+    return {
+      ok: true,
+      delivered: list.length,
+      mode: "remote",
+      status: res.status,
+    };
   } catch (err) {
     console.warn("Learning API submit failed — queueing events:", err);
-    const queue = loadQueue();
-    queue.push(...list);
-    saveQueue(queue);
+    enqueueEvents(list);
     return {
       ok: false,
       delivered: 0,
@@ -148,7 +213,7 @@ export async function submitLearningEvents(events) {
   }
 }
 
-/** Flush offline queue (e.g. on session end or app focus). */
+/** Flush offline queue (e.g. on session end, reconnect, or app focus). */
 export async function flushEventQueue() {
   const queue = loadQueue();
   if (!queue.length) return { ok: true, flushed: 0 };
@@ -157,6 +222,10 @@ export async function flushEventQueue() {
   if (!endpoint) {
     saveQueue([]);
     return { ok: true, flushed: queue.length, mode: "local-mock" };
+  }
+
+  if (isBrowserOffline()) {
+    return { ok: false, flushed: 0, error: "offline", queued: queue.length };
   }
 
   try {
@@ -177,7 +246,13 @@ export async function flushEventQueue() {
     return { ok: true, flushed: queue.length };
   } catch (err) {
     console.warn("Learning queue flush failed:", err);
-    return { ok: false, flushed: 0, error: String(err?.message || err) };
+    notifyQueueListeners();
+    return {
+      ok: false,
+      flushed: 0,
+      error: String(err?.message || err),
+      queued: queue.length,
+    };
   }
 }
 

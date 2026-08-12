@@ -100,3 +100,37 @@ export async function archiveConversationRemote(clientId, summaryPayload = {}) {
     }
   );
 }
+
+/** Active threads ready to continue (cross-subject). */
+export async function fetchContinueList(limit = 20) {
+  return apiRequest(
+    `/api/learning/conversations/continue/${qs({ limit })}`,
+    { method: "GET" }
+  );
+}
+
+/** Keyword search over transcripts. */
+export async function searchTranscripts({ q, subject, topic } = {}) {
+  return apiRequest(
+    `/api/learning/conversations/search/${qs({ q, subject, topic })}`,
+    { method: "GET" }
+  );
+}
+
+/** Persist intervention/tools/personalization for safe resume. */
+export async function putResumeSnapshot(clientId, snapshot) {
+  return apiRequest(
+    `/api/learning/conversations/${encodeURIComponent(clientId)}/resume/`,
+    {
+      method: "PUT",
+      json: {
+        intervention: snapshot?.intervention,
+        tools: snapshot?.tools,
+        personalization: snapshot?.personalization,
+        sessionId: snapshot?.sessionId || "",
+        subject: snapshot?.subject || "",
+        topic: snapshot?.topic || "",
+      },
+    }
+  );
+}

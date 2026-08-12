@@ -1,10 +1,25 @@
-import { Plus, Mic, Send, Volume2, PanelLeft, BookOpen, X } from "lucide-react";
+import { useRef } from "react";
+import {
+  Plus,
+  Mic,
+  Send,
+  Volume2,
+  PanelLeft,
+  BookOpen,
+  X,
+  Loader2,
+  Image as ImageIcon,
+} from "lucide-react";
 import TypingDots from "./TypingDots";
 import TutorMessageContent from "./TutorMessageContent";
 import InterventionBanner, {
   InterventionSystemChip,
 } from "./InterventionBanner";
 import { ConversationEndedCard } from "./ConversationJournal";
+import ConnectionBanner from "./ConnectionBanner";
+import ChatErrorBanner from "./ChatErrorBanner";
+import SafetyEscalationCard from "./SafetyEscalationCard";
+import { HOMEWORK_ACCEPT } from "../../services/homework";
 import "../../styles/tutor-content.css";
 
 function DayBoundary({ text }) {
@@ -52,15 +67,34 @@ export default function ChatPanel({
   onOpenJournal,
   onExitArchiveView,
   archiveCount = 0,
+  chatError = null,
+  onRetryChatError,
+  onDismissChatError,
+  connectivity = null,
+  safetyEscalation = null,
+  onSafetyPause,
+  onSafetyResume,
+  onAttachHomework,
+  homeworkBusy = false,
+  homeworkError = "",
+  onClearHomeworkError,
 }) {
+  const fileInputRef = useRef(null);
   const interventionActive = intervention?.status === "active";
   const interventionOffered = intervention?.status === "offered";
+  const offline = connectivity && connectivity.online === false;
+  const safetyActive = Boolean(safetyEscalation && !safetyEscalation.acknowledged);
+  const safetyPaused = Boolean(safetyEscalation?.paused || safetyEscalation?.acknowledged);
   const inputDisabled =
     isStreaming ||
     !hasAi ||
     isArchiveView ||
     conversationEnded ||
-    isSummarizing;
+    isSummarizing ||
+    offline ||
+    safetyActive ||
+    safetyPaused ||
+    homeworkBusy;
 
   return (
     <main
@@ -153,20 +187,38 @@ export default function ChatPanel({
             <span className="pulse" />{" "}
             {isSummarizing
               ? "Saving journal…"
-              : isStreaming
-                ? "Thinking…"
-                : isArchiveView
-                  ? "Reading past chat"
-                  : conversationEnded
-                    ? "Conversation ended"
-                    : interventionActive
-                      ? "Guide mode"
-                      : isResume
-                        ? "Picking up where you left"
-                        : "Kindling is live"}
+              : safetyActive || safetyPaused
+                ? "Lesson paused for safety"
+                : isStreaming
+                  ? "Thinking…"
+                  : chatError
+                    ? "Paused — try again"
+                    : offline
+                      ? "Offline"
+                      : isArchiveView
+                        ? "Reading past chat"
+                        : conversationEnded
+                          ? "Conversation ended"
+                          : interventionActive
+                            ? "Guide mode"
+                            : isResume
+                              ? "Picking up where you left"
+                              : "Kindling is live"}
           </div>
         </div>
       </div>
+
+      {connectivity?.showBanner && !isArchiveView && (
+        <ConnectionBanner
+          online={connectivity.online}
+          apiStatus={connectivity.apiStatus}
+          learningQueued={connectivity.learningQueued}
+          isChecking={connectivity.isChecking}
+          isSyncing={connectivity.isSyncing}
+          onRetryConnection={connectivity.checkApi}
+          onSyncLearning={connectivity.syncLearning}
+        />
+      )}
 
       {isArchiveView && (
         <div className="archive-banner">
@@ -191,8 +243,9 @@ export default function ChatPanel({
 
       <div className="chat-area" ref={chatAreaRef}>
         {!hasAi && (
-          <div className="error-toast" style={{ margin: "auto" }}>
-            ⚠ No API key — add VITE_GEMINI_API_KEY to .env
+          <div className="error-toast config-toast" role="status">
+            Kindling needs an AI key to tutor. An adult can add{" "}
+            <code>VITE_GEMINI_API_KEY</code> to the app config, then refresh.
           </div>
         )}
 
@@ -235,6 +288,37 @@ export default function ChatPanel({
               </div>
             );
           }
+          if (msg.kind === "homework" || msg.homework) {
+            return (
+              <div className="msg child homework-msg" key={msg.id || i}>
+                <div className="homework-msg-label">
+                  <ImageIcon size={12} /> My work
+                </div>
+                {msg.homework?.imageUrl && (
+                  <a
+                    href={msg.homework.imageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="homework-thumb-wrap"
+                  >
+                    <img
+                      src={msg.homework.imageUrl}
+                      alt="Uploaded homework"
+                      className="homework-thumb"
+                    />
+                  </a>
+                )}
+                <div className="homework-msg-text">{msg.text}</div>
+                {msg.homework?.analysis?.errors?.length > 0 && (
+                  <ul className="homework-error-hints">
+                    {msg.homework.analysis.errors.slice(0, 2).map((e, ei) => (
+                      <li key={ei}>{e}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          }
           return (
             <div className="msg child" key={msg.id || i}>
               {msg.text}
@@ -262,16 +346,76 @@ export default function ChatPanel({
         )}
 
         {isStreaming && messages.length === 0 && <TypingDots />}
+
+        {safetyEscalation && !isArchiveView && (
+          <SafetyEscalationCard
+            copy={safetyEscalation.copy}
+            onPause={
+              safetyEscalation.paused || safetyEscalation.acknowledged
+                ? undefined
+                : onSafetyPause
+            }
+            onResume={onSafetyResume}
+          />
+        )}
+
+        {chatError && !isArchiveView && !safetyEscalation && (
+          <ChatErrorBanner
+            error={chatError}
+            onRetry={onRetryChatError}
+            onDismiss={onDismissChatError}
+            isStreaming={isStreaming}
+          />
+        )}
       </div>
 
+      {(homeworkError || homeworkBusy) && (
+        <div
+          className={`homework-status-bar${homeworkError ? " is-error" : ""}`}
+          role="status"
+        >
+          {homeworkBusy ? (
+            <>
+              <Loader2 size={14} className="spin" /> Looking at your work…
+            </>
+          ) : (
+            <>
+              <span>{homeworkError}</span>
+              {onClearHomeworkError && (
+                <button type="button" onClick={onClearHomeworkError}>
+                  Dismiss
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       <div className="lesson-input">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={HOMEWORK_ACCEPT}
+          capture="environment"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file && onAttachHomework) onAttachHomework(file);
+          }}
+        />
         <button
           className="icon-btn"
-          aria-label="Attach work"
-          title="Attach work"
-          disabled={inputDisabled}
+          aria-label="Attach homework photo"
+          title="Photo of your homework"
+          disabled={inputDisabled || !onAttachHomework}
+          onClick={() => fileInputRef.current?.click()}
         >
-          <Plus size={18} color="#1F3A34" />
+          {homeworkBusy ? (
+            <Loader2 size={18} className="spin" color="#1F3A34" />
+          ) : (
+            <Plus size={18} color="#1F3A34" />
+          )}
         </button>
         <input
           ref={inputRef}
@@ -281,13 +425,19 @@ export default function ChatPanel({
               ? "Read-only — return to the live lesson to chat"
               : conversationEnded
                 ? "Conversation ended — start a new one to continue"
-                : isListening
-                  ? "🎙 Listening — speak now…"
-                  : isStreaming || isSummarizing
-                    ? "Kindling is thinking…"
-                    : interventionActive
-                      ? `Ask a question or try the next step, ${studentName}…`
-                      : `Answer Kindling, ${studentName}…`
+                : offline
+                  ? "You're offline — reconnect to chat"
+                  : safetyActive || safetyPaused
+                    ? "Lesson paused — use the buttons above when you're ready"
+                    : chatError
+                      ? "Tap Try again above, or type a new message…"
+                      : isListening
+                        ? "🎙 Listening — speak now…"
+                        : isStreaming || isSummarizing
+                          ? "Kindling is thinking…"
+                          : interventionActive
+                            ? `Ask a question or try the next step, ${studentName}…`
+                            : `Answer Kindling, ${studentName}…`
           }
           value={inputVal}
           disabled={inputDisabled}

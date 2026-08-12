@@ -24,7 +24,111 @@ Django + Django REST Framework API for the Kindling adaptive tutoring platform.
 | `students` | Student profile for the logged-in user (1:1) |
 | `curriculum` | Subjects & topics owned by a student |
 | `learning` | Event ingest, sessions, longitudinal profile, dashboard |
+| `core` | Health probes, request logging, client error + product metrics telemetry |
 
+## Observability (Phase 0.2)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health/live/` | Liveness (process up) |
+| `GET /health/ready/` | Readiness (DB reachable) |
+| `GET /health/` | Combined probe (backward compatible) |
+| `POST /api/telemetry/errors/` | Client error ingest (scrubbed) |
+| `POST /api/telemetry/metrics/` | Product funnel metrics |
+| `GET /api/telemetry/summary/?hours=24` | “Is tutoring healthy?” snapshot |
+
+Structured access logs emit as `kindling | {"event":"http.request",...}` with latency and status. Set `VITE_TELEMETRY=false` on the SPA to disable client posts.
+
+## Child safety & privacy (Phase 0.4)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/safety/policy/?grade=` | Age-band policy notes for a grade label |
+| `POST /api/safety/events/` | Scrubbed distress escalation ingest (no raw message body) |
+| `GET /api/auth/export/` | Authenticated JSON export of account + learning data |
+| `DELETE /api/auth/account/` | Delete account (`{"confirm": true}`); demo account blocked |
+
+Full write-up: [`docs/SAFETY_AND_PRIVACY.md`](../docs/SAFETY_AND_PRIVACY.md).
+
+## Background jobs (Phase 0.5)
+
+Cron-friendly job runner (no Redis/Celery required). Jobs write `JobRun` audit rows and structured logs (`event=job.*`).
+
+### Commands
+
+```bash
+# List registered jobs
+python manage.py run_job list
+
+# Run the ops heartbeat (proves the runner works)
+python manage.py run_job heartbeat
+
+# Dry-run digest placeholder (no email)
+python manage.py run_job weekly_digest --dry-run
+
+# Run every job that is due by interval
+python manage.py run_scheduled_jobs
+```
+
+### Staging cron example
+
+```cron
+*/5 * * * * cd /path/to/backend && python manage.py run_scheduled_jobs >> /var/log/kindling-jobs.log 2>&1
+```
+
+### Registered jobs
+
+| Name | Default interval | Purpose |
+|------|------------------|---------|
+| `heartbeat` | 1h | Health proof + 24h counters |
+| `weekly_digest` | 7d | Placeholder parent digest (dry-run) |
+| `mastery_recompute` | 1d | Placeholder mastery recompute |
+| `review_schedule` | 1d | Placeholder spaced review |
+
+Configure in `settings.KINDLING_JOBS`. Ops snapshot: `GET /api/jobs/status/`.
+
+## Skill graph mastery (Epic A1)
+
+Pilot domain: **Math Foundations** (fractions → early algebra).
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/learning/skills/` | Pilot skill catalog + prerequisites |
+| `GET /api/learning/skills/path/?subject=&topic=` | Skills for a lesson topic + readiness |
+| `GET /api/learning/skills/next/` | Recommended next skill for the learner |
+
+Graded `turn.exchange` events update **BKT-lite** `SkillMastery` rows and blend into topic mastery. Warm states: Growing roots → Ready to spark → Catching fire → Glowing.
+
+```bash
+python manage.py seed_kindling   # seeds graph + demo mastery sparks
+```
+
+## Math correctness verification (Epic A3)
+
+Independent rational/decimal checker for pilot math turns. Tutor may emit a hidden tag:
+
+```text
+⟦check expected="3/4" alts="0.75|6/8" result="correct"⟧
+```
+
+When the tag (or pilot Math context) is present, the server re-verifies on `turn.exchange` and **prefers the checker** over linguistic “yes/no” for mastery updates. Disagreements log `math.grade_disagreement`.
+
+```bash
+POST /api/learning/verify-math/
+{ "studentText": "6/8", "tutorText": "…⟦check expected=\"3/4\" result=\"correct\"⟧" }
+```
+
+## Homework photos (Epic A4)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/learning/homework/` | Multipart upload (`image` field, max 5 MB) |
+| `POST /api/learning/homework/<id>/analyze/` | Attach vision analysis JSON |
+| `GET/DELETE /api/learning/homework/<id>/` | Fetch or delete |
+
+Files live under `MEDIA_ROOT/homework/…`. Retention default: **30 days** (`KINDLING_HOMEWORK_RETENTION_DAYS`). Vision OCR runs in the SPA via Gemini multimodal; the API stores the image + analysis for history.
+
+Requires `Pillow` (`pip install -r requirements.txt`).
 ## Quick start
 
 ```bash

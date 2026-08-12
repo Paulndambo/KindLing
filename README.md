@@ -6,12 +6,16 @@
 Kindling/
 ├── frontend/          # React + Vite SPA (live lessons, dashboard, subjects)
 ├── backend/           # Django REST API (auth, profile, curriculum, learning)
+├── docs/              # Safety, privacy, and ops notes
 ├── README.md          # This file
 ├── CAPABILITIES.md    # Product capabilities & roadmap
+├── PLAN.md            # Production-ready execution plan
 └── PITCH_DECK.md      # Investor pitch narrative
 ```
 
 - Full product inventory & roadmap: **[CAPABILITIES.md](./CAPABILITIES.md)**  
+- Execution plan: **[PLAN.md](./PLAN.md)**  
+- Safety & privacy baseline: **[docs/SAFETY_AND_PRIVACY.md](./docs/SAFETY_AND_PRIVACY.md)**  
 - Investor pitch deck (Markdown): **[PITCH_DECK.md](./PITCH_DECK.md)**
 
 ---

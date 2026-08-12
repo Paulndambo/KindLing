@@ -523,8 +523,166 @@ export async function appendMessageAsync(
 }
 
 /**
- * Archive with summary — local + backend.
+ * Save resume snapshot (intervention / tools / personalization) for a conversation.
  */
+export async function saveResumeSnapshotAsync(
+  studentId,
+  subject,
+  topic,
+  conversationId,
+  snapshot
+) {
+  if (!conversationId) return null;
+
+  // Local shelf: attach resumeSnapshot on the conversation
+  try {
+    const shelf = loadTopicShelf(studentId, subject, topic);
+    const idx = (shelf.conversations || []).findIndex((c) => c.id === conversationId);
+    if (idx >= 0) {
+      const conv = {
+        ...shelf.conversations[idx],
+        resumeSnapshot: {
+          ...(shelf.conversations[idx].resumeSnapshot || {}),
+          ...snapshot,
+          savedAt: new Date().toISOString(),
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      const conversations = [...shelf.conversations];
+      conversations[idx] = conv;
+      saveTopicShelf(studentId, { ...shelf, conversations });
+    }
+  } catch {
+    /* ignore local failures */
+  }
+
+  if (backendAvailableSync()) {
+    try {
+      const { putResumeSnapshot } = await loadConversationApi();
+      await putResumeSnapshot(conversationId, {
+        ...snapshot,
+        subject,
+        topic,
+      });
+    } catch (err) {
+      console.warn("Resume snapshot save failed (cached locally)", err);
+    }
+  }
+  return snapshot;
+}
+
+/**
+ * List continuable conversations from local shelves (offline / demo fallback).
+ */
+export function listLocalContinuable(studentId, { limit = 20 } = {}) {
+  try {
+    const rootKey = `${STORAGE_KEYS.topicConversations}:${studentId || "anonymous"}`;
+    const raw = localStorage.getItem(rootKey);
+    if (!raw) return [];
+    const shelves = JSON.parse(raw) || {};
+    const items = [];
+    for (const shelf of Object.values(shelves)) {
+      for (const conv of shelf.conversations || []) {
+        if (conv.status !== "active") continue;
+        const msgs = (conv.messages || []).filter(
+          (m) => m.role === "tutor" || m.role === "child"
+        );
+        if (!msgs.length && !(conv.apiHistory || []).length) continue;
+        const last = msgs[msgs.length - 1];
+        items.push({
+          id: conv.id,
+          status: "active",
+          subject: conv.subject || shelf.subject,
+          topic: conv.topic || shelf.topic,
+          messageCount: msgs.length || conv.messageCount || 0,
+          updatedAt: conv.updatedAt || shelf.updatedAt,
+          previewText: (last?.text || "").slice(0, 180),
+          resumeSnapshot: conv.resumeSnapshot || {},
+          canContinue: true,
+        });
+      }
+    }
+    items.sort(
+      (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+    );
+    return items.slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+export async function listContinuableAsync(studentId, { limit = 20 } = {}) {
+  if (backendAvailableSync()) {
+    try {
+      const { fetchContinueList } = await loadConversationApi();
+      const data = await fetchContinueList(limit);
+      if (Array.isArray(data?.items)) return data.items;
+    } catch (err) {
+      console.warn("Continue list API failed, using local shelves", err);
+    }
+  }
+  return listLocalContinuable(studentId, { limit });
+}
+
+export async function searchTranscriptsAsync(
+  studentId,
+  { q, subject, topic } = {}
+) {
+  if (backendAvailableSync()) {
+    try {
+      const { searchTranscripts } = await loadConversationApi();
+      return await searchTranscripts({ q, subject, topic });
+    } catch (err) {
+      console.warn("Transcript search API failed, local fallback", err);
+    }
+  }
+  // Local fallback: scan shelves
+  const qLower = String(q || "")
+    .trim()
+    .toLowerCase();
+  if (qLower.length < 2) return { results: [], query: q, count: 0 };
+  const results = [];
+  try {
+    const rootKey = `${STORAGE_KEYS.topicConversations}:${studentId || "anonymous"}`;
+    const raw = localStorage.getItem(rootKey);
+    const shelves = raw ? JSON.parse(raw) : {};
+    for (const shelf of Object.values(shelves || {})) {
+      if (subject && shelf.subject !== subject) continue;
+      if (topic && shelf.topic !== topic) continue;
+      for (const conv of shelf.conversations || []) {
+        for (const m of conv.messages || []) {
+          if (m.role === "system") continue;
+          if (!(m.text || "").toLowerCase().includes(qLower)) continue;
+          const text = m.text || "";
+          const idx = text.toLowerCase().indexOf(qLower);
+          let snippet = text;
+          if (idx >= 0) {
+            const start = Math.max(0, idx - 40);
+            const end = Math.min(text.length, idx + qLower.length + 80);
+            snippet =
+              (start > 0 ? "…" : "") +
+              text.slice(start, end) +
+              (end < text.length ? "…" : "");
+          }
+          results.push({
+            messageId: m.id,
+            role: m.role,
+            snippet,
+            at: m.at,
+            conversationId: conv.id,
+            subject: conv.subject || shelf.subject,
+            topic: conv.topic || shelf.topic,
+            conversationStatus: conv.status,
+          });
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return { results: results.slice(0, 40), query: q, count: results.length };
+}
+
 export async function archiveConversationAsync(
   studentId,
   subject,

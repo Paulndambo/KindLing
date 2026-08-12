@@ -1,4 +1,9 @@
 import { STORAGE_KEYS, Correctness, Affect } from "./types";
+import {
+  applySkillsToProfile,
+  buildLocalSkillPath,
+  skillDirectivesLocal,
+} from "./skillGraph";
 
 /**
  * Longitudinal student learning profile.
@@ -45,6 +50,8 @@ export function createEmptyProfile(studentId = "anonymous") {
       sessionRestarts: 0,
     },
     lastSession: null,
+    /** Per-skill BKT mastery keyed by skill slug (Epic A1) */
+    skills: {},
   };
 }
 
@@ -194,8 +201,10 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
     .slice(0, 5)
     .map((x) => ({ subject: x.subject, topic: x.topic, score: Math.round(x.score) }));
 
-  next.updatedAt = new Date().toISOString();
-  return next;
+  // Epic A1: BKT skill-graph update for pilot topics
+  const withSkills = applySkillsToProfile(next, { subject, topic, signals });
+  withSkills.updatedAt = new Date().toISOString();
+  return withSkills;
 }
 
 export function applySessionStart(profile, sessionMeta) {
@@ -310,6 +319,21 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
     directives.push(`Watch for misconception: ${mc.label} (seen ${mc.count}×).`);
   }
 
+  const skillPath = buildLocalSkillPath(profile, subject, topic);
+  directives.push(...skillDirectivesLocal(profile, subject, topic));
+
+  // Dedupe
+  const seen = new Set();
+  const deduped = [];
+  for (const d of directives) {
+    if (!seen.has(d)) {
+      seen.add(d);
+      deduped.push(d);
+    }
+  }
+  directives.length = 0;
+  directives.push(...deduped.slice(0, 10));
+
   if (!directives.length) {
     directives.push("Maintain adaptive Socratic pace; reassess after each answer.");
   }
@@ -325,6 +349,17 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
         )
       : null;
 
+  let skillSummary = null;
+  if (skillPath.hasGraph) {
+    const primary = skillPath.skills.filter((s) => s.isPrimary);
+    if (primary.length) {
+      skillSummary = `Skill sparks: ${primary
+        .slice(0, 3)
+        .map((s) => `${s.shortLabel || s.name} ${Math.round(s.score)} (${s.stateLabel})`)
+        .join(", ")}.`;
+    }
+  }
+
   return {
     summary: [
       `${profile.totals.exchanges} observed exchanges across ${profile.totals.sessions} sessions.`,
@@ -332,6 +367,7 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
       topicMastery
         ? `Current topic mastery estimate: ${Math.round(topicMastery.score)}/100.`
         : "No mastery data for this topic yet.",
+      skillSummary,
       `Avg confidence ~${Math.round(avgConfidence * 100)}%, engagement ~${Math.round(avgEngagement * 100)}%.`,
     ]
       .filter(Boolean)
@@ -347,6 +383,9 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
       strengths: profile.strengths,
       topMisconceptions: topMisconceptions.map((m) => m.label),
       preferredDelivery: topPrefs,
+      skillPath,
+      topicSkillState: skillPath.topicState,
+      recommendedNextSkill: skillPath.recommendedNext,
     },
   };
 }

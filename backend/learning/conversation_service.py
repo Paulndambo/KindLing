@@ -40,7 +40,11 @@ def topic_key(subject: str | None, topic: str | None) -> str:
     return f"{subject or 'General'}::{topic or 'General'}"
 
 
-def conversation_to_dict(conv: TopicConversation, include_messages: bool = True) -> dict:
+def conversation_to_dict(
+    conv: TopicConversation,
+    include_messages: bool = True,
+    include_snapshot: bool = True,
+) -> dict:
     data = {
         "id": conv.client_id,
         "status": conv.status,
@@ -55,7 +59,10 @@ def conversation_to_dict(conv: TopicConversation, include_messages: bool = True)
         "nextStep": conv.next_step or None,
         "messageCount": conv.message_count,
         "apiHistory": conv.api_history or [],
+        "previewText": conv.preview_text or None,
     }
+    if include_snapshot:
+        data["resumeSnapshot"] = conv.resume_snapshot or {}
     if include_messages:
         data["messages"] = [
             {
@@ -68,6 +75,123 @@ def conversation_to_dict(conv: TopicConversation, include_messages: bool = True)
             for m in conv.messages.all()
         ]
     return data
+
+
+def _preview_from_text(text: str, max_len: int = 180) -> str:
+    cleaned = " ".join(str(text or "").split())
+    if len(cleaned) <= max_len:
+        return cleaned
+    return cleaned[: max_len - 1] + "…"
+
+
+def update_resume_snapshot(
+    conv: TopicConversation, snapshot: dict | None
+) -> TopicConversation:
+    """Merge resume snapshot (intervention, tools, personalization)."""
+    if not snapshot or not isinstance(snapshot, dict):
+        return conv
+    current = dict(conv.resume_snapshot or {})
+    # Shallow merge top-level keys; nested dicts replaced per key
+    for key, value in snapshot.items():
+        if value is None:
+            current.pop(key, None)
+        else:
+            current[key] = value
+    current["savedAt"] = timezone.now().isoformat()
+    conv.resume_snapshot = current
+    conv.save(update_fields=["resume_snapshot", "updated_at"])
+    return conv
+
+
+def list_continuable(
+    student: StudentProfile | None,
+    *,
+    limit: int = 20,
+) -> list[dict]:
+    """
+    Active conversations with real transcript content — for Continue cards.
+    """
+    if not student:
+        return []
+    qs = (
+        TopicConversation.objects.filter(
+            student=student,
+            status=ConversationStatus.ACTIVE,
+            message_count__gte=1,
+        )
+        .order_by("-updated_at")[:limit]
+    )
+    out = []
+    for conv in qs:
+        d = conversation_to_dict(conv, include_messages=False, include_snapshot=True)
+        d["canContinue"] = True
+        out.append(d)
+    return out
+
+
+def search_transcripts(
+    student: StudentProfile | None,
+    query: str,
+    *,
+    subject: str = "",
+    topic: str = "",
+    limit: int = 40,
+) -> list[dict]:
+    """
+    Keyword search over message text for a student's conversations.
+    Returns snippets suitable for student/family views (no internal API history).
+    """
+    if not student:
+        return []
+    q = (query or "").strip()
+    if len(q) < 2:
+        return []
+
+    msg_qs = ConversationMessage.objects.filter(
+        conversation__student=student,
+        text__icontains=q,
+    ).select_related("conversation")
+
+    if subject:
+        msg_qs = msg_qs.filter(conversation__subject__iexact=subject.strip())
+    if topic:
+        msg_qs = msg_qs.filter(conversation__topic__iexact=topic.strip())
+
+    # Prefer tutor/child messages over system chrome
+    msg_qs = msg_qs.exclude(role=MessageRole.SYSTEM).order_by("-occurred_at")[:limit]
+
+    results = []
+    for m in msg_qs:
+        conv = m.conversation
+        text = m.text or ""
+        # Highlight window around first match
+        lower = text.lower()
+        idx = lower.find(q.lower())
+        if idx < 0:
+            snippet = _preview_from_text(text, 200)
+        else:
+            start = max(0, idx - 40)
+            end = min(len(text), idx + len(q) + 80)
+            snippet = text[start:end].strip()
+            if start > 0:
+                snippet = "…" + snippet
+            if end < len(text):
+                snippet = snippet + "…"
+
+        results.append(
+            {
+                "messageId": m.client_message_id,
+                "role": m.role,
+                "snippet": snippet,
+                "at": m.occurred_at.isoformat() if m.occurred_at else None,
+                "conversationId": conv.client_id,
+                "subject": conv.subject,
+                "topic": conv.topic,
+                "conversationStatus": conv.status,
+                "conversationTitle": conv.title or None,
+            }
+        )
+    return results
 
 
 def get_topic_qs(student: StudentProfile | None, subject: str, topic: str):
@@ -156,6 +280,10 @@ def upsert_conversation(
             conv.next_step = payload.get("nextStep") or ""
         if "apiHistory" in payload and payload["apiHistory"] is not None:
             conv.api_history = payload["apiHistory"] or []
+        if "resumeSnapshot" in payload and payload["resumeSnapshot"] is not None:
+            conv.resume_snapshot = payload.get("resumeSnapshot") or {}
+        if "previewText" in payload and payload["previewText"] is not None:
+            conv.preview_text = _preview_from_text(payload.get("previewText") or "")
         if payload.get("endedAt"):
             conv.ended_at = parse_ts(payload["endedAt"])
         elif payload.get("status") == ConversationStatus.ARCHIVED and not conv.ended_at:
@@ -172,6 +300,18 @@ def upsert_conversation(
             ended_at=timezone.now(),
         )
 
+    # Create path: also accept snapshot / preview
+    if created:
+        dirty = []
+        if payload.get("resumeSnapshot"):
+            conv.resume_snapshot = payload.get("resumeSnapshot") or {}
+            dirty.append("resume_snapshot")
+        if payload.get("previewText"):
+            conv.preview_text = _preview_from_text(payload.get("previewText") or "")
+            dirty.append("preview_text")
+        if dirty:
+            conv.save(update_fields=dirty + ["updated_at"])
+
     # Optional full message replace / merge
     messages = payload.get("messages")
     if messages is not None:
@@ -179,7 +319,15 @@ def upsert_conversation(
         conv.message_count = conv.messages.filter(
             role__in=[MessageRole.TUTOR, MessageRole.CHILD]
         ).count()
-        conv.save(update_fields=["message_count", "updated_at"])
+        # Refresh preview from last child/tutor message
+        last = (
+            conv.messages.filter(role__in=[MessageRole.TUTOR, MessageRole.CHILD])
+            .order_by("-occurred_at")
+            .first()
+        )
+        if last and last.text:
+            conv.preview_text = _preview_from_text(last.text)
+        conv.save(update_fields=["message_count", "preview_text", "updated_at"])
 
     return conv
 
@@ -238,7 +386,13 @@ def append_message(
     conv.message_count = conv.messages.filter(
         role__in=[MessageRole.TUTOR, MessageRole.CHILD]
     ).count()
-    conv.save(update_fields=["api_history", "message_count", "updated_at"])
+    if role in (MessageRole.TUTOR, MessageRole.CHILD) and (message.get("text") or "").strip():
+        conv.preview_text = _preview_from_text(message.get("text") or "")
+        conv.save(
+            update_fields=["api_history", "message_count", "preview_text", "updated_at"]
+        )
+    else:
+        conv.save(update_fields=["api_history", "message_count", "updated_at"])
     return msg
 
 

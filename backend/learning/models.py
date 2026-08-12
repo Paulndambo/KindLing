@@ -253,6 +253,65 @@ class Misconception(models.Model):
         return f"{self.label} ({self.count}×)"
 
 
+class SkillMastery(models.Model):
+    """
+    Per-skill Bayesian-ish knowledge estimate for a learner (Epic A1).
+
+    p_know ∈ [0,1] is the latent mastery; score is p_know * 100 for UI.
+    State drives path locks / tutor scaffolding language.
+    """
+
+    class State(models.TextChoices):
+        LOCKED = "locked", "Growing roots"  # prereqs not ready
+        READY = "ready", "Ready to spark"
+        LEARNING = "learning", "Catching fire"
+        MASTERED = "mastered", "Glowing"
+        RUSTY = "rusty", "Needs a warm-up"
+
+    profile = models.ForeignKey(
+        LearningProfile,
+        on_delete=models.CASCADE,
+        related_name="skill_masteries",
+    )
+    skill = models.ForeignKey(
+        "curriculum.Skill",
+        on_delete=models.CASCADE,
+        related_name="learner_masteries",
+    )
+    p_know = models.FloatField(default=0.2)
+    score = models.FloatField(default=20.0)  # 0–100 display
+    attempts = models.PositiveIntegerField(default=0)
+    correct = models.PositiveIntegerField(default=0)
+    incorrect = models.PositiveIntegerField(default=0)
+    partial = models.PositiveIntegerField(default=0)
+    consecutive_correct = models.PositiveIntegerField(default=0)
+    consecutive_incorrect = models.PositiveIntegerField(default=0)
+    state = models.CharField(
+        max_length=20, choices=State.choices, default=State.READY, db_index=True
+    )
+    last_evidence_at = models.DateTimeField(null=True, blank=True)
+    last_correctness = models.CharField(max_length=20, blank=True, default="")
+    # Rolling evidence log (small): [{at, obs, p_know}, ...]
+    evidence = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "skill masteries"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "skill"],
+                name="uniq_profile_skill_mastery",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["profile", "state"]),
+        ]
+
+    def __str__(self):
+        return f"{self.skill.slug}: {self.score:.0f} ({self.state})"
+
+
 class ConversationStatus(models.TextChoices):
     ACTIVE = "active", "Active"
     ARCHIVED = "archived", "Archived"
@@ -295,6 +354,10 @@ class TopicConversation(models.Model):
     message_count = models.PositiveIntegerField(default=0)
     # Gemini API history for resume: [{role, text}, ...]
     api_history = models.JSONField(default=list, blank=True)
+    # Epic A2: safe restore of intervention / tools / personalization
+    resume_snapshot = models.JSONField(default=dict, blank=True)
+    # Last child/tutor line snippet for "Continue" cards (no full PII dump in lists)
+    preview_text = models.CharField(max_length=240, blank=True, default="")
     started_at = models.DateTimeField()
     updated_at = models.DateTimeField(auto_now=True)
     ended_at = models.DateTimeField(null=True, blank=True)
@@ -315,6 +378,54 @@ class TopicConversation(models.Model):
 
     def __str__(self):
         return f"{self.client_id} · {self.topic_key} ({self.status})"
+
+
+class HomeworkUpload(models.Model):
+    """
+    Student homework / worksheet photo (Epic A4).
+
+    File is stored under MEDIA; analysis JSON holds OCR/vision extract
+    (problem text, student work, error hypotheses). Retention is short —
+    see docs/SAFETY_AND_PRIVACY.md.
+    """
+
+    class Status(models.TextChoices):
+        UPLOADED = "uploaded", "Uploaded"
+        ANALYZED = "analyzed", "Analyzed"
+        REJECTED = "rejected", "Rejected"
+
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="homework_uploads",
+        null=True,
+        blank=True,
+    )
+    client_student_id = models.CharField(max_length=120, blank=True, default="")
+    conversation_id = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    subject = models.CharField(max_length=160, blank=True, default="")
+    topic = models.CharField(max_length=200, blank=True, default="")
+    image = models.ImageField(upload_to="homework/%Y/%m/")
+    content_type = models.CharField(max_length=80, blank=True, default="")
+    byte_size = models.PositiveIntegerField(default=0)
+    original_name = models.CharField(max_length=200, blank=True, default="")
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.UPLOADED, db_index=True
+    )
+    reject_reason = models.CharField(max_length=200, blank=True, default="")
+    # Vision/OCR analysis (problem, studentWork, errors[], focusSkill, …)
+    analysis = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["student", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Homework {self.pk} ({self.status})"
 
 
 class ConversationMessage(models.Model):

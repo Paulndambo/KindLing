@@ -51,3 +51,14 @@ export const STORAGE_KEYS = {
   /** Root key prefix; store appends :studentId */
   topicConversations: "kindling_topic_conversations_v1",
 };
+
+/**
+ * Graded-turn contract (Epic A3) — optional structured fields for verification.
+ * @typedef {object} GradedTurnContract
+ * @property {'math'} kind
+ * @property {string} [studentAnswer]
+ * @property {string} [expected]
+ * @property {string[]} [alts]
+ * @property {'equivalent'|'exact'|'numeric_tol'} [mode]
+ * @property {number} [tolerance]
+ */

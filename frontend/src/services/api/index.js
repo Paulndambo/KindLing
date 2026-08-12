@@ -5,6 +5,8 @@ export {
   loginWithDemo,
   registerAccount,
   fetchCurrentUser,
+  exportUserData,
+  deleteAccount,
   logoutLocal,
 } from "./auth";
 export {
@@ -23,7 +25,12 @@ export {
   deleteTopic,
   normalizeSubject,
 } from "./subjects";
-export { getDashboard, getLearningProfile } from "./learning";
+export {
+  getDashboard,
+  getLearningProfile,
+  getSkillCatalog,
+  getSkillPath,
+} from "./learning";
 export {
   fetchConversationShelf,
   putConversationShelf,
@@ -32,4 +39,16 @@ export {
   putConversation,
   appendConversationMessage,
   archiveConversationRemote,
+  fetchContinueList,
+  searchTranscripts,
+  putResumeSnapshot,
 } from "./conversations";
+
+// Re-export telemetry helpers for app-wide use
+export {
+  reportError,
+  trackMetric,
+  markSessionStarted,
+  markSessionFirstMessage,
+  markSessionDropOff,
+} from "../telemetry";

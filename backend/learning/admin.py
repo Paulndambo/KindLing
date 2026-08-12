@@ -2,11 +2,13 @@ from django.contrib import admin
 
 from .models import (
     ConversationMessage,
+    HomeworkUpload,
     LearningEvent,
     LearningProfile,
     LessonSession,
     Misconception,
     SessionTurn,
+    SkillMastery,
     TopicConversation,
     TopicMastery,
 )
@@ -54,6 +56,12 @@ class TopicMasteryInline(admin.TabularInline):
     extra = 0
 
 
+class SkillMasteryInline(admin.TabularInline):
+    model = SkillMastery
+    extra = 0
+    raw_id_fields = ("skill",)
+
+
 class MisconceptionInline(admin.TabularInline):
     model = Misconception
     extra = 0
@@ -63,7 +71,14 @@ class MisconceptionInline(admin.TabularInline):
 class LearningProfileAdmin(admin.ModelAdmin):
     list_display = ("student", "client_student_id", "updated_at")
     search_fields = ("client_student_id", "student__name")
-    inlines = [TopicMasteryInline, MisconceptionInline]
+    inlines = [TopicMasteryInline, SkillMasteryInline, MisconceptionInline]
+
+
+@admin.register(SkillMastery)
+class SkillMasteryAdmin(admin.ModelAdmin):
+    list_display = ("skill", "score", "p_know", "state", "attempts", "profile")
+    list_filter = ("state", "skill__domain")
+    search_fields = ("skill__slug", "skill__name")
 
 
 @admin.register(TopicMastery)
@@ -106,3 +121,19 @@ class ConversationMessageAdmin(admin.ModelAdmin):
     list_display = ("client_message_id", "role", "conversation", "occurred_at")
     list_filter = ("role",)
     search_fields = ("client_message_id", "text")
+
+
+@admin.register(HomeworkUpload)
+class HomeworkUploadAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "student",
+        "subject",
+        "topic",
+        "status",
+        "byte_size",
+        "created_at",
+    )
+    list_filter = ("status",)
+    search_fields = ("original_name", "subject", "topic", "conversation_id")
+    readonly_fields = ("created_at", "updated_at", "byte_size", "content_type")

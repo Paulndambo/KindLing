@@ -1,4 +1,41 @@
-import { Check, PanelLeftClose } from "lucide-react";
+import { Check, PanelLeftClose, Sparkles, Lock } from "lucide-react";
+import {
+  buildLocalSkillPath,
+  topicSkillScore,
+  STATE,
+  STATE_LABELS,
+} from "../../services/learning/skillGraph";
+
+function SkillSparkBar({ skills = [] }) {
+  if (!skills.length) return null;
+  return (
+    <div className="skill-spark-row" aria-label="Skills for this topic">
+      {skills
+        .filter((s) => s.isPrimary)
+        .map((s) => {
+          const pct = Math.max(4, Math.min(100, Math.round(s.score || 0)));
+          return (
+            <div
+              key={s.slug}
+              className={`skill-spark skill-spark--${s.state || "ready"}`}
+              title={`${s.name}: ${pct}% · ${s.stateLabel || ""}`}
+            >
+              <div className="skill-spark-track">
+                <div
+                  className="skill-spark-fill"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="skill-spark-label">
+                {s.state === STATE.LOCKED && <Lock size={9} />}
+                {s.shortLabel || s.name}
+              </span>
+            </div>
+          );
+        })}
+    </div>
+  );
+}
 
 export default function LessonPath({
   subjectName,
@@ -7,6 +44,9 @@ export default function LessonPath({
   onSelectTopic,
   student,
   onCollapse,
+  learningProfile = null,
+  activeSkillPath = null,
+  recommendedNext = null,
 }) {
   const studentName = student?.name?.trim() || "Student";
 
@@ -27,6 +67,27 @@ export default function LessonPath({
             </button>
           )}
         </div>
+
+        {activeSkillPath?.hasGraph && (
+          <div className="skill-path-panel">
+            <div className="skill-path-panel-head">
+              <Sparkles size={13} />
+              <span>Skill sparks</span>
+              <span className="skill-path-state">
+                {activeSkillPath.topicStateLabel ||
+                  STATE_LABELS[activeSkillPath.topicState] ||
+                  ""}
+              </span>
+            </div>
+            <SkillSparkBar skills={activeSkillPath.skills} />
+            {recommendedNext && (
+              <p className="skill-path-next">
+                Next spark: <strong>{recommendedNext.shortLabel || recommendedNext.name}</strong>
+              </p>
+            )}
+          </div>
+        )}
+
         <div
           style={{
             marginTop: 14,
@@ -42,13 +103,24 @@ export default function LessonPath({
                 : i === activeTopicIdx
                   ? "active-topic"
                   : "todo-topic";
+            const path = buildLocalSkillPath(learningProfile, subjectName, t);
+            const score = topicSkillScore(learningProfile, t);
+            const locked =
+              path.hasGraph && path.topicState === STATE.LOCKED && i !== activeTopicIdx;
+
             return (
               <button
                 key={t}
                 disabled={i === activeTopicIdx}
-                className={`topic-node-row ${status}`}
+                className={`topic-node-row ${status}${locked ? " topic-locked" : ""}`}
                 title={
-                  i === activeTopicIdx ? "Current topic" : `Switch to: ${t}`
+                  i === activeTopicIdx
+                    ? "Current topic"
+                    : locked
+                      ? `Growing roots — warm up prereqs before ${t}`
+                      : score != null
+                        ? `${t} · ~${score}% skill blend`
+                        : `Switch to: ${t}`
                 }
                 onClick={() => onSelectTopic(i)}
               >
@@ -76,8 +148,16 @@ export default function LessonPath({
                         : "none",
                   }}
                 />
-                <span style={{ flex: 1 }}>{t}</span>
-                {i < activeTopicIdx && <Check size={11} color="#E4A32A" />}
+                <span style={{ flex: 1, textAlign: "left" }}>
+                  {t}
+                  {score != null && (
+                    <span className="topic-skill-pct">{score}%</span>
+                  )}
+                </span>
+                {locked && <Lock size={11} opacity={0.7} />}
+                {i < activeTopicIdx && !locked && (
+                  <Check size={11} color="#E4A32A" />
+                )}
               </button>
             );
           })}
@@ -100,7 +180,7 @@ export default function LessonPath({
       </div>
       <div className="session-info">
         <b>AI Tutor</b>
-        Kindling · Powered by Gemini
+        Kindling · Skill-aware · Gemini
       </div>
     </aside>
   );

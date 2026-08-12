@@ -54,6 +54,25 @@ export async function fetchCurrentUser() {
   return apiRequest("/api/auth/me/", { method: "GET", auth: true });
 }
 
+/** GDPR-style JSON export of account + learning data. */
+export async function exportUserData() {
+  return apiRequest("/api/auth/export/", { method: "GET", auth: true });
+}
+
+/**
+ * Permanently delete the authenticated account.
+ * Requires confirm: true. Demo account is rejected by the API.
+ */
+export async function deleteAccount() {
+  const result = await apiRequest("/api/auth/account/", {
+    method: "DELETE",
+    auth: true,
+    json: { confirm: true },
+  });
+  setStoredTokens(null);
+  return result;
+}
+
 export function logoutLocal() {
   setStoredTokens(null);
 }

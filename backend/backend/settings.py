@@ -54,6 +54,8 @@ MIDDLEWARE: List[str] = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Structured access logs (latency, status, request id) — after auth so user_id is available
+    "core.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF: str = "backend.urls"
@@ -124,6 +126,14 @@ USE_TZ: bool = True
 
 STATIC_URL: str = "static/"
 
+# User uploads (homework photos — Epic A4). Local filesystem for dev.
+MEDIA_URL: str = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Homework image limits (also enforced in learning.homework)
+KINDLING_HOMEWORK_MAX_BYTES: int = 5 * 1024 * 1024
+KINDLING_HOMEWORK_RETENTION_DAYS: int = 30
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -187,3 +197,68 @@ CORS_ALLOW_HEADERS: List[str] = [
 
 # Learning event ingest may be called without credentials from the SPA
 CORS_ALLOW_CREDENTIALS: bool = True
+
+# ---------------------------------------------------------------------------
+# Background jobs (Phase 0.5) — cron via: python manage.py run_scheduled_jobs
+# ---------------------------------------------------------------------------
+
+# Override per-job schedule / enable flags. See core.jobs.tasks for defaults.
+KINDLING_JOBS: Dict[str, Dict[str, Any]] = {
+    "heartbeat": {
+        "enabled": True,
+        "interval_seconds": 3600,  # hourly when scheduler runs
+    },
+    "weekly_digest": {
+        "enabled": True,
+        "interval_seconds": 7 * 24 * 3600,
+    },
+    "mastery_recompute": {
+        "enabled": True,
+        "interval_seconds": 24 * 3600,
+    },
+    "review_schedule": {
+        "enabled": True,
+        "interval_seconds": 24 * 3600,
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Logging — structured Kindling observability (Phase 0.2)
+# ---------------------------------------------------------------------------
+
+LOGGING: Dict[str, Any] = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "kindling": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

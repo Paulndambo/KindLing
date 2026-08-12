@@ -5,7 +5,14 @@ export {
   STORAGE_KEYS,
   InterventionStatus,
 } from "./types";
-export { analyzeExchange } from "./signalExtractor";
+export { analyzeExchange, stripMathCheckTags } from "./signalExtractor";
+export {
+  verifyMathAnswer,
+  parseMathValue,
+  parseCheckTags,
+  resolveGradedCorrectness,
+  isMathPilotContext,
+} from "./mathVerifier";
 export {
   createEmptyProfile,
   loadLearningProfile,
@@ -16,9 +23,21 @@ export {
   buildPersonalizationInsights,
 } from "./profileStore";
 export {
+  PILOT_SUBJECT,
+  STATE as SkillState,
+  STATE_LABELS as SkillStateLabels,
+  buildLocalSkillPath,
+  topicSkillScore,
+  skillDirectivesLocal,
+  applySkillsToProfile,
+} from "./skillGraph";
+export {
   submitLearningEvents,
   flushEventQueue,
   createLearningEvent,
+  getQueuedEventCount,
+  subscribeLearningQueue,
+  isLearningRemoteEnabled,
 } from "./analyticsApi";
 export { createSessionTracker, newSessionId } from "./sessionTracker";
 export {
@@ -49,4 +68,8 @@ export {
   appendMessageAsync,
   archiveConversationAsync,
   saveTopicShelfAsync,
+  saveResumeSnapshotAsync,
+  listContinuableAsync,
+  listLocalContinuable,
+  searchTranscriptsAsync,
 } from "./conversationStore";

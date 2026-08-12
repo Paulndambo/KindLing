@@ -1,4 +1,11 @@
 import { Correctness, Affect } from "./types";
+import {
+  isMathPilotContext,
+  parseCheckTags,
+  resolveGradedCorrectness,
+  stripMathCheckTags,
+  verifyMathAnswer,
+} from "./mathVerifier";
 
 /**
  * Infer learning signals from a student ↔ tutor exchange.
@@ -157,6 +164,7 @@ export function scoreEngagement(studentText, affect, responseMs) {
 
 /**
  * Full analysis of one student turn + tutor reply.
+ * Epic A3: math verifier can override linguistic correctness when confident.
  */
 export function analyzeExchange({
   studentText,
@@ -164,16 +172,43 @@ export function analyzeExchange({
   responseMs = null,
   wasHintRequest = false,
   inputModality = "text", // text | voice
+  subject = "",
+  topic = "",
+  expectedAnswer = null,
+  expectedAlts = null,
 }) {
-  const correctness = inferCorrectness(studentText, tutorText);
+  const tutorClean = stripMathCheckTags(tutorText);
+  const linguistic = inferCorrectness(studentText, tutorClean);
   const affect = inferAffect(studentText);
-  const misconceptions = detectMisconceptions(studentText, tutorText);
-  const deliveryPreferences = detectDeliveryPreferences(studentText, tutorText);
+  const misconceptions = detectMisconceptions(studentText, tutorClean);
+  const deliveryPreferences = detectDeliveryPreferences(studentText, tutorClean);
   const engagement = scoreEngagement(studentText, affect, responseMs);
   const isHint =
     wasHintRequest || matchAny(studentText || "", HINT_PATTERNS);
 
   const wordCount = (studentText || "").trim().split(/\s+/).filter(Boolean).length;
+
+  // Math verification (pilot contexts or when tutor emitted a check tag)
+  const tag = parseCheckTags(tutorText);
+  const shouldVerify =
+    isMathPilotContext(subject, topic) ||
+    Boolean(tag.expected || tag.alts?.length || expectedAnswer);
+
+  let verification = null;
+  if (shouldVerify && !isHint) {
+    verification = verifyMathAnswer(studentText, {
+      expected: expectedAnswer || undefined,
+      alts: expectedAlts || undefined,
+      tutorText,
+    });
+  }
+
+  const graded = resolveGradedCorrectness({
+    linguistic,
+    verification,
+    preferChecker: true,
+  });
+  const correctness = graded.correctness;
 
   // Confidence proxy: high if confident language or correct+quick; low if hesitant/frustrated
   let confidence = 0.5;
@@ -183,9 +218,25 @@ export function analyzeExchange({
   if (correctness === Correctness.CORRECT) confidence = Math.min(1, confidence + 0.15);
   if (correctness === Correctness.INCORRECT) confidence = Math.max(0, confidence - 0.1);
   if (isHint) confidence = Math.max(0.15, confidence - 0.2);
+  if (verification?.checked && verification.confidence >= 0.85) {
+    confidence = Math.min(1, Math.max(confidence, 0.55));
+  }
+
+  const tags = buildTags({
+    correctness,
+    affect,
+    isHint,
+    deliveryPreferences,
+    misconceptions,
+    gradeSource: graded.source,
+    discrepancy: Boolean(verification?.discrepancy),
+  });
 
   return {
     correctness,
+    linguisticCorrectness: linguistic,
+    gradeSource: graded.source,
+    verification,
     affect,
     engagement,
     confidence: clamp(Number(confidence.toFixed(2)), 0, 1),
@@ -197,21 +248,26 @@ export function analyzeExchange({
     charCount: (studentText || "").length,
     responseMs,
     inputModality,
-    // Free-text tags for future ML
-    tags: buildTags({
-      correctness,
-      affect,
-      isHint,
-      deliveryPreferences,
-      misconceptions,
-    }),
+    tags,
   };
 }
 
-function buildTags({ correctness, affect, isHint, deliveryPreferences, misconceptions }) {
+function buildTags({
+  correctness,
+  affect,
+  isHint,
+  deliveryPreferences,
+  misconceptions,
+  gradeSource,
+  discrepancy,
+}) {
   const tags = [`correctness:${correctness}`, `affect:${affect}`];
+  if (gradeSource) tags.push(`grade_source:${gradeSource}`);
+  if (discrepancy) tags.push("math:discrepancy");
   if (isHint) tags.push("behavior:hint");
   deliveryPreferences.forEach((p) => tags.push(`pref:${p}`));
   misconceptions.forEach((m) => tags.push(`misconception:${m.id}`));
   return tags;
 }
+
+export { stripMathCheckTags } from "./mathVerifier";

@@ -219,6 +219,7 @@ export default function App() {
             key={student?.id || student?.name || "dashboard"}
             student={student}
             subjects={subjects}
+            onStartLesson={startLesson}
           />
         )}
       </Suspense>

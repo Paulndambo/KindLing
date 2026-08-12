@@ -5,6 +5,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Check, Copy } from "lucide-react";
 import "katex/dist/katex.min.css";
+import { stripMathCheckTags } from "../../services/learning/mathVerifier";
 
 /**
  * Renders Kindling tutor replies as structured, learner-friendly content:
@@ -158,7 +159,8 @@ function markdownComponents() {
 const STATIC_COMPONENTS = markdownComponents();
 
 function TutorMessageContent({ text, streaming = false }) {
-  const content = text || "";
+  // Epic A3: never show machine math-check tags to learners
+  const content = stripMathCheckTags(text || "");
 
   // components object is stable; streaming only affects CSS class
   const components = useMemo(() => STATIC_COMPONENTS, []);
