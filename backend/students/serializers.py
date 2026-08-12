@@ -1,0 +1,54 @@
+from rest_framework import serializers
+
+from .models import StudentProfile
+
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    """API shape aligned with frontend student profile keys (camelCase via source)."""
+
+    countryFlag = serializers.CharField(
+        source="country_flag", required=False, allow_blank=True
+    )
+    schoolName = serializers.CharField(
+        source="school_name", required=False, allow_blank=True
+    )
+    schoolType = serializers.CharField(
+        source="school_type", required=False, allow_blank=True
+    )
+    academicTarget = serializers.CharField(
+        source="academic_target", required=False, allow_blank=True
+    )
+    learningStyle = serializers.CharField(
+        source="learning_style", required=False, allow_blank=True
+    )
+    isOnboarded = serializers.BooleanField(source="is_onboarded", required=False)
+
+    class Meta:
+        model = StudentProfile
+        fields = (
+            "id",
+            "name",
+            "grade",
+            "avatar",
+            "country",
+            "countryFlag",
+            "schoolName",
+            "schoolType",
+            "curriculum",
+            "academicTarget",
+            "learningStyle",
+            "interests",
+            "goal",
+            "isOnboarded",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        if StudentProfile.objects.filter(user=user).exists():
+            raise serializers.ValidationError(
+                {"detail": "This account already has a student profile."}
+            )
+        return StudentProfile.objects.create(user=user, **validated_data)
