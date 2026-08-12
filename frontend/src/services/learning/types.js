@@ -17,6 +17,8 @@ export const LearningEventType = {
   INTERVENTION_ENTERED: "intervention.entered",
   INTERVENTION_EXITED: "intervention.exited",
   INTERVENTION_DECLINED: "intervention.declined",
+  /** Interactive manipulative use (Epic A6) */
+  MANIPULATIVE_USED: "behavior.manipulative_used",
 };
 
 /** Live intervention (step-by-step guide) lifecycle. */

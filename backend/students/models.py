@@ -25,8 +25,27 @@ class StudentProfile(models.Model):
     interests = models.JSONField(default=list, blank=True)
     goal = models.CharField(max_length=200, blank=True, default="")
     is_onboarded = models.BooleanField(default=False)
+    # Family digest preferences (Epic A5) — single-student account for now
+    digest_opt_in = models.BooleanField(
+        default=False,
+        help_text="When true, Kindling may generate weekly parent digests.",
+    )
+    family_email = models.EmailField(
+        blank=True,
+        default="",
+        help_text="Where to send digests; falls back to account email when blank.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def digest_recipient(self) -> str:
+        """Email address for parent digests."""
+        if self.family_email:
+            return self.family_email.strip()
+        user = getattr(self, "user", None)
+        if user is not None:
+            return (user.email or user.username or "").strip()
+        return ""
 
     class Meta:
         ordering = ["name"]

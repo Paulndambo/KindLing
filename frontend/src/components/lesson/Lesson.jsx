@@ -20,11 +20,22 @@ import {
   uploadHomeworkFile,
   validateHomeworkFile,
 } from "../../services/homework";
+import {
+  MANIPULATIVE_TYPES,
+  manipulativesForTopic,
+  parseVisualDirective,
+} from "../../services/learning/manipulatives";
+import {
+  LearningEventType,
+  createLearningEvent,
+  submitLearningEvents,
+} from "../../services/learning";
 import { reportError, trackMetric } from "../../services/telemetry";
 import LessonPath from "./LessonPath";
 import ChatPanel from "./ChatPanel";
 import LessonTools from "./LessonTools";
 import ConversationJournal from "./ConversationJournal";
+import ManipulativePanel from "./manipulatives/ManipulativePanel";
 import "../../styles/lesson.css";
 
 export default function Lesson({ activeLesson, student, subjects }) {
@@ -62,6 +73,19 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const [homeworkBusy, setHomeworkBusy] = useState(false);
   const [homeworkError, setHomeworkError] = useState("");
 
+  // Epic A6 interactive models
+  const availableManipulatives = useMemo(
+    () => manipulativesForTopic(topicName),
+    [topicName]
+  );
+  const [manipOpen, setManipOpen] = useState(
+    () => manipulativesForTopic(topicName).length > 0
+  );
+  const [manipType, setManipType] = useState(MANIPULATIVE_TYPES.FRACTION_BAR);
+  const [manipState, setManipState] = useState({ num: 1, den: 4 });
+  const [tutorPulse, setTutorPulse] = useState(null);
+  const tutorPulseTimerRef = useRef(null);
+
   // Pending auto-enter after recordExchange returns
   const pendingAutoInterventionRef = useRef(null);
 
@@ -69,6 +93,11 @@ export default function Lesson({ activeLesson, student, subjects }) {
     useSpeechSynthesis();
 
   const connectivity = useConnectivity({ enabled: true });
+
+  const studentId =
+    student?.id != null
+      ? `id_${student.id}`
+      : student?.name?.toLowerCase().replace(/\s+/g, "_") || "anonymous";
 
   const {
     profile,
@@ -112,11 +141,85 @@ export default function Lesson({ activeLesson, student, subjects }) {
     [prepareAudio, stopSpeaking, recordToolToggle]
   );
 
+  const logManipulative = useCallback(
+    (action, extra = {}) => {
+      const sessionId = getSessionId?.() || undefined;
+      submitLearningEvents(
+        createLearningEvent(
+          LearningEventType.MANIPULATIVE_USED,
+          {
+            action,
+            type: extra.type || manipType,
+            num: extra.num ?? manipState.num,
+            den: extra.den ?? manipState.den,
+            subject: subjectName,
+            topic: topicName,
+            sessionId,
+            ...extra,
+          },
+          { studentId, sessionId }
+        )
+      );
+      trackMetric("manipulative.used", {
+        sessionId,
+        tags: { action, type: extra.type || manipType, topic: topicName },
+      });
+    },
+    [
+      getSessionId,
+      manipType,
+      manipState.num,
+      manipState.den,
+      subjectName,
+      topicName,
+      studentId,
+    ]
+  );
+
+  // Reset manipulative defaults when topic changes
+  useEffect(() => {
+    const avail = manipulativesForTopic(topicName);
+    if (avail.length) {
+      setManipType(avail[0]);
+      setManipOpen(tools.visuals !== false);
+      setManipState({ num: 1, den: topicName.toLowerCase().includes("number") ? 4 : 4 });
+      setTutorPulse(null);
+    } else {
+      setManipOpen(false);
+    }
+  }, [topicName, tools.visuals]);
+
   const handleTutorReply = useCallback(
     (text) => {
       if (tools.voiceOutput) speak(text);
+      // Epic A6: tutor can drive the manipulative via hidden visual tags
+      const directive = parseVisualDirective(text);
+      if (directive && availableManipulatives.length) {
+        setManipType(directive.type);
+        setManipState({ num: directive.num, den: directive.den });
+        setManipOpen(true);
+        setTutorPulse({
+          num: directive.num,
+          den: directive.den,
+          label: directive.label || "Kindling moved the model",
+          type: directive.type,
+        });
+        logManipulative("tutor_set", {
+          type: directive.type,
+          num: directive.num,
+          den: directive.den,
+          fromTag: !directive.fromNaturalLanguage,
+        });
+        if (tutorPulseTimerRef.current) {
+          window.clearTimeout(tutorPulseTimerRef.current);
+        }
+        tutorPulseTimerRef.current = window.setTimeout(
+          () => setTutorPulse(null),
+          8000
+        );
+      }
     },
-    [speak, tools.voiceOutput]
+    [speak, tools.voiceOutput, availableManipulatives.length, logManipulative]
   );
 
   const handleReadAloud = useCallback(
@@ -140,11 +243,6 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const handleSessionBegin = useCallback(() => {
     beginSession();
   }, [beginSession]);
-
-  const studentId =
-    student?.id != null
-      ? `id_${student.id}`
-      : student?.name?.toLowerCase().replace(/\s+/g, "_") || "anonymous";
 
   const {
     messages,
@@ -604,6 +702,41 @@ export default function Lesson({ activeLesson, student, subjects }) {
           homeworkBusy={homeworkBusy}
           homeworkError={homeworkError}
           onClearHomeworkError={() => setHomeworkError("")}
+          manipulativeSlot={
+            availableManipulatives.length > 0 && tools.visuals !== false ? (
+              <ManipulativePanel
+                topicName={topicName}
+                open={manipOpen}
+                onOpenChange={(open) => {
+                  setManipOpen(open);
+                  logManipulative(open ? "open" : "close");
+                }}
+                type={manipType}
+                onTypeChange={(t) => {
+                  setManipType(t);
+                  logManipulative("switch_type", { type: t });
+                }}
+                num={manipState.num}
+                den={manipState.den}
+                onStateChange={(next) => {
+                  setManipState(next);
+                  logManipulative("adjust", {
+                    num: next.num,
+                    den: next.den,
+                  });
+                }}
+                tutorPulse={tutorPulse}
+                disabled={isStreaming || isSummarizing}
+                onShareWithTutor={async ({ text, type, num, den }) => {
+                  logManipulative("share", { type, num, den });
+                  noteInputModality("text");
+                  await sendMessage(
+                    `${text} What do you notice about this model?`
+                  );
+                }}
+              />
+            ) : null
+          }
         />
 
         <LessonTools
@@ -614,6 +747,14 @@ export default function Lesson({ activeLesson, student, subjects }) {
           isStreaming={isStreaming || isSummarizing}
           hasAi={hasAi}
           student={student}
+          hasManipulatives={availableManipulatives.length > 0}
+          manipOpen={manipOpen}
+          onOpenManipulative={() => {
+            setManipOpen(true);
+            setMobilePanel("chat");
+            logManipulative("open_from_tools");
+          }}
+          manipState={manipState}
           studentName={studentName}
           onRequestHint={requestHint}
           onRestart={startNewConversation}

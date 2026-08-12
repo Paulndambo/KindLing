@@ -16,6 +16,7 @@ class LearningEventType(models.TextChoices):
     INTERVENTION_ENTERED = "intervention.entered", "Intervention entered"
     INTERVENTION_EXITED = "intervention.exited", "Intervention exited"
     INTERVENTION_DECLINED = "intervention.declined", "Intervention declined"
+    MANIPULATIVE_USED = "behavior.manipulative_used", "Manipulative used"
 
 
 class Correctness(models.TextChoices):
@@ -426,6 +427,66 @@ class HomeworkUpload(models.Model):
 
     def __str__(self):
         return f"Homework {self.pk} ({self.status})"
+
+
+class ParentDigest(models.Model):
+    """
+    Weekly family progress digest built from learning events (Epic A5).
+
+    Copy is parent-facing: clear, encouraging, never shaming.
+    Delivery may be in-app only, console (dev), or email.
+    """
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+        SKIPPED = "skipped", "Skipped"
+
+    class Channel(models.TextChoices):
+        IN_APP = "in_app", "In-app"
+        EMAIL = "email", "Email"
+        CONSOLE = "console", "Console (dev)"
+
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="parent_digests",
+    )
+    period_start = models.DateTimeField()
+    period_end = models.DateTimeField()
+    # Aggregated stats for charts / UI
+    summary = models.JSONField(default=dict, blank=True)
+    headline = models.CharField(max_length=200, blank=True, default="")
+    body_text = models.TextField(blank=True, default="")
+    body_html = models.TextField(blank=True, default="")
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.DRAFT, db_index=True
+    )
+    channel = models.CharField(
+        max_length=20, choices=Channel.choices, default=Channel.IN_APP
+    )
+    recipient_email = models.EmailField(blank=True, default="")
+    sent_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-period_end", "-created_at"]
+        indexes = [
+            models.Index(fields=["student", "-period_end"]),
+            models.Index(fields=["status", "-created_at"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["student", "period_start", "period_end"],
+                name="uniq_digest_student_period",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Digest {self.student_id} {self.period_start.date()}–{self.period_end.date()} [{self.status}]"
 
 
 class ConversationMessage(models.Model):

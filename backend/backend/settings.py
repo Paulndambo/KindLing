@@ -134,6 +134,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 KINDLING_HOMEWORK_MAX_BYTES: int = 5 * 1024 * 1024
 KINDLING_HOMEWORK_RETENTION_DAYS: int = 30
 
+# ---------------------------------------------------------------------------
+# Email — parent digests (Epic A5). Console backend for local/dev.
+# ---------------------------------------------------------------------------
+EMAIL_BACKEND: str = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL: str = "Kindling <noreply@kindling.local>"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

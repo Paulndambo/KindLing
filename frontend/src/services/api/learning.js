@@ -43,3 +43,36 @@ export async function getSkillPath({ subject, topic, studentId } = {}) {
     auth: true,
   });
 }
+
+/** List parent digests for the current student (Epic A5). */
+export async function listDigests() {
+  return apiRequest("/api/learning/digests/", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+/**
+ * Generate this week's digest (and optionally deliver).
+ * @param {{ deliver?: boolean, dryRun?: boolean, forcePreview?: boolean }} opts
+ */
+export async function generateDigest(opts = {}) {
+  const {
+    deliver = true,
+    dryRun = true,
+    forcePreview = true,
+  } = opts;
+  return apiRequest("/api/learning/digests/generate/", {
+    method: "POST",
+    auth: true,
+    json: { deliver, dryRun, forcePreview },
+  });
+}
+
+/** Single digest by id. */
+export async function getDigest(id) {
+  return apiRequest(`/api/learning/digests/${id}/`, {
+    method: "GET",
+    auth: true,
+  });
+}

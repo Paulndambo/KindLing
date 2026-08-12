@@ -18,6 +18,7 @@ import { LEARNING_STYLE_OPTIONS, AVATAR_OPTIONS } from "../../constants/onboardi
 import { getDashboard, ApiError } from "../../services/api";
 import ConfidenceChart from "../charts/ConfidenceChart";
 import ContinueStrip from "../subjects/ContinueStrip";
+import FamilyDigestCard from "./FamilyDigestCard";
 
 function StatCard({ eyebrow, value, cap, icon: Icon }) {
   return (
@@ -93,7 +94,12 @@ const EMPTY_WEEK = {
   questions: "0",
 };
 
-export default function Dashboard({ student, subjects = [], onStartLesson }) {
+export default function Dashboard({
+  student,
+  subjects = [],
+  onStartLesson,
+  onStudentUpdate,
+}) {
   const [week, setWeek] = useState("this");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -632,6 +638,9 @@ export default function Dashboard({ student, subjects = [], onStartLesson }) {
             )}
           </div>
         </div>
+
+        {/* Epic A5 — family digests */}
+        <FamilyDigestCard student={student} onStudentUpdate={onStudentUpdate} />
       </div>
     </section>
   );

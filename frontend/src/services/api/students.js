@@ -40,6 +40,8 @@ export async function saveStudentProfile(profile) {
       interests: profile.interests || [],
       goal: profile.goal || "",
       isOnboarded: true,
+      digestOptIn: profile.digestOptIn ?? false,
+      familyEmail: profile.familyEmail || "",
     },
   });
 }

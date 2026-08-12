@@ -14,6 +14,14 @@ export {
   isMathPilotContext,
 } from "./mathVerifier";
 export {
+  MANIPULATIVE_TYPES,
+  manipulativesForTopic,
+  parseVisualDirective,
+  stripVisualTags,
+  formatFraction,
+  buildVisualPromptHint,
+} from "./manipulatives";
+export {
   createEmptyProfile,
   loadLearningProfile,
   saveLearningProfile,

@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .digest_views import DigestDetailView, DigestGenerateView, DigestListView
 from .homework_views import (
     HomeworkAnalyzeView,
     HomeworkDetailView,
@@ -60,6 +61,18 @@ urlpatterns = [
         name="learning-session-detail",
     ),
     path("dashboard/", DashboardView.as_view(), name="learning-dashboard"),
+    # Parent digests (Epic A5)
+    path("digests/", DigestListView.as_view(), name="learning-digests"),
+    path(
+        "digests/generate/",
+        DigestGenerateView.as_view(),
+        name="learning-digests-generate",
+    ),
+    path(
+        "digests/<int:pk>/",
+        DigestDetailView.as_view(),
+        name="learning-digest-detail",
+    ),
     # Durable topic conversations (resume + journal + search)
     path(
         "conversations/shelf/",

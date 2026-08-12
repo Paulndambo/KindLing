@@ -30,6 +30,9 @@ export {
   getLearningProfile,
   getSkillCatalog,
   getSkillPath,
+  listDigests,
+  generateDigest,
+  getDigest,
 } from "./learning";
 export {
   fetchConversationShelf,

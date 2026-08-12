@@ -226,33 +226,35 @@ Do not start Horizon B product surface area until **Phase 0–2** below are comp
 **Done when:** Student can photograph a fractions worksheet problem and receive guided help without retyping everything.  
 **How:** Lesson → + → pick photo → “Looking at your work…” → thumbnail + Kindling helps.
 
-### Epic A5 — Parent digest from existing learning events
+### Epic A5 — Parent digest from existing learning events ✅
 
 **CAPABILITIES:** §3.2.4 (alerts), §3.5.1 (partial: digest without full multi-child yet), §3.8.2
 
-| Step | Work |
-|------|------|
-| A5.1 | Digest data model: weekly summary from events (time on task, topics, mastery deltas, struggle hotspots) |
-| A5.2 | Copy rules: clarity for parents, no shame language about the child |
-| A5.3 | Delivery: email (or in-app first) via background job |
-| A5.4 | Opt-in settings on profile (even if still single student account) |
+| Step | Work | Status |
+|------|------|--------|
+| A5.1 | `ParentDigest` model + aggregate from sessions/events/mastery | ✅ |
+| A5.2 | Warm parent copy (effort-first, no shame language) | ✅ |
+| A5.3 | `weekly_digest` job + in-app / console / email delivery | ✅ |
+| A5.4 | `digest_opt_in` + `family_email` on profile; Dashboard UI | ✅ |
 
 **Note:** Full multi-child parent hierarchy can wait for Phase 3; digests can target the linked family email on the student account first.
 
-**Done when:** Opted-in demo family receives a weekly summary generated from real `LearningEvent` data.
+**Done when:** Opted-in demo family receives a weekly summary generated from real `LearningEvent` data.  
+**How:** Dashboard → Family weekly digest (opt-in + generate preview); job: `python manage.py run_job weekly_digest --dry-run`.
 
-### Epic A6 — Interactive visual models (top struggle topics)
+### Epic A6 — Interactive visual models (top struggle topics) ✅
 
 **CAPABILITIES:** §3.3.1 (scoped)
 
-| Step | Work |
-|------|------|
-| A6.1 | Pick 1–2 manipulatives for pilot (e.g. fraction bars, number line) |
-| A6.2 | Embed in lesson UI as tutor-invokable or tools-panel widgets |
-| A6.3 | Sync state lightly with chat (tutor can say “move the bar to 3/4”) |
-| A6.4 | Log tool use as learning events |
+| Step | Work | Status |
+|------|------|--------|
+| A6.1 | Fraction bars + number line for Math Foundations topics | ✅ |
+| A6.2 | Chat manipulative panel + tools “Open fraction model” | ✅ |
+| A6.3 | Tutor `⟦visual type=… num=… den=…⟧` drives model; student can share back | ✅ |
+| A6.4 | `behavior.manipulative_used` learning events + metrics | ✅ |
 
-**Done when:** At least one pilot topic uses an interactive visual during live teaching, not only ASCII diagrams.
+**Done when:** At least one pilot topic uses an interactive visual during live teaching, not only ASCII diagrams.  
+**How:** Math Foundations → Fraction sense → Interactive model panel; tutor tags move the bar; Share model with Kindling.
 
 ### Phase 1 sequencing (recommended)
 
@@ -270,12 +272,12 @@ Week-oriented order (adjust to team size):
 
 **Phase 1 exit criteria (Horizon A MVP)**
 
-- [ ] Pilot skill graph + mastery updates on graded turns  
-- [ ] Resume session with transcript  
-- [ ] Math correctness verification on pilot items  
-- [ ] Homework image → guided help path  
-- [ ] Parent weekly digest (opt-in) from events  
-- [ ] ≥1 interactive visual for a high-struggle pilot topic  
+- [x] Pilot skill graph + mastery updates on graded turns  
+- [x] Resume session with transcript  
+- [x] Math correctness verification on pilot items  
+- [x] Homework image → guided help path  
+- [x] Parent weekly digest (opt-in) from events  
+- [x] ≥1 interactive visual for a high-struggle pilot topic  
 
 ---
 
@@ -575,6 +577,8 @@ Track as features land:
 | 2026-08-12 | Phase 1 Epic A2: session continue cards, resume snapshots, transcript search. |
 | 2026-08-12 | Phase 1 Epic A3: math correctness verifier (tags + Fraction check, prefer checker). |
 | 2026-08-12 | Phase 1 Epic A4: homework photo upload, vision analysis, guided remediation. |
+| 2026-08-12 | Phase 1 Epic A6: fraction bar + number line manipulatives, tutor visual tags. |
+| 2026-08-12 | Phase 1 Epic A5: parent digests (opt-in, weekly job, Dashboard family panel). |
 
 ---
 

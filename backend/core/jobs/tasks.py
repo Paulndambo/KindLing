@@ -56,29 +56,23 @@ def job_heartbeat(**kwargs) -> Dict[str, Any]:
 
 @register_job(
     "weekly_digest",
-    description="Placeholder: weekly parent digest dry-run (Horizon A)",
+    description="Generate and deliver weekly parent digests (Epic A5)",
     interval_seconds=7 * 24 * 3600,
     enabled=True,
 )
 def job_weekly_digest(**kwargs) -> Dict[str, Any]:
     """
-    Skeleton for parent digests. Does not send email yet.
-    Counts candidates that a future implementation would notify.
+    Build digests from learning events for opted-in students.
+    dry_run=True (default for manual runs): generate + mark sent without SMTP.
+    dry_run=False: attempt email (console backend in dev).
     """
-    from students.models import StudentProfile
+    from learning.digest_service import run_weekly_digests
 
-    dry_run = kwargs.get("dry_run", True)
-    # Future: filter by digest opt-in; for now all onboarded profiles
-    candidates = StudentProfile.objects.filter(is_onboarded=True).count()
-
-    return {
-        "ok": True,
-        "job": "weekly_digest",
-        "dry_run": dry_run,
-        "candidates": candidates,
-        "emails_sent": 0,
-        "note": "Digest delivery not implemented — dry-run only (Phase 0.5 skeleton)",
-    }
+    dry_run = kwargs.get("dry_run", False)
+    force = bool(kwargs.get("force", False))
+    result = run_weekly_digests(dry_run=dry_run, force=force)
+    result["emails_sent"] = result.get("sent", 0)
+    return result
 
 
 @register_job(

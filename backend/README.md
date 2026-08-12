@@ -63,8 +63,10 @@ python manage.py run_job list
 # Run the ops heartbeat (proves the runner works)
 python manage.py run_job heartbeat
 
-# Dry-run digest placeholder (no email)
+# Weekly parent digests (Epic A5) — generate + in-app/console delivery
 python manage.py run_job weekly_digest --dry-run
+# Real email (console backend prints to stdout in local dev)
+python manage.py run_job weekly_digest
 
 # Run every job that is due by interval
 python manage.py run_scheduled_jobs
@@ -81,7 +83,7 @@ python manage.py run_scheduled_jobs
 | Name | Default interval | Purpose |
 |------|------------------|---------|
 | `heartbeat` | 1h | Health proof + 24h counters |
-| `weekly_digest` | 7d | Placeholder parent digest (dry-run) |
+| `weekly_digest` | 7d | Parent digests for opted-in students |
 | `mastery_recompute` | 1d | Placeholder mastery recompute |
 | `review_schedule` | 1d | Placeholder spaced review |
 
@@ -129,6 +131,20 @@ POST /api/learning/verify-math/
 Files live under `MEDIA_ROOT/homework/…`. Retention default: **30 days** (`KINDLING_HOMEWORK_RETENTION_DAYS`). Vision OCR runs in the SPA via Gemini multimodal; the API stores the image + analysis for history.
 
 Requires `Pillow` (`pip install -r requirements.txt`).
+
+## Parent digests (Epic A5)
+
+Opt-in weekly family summaries from learning events (sessions, exchanges, mastery, guide-mode). Copy is effort-first and non-shaming.
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/learning/digests/` | List digests + opt-in / family email |
+| `POST /api/learning/digests/generate/` | Build this week's digest (`deliver`, `dryRun`) |
+| `GET /api/learning/digests/<id>/` | Digest detail |
+| Profile | `digestOptIn`, `familyEmail` on `PATCH /api/students/me/` |
+
+Delivery: in-app always; email via Django mail (console backend in local dev). Weekly job: `run_job weekly_digest`.
+
 ## Quick start
 
 ```bash

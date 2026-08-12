@@ -124,6 +124,15 @@ export function useStudentProfile({
     lastFetchKey.current = null;
   }, [setStudent]);
 
+  /** Merge a partial/full profile response (e.g. after PATCH digest prefs). */
+  const applyProfileUpdate = useCallback(
+    (partial) => {
+      if (!partial || typeof partial !== "object") return;
+      setStudent((prev) => ({ ...(prev || {}), ...partial }));
+    },
+    [setStudent]
+  );
+
   return {
     // Never surface a cached profile while logged out
     student: isLoggedIn ? student : null,
@@ -135,6 +144,7 @@ export function useStudentProfile({
     profileError,
     setProfileError,
     refreshProfile: loadRemoteProfile,
+    applyProfileUpdate,
     clearLocalProfile,
   };
 }

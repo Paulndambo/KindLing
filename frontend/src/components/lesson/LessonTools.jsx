@@ -63,6 +63,10 @@ export default function LessonTools({
   onExitIntervention,
   onAcceptIntervention,
   onDeclineIntervention,
+  hasManipulatives = false,
+  manipOpen = false,
+  onOpenManipulative,
+  manipState = null,
 }) {
   const last = lastSignals ? signalLabel(lastSignals.correctness) : null;
   const accuracyPct =
@@ -248,6 +252,29 @@ export default function LessonTools({
           </p>
         )}
       </div>
+
+      {hasManipulatives && (
+        <div className="manip-tools-block">
+          <h4>
+            <Square size={13} style={{ marginRight: 6, verticalAlign: -2 }} />
+            Interactive model
+          </h4>
+          <p style={{ fontSize: 12, color: "var(--ink-soft)", margin: "0 0 8px" }}>
+            Fraction bars & number lines help make parts of a whole concrete.
+            {manipState
+              ? ` Showing ${manipState.num}/${manipState.den}.`
+              : ""}
+          </p>
+          <button
+            type="button"
+            className="hint-btn"
+            onClick={onOpenManipulative}
+            disabled={isStreaming}
+          >
+            {manipOpen ? "Focus model in chat" : "Open fraction model"}
+          </button>
+        </div>
+      )}
 
       <div className={`voice-panel${tools.voiceOutput ? " active" : ""}`}>
         <div

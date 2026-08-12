@@ -40,9 +40,11 @@ function buildSpeechPrompt(text) {
 
 export function stripMarkdown(text) {
   return String(text || "")
-    // machine math check tags (Epic A3) — never speak
+    // machine math check + visual tags (Epic A3/A6) — never speak
     .replace(/⟦\s*check\b[^⟧]*⟧/gi, " ")
     .replace(/\[\[\s*check\s*:?[^\]]*\]\]/gi, " ")
+    .replace(/⟦\s*visual\b[^⟧]*⟧/gi, " ")
+    .replace(/\[\[\s*visual\s*:?[^\]]*\]\]/gi, " ")
     // fenced / inline code (keep short inline content for speech)
     .replace(/```[\w+-]*\n?([\s\S]*?)```/g, (_, body) => {
       // Skip pure diagrams / long code in speech

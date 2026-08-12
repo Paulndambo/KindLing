@@ -96,11 +96,24 @@ class Command(BaseCommand):
                 "interests": ["🚀 Space & Astronomy", "🎨 Art & Drawing"],
                 "goal": "Get ahead with extra challenge",
                 "is_onboarded": True,
+                # Epic A5 — demo family digests on by default
+                "digest_opt_in": True,
+                "family_email": DEMO_EMAIL,
             },
         )
         if s_created:
             self.stdout.write(self.style.SUCCESS(f"Created student profile {student.name}"))
         else:
+            # Keep re-seeds aligned with demo digest prefs
+            updated = False
+            if not student.digest_opt_in:
+                student.digest_opt_in = True
+                updated = True
+            if not student.family_email:
+                student.family_email = DEMO_EMAIL
+                updated = True
+            if updated:
+                student.save(update_fields=["digest_opt_in", "family_email", "updated_at"])
             self.stdout.write(f"Student profile already exists: {student.name}")
 
         self._ensure_subjects(student)
@@ -130,6 +143,7 @@ class Command(BaseCommand):
             self.stdout.write("Learning profile already exists.")
 
         self._seed_demo_skill_mastery(profile)
+        self._seed_demo_digest(student)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -137,7 +151,8 @@ class Command(BaseCommand):
                 f"  email:    {DEMO_EMAIL}\n"
                 f"  password: {DEMO_PASSWORD}\n"
                 "  or POST /api/auth/demo/\n"
-                f"  Pilot subject: {PILOT_SUBJECT} (fractions → early algebra skill graph)"
+                f"  Pilot subject: {PILOT_SUBJECT} (fractions → early algebra skill graph)\n"
+                "  Family digests: opt-in on (Dashboard → Family digest)"
             )
         )
 
@@ -229,6 +244,21 @@ class Command(BaseCommand):
 
         if not student.subjects.exists():
             self.stdout.write(self.style.WARNING("No subjects created."))
+
+    def _seed_demo_digest(self, student):
+        """Generate an in-app digest so the dashboard has something to show."""
+        from learning.digest_service import (
+            deliver_digest,
+            generate_digest_for_student,
+        )
+
+        digest = generate_digest_for_student(student, force=True)
+        deliver_digest(digest, dry_run=True)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Parent digest ready (id={digest.pk}, status={digest.status})"
+            )
+        )
 
     def _seed_demo_skill_mastery(self, profile):
         """Give Maya a believable spark trail into fractions."""

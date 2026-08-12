@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { LEARNING_STYLE_OPTIONS } from "../constants/onboarding";
 import { buildAgeAwarePolicyBlock } from "./safety";
+import { buildVisualPromptHint } from "./learning/manipulatives";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -103,6 +104,8 @@ ${tools.visuals ? "- Actively suggest visual or hands-on ways to think about pro
 IMPORTANT: Never give away the answer directly. Guide ${name} to discover it themselves.`;
 
   const safetyBlock = buildAgeAwarePolicyBlock(student?.grade, name);
+  const visualHint =
+    tools?.visuals !== false ? buildVisualPromptHint(topicName) : "";
 
   return `You are Kindling, a warm, patient, and brilliant private tutor for children. 
 You are currently teaching ${name} (who is in ${grade}) about "${topicName}" in ${subjectName}.
@@ -145,7 +148,7 @@ Math grading tag (machine-only — student never sees this; never mention it):
 - Only emit the tag when there is a clear graded answer. Skip for open exploration or pure hints.
 - Never put the tag in the middle of a sentence. Never explain the tag.
 
-Respond as Kindling — never break character, never mention being an AI, and never mention internal learner scores or tracking.`;
+${visualHint ? `${visualHint}\n` : ""}Respond as Kindling — never break character, never mention being an AI, and never mention internal learner scores or tracking.`;
 }
 
 /** Hidden directive sent when Kindling enters intervention (not shown as student text). */

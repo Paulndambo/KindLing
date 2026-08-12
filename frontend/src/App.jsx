@@ -58,6 +58,7 @@ export default function App() {
     profileSaving,
     profileError,
     clearLocalProfile,
+    applyProfileUpdate,
   } = useStudentProfile({
     isLoggedIn,
     accountName: userSession?.name || "",
@@ -220,6 +221,7 @@ export default function App() {
             student={student}
             subjects={subjects}
             onStartLesson={startLesson}
+            onStudentUpdate={applyProfileUpdate}
           />
         )}
       </Suspense>

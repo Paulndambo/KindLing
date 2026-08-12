@@ -7,6 +7,7 @@ from .models import (
     LearningProfile,
     LessonSession,
     Misconception,
+    ParentDigest,
     SessionTurn,
     SkillMastery,
     TopicConversation,
@@ -121,6 +122,22 @@ class ConversationMessageAdmin(admin.ModelAdmin):
     list_display = ("client_message_id", "role", "conversation", "occurred_at")
     list_filter = ("role",)
     search_fields = ("client_message_id", "text")
+
+
+@admin.register(ParentDigest)
+class ParentDigestAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "student",
+        "period_start",
+        "period_end",
+        "status",
+        "channel",
+        "sent_at",
+    )
+    list_filter = ("status", "channel")
+    search_fields = ("headline", "student__name", "recipient_email")
+    readonly_fields = ("created_at", "updated_at", "sent_at")
 
 
 @admin.register(HomeworkUpload)

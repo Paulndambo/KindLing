@@ -22,6 +22,10 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         source="learning_style", required=False, allow_blank=True
     )
     isOnboarded = serializers.BooleanField(source="is_onboarded", required=False)
+    digestOptIn = serializers.BooleanField(source="digest_opt_in", required=False)
+    familyEmail = serializers.EmailField(
+        source="family_email", required=False, allow_blank=True
+    )
 
     class Meta:
         model = StudentProfile
@@ -40,6 +44,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "interests",
             "goal",
             "isOnboarded",
+            "digestOptIn",
+            "familyEmail",
             "created_at",
             "updated_at",
         )

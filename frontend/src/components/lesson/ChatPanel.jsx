@@ -78,6 +78,7 @@ export default function ChatPanel({
   homeworkBusy = false,
   homeworkError = "",
   onClearHomeworkError,
+  manipulativeSlot = null,
 }) {
   const fileInputRef = useRef(null);
   const interventionActive = intervention?.status === "active";
@@ -368,6 +369,8 @@ export default function ChatPanel({
           />
         )}
       </div>
+
+      {manipulativeSlot}
 
       {(homeworkError || homeworkBusy) && (
         <div
