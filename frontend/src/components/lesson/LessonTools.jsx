@@ -8,7 +8,18 @@ import {
   BookOpen,
   MessageSquarePlus,
   Square,
+  Lightbulb,
+  Trees,
+  ArrowUpRight,
+  ListOrdered,
 } from "lucide-react";
+
+const LADDER_BTNS = [
+  { level: 1, label: "Micro-hint", Icon: Lightbulb },
+  { level: 2, label: "Example", Icon: BookOpen },
+  { level: 3, label: "Full guide", Icon: LifeBuoy },
+  { level: 4, label: "Easier path", Icon: Trees },
+];
 
 function signalLabel(correctness) {
   switch (correctness) {
@@ -60,9 +71,21 @@ export default function LessonTools({
   learningInsights = null,
   intervention = null,
   onRequestGuide,
+  onRequestLevel,
+  onRequestLibraryExample,
+  libraryExampleTitle = null,
+  libraryExampleCount = 0,
+  activeMisconceptions = null,
+  multiStepAvailable = false,
+  multiStepActive = false,
+  multiStepTitle = null,
+  multiStepPercent = null,
+  onStartMultiStep,
+  onExitMultiStep,
   onExitIntervention,
   onAcceptIntervention,
   onDeclineIntervention,
+  onEscalateIntervention,
   hasManipulatives = false,
   manipOpen = false,
   onOpenManipulative,
@@ -76,6 +99,12 @@ export default function LessonTools({
 
   const interventionActive = intervention?.status === "active";
   const interventionOffered = intervention?.status === "offered";
+  const activeLevel =
+    intervention?.level || intervention?.context?.level || 0;
+  const activeLabel =
+    intervention?.context?.levelLabel ||
+    intervention?.context?.activeTitle ||
+    "Help mode";
 
   return (
     <aside className="lesson-tools">
@@ -92,40 +121,82 @@ export default function LessonTools({
         </p>
       </div>
 
-      {/* Intervention / step-by-step guide controls */}
+      {/* Epic B2 — graduated intervention ladder */}
       <div
         className={`intervention-tools-panel${
           interventionActive ? " active" : ""
-        }${interventionOffered ? " offered" : ""}`}
+        }${interventionOffered ? " offered" : ""}${
+          activeLevel ? ` ladder-${activeLevel}` : ""
+        }`}
       >
         <h4>
           <LifeBuoy size={13} style={{ marginRight: 6, verticalAlign: -2 }} />
-          Step-by-step guide
+          Help ladder
         </h4>
+        <p className="intervention-tools-text">
+          Four kinds of help — from a tiny hint to an easier path. Always
+          leave-anytime.
+        </p>
+        <div className="ladder-rungs" role="group" aria-label="Help levels">
+          {LADDER_BTNS.map(({ level, label, Icon }) => {
+            const isCurrent = interventionActive && activeLevel === level;
+            return (
+              <button
+                key={level}
+                type="button"
+                className={`ladder-rung${isCurrent ? " current" : ""}`}
+                disabled={isStreaming || !hasAi || isArchiveView}
+                onClick={() =>
+                  onRequestLevel ? onRequestLevel(level) : onRequestGuide?.()
+                }
+                title={label}
+              >
+                <span className="ladder-rung-num">{level}</span>
+                <Icon size={13} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {interventionActive ? (
           <>
-            <p className="intervention-tools-text">
-              Kindling is walking through{" "}
-              <strong>{intervention.context?.topic || "this topic"}</strong>{" "}
-              with explanations and examples. {studentName} can stay as long as
-              they need.
+            <p className="intervention-tools-text" style={{ marginTop: 10 }}>
+              Active: <strong>{activeLabel}</strong> on{" "}
+              <strong>{intervention.context?.topic || "this topic"}</strong>.
+              {studentName} can stay as long as they need.
             </p>
-            <button
-              type="button"
-              className="intervention-exit-btn full"
-              onClick={onExitIntervention}
-              disabled={isStreaming}
-            >
-              <X size={14} />
-              Exit guide mode
-            </button>
+            <div className="intervention-tools-actions">
+              {activeLevel < 4 && onEscalateIntervention && (
+                <button
+                  type="button"
+                  className="intervention-btn primary compact"
+                  onClick={onEscalateIntervention}
+                  disabled={isStreaming || !hasAi}
+                >
+                  <ArrowUpRight size={13} />
+                  More help
+                </button>
+              )}
+              <button
+                type="button"
+                className="intervention-exit-btn full"
+                onClick={onExitIntervention}
+                disabled={isStreaming}
+              >
+                <X size={14} />
+                {intervention.context?.exitLabel || "Exit help"}
+              </button>
+            </div>
           </>
         ) : interventionOffered ? (
           <>
-            <p className="intervention-tools-text">
+            <p className="intervention-tools-text" style={{ marginTop: 10 }}>
               {intervention.context?.headline ||
-                "Kindling noticed a struggle"}
-              . Offer a guided walkthrough?
+                "Kindling noticed a sticky moment"}
+              {intervention.context?.levelLabel
+                ? ` · suggested ${intervention.context.levelLabel}`
+                : ""}
             </p>
             <div className="intervention-tools-actions">
               <button
@@ -134,7 +205,7 @@ export default function LessonTools({
                 onClick={onAcceptIntervention}
                 disabled={isStreaming || !hasAi}
               >
-                Start guide
+                {intervention.context?.acceptCta || "Start help"}
               </button>
               <button
                 type="button"
@@ -146,24 +217,81 @@ export default function LessonTools({
               </button>
             </div>
           </>
-        ) : (
-          <>
-            <p className="intervention-tools-text">
-              If {studentName} is stuck, Kindling can switch into a clear
-              step-by-step explanation with examples — or will offer help after
-              repeated misses.
+        ) : null}
+
+        {/* Epic B4 — curated library shortcut */}
+        {(libraryExampleTitle || libraryExampleCount > 0) &&
+          !interventionActive &&
+          !interventionOffered &&
+          !multiStepActive && (
+            <div className="library-example-block">
+              <p className="intervention-tools-text" style={{ marginTop: 10 }}>
+                {libraryExampleTitle
+                  ? `Library ready: “${libraryExampleTitle}”`
+                  : `${libraryExampleCount} curated example${
+                      libraryExampleCount === 1 ? "" : "s"
+                    } for this topic`}
+              </p>
+              <button
+                type="button"
+                className="guide-btn library-example-btn"
+                onClick={onRequestLibraryExample}
+                disabled={isStreaming || !hasAi || isArchiveView}
+                style={{
+                  opacity: isStreaming || !hasAi || isArchiveView ? 0.45 : 1,
+                }}
+              >
+                <BookOpen size={14} />
+                Show library example
+              </button>
+            </div>
+          )}
+
+        {/* Epic B6 — show your work */}
+        {(multiStepAvailable || multiStepActive) && (
+          <div className="multistep-tools-block">
+            <p className="intervention-tools-text" style={{ marginTop: 10 }}>
+              {multiStepActive
+                ? `Show your work${
+                    multiStepTitle ? ` · ${multiStepTitle}` : ""
+                  }${
+                    multiStepPercent != null ? ` · ${multiStepPercent}%` : ""
+                  }`
+                : "Practice a multi-step problem with intermediate checks and partial credit."}
             </p>
-            <button
-              type="button"
-              className="guide-btn"
-              onClick={onRequestGuide}
-              disabled={isStreaming || !hasAi}
-              style={{ opacity: isStreaming || !hasAi ? 0.45 : 1 }}
-            >
-              <LifeBuoy size={14} />
-              Start step-by-step guide
-            </button>
-          </>
+            {multiStepActive ? (
+              <button
+                type="button"
+                className="intervention-exit-btn full"
+                onClick={onExitMultiStep}
+                disabled={isStreaming}
+              >
+                <X size={14} />
+                Exit show-your-work
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="guide-btn library-example-btn"
+                onClick={onStartMultiStep}
+                disabled={
+                  isStreaming ||
+                  !hasAi ||
+                  isArchiveView ||
+                  interventionActive
+                }
+                style={{
+                  opacity:
+                    isStreaming || !hasAi || isArchiveView || interventionActive
+                      ? 0.45
+                      : 1,
+                }}
+              >
+                <ListOrdered size={14} />
+                Show your work
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -198,10 +326,35 @@ export default function LessonTools({
                 </strong>
               </div>
             )}
-            {lastSignals.misconceptions?.length > 0 && (
-              <p className="pulse-note">
-                Flagged:{" "}
-                {lastSignals.misconceptions.map((m) => m.label).join(", ")}
+            {(activeMisconceptions?.length > 0 ||
+              lastSignals.misconceptions?.length > 0) && (
+              <div className="misconception-pulse">
+                <p className="pulse-note">
+                  Pattern to gently rework:{" "}
+                  {(activeMisconceptions?.length
+                    ? activeMisconceptions
+                    : lastSignals.misconceptions
+                  )
+                    .map((m) => m.label)
+                    .join(", ")}
+                </p>
+                {(activeMisconceptions || lastSignals.misconceptions)
+                  ?.slice(0, 1)
+                  .map((m) =>
+                    m.playbook?.check_question || m.playbook?.checkQuestion ? (
+                      <p key={m.id} className="pulse-note misconception-tip">
+                        Try asking: “
+                        {m.playbook.check_question || m.playbook.checkQuestion}”
+                      </p>
+                    ) : null
+                  )}
+              </div>
+            )}
+            {(sessionSummary?.persistenceScore > 0 ||
+              learningInsights?.persistenceScore > 0) && (
+              <p className="pulse-note persistence-note">
+                Persistence spark: effort and bounce-backs count here — not only
+                correct answers.
               </p>
             )}
           </div>
@@ -237,6 +390,17 @@ export default function LessonTools({
                 <span>~ {sessionSummary.counters.partial || 0}</span>
                 <span>✗ {sessionSummary.counters.incorrect || 0}</span>
                 <span>💡 {sessionSummary.counters.hints || 0}</span>
+              </div>
+            )}
+            {(sessionSummary.persistenceScore > 0 ||
+              sessionSummary.counters?.persistenceEvents > 0) && (
+              <div className="pulse-row">
+                <span>Persistence</span>
+                <strong>
+                  {sessionSummary.persistenceScore ||
+                    sessionSummary.counters?.persistenceEvents ||
+                    0}
+                </strong>
               </div>
             )}
           </div>
@@ -350,7 +514,9 @@ export default function LessonTools({
         {isStreaming
           ? "Kindling is thinking…"
           : interventionActive
-            ? "💡 In guide mode"
+            ? activeLevel === 1
+              ? "💡 In micro-hint"
+              : "💡 Help mode active"
             : "💡 Get a hint"}
       </button>
 

@@ -68,6 +68,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self._seed_skill_graph()
+        self._seed_worked_examples()
+        self._seed_misconceptions()
+        self._seed_multistep_problems()
 
         user, created = User.objects.get_or_create(
             username=DEMO_EMAIL,
@@ -228,7 +231,13 @@ class Command(BaseCommand):
                         for j, topic_name in enumerate(subj["topics"]):
                             if topic_name not in have:
                                 Topic.objects.create(
-                                    subject=subject, name=topic_name, sort_order=j
+                                    subject=subject,
+                                    name=topic_name,
+                                    sort_order=j,
+                                    familiarity=Topic.Familiarity.BEGINNER,
+                                    learning_goal=(
+                                        f"Build a clear foundation in {topic_name}."
+                                    ),
                                 )
                 continue
             subject = Subject.objects.create(
@@ -237,13 +246,143 @@ class Command(BaseCommand):
                 icon=subj["icon"],
                 color=subj["color"],
                 sort_order=i,
+                learning_goal=subj.get(
+                    "learning_goal",
+                    f"Grow steadily in {subj['name']} with Kindling.",
+                ),
             )
             for j, topic_name in enumerate(subj["topics"]):
-                Topic.objects.create(subject=subject, name=topic_name, sort_order=j)
+                Topic.objects.create(
+                    subject=subject,
+                    name=topic_name,
+                    sort_order=j,
+                    familiarity=Topic.Familiarity.BEGINNER,
+                    learning_goal=f"Build a clear foundation in {topic_name}.",
+                )
             self.stdout.write(self.style.SUCCESS(f"Created subject {subj['name']}"))
 
         if not student.subjects.exists():
             self.stdout.write(self.style.WARNING("No subjects created."))
+
+    def _seed_worked_examples(self):
+        """Epic B4 — curated worked examples + counterexamples for pilot skills."""
+        from curriculum.models import Skill, WorkedExample
+        from curriculum.worked_examples_data import WORKED_EXAMPLES
+
+        created = 0
+        updated = 0
+        for row in WORKED_EXAMPLES:
+            skill = Skill.objects.filter(slug=row["skill_slug"]).first()
+            defaults = {
+                "skill": skill,
+                "title": row["title"],
+                "summary": row.get("summary") or "",
+                "problem": row["problem"],
+                "steps": row.get("steps") or [],
+                "takeaway": row.get("takeaway") or "",
+                "counterexample": row.get("counterexample") or "",
+                "kind": row.get("kind") or WorkedExample.Kind.EXAMPLE,
+                "subject_name": row.get("subject_name") or "",
+                "topic_names": row.get("topic_names") or [],
+                "grade_min": row.get("grade_min", 0),
+                "grade_max": row.get("grade_max", 12),
+                "language_notes": row.get("language_notes") or "",
+                "sort_order": row.get("sort_order", 0),
+                "is_active": True,
+            }
+            _, was_created = WorkedExample.objects.update_or_create(
+                slug=row["slug"],
+                defaults=defaults,
+            )
+            if was_created:
+                created += 1
+            else:
+                updated += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Worked examples: {WorkedExample.objects.count()} total "
+                f"(+{created} new, {updated} updated)"
+            )
+        )
+
+    def _seed_misconceptions(self):
+        """Epic B5 — misconception catalog + remediation playbooks."""
+        from curriculum.misconceptions_data import MISCONCEPTIONS
+        from curriculum.models import MisconceptionDef, Skill
+
+        created = 0
+        updated = 0
+        for row in MISCONCEPTIONS:
+            skill = None
+            if row.get("skill_slug"):
+                skill = Skill.objects.filter(slug=row["skill_slug"]).first()
+            defaults = {
+                "label": row["label"],
+                "domain": row.get("domain") or "general",
+                "description": row.get("description") or "",
+                "skill": skill,
+                "topic_names": row.get("topic_names") or [],
+                "student_cues": row.get("student_cues") or [],
+                "patterns": row.get("patterns") or [],
+                "playbook": row.get("playbook") or {},
+                "related_example_slug": row.get("related_example_slug") or "",
+                "related_counter_slug": row.get("related_counter_slug") or "",
+                "sort_order": row.get("sort_order") or 0,
+                "is_active": True,
+            }
+            _, was = MisconceptionDef.objects.update_or_create(
+                slug=row["slug"],
+                defaults=defaults,
+            )
+            if was:
+                created += 1
+            else:
+                updated += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Misconception defs: {MisconceptionDef.objects.count()} total "
+                f"(+{created} new, {updated} updated)"
+            )
+        )
+
+    def _seed_multistep_problems(self):
+        """Epic B6 — multi-step show-your-work problems."""
+        from curriculum.models import MultiStepProblem, Skill
+        from curriculum.multistep_data import MULTI_STEP_PROBLEMS
+
+        created = 0
+        updated = 0
+        for row in MULTI_STEP_PROBLEMS:
+            skill = Skill.objects.filter(slug=row.get("skill_slug")).first()
+            defaults = {
+                "skill": skill,
+                "title": row["title"],
+                "prompt": row["prompt"],
+                "subject_name": row.get("subject_name") or "",
+                "topic_names": row.get("topic_names") or [],
+                "steps": row.get("steps") or [],
+                "final_expected": row.get("final_expected") or "",
+                "final_alts": row.get("final_alts") or [],
+                "sort_order": row.get("sort_order") or 0,
+                "is_active": True,
+            }
+            _, was = MultiStepProblem.objects.update_or_create(
+                slug=row["slug"],
+                defaults=defaults,
+            )
+            if was:
+                created += 1
+            else:
+                updated += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Multi-step problems: {MultiStepProblem.objects.count()} total "
+                f"(+{created} new, {updated} updated)"
+            )
+        )
 
     def _seed_demo_digest(self, student):
         """Generate an in-app digest so the dashboard has something to show."""

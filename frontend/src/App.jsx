@@ -11,6 +11,7 @@ const Overview = lazy(() => import("./components/overview/Overview"));
 const MySubjects = lazy(() => import("./components/subjects/MySubjects"));
 const Lesson = lazy(() => import("./components/lesson/Lesson"));
 const Dashboard = lazy(() => import("./components/dashboard/Dashboard"));
+const Settings = lazy(() => import("./components/settings/Settings"));
 
 function ScreenFallback() {
   return (
@@ -224,6 +225,12 @@ export default function App() {
             onStudentUpdate={applyProfileUpdate}
           />
         )}
+        {screen === "settings" && (
+          <Settings
+            isLoggedIn={isLoggedIn}
+            onOpenLogin={handleOpenLogin}
+          />
+        )}
       </Suspense>
 
       <AuthModal
@@ -244,7 +251,12 @@ export default function App() {
       {onboardingOpen && isLoggedIn && (
         <OnboardingModal
           initialProfile={student}
-          onSave={saveProfile}
+          onSave={async (profile) => {
+            const wasNew = !student?.isOnboarded;
+            await saveProfile(profile);
+            // First-time finish → land on My Subjects to create what they care about
+            if (wasNew) setScreen("subjects");
+          }}
           onClose={() => {
             // Allow closing only once onboarded (edit mode)
             if (student?.isOnboarded) setOnboardingOpen(false);

@@ -191,6 +191,18 @@ Authorization: Bearer <access_token>
 | POST | `/refresh/` | public | Refresh JWT |
 | GET | `/me/` | JWT | Current user |
 
+### Platform — `/api/platform/`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/plans/` | public | Plan catalog (Spark / Ember / Forge) |
+| GET | `/subscription/` | JWT | Current subscription + entitlements |
+| POST | `/subscription/` | JWT | Activate/change plan (pilot checkout) |
+| PATCH | `/subscription/` | JWT | Cancel at period end / resume |
+| GET/PATCH | `/ai-routing/` | JWT | AI routing prefs (no raw API keys) |
+
+BYOK API keys stay on the client. The API only stores routing mode, provider/model choices, and non-secret key fingerprints.
+
 ### Students — `/api/students/`
 
 | Method | Path | Description |
@@ -273,4 +285,5 @@ The SPA keeps a localStorage cache for offline resilience but **loads and saves 
 python manage.py createsuperuser
 # open http://127.0.0.1:8000/admin/
 ```
-# KindLing
+
+For monorepo overview, quick start, and pedagogy status, see the **[root README](../README.md)**.

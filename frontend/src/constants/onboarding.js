@@ -328,6 +328,47 @@ export const HIGHER_ED_GOAL_OPTIONS = [
 
 export const GOAL_OPTIONS = K12_GOAL_OPTIONS;
 
+/** Subjects learners often want help with (any domain — not math-only). */
+export const FOCUS_SUBJECT_OPTIONS = [
+  "Math",
+  "Science",
+  "English / Language Arts",
+  "Writing & essays",
+  "History / Social studies",
+  "Coding / Computer science",
+  "Languages",
+  "Test prep",
+  "Homework help (mixed)",
+  "Something else",
+];
+
+export const MAX_INTERESTS = 6;
+export const MAX_FOCUS_SUBJECTS = 5;
+
+/** Soft curriculum suggestion from country (never locks the choice). */
+export const COUNTRY_CURRICULUM_HINTS = {
+  "United States": "US Common Core & State Standards",
+  "United Kingdom": "UK National Curriculum (GCSE / A-Levels)",
+  Canada: "Canadian Provincial Curriculum",
+  Australia: "Australian Curriculum (ACARA)",
+  India: "CBSE / ICSE (India)",
+  Singapore: "Cambridge Assessment International (IGCSE)",
+  France: "French National Curriculum",
+  Germany: "Custom / Other Curriculum",
+  "South Africa": "Custom / Other Curriculum",
+  Nigeria: "Custom / Other Curriculum",
+  Kenya: "Custom / Other Curriculum",
+  "International / Other": "Custom / Other Curriculum",
+};
+
+export const ONBOARDING_STEPS = [
+  { id: 1, label: "You", short: "About you" },
+  { id: 2, label: "Place", short: "Where you learn" },
+  { id: 3, label: "Goals", short: "Goals & subjects" },
+  { id: 4, label: "Style", short: "How you learn" },
+  { id: 5, label: "Ready", short: "Review" },
+];
+
 export function getSchoolTypeOptions(grade) {
   return isHigherEducation(grade)
     ? HIGHER_ED_SCHOOL_TYPE_OPTIONS
@@ -375,6 +416,7 @@ export const EMPTY_STUDENT_PROFILE = {
   academicTarget: "",
   learningStyle: "visual",
   interests: [],
+  focusSubjects: [],
   goal: "",
   isOnboarded: false,
 };

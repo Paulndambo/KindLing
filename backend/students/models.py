@@ -23,6 +23,8 @@ class StudentProfile(models.Model):
     academic_target = models.CharField(max_length=80, blank=True, default="")
     learning_style = models.CharField(max_length=40, blank=True, default="visual")
     interests = models.JSONField(default=list, blank=True)
+    # Subjects the learner wants help with most (onboarding signal for tutor + GTM)
+    focus_subjects = models.JSONField(default=list, blank=True)
     goal = models.CharField(max_length=200, blank=True, default="")
     is_onboarded = models.BooleanField(default=False)
     # Family digest preferences (Epic A5) — single-student account for now

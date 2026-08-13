@@ -239,6 +239,187 @@ class SkillCatalogView(APIView):
         return Response({"skills": skills, "pilot": True})
 
 
+class MultiStepProblemListView(APIView):
+    """
+    GET /api/learning/multistep/?subject=&topic=&skill=
+
+    Epic B6 — structured show-your-work problems.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from learning.multistep_service import (
+            list_multistep_problems,
+            pick_multistep_problem,
+        )
+
+        subject = request.query_params.get("subject") or ""
+        topic = request.query_params.get("topic") or ""
+        skill = request.query_params.get("skill") or ""
+        try:
+            limit = int(request.query_params.get("limit") or 20)
+        except (TypeError, ValueError):
+            limit = 20
+        problems = list_multistep_problems(
+            subject=subject, topic=topic, skill=skill, limit=limit
+        )
+        best = pick_multistep_problem(
+            subject=subject, topic=topic, skill=skill
+        )
+        return Response(
+            {
+                "problems": problems,
+                "best": best,
+                "count": len(problems),
+                "source": "library",
+                "query": {"subject": subject, "topic": topic, "skill": skill},
+            }
+        )
+
+
+class MisconceptionCatalogView(APIView):
+    """
+    GET /api/learning/misconceptions/?topic=&skill=&domain=
+
+    Epic B5 — catalog + playbooks. Optional POST body detect:
+    POST { studentText, tutorText, topic, subject } → hits with playbooks.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from learning.misconception_service import list_misconception_defs
+
+        topic = request.query_params.get("topic") or ""
+        skill = request.query_params.get("skill") or ""
+        domain = request.query_params.get("domain") or ""
+        try:
+            limit = int(request.query_params.get("limit") or 40)
+        except (TypeError, ValueError):
+            limit = 40
+        defs = list_misconception_defs(
+            domain=domain, topic=topic, skill=skill, limit=limit
+        )
+        return Response(
+            {
+                "misconceptions": defs,
+                "count": len(defs),
+                "source": "catalog",
+                "query": {"topic": topic, "skill": skill, "domain": domain},
+            }
+        )
+
+    def post(self, request):
+        from learning.misconception_service import (
+            detect_misconceptions_text,
+            playbook_prompt_block,
+        )
+
+        student_text = (
+            request.data.get("studentText")
+            or request.data.get("student_text")
+            or ""
+        )
+        tutor_text = request.data.get("tutorText") or request.data.get("tutor_text") or ""
+        topic = request.data.get("topic") or request.query_params.get("topic") or ""
+        subject = request.data.get("subject") or ""
+        skill = request.data.get("skill") or ""
+        hits = detect_misconceptions_text(
+            student_text,
+            tutor_text,
+            topic=topic,
+            subject=subject,
+            skill=skill,
+        )
+        return Response(
+            {
+                "hits": hits,
+                "promptBlock": playbook_prompt_block(hits),
+                "count": len(hits),
+            }
+        )
+
+
+class WorkedExampleListView(APIView):
+    """
+    GET /api/learning/worked-examples/?subject=&topic=&skill=&grade=&kind=
+
+    Epic B4 — curated library examples (prefer over free generation).
+    Auth optional so demo / local clients can still load the pack.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from learning.worked_example_service import (
+            find_best_worked_example,
+            find_worked_examples,
+            library_prompt_block,
+        )
+
+        subject = request.query_params.get("subject") or ""
+        topic = request.query_params.get("topic") or ""
+        skill = request.query_params.get("skill") or request.query_params.get(
+            "skillSlug"
+        ) or ""
+        grade = request.query_params.get("grade") or ""
+        kind = request.query_params.get("kind") or ""
+        try:
+            limit = int(request.query_params.get("limit") or 8)
+        except (TypeError, ValueError):
+            limit = 8
+
+        # Optional grade from authenticated student profile
+        if not grade and request.user and request.user.is_authenticated:
+            student = get_student_profile(request.user)
+            if student and student.grade:
+                grade = student.grade
+
+        examples = find_worked_examples(
+            subject=subject,
+            topic=topic,
+            skill=skill,
+            grade=grade or None,
+            kind=kind,
+            limit=limit,
+        )
+        best = examples[0] if examples else find_best_worked_example(
+            subject=subject,
+            topic=topic,
+            skill=skill,
+            grade=grade or None,
+            kind=kind or "example",
+        )
+        counters = find_worked_examples(
+            subject=subject,
+            topic=topic,
+            skill=skill,
+            grade=grade or None,
+            kind="counterexample",
+            limit=4,
+        )
+        return Response(
+            {
+                "examples": examples,
+                "best": best,
+                "counterexamples": counters,
+                "promptBlock": library_prompt_block(
+                    [e for e in examples if e.get("kind") == "example"] or examples,
+                    max_examples=2,
+                ),
+                "source": "library",
+                "query": {
+                    "subject": subject,
+                    "topic": topic,
+                    "skill": skill,
+                    "grade": grade,
+                    "kind": kind,
+                },
+            }
+        )
+
+
 class MathVerifyView(APIView):
     """
     POST /api/learning/verify-math/

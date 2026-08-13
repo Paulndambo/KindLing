@@ -218,7 +218,7 @@ def apply_exchange_to_profile_model(
         # Never break event ingest on mastery graph errors
         pass
 
-    # Misconceptions
+    # Misconceptions (detect / re-activate)
     for mc in signals.get("misconceptions") or []:
         mid = mc.get("id") or mc.get("label")
         if not mid:
@@ -231,10 +231,43 @@ def apply_exchange_to_profile_model(
         obj.count += 1
         obj.label = mc.get("label") or obj.label
         obj.last_seen = timezone.now()
+        obj.is_active = True
+        if mc.get("skillSlug") or mc.get("skill_slug"):
+            obj.skill_slug = mc.get("skillSlug") or mc.get("skill_slug") or obj.skill_slug
+        if mc.get("playbook"):
+            obj.last_playbook = mc.get("playbook") or obj.last_playbook
         subjects_map = dict(obj.subjects or {})
         subjects_map[subject or "General"] = subjects_map.get(subject or "General", 0) + 1
         obj.subjects = subjects_map
         obj.save()
+
+    # Epic B5 — remediation success → clear active + small mastery boost
+    for mid in signals.get("misconceptionsRemediated") or signals.get(
+        "remediatedMisconceptions"
+    ) or []:
+        rid = mid if isinstance(mid, str) else (mid.get("id") or mid.get("slug"))
+        if not rid:
+            continue
+        obj = Misconception.objects.filter(
+            profile=profile, misconception_id=rid
+        ).first()
+        if not obj:
+            continue
+        obj.remediation_success_count = (obj.remediation_success_count or 0) + 1
+        obj.last_remediated_at = timezone.now()
+        obj.is_active = False
+        obj.save()
+        # Feed remediation into skill mastery when linked
+        skill_slug = obj.skill_slug or (
+            mid.get("skillSlug") if isinstance(mid, dict) else None
+        )
+        if skill_slug:
+            try:
+                from learning.mastery_engine import apply_remediation_boost
+
+                apply_remediation_boost(profile, skill_slug)
+            except Exception:
+                pass
 
     for pref in signals.get("deliveryPreferences") or []:
         if pref in delivery:
@@ -384,7 +417,13 @@ def build_personalization_insights(
         )
 
     for mc in top_mc:
+        if getattr(mc, "is_active", True) is False:
+            continue
         directives.append(f"Watch for misconception: {mc.label} (seen {mc.count}×).")
+        pb = getattr(mc, "last_playbook", None) or {}
+        for d in (pb.get("tutor_directives") or [])[:2]:
+            if d and d not in directives:
+                directives.append(d)
 
     # Epic A1: skill-graph directives + summary spice
     skill_path = None

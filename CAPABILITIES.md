@@ -58,13 +58,23 @@ When Kindling detects struggle, it can step in with structured help.
 
 | Capability | Status | Notes |
 |------------|--------|--------|
-| Struggle detection | ✅ | Consecutive incorrect answers (threshold 2+), hint streaks, frustration |
-| Offer to enter guide mode | ✅ | In-chat card: “Yes, guide me” / “Not now” |
-| Auto-enter guide mode | ✅ | Stronger struggle (e.g. 3+ incorrect, or 2+ with frustration) |
-| Manual start guide | ✅ | Tools panel control anytime |
-| Step-by-step teaching | ✅ | Explanations, worked examples, demos; less purely Socratic |
-| Exit guide anytime | ✅ | Clear **Exit guide** in chat bar and tools panel |
-| Learning events | ✅ | `intervention.offered` / `entered` / `exited` / `declined` |
+| Struggle detection | ✅ | Incorrect streaks, hint streaks, frustration + B1 signals (idle, short answers, thrashing, rapid guessing, off-topic) |
+| Soft idle nudge | ✅ | After ~45s wait: gentle “Still thinking?” card before full offer |
+| Graduated help ladder | ✅ | B2: micro-hint → worked example → full guide → break/easier skill |
+| Offer to enter help | ✅ | In-chat card with level-aware CTA; optional level picker |
+| Auto-enter help | ✅ | Stronger struggle picks a heavier ladder level |
+| Manual start help | ✅ | Tools panel Help ladder (4 rungs) anytime |
+| Worked-example pack (pilot) | ✅ | Local pilot examples preferred when topic/skill matches |
+| Step-by-step teaching | ✅ | Level 3 full guide: explanations, examples, demos |
+| Escalate help | ✅ | “More help” while active; auto-offer escalate after more misses |
+| Exit help anytime | ✅ | Exit control in chat bar and tools panel (every level) |
+| Learning events | ✅ | `intervention.*` (+ `level` / `levelId`) + `struggle.signal` + `affect.checkin` / `affect.persistence` |
+| Scaffolding bias | ✅ | Session + profile bias rises on short/rapid answers; feeds tutor directives |
+| Affective check-ins | ✅ | B3: gentle feeling card after frustration streaks / long sessions |
+| Persistence celebration | ✅ | Effort chips, tutor directives, parent digest “Effort & heart” |
+| Worked-example library | ✅ | B4: DB catalog linked to skills; grade bands; API; tools “Show library example” |
+| Misconception engine | ✅ | B5: catalog + playbooks; detect/remediate events; mastery boost on success |
+| Multi-step show-your-work | ✅ | B6: step panel, intermediate checks, partial credit; pilot skills |
 
 ### 2.5 Learning intelligence (signals & profile)
 
@@ -139,17 +149,17 @@ The following improvements would move Kindling from a strong adaptive prototype 
 2. **Curriculum graph**  
    Prerequisites, recommended next topics, spiral review, and “you’re ready for X” routing.
 
-3. **Worked-example library**  
-   Curated, age-appropriate examples and counterexamples per topic (not only model-generated).
+3. **Worked-example library** ✅  
+   Curated, age-appropriate examples and counterexamples per pilot skill (DB + API; tutor prefers library over free generation).
 
 4. **Retrieval practice & spaced review**  
    Auto-schedule short reviews from weak mastery and forgotten topics.
 
-5. **Misconception engine**  
-   Expand beyond a handful of regex cues; store and remediate known misconceptions per domain.
+5. **Misconception engine** ✅  
+   Stored catalog per domain + remediation playbooks; detect → tutor directives; remediation feeds skill mastery.
 
-6. **Multi-step problem solving**  
-   Structured “show your work” modes, intermediate checks, and partial-credit pedagogy.
+6. **Multi-step problem solving** ✅  
+   Show-your-work mode with intermediate checks (A3 verifier), partial credit, and step-list UI (pilot: adding unlike fractions, one-step equations).
 
 7. **Assessment modes**  
    Low-stakes quizzes, end-of-topic checks, and optional timed practice separate from open chat.
@@ -159,13 +169,13 @@ The following improvements would move Kindling from a strong adaptive prototype 
 
 ### 3.2 Intervention & emotional support
 
-1. **Richer struggle signals**  
+1. **Richer struggle signals** ✅  
    Idle time, repeated short answers, topic thrashing, rapid guessing, off-topic drift.
 
-2. **Graduated interventions**  
+2. **Graduated interventions** ✅  
    Micro-hint → worked example → full guide → suggest break / easier related skill.
 
-3. **Affective check-ins**  
+3. **Affective check-ins** ✅  
    Gentle “how are you feeling about this?” flows; celebrate persistence, not only accuracy.
 
 4. **Parent/teacher alerts (opt-in)**  
@@ -268,7 +278,7 @@ The following improvements would move Kindling from a strong adaptive prototype 
    Latency, TTS failures, intervention rates, drop-off funnels.
 
 4. **Provider flexibility**  
-   Abstract AI gateway (multi-model failover, cost controls).
+   ✅ AI gateway with multi-provider adapters (Gemini, OpenAI, Anthropic, Groq, OpenRouter), BYOK key vault, routing modes (platform / byok / auto), hot-switch, and Settings UI. Remaining: multi-model failover chains + cost controls.
 
 5. **Mobile apps**  
    Native or PWA with reliable voice and offline notes.

@@ -1,21 +1,192 @@
-import { GoogleGenAI } from "@google/genai";
 import { LEARNING_STYLE_OPTIONS } from "../constants/onboarding";
+import { familiarityMeta } from "../constants/familiarity";
 import { buildAgeAwarePolicyBlock } from "./safety";
 import { buildVisualPromptHint } from "./learning/manipulatives";
+import {
+  buildLadderTutorBlock,
+  buildLadderEnterMessage,
+  buildLadderExitMessage,
+  normalizeLevel,
+  InterventionLevel,
+  levelMeta,
+} from "./learning/interventionLadder";
+import {
+  buildLibraryPromptBlock,
+  findWorkedExample,
+  getCachedLibraryPromptBlock,
+} from "./learning/workedExamples";
+import {
+  buildMultiStepTutorBlock,
+  buildMultiStepEnterMessage,
+  buildMultiStepExitMessage,
+} from "./learning/multiStepEngine";
+import {
+  createChatSession as gatewayCreateChat,
+  generateText,
+  getLegacyAiHandle,
+  isAiAvailable,
+  PLATFORM_CHAT_MODEL,
+} from "./ai";
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+/**
+ * Normalize topic intent passed into the tutor prompt.
+ * @param {object|null|undefined} topicContext
+ */
+export function normalizeTopicContext(topicContext = null) {
+  if (!topicContext || typeof topicContext !== "object") {
+    return {
+      familiarity: "new",
+      learningGoal: "",
+      subjectGoal: "",
+      isFirstSession: false,
+    };
+  }
+  const fam = String(topicContext.familiarity || "new").toLowerCase();
+  const meta = familiarityMeta(fam);
+  return {
+    familiarity: meta?.id || "new",
+    learningGoal: String(
+      topicContext.learningGoal || topicContext.learning_goal || ""
+    ).trim(),
+    subjectGoal: String(
+      topicContext.subjectGoal || topicContext.subject_goal || ""
+    ).trim(),
+    isFirstSession: Boolean(topicContext.isFirstSession),
+  };
+}
 
-export const ai = GEMINI_API_KEY
-  ? new GoogleGenAI({ apiKey: GEMINI_API_KEY })
-  : null;
+/**
+ * System-prompt block: familiarity + goals + first-session pacing.
+ */
+export function buildTopicIntentPromptBlock(topicName, topicContext = null) {
+  const ctx = normalizeTopicContext(topicContext);
+  const meta = familiarityMeta(ctx.familiarity);
+  const pacing = meta?.pacing || "gentle_intro";
+  const goalLine = ctx.learningGoal
+    ? `- Stated learning focus for this topic: "${ctx.learningGoal}"`
+    : "- No specific topic goal stated — discover what they want after a solid orientation.";
+  const subjectLine = ctx.subjectGoal
+    ? `- Subject-level hope: "${ctx.subjectGoal}"`
+    : "";
 
-export const GEMINI_MODEL = "gemini-3.1-flash-lite";
+  let pacingRules = "";
+  if (pacing === "gentle_intro" || ctx.isFirstSession) {
+    pacingRules = `First-session / low-familiarity pacing (mandatory when this is their first live thread on the topic, or familiarity is new/beginner):
+- Do NOT open with a hard problem, quiz, or advanced terminology dump.
+- Start with a warm, comprehensive orientation: what "${topicName}" is, why it matters, the big idea in plain language, and 1–2 everyday hooks (use their interests when natural).
+- Check readiness with a soft question ("Does that match what you expected?" / "Want me to show a tiny everyday example next?") before any practice.
+- Only after they show comfort, move to one tiny guided example — still scaffolded.
+- Keep early messages friendly and structured; a slightly longer orientation message is OK for the opening turn only.`;
+  } else if (pacing === "refresh_then_build") {
+    pacingRules = `Basics-level pacing:
+- Briefly refresh core ideas, then confirm what they already know before stretching.
+- Align practice to their stated goal; avoid restarting from absolute zero unless they ask.`;
+  } else if (pacing === "review") {
+    pacingRules = `Review / exam-prep pacing:
+- Orient quickly around their goal, then offer structured practice and common pitfalls.
+- Still warm up — never ambush with the hardest item first.`;
+  } else {
+    pacingRules = `Comfortable-learner pacing:
+- Honor their goal; go deeper, but still open with a short framing of the topic and a check-in on what they want today.`;
+  }
+
+  return `Topic intent & pacing for "${topicName}":
+- Self-reported familiarity: ${meta?.label || "Brand new"} (${ctx.familiarity}).
+${goalLine}
+${subjectLine}
+${pacingRules}
+- Never shame gaps. Treat "new" as an invitation to teach well, not a deficit.
+- Stay aligned with their stated goals throughout the lesson; circle back to them.`;
+}
+
+/**
+ * Hidden kickoff user message for a brand-new topic thread.
+ */
+export function buildLessonOpeningPrompt({
+  topicName,
+  studentName,
+  student,
+  topicContext = null,
+}) {
+  const ctx = normalizeTopicContext(topicContext);
+  const meta = familiarityMeta(ctx.familiarity);
+  const name = studentName || student?.name?.trim() || "the student";
+  const grade = student?.grade || "their grade";
+  const curriculum = student?.curriculum || "their curriculum";
+  const goalBit = ctx.learningGoal
+    ? `Their stated goal: "${ctx.learningGoal}".`
+    : "They have not written a specific goal yet — invite one gently after the intro.";
+  const subjectBit = ctx.subjectGoal
+    ? `Subject hope: "${ctx.subjectGoal}".`
+    : "";
+
+  const needsFullIntro =
+    ctx.isFirstSession ||
+    meta?.pacing === "gentle_intro" ||
+    ctx.familiarity === "new" ||
+    ctx.familiarity === "beginner";
+
+  if (needsFullIntro) {
+    return (
+      `Open the FIRST live lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
+      `Familiarity: ${meta?.label || "Brand new"}. ${goalBit} ${subjectBit} ` +
+      `This is a comprehensive orientation, not a steep cold start. ` +
+      `In one warm message: (1) greet them by name, (2) introduce what "${topicName}" is in plain, grade-right language, ` +
+      `(3) why it matters with a simple real-world hook (use their interests if natural), ` +
+      `(4) outline the 2–4 big ideas they will grow into — without dumping jargon, ` +
+      `(5) briefly acknowledge their familiarity/goal so they feel heard, ` +
+      `(6) end with ONE soft check-in question (understanding or what they want first) — NOT a hard practice problem. ` +
+      `Do not quiz them yet. Do not jump to advanced exercises. ` +
+      `A slightly longer opening is fine; later turns stay shorter.`
+    );
+  }
+
+  return (
+    `Start the lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
+    `Familiarity: ${meta?.label || "some experience"}. ${goalBit} ${subjectBit} ` +
+    `Open warmly: short framing of the topic, confirm their goal, ` +
+    `then ONE approachable question that matches their level — not a steep leap. ` +
+    `Keep it conversational.`
+  );
+}
+
+/**
+ * Dynamic AI handle — true when platform Gemini or a BYOK route is available.
+ * Prefer isAiAvailable() for new code.
+ */
+export function getAi() {
+  return getLegacyAiHandle();
+}
+
+/** @deprecated Prefer isAiAvailable() / getAi() — kept for modules that import { ai }. */
+export const ai = new Proxy(
+  {},
+  {
+    get(_t, prop) {
+      const handle = getLegacyAiHandle();
+      if (prop === "then") return undefined; // not a Promise
+      if (!handle) return undefined;
+      const val = handle[prop];
+      return typeof val === "function" ? val.bind(handle) : val;
+    },
+    has(_t, prop) {
+      const handle = getLegacyAiHandle();
+      return Boolean(handle && prop in handle);
+    },
+  }
+);
+
+// Boolean checks: `if (!ai)` is unreliable with a Proxy — use this.
+export { isAiAvailable };
+
+export const GEMINI_MODEL = PLATFORM_CHAT_MODEL;
 
 /**
  * Build the system prompt for a lesson chat.
  * @param {object} [options]
- * @param {boolean} [options.interventionActive] - step-by-step guide mode
- * @param {object} [options.interventionContext] - topic/subject/reason for the guide
+ * @param {boolean} [options.interventionActive] - ladder help mode active
+ * @param {object} [options.interventionContext] - topic/subject/reason/level for help
+ * @param {object} [options.multiStepSession] - Epic B6 show-your-work session
  */
 export function buildSystemPrompt(
   subjectName,
@@ -37,11 +208,47 @@ export function buildSystemPrompt(
   const interestsStr = student?.interests?.length
     ? student.interests.join(", ")
     : "their interests";
+  const focusSubjects = Array.isArray(student?.focusSubjects)
+    ? student.focusSubjects
+    : Array.isArray(student?.focus_subjects)
+      ? student.focus_subjects
+      : [];
+  const focusStr = focusSubjects.length
+    ? focusSubjects.join(", ")
+    : "";
+  const goalStr = student?.goal ? String(student.goal).trim() : "";
 
   const interventionActive = Boolean(options.interventionActive);
   const ctx = options.interventionContext || {};
   const guideTopic = ctx.topic || topicName;
   const guideSubject = ctx.subject || subjectName;
+  const ladderLevel = normalizeLevel(
+    ctx.level ?? InterventionLevel.FULL_GUIDE
+  );
+  const topicContext = normalizeTopicContext(
+    options.topicContext || learningInsights?.topicContext || null
+  );
+  const topicIntentBlock = buildTopicIntentPromptBlock(topicName, topicContext);
+
+  // Epic B4 — prefer curated library examples over free generation
+  const libraryBlockFromInsights =
+    learningInsights?.libraryPromptBlock ||
+    options.libraryPromptBlock ||
+    getCachedLibraryPromptBlock() ||
+    "";
+  const fallbackExample =
+    ctx.workedExample ||
+    findWorkedExample({
+      subject: subjectName,
+      topic: topicName,
+      grade: student?.grade,
+      kind: "example",
+    });
+  const libraryBlock =
+    libraryBlockFromInsights ||
+    (fallbackExample
+      ? buildLibraryPromptBlock([fallbackExample], { maxExamples: 1 })
+      : "");
 
 const insightBlock = learningInsights
   ? `
@@ -63,30 +270,84 @@ ${
         .join("; ")}`
     : ""
 }
+${
+  learningInsights.persistenceScore >= 2
+    ? `- Persistence spark is high — celebrate effort, bounce-backs, and sticking with hard ideas (not only accuracy).`
+    : ""
+}
+${
+  learningInsights.lastCheckIn?.label
+    ? `- Latest check-in: student said “${learningInsights.lastCheckIn.label}” — respond with warmth; never shame.`
+    : ""
+}
+${
+  learningInsights.libraryExampleTitle
+    ? `- A curated library example is ready for this topic (“${learningInsights.libraryExampleTitle}”) — prefer it when demonstrating.`
+    : ""
+}
+${
+  learningInsights.activeMisconceptions?.length
+    ? `- Active misconception cues: ${learningInsights.activeMisconceptions
+        .map((m) => m.label)
+        .join("; ")} — remediate gently with the playbook below.`
+    : ""
+}
 `
     : "";
+
+  const misconceptionBlock =
+    learningInsights?.misconceptionPromptBlock ||
+    options.misconceptionPromptBlock ||
+    "";
 
   const interventionBlock = interventionActive
-    ? `
-═══════════════════════════════════════
-INTERVENTION MODE — ACTIVE (step-by-step guide)
-═══════════════════════════════════════
-${name} is struggling with "${guideTopic}" in ${guideSubject}. You noticed and entered a guided teaching mode.
-
-Your job in this mode:
-1. Warmly acknowledge that this part is tricky — normalize struggle without shame.
-2. Teach with a clear, patient step-by-step guide: explain concepts, then show worked examples / demonstrations.
-3. Break ideas into small steps. After each step, check understanding with a simple question before moving on.
-4. Use concrete examples (and visual / hands-on ideas when helpful). Tie examples to ${name}'s interests (${interestsStr}) when natural.
-5. You MAY fully explain and demonstrate — this is not pure Socratic discovery mode right now.
-6. Stay in guide mode until the student exits (UI action) or clearly wants to return to practice. Go as deep / as long as they need.
-7. Keep language warm and age-appropriate. Still celebrate micro-wins.
-8. Do not mention "intervention mode", scores, or internal tracking by those names — speak as a caring tutor who "noticed this was hard" and is walking them through it.
-`
+    ? buildLadderTutorBlock({
+        studentName: name,
+        topic: guideTopic,
+        subject: guideSubject,
+        level: ladderLevel,
+        reasonText: ctx.reasonText,
+        workedExample: ctx.workedExample || fallbackExample,
+        easierSkill: ctx.easierSkill,
+        interestsStr,
+      })
     : "";
 
-const philosophyBlock = interventionActive
-    ? `Your teaching philosophy (intervention / guide mode):
+  const multiStepSession = options.multiStepSession || null;
+  const multiStepActive = Boolean(
+    multiStepSession && multiStepSession.status === "active"
+  );
+  const multiStepBlock = multiStepActive
+    ? buildMultiStepTutorBlock(multiStepSession)
+    : "";
+
+const philosophyBlock = multiStepActive
+    ? `Your teaching philosophy (show-your-work mode):
+- One intermediate step at a time. Celebrate each solid micro-step.
+- Partial credit mindset: unfinished paths still earn praise for correct pieces.
+- Do not spoil later steps. Keep messages short.
+${tools.encourage ? `- Be extra enthusiastic for ${name}!` : ""}
+${tools.visuals ? "- Use a quick visual when a step is about equal pieces." : ""}`
+    : interventionActive
+    ? ladderLevel === InterventionLevel.MICRO_HINT
+      ? `Your teaching philosophy (micro-hint mode):
+- One small nudge only — stay mostly Socratic.
+- Never dump a full solution at this level.
+${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
+${tools.visuals ? "- A tiny visual cue is OK if it is still just a hint." : ""}`
+      : ladderLevel === InterventionLevel.WORKED_EXAMPLE
+        ? `Your teaching philosophy (worked-example mode):
+- One modeled example, then one twin try for ${name}.
+- Clear steps, then check understanding — not a full course guide.
+${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
+${tools.visuals ? "- Use a simple visual model in the example when natural." : ""}`
+        : ladderLevel === InterventionLevel.BREAK_OR_EASIER
+          ? `Your teaching philosophy (easier-path mode):
+- Normalize reset. Offer break or simpler related skill.
+- One easy win before returning to the hard idea.
+${tools.encourage ? `- Be extra warm and encouraging for ${name}!` : ""}
+${tools.visuals ? "- Prefer concrete, low-load visuals." : ""}`
+          : `Your teaching philosophy (step-by-step guide mode):
 - Lead with clear explanation, then a demonstration, then a tiny check-in.
 - One step at a time — never dump a full lecture.
 - Examples first when concepts are abstract; invite ${name} to try a parallel example after you model one.
@@ -96,12 +357,13 @@ ${tools.visuals ? "- Lean hard on visual or hands-on models." : ""}`
     : `Your teaching philosophy:
 - Ask one question at a time. Never overwhelm.
 - Celebrate correct reasoning, not just correct answers.
-- Keep messages short and conversational (2-4 sentences max).
+- Keep routine messages short and conversational (2-4 sentences). The very first orientation on a brand-new topic may be a bit longer so ${name} is not dropped onto a steep slope.
 - Continuously adapt: if they struggle, scaffold; if they soar, deepen — within this conversation.
+- Match difficulty to stated familiarity and goals. Never assume prior mastery of "${topicName}" unless they show it.
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Actively suggest visual or hands-on ways to think about problems." : ""}
 
-IMPORTANT: Never give away the answer directly. Guide ${name} to discover it themselves.`;
+IMPORTANT: Never give away the answer directly during practice. Guide ${name} to discover it themselves. Orientation and worked teaching moments may explain ideas clearly before practice begins.`;
 
   const safetyBlock = buildAgeAwarePolicyBlock(student?.grade, name);
   const visualHint =
@@ -118,14 +380,21 @@ Extensive Student Profile & Academic Alignment:
 - Academic Target: ${target}.
 - Preferred Learning Style: ${styleObj.label} (${styleObj.desc}).
 - Passions & Hobbies: ${interestsStr}.
+${focusStr ? `- Subjects they especially want help with: ${focusStr}.` : ""}
+${goalStr ? `- Primary learning goal: ${goalStr}.` : ""}
+
+${topicIntentBlock}
 
 Regional & Curriculum Adaptation Instructions:
 - Align your terminology, spelling (e.g., US vs UK English), and educational standards with ${country}'s ${curriculum} system.
-- Calibrate question depth and rigor to match ${name}'s ${target} level.
+- Calibrate question depth and rigor to match ${name}'s ${target} level AND their self-reported familiarity with this topic.
 - Frame problem scenarios using their interests (${interestsStr}) as engaging real-world analogies.
-${insightBlock}${interventionBlock}
+${focusStr ? `- When choosing examples or check-ins, prefer connecting to their focus subjects (${focusStr}) when natural.` : ""}
+${insightBlock}${multiStepActive ? "" : interventionBlock}
 ${philosophyBlock}
-
+${multiStepBlock ? `\n${multiStepBlock}\n` : ""}
+${libraryBlock ? `\n${libraryBlock}\n` : ""}
+${misconceptionBlock ? `\n${misconceptionBlock}\n` : ""}
 ${safetyBlock}
 
 Formatting (the app renders Markdown, math, code, and diagrams cleanly — use structure when it helps learning):
@@ -152,36 +421,52 @@ ${visualHint ? `${visualHint}\n` : ""}Respond as Kindling — never break charac
 }
 
 /** Hidden directive sent when Kindling enters intervention (not shown as student text). */
-export function buildInterventionEnterMessage({ studentName, topic, subject, reasonText }) {
-  const name = studentName || "the student";
-  return `[INTERNAL MODE CHANGE — student does not see this line]
-Enter INTERVENTION / STEP-BY-STEP GUIDE mode for "${topic}" (${subject}).
-Context: you noticed ${reasonText || "they are struggling with this"}.
-Respond to ${name} now: warmly tell them you noticed this part is tricky, and that you'll walk them through it step by step with clear explanations and examples. Start with step 1 of the guide. Keep it friendly and unhurried.`;
+export function buildInterventionEnterMessage({
+  studentName,
+  topic,
+  subject,
+  reasonText,
+  level,
+  workedExample,
+  easierSkill,
+}) {
+  return buildLadderEnterMessage({
+    studentName,
+    topic,
+    subject,
+    reasonText,
+    level: level ?? InterventionLevel.FULL_GUIDE,
+    workedExample,
+    easierSkill,
+  });
 }
 
 /** Hidden directive when student leaves intervention mode. */
-export function buildInterventionExitMessage({ studentName, topic }) {
-  const name = studentName || "the student";
-  return `[INTERNAL MODE CHANGE — student does not see this line]
-Exit INTERVENTION mode. Return to normal Socratic tutoring for "${topic}".
-Respond briefly to ${name}: acknowledge you're going back to practice together, celebrate any progress, and ask one light check question — do NOT give answers away.`;
+export function buildInterventionExitMessage({ studentName, topic, level }) {
+  return buildLadderExitMessage({
+    studentName,
+    topic,
+    level: level ?? InterventionLevel.FULL_GUIDE,
+  });
 }
 
-export function createChatSession(systemInstruction, history = []) {
-  if (!ai) return null;
-  const safeHistory = (history || [])
-    .filter((h) => h?.text?.trim() && (h.role === "user" || h.role === "model"))
-    .map((h) => ({
-      role: h.role,
-      parts: [{ text: h.text }],
-    }));
+/** Epic B6 enter/exit helpers re-exported for chat session. */
+export function buildShowYourWorkEnterMessage(opts) {
+  return buildMultiStepEnterMessage(opts);
+}
 
-  return ai.chats.create({
-    model: GEMINI_MODEL,
-    config: { systemInstruction },
-    history: safeHistory,
-  });
+export function buildShowYourWorkExitMessage(opts) {
+  return buildMultiStepExitMessage(opts);
+}
+
+export { levelMeta, InterventionLevel };
+
+/**
+ * Provider-agnostic chat session (Gemini / OpenAI / Anthropic / …).
+ * Returns { sendMessageStream({ message }) } or null.
+ */
+export function createChatSession(systemInstruction, history = []) {
+  return gatewayCreateChat(systemInstruction, history);
 }
 
 /** Resume an existing topic thread — no first-meeting intro. */
@@ -225,7 +510,7 @@ export async function summarizeConversation({
   topic,
   transcript,
 }) {
-  if (!ai || !transcript?.trim()) {
+  if (!isAiAvailable() || !transcript?.trim()) {
     return null;
   }
 
@@ -247,16 +532,8 @@ Respond with ONLY valid JSON (no markdown fences) in this shape:
 Keep language age-appropriate, encouraging, and specific. No scores or internal jargon.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: prompt,
-    });
-    const text =
-      typeof response?.text === "string"
-        ? response.text
-        : response?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ||
-          "";
-    const cleaned = String(text)
+    const text = await generateText(prompt, { task: "summary" });
+    const cleaned = String(text || "")
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/\s*```$/i, "")

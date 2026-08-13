@@ -43,6 +43,7 @@ INSTALLED_APPS: List[str] = [
     "students",
     "curriculum",
     "learning",
+    "kindling_platform",
 ]
 
 MIDDLEWARE: List[str] = [

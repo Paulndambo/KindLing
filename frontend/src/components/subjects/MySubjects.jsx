@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Plus, X, ArrowRight, BookOpen, Loader2, LogIn, Sparkles } from "lucide-react";
 import { ICON_MAP } from "../../constants/icons";
+import { DEFAULT_FAMILIARITY, familiarityLabel } from "../../constants/familiarity";
 import { listContinuableAsync } from "../../services/learning";
 import NewSubjectModal from "./NewSubjectModal";
+import TopicIntentFields from "./TopicIntentFields";
 import ContinueStrip from "./ContinueStrip";
 import TranscriptSearch from "./TranscriptSearch";
 
@@ -22,6 +24,7 @@ export default function MySubjects({
   onOpenOnboarding,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  /** @type {Record<string, { name: string, familiarity: string, learningGoal: string, expanded: boolean }>} */
   const [drafts, setDrafts] = useState({});
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -65,17 +68,38 @@ export default function MySubjects({
       `${(subjectName || "").toLowerCase()}::${(topicName || "").toLowerCase()}`
     );
 
-  const setDraft = (subjId, val) =>
-    setDrafts((d) => ({ ...d, [subjId]: val }));
+  const emptyDraft = () => ({
+    name: "",
+    familiarity: DEFAULT_FAMILIARITY,
+    learningGoal: "",
+    expanded: false,
+  });
+
+  const getDraft = (subjId) => drafts[subjId] || emptyDraft();
+
+  const patchDraft = (subjId, patch) =>
+    setDrafts((d) => ({
+      ...d,
+      [subjId]: { ...emptyDraft(), ...(d[subjId] || {}), ...patch },
+    }));
 
   const submitTopic = async (subjId) => {
-    const val = (drafts[subjId] || "").trim();
+    const draft = getDraft(subjId);
+    const val = (draft.name || "").trim();
     if (!val || busy) return;
     setActionError("");
     setBusy(true);
     try {
-      await onAddTopic(subjId, val);
-      setDraft(subjId, "");
+      await onAddTopic(subjId, {
+        name: val,
+        familiarity: draft.familiarity || DEFAULT_FAMILIARITY,
+        learningGoal: (draft.learningGoal || "").trim(),
+      });
+      setDrafts((d) => {
+        const next = { ...d };
+        delete next[subjId];
+        return next;
+      });
     } catch (err) {
       setActionError(err?.message || "Could not add topic.");
     } finally {
@@ -301,9 +325,22 @@ export default function MySubjects({
                     )}
                     {topics.map((t) => {
                       const resume = canContinue(s.name, t.name);
+                      const fam = t.familiarity || DEFAULT_FAMILIARITY;
                       return (
                       <div className="topic-chip" key={t.id}>
-                        <span className="tname">{t.name}</span>
+                        <div className="topic-chip-main">
+                          <span className="tname">{t.name}</span>
+                          <div className="topic-meta-row">
+                            <span className="topic-fam-badge" title={familiarityLabel(fam)}>
+                              {familiarityLabel(fam)}
+                            </span>
+                            {t.learningGoal ? (
+                              <span className="topic-goal-preview" title={t.learningGoal}>
+                                {t.learningGoal}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
                         <div className="topic-actions">
                           <button
                             className={`start-chip-btn${resume ? " continue" : ""}`}
@@ -326,24 +363,59 @@ export default function MySubjects({
                     })}
                   </div>
 
-                  <div className="add-topic-row">
-                    <input
-                      placeholder="Add a topic…"
-                      value={drafts[s.id] || ""}
-                      disabled={busy}
-                      onChange={(e) => setDraft(s.id, e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && submitTopic(s.id)
-                      }
-                    />
-                    <button
-                      aria-label="Add topic"
-                      disabled={busy}
-                      onClick={() => submitTopic(s.id)}
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
+                  {(() => {
+                    const draft = getDraft(s.id);
+                    const expanded = draft.expanded || Boolean(draft.name?.trim());
+                    return (
+                      <div className={`add-topic-block${expanded ? " expanded" : ""}`}>
+                        <div className="add-topic-row">
+                          <input
+                            placeholder="Add a topic…"
+                            value={draft.name || ""}
+                            disabled={busy}
+                            onChange={(e) =>
+                              patchDraft(s.id, {
+                                name: e.target.value,
+                                expanded: true,
+                              })
+                            }
+                            onFocus={() => patchDraft(s.id, { expanded: true })}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                submitTopic(s.id);
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            aria-label="Add topic"
+                            disabled={busy || !(draft.name || "").trim()}
+                            onClick={() => submitTopic(s.id)}
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                        {expanded ? (
+                          <div className="add-topic-intent">
+                            <TopicIntentFields
+                              compact
+                              disabled={busy}
+                              familiarity={draft.familiarity || DEFAULT_FAMILIARITY}
+                              onFamiliarityChange={(id) =>
+                                patchDraft(s.id, { familiarity: id })
+                              }
+                              learningGoal={draft.learningGoal || ""}
+                              onLearningGoalChange={(v) =>
+                                patchDraft(s.id, { learningGoal: v })
+                              }
+                              goalPlaceholder={`What should Kindling focus on in this topic?`}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

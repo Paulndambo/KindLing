@@ -15,6 +15,7 @@ import TutorMessageContent from "./TutorMessageContent";
 import InterventionBanner, {
   InterventionSystemChip,
 } from "./InterventionBanner";
+import AffectCheckInCard, { PersistenceChip } from "./AffectCheckInCard";
 import { ConversationEndedCard } from "./ConversationJournal";
 import ConnectionBanner from "./ConnectionBanner";
 import ChatErrorBanner from "./ChatErrorBanner";
@@ -52,9 +53,19 @@ export default function ChatPanel({
   onSpeak,
   onStopSpeaking,
   intervention = null,
+  softNudge = null,
   onAcceptIntervention,
   onDeclineIntervention,
   onExitIntervention,
+  onNudgeThinking,
+  onNudgeHelp,
+  onEscalateIntervention,
+  onPickLevel,
+  affectCheckIn = null,
+  onAffectRespond,
+  onAffectDismiss,
+  persistenceNote = null,
+  onDismissPersistenceNote,
   pathCollapsed = false,
   onExpandPath,
   isResume = false,
@@ -79,10 +90,23 @@ export default function ChatPanel({
   homeworkError = "",
   onClearHomeworkError,
   manipulativeSlot = null,
+  multiStepSlot = null,
 }) {
   const fileInputRef = useRef(null);
   const interventionActive = intervention?.status === "active";
   const interventionOffered = intervention?.status === "offered";
+  const showSoftNudge =
+    Boolean(softNudge) &&
+    !interventionOffered &&
+    !interventionActive &&
+    !isArchiveView &&
+    !conversationEnded;
+  const showAffectCheckIn =
+    Boolean(affectCheckIn) &&
+    !interventionOffered &&
+    !showSoftNudge &&
+    !isArchiveView &&
+    !conversationEnded;
   const offline = connectivity && connectivity.online === false;
   const safetyActive = Boolean(safetyEscalation && !safetyEscalation.acknowledged);
   const safetyPaused = Boolean(safetyEscalation?.paused || safetyEscalation?.acknowledged);
@@ -201,7 +225,9 @@ export default function ChatPanel({
                         : conversationEnded
                           ? "Conversation ended"
                           : interventionActive
-                            ? "Guide mode"
+                            ? intervention?.context?.levelLabel ||
+                              intervention?.context?.activeTitle ||
+                              "Help mode"
                             : isResume
                               ? "Picking up where you left"
                               : "Kindling is live"}
@@ -239,14 +265,17 @@ export default function ChatPanel({
           isStreaming={isStreaming}
           hasAi={hasAi}
           onExit={onExitIntervention}
+          onEscalate={onEscalateIntervention}
         />
       )}
 
       <div className="chat-area" ref={chatAreaRef}>
         {!hasAi && (
           <div className="error-toast config-toast" role="status">
-            Kindling needs an AI key to tutor. An adult can add{" "}
-            <code>VITE_GEMINI_API_KEY</code> to the app config, then refresh.
+            Kindling needs an AI route to tutor. Open{" "}
+            <strong>Settings → AI providers</strong> to use platform Gemini or
+            add your own API key (BYOK), or set{" "}
+            <code>VITE_GEMINI_API_KEY</code> for the platform default.
           </div>
         )}
 
@@ -335,14 +364,46 @@ export default function ChatPanel({
           />
         )}
 
+        {showSoftNudge && (
+          <InterventionBanner
+            status="nudge"
+            context={softNudge}
+            isStreaming={isStreaming}
+            hasAi={hasAi}
+            onNudgeThinking={onNudgeThinking}
+            onNudgeHelp={onNudgeHelp}
+          />
+        )}
+
+        {showAffectCheckIn && (
+          <AffectCheckInCard
+            checkIn={affectCheckIn}
+            onRespond={onAffectRespond}
+            onDismiss={onAffectDismiss}
+            disabled={isStreaming}
+          />
+        )}
+
+        {persistenceNote?.text && !isArchiveView && (
+          <PersistenceChip
+            text={persistenceNote.text}
+            onDismiss={onDismissPersistenceNote}
+          />
+        )}
+
         {interventionOffered && !isArchiveView && !conversationEnded && (
           <InterventionBanner
             status="offered"
-            context={intervention.context}
+            context={{
+              ...intervention.context,
+              escalate: intervention.escalate,
+            }}
             isStreaming={isStreaming}
             hasAi={hasAi}
             onAccept={onAcceptIntervention}
             onDecline={onDeclineIntervention}
+            onPickLevel={onPickLevel}
+            showLevelPicker
           />
         )}
 
@@ -370,6 +431,7 @@ export default function ChatPanel({
         )}
       </div>
 
+      {multiStepSlot}
       {manipulativeSlot}
 
       {(homeworkError || homeworkBusy) && (

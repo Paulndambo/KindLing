@@ -4,8 +4,16 @@ export {
   Affect,
   STORAGE_KEYS,
   InterventionStatus,
+  StruggleSignal,
+  InterventionLevelId,
 } from "./types";
-export { analyzeExchange, stripMathCheckTags } from "./signalExtractor";
+export {
+  analyzeExchange,
+  stripMathCheckTags,
+  isShortAnswer,
+  isRapidGuess,
+  detectOffTopicDrift,
+} from "./signalExtractor";
 export {
   verifyMathAnswer,
   parseMathValue,
@@ -26,10 +34,21 @@ export {
   loadLearningProfile,
   saveLearningProfile,
   applyExchangeToProfile,
+  applyAffectCheckInToProfile,
   applySessionStart,
   applySessionEnd,
   buildPersonalizationInsights,
 } from "./profileStore";
+export {
+  AFFECT_CHECKIN_THRESHOLDS,
+  AFFECT_CHECKIN_OPTIONS,
+  getCheckInOption,
+  evaluateAffectCheckIn,
+  describeAffectCheckIn,
+  scorePersistenceDelta,
+  affectDirectivesFromState,
+  persistenceCelebrationCopy,
+} from "./affectCheckIn";
 export {
   PILOT_SUBJECT,
   STATE as SkillState,
@@ -38,7 +57,62 @@ export {
   topicSkillScore,
   skillDirectivesLocal,
   applySkillsToProfile,
+  suggestEasierRelatedSkill,
 } from "./skillGraph";
+export {
+  InterventionLevel,
+  INTERVENTION_LEVEL_META,
+  LADDER_LEVELS,
+  levelMeta,
+  normalizeLevel,
+  selectInterventionLevel,
+  enrichInterventionContext,
+  shouldOfferEscalation,
+  buildLadderTutorBlock,
+  buildLadderEnterMessage,
+  buildLadderExitMessage,
+} from "./interventionLadder";
+export {
+  findWorkedExample,
+  listWorkedExamples,
+  loadWorkedExamplesLibrary,
+  buildLibraryPromptBlock,
+  getCachedLibraryPromptBlock,
+  clearWorkedExampleCache,
+  parseGradeNumber,
+  listLocalWorkedExamples,
+} from "./workedExamples";
+export {
+  loadMisconceptionCatalog,
+  clearMisconceptionCache,
+  detectMisconceptions as detectMisconceptionsCatalog,
+  detectMisconceptionsRemote,
+  detectRemediationSuccess,
+  misconceptionDirectives,
+  buildMisconceptionPromptBlock,
+  listLocalMisconceptions,
+} from "./misconceptionEngine";
+export {
+  createMultiStepSession,
+  startMultiStepForTopic,
+  applyStepAttempt,
+  skipCurrentStep,
+  scorePartialCredit,
+  multiStepSummary,
+  multiStepToCorrectness,
+  buildMultiStepTutorBlock,
+  buildMultiStepEnterMessage,
+  buildMultiStepExitMessage,
+  parseStepTags,
+  stripStepTags,
+  StepStatus,
+} from "./multiStepEngine";
+export {
+  MULTI_STEP_PROBLEMS,
+  problemsForTopic,
+  pickMultiStepProblem,
+  getMultiStepProblem,
+} from "./multiStepProblems";
 export {
   submitLearningEvents,
   flushEventQueue,
@@ -50,9 +124,15 @@ export {
 export { createSessionTracker, newSessionId } from "./sessionTracker";
 export {
   evaluateInterventionTrigger,
+  evaluateIdleStruggle,
   describeInterventionContext,
-  INCORRECT_STREAK_THRESHOLD,
+  describeIdleNudge,
+  struggleDirectivesFromSnapshot,
 } from "./interventionDetector";
+export {
+  INCORRECT_STREAK_THRESHOLD,
+  STRUGGLE_THRESHOLDS,
+} from "./struggleThresholds";
 export {
   loadTopicShelf,
   saveTopicShelf,

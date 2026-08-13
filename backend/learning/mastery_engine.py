@@ -192,6 +192,38 @@ def get_or_init_skill_mastery(
     return sm
 
 
+def apply_remediation_boost(
+    profile: LearningProfile,
+    skill_slug: str,
+    amount: float = 0.08,
+) -> Optional[SkillMastery]:
+    """
+    Epic B5 — after a misconception is remediated, nudge linked skill mastery up.
+    Soft positive evidence without counting as a full correct attempt.
+    """
+    skill = Skill.objects.filter(slug=skill_slug).first()
+    if not skill or not profile:
+        return None
+    sm = get_or_init_skill_mastery(profile, skill)
+    now = timezone.now()
+    p_before = apply_forgetting(sm.p_know, sm.last_evidence_at, now=now)
+    # Gentle lift toward mastery (not a full BKT correct)
+    p_after = clamp(p_before + amount * (1.0 - p_before))
+    sm.p_know = p_after
+    sm.score = round(p_after * 100, 2)
+    sm.last_evidence_at = now
+    sm.last_correctness = Correctness.PARTIAL
+    ready, _ = prereq_readiness(profile, skill)
+    sm.state = derive_state(
+        sm.p_know,
+        locked=not ready,
+        consecutive_correct=sm.consecutive_correct,
+        attempts=sm.attempts,
+        last_evidence_at=sm.last_evidence_at,
+    )
+    sm.save()
+    return sm
+
 @transaction.atomic
 def update_skills_for_exchange(
     profile: LearningProfile,

@@ -287,68 +287,93 @@ Week-oriented order (adjust to team size):
 
 **Maps to:** §3.1.3–3.1.8 (selectively), §3.2.1–3.2.3
 
-### Epic B1 — Richer struggle signals
+### Epic B1 — Richer struggle signals ✅
 
 Extend `interventionDetector.js` / session tracker:
 
-| Signal | Behavior |
-|--------|----------|
-| Idle time | Soft nudge → offer help after threshold |
-| Repeated short answers | Increase scaffolding bias |
-| Topic thrashing | Suggest focus or prerequisite |
-| Rapid guessing | Slow down; verify with A3 when applicable |
-| Off-topic drift | Gentle redirect |
+| Signal | Behavior | Status |
+|--------|----------|--------|
+| Idle time | Soft nudge → offer help after threshold | ✅ |
+| Repeated short answers | Increase scaffolding bias | ✅ |
+| Topic thrashing | Suggest focus or prerequisite | ✅ |
+| Rapid guessing | Slow down; verify with A3 when applicable | ✅ |
+| Off-topic drift | Gentle redirect | ✅ |
 
-Emit new learning event subtypes where useful.
+Emit new learning event subtypes where useful. ✅ `struggle.signal` (+ payload.signal subtypes)
 
-### Epic B2 — Graduated interventions
+**How:** Wait ~45s after a tutor prompt → soft “Still thinking?” card; ~90s → guide offer. Fire short/rapid/off-topic/thrash answers to see reason-specific offers and `struggle.signal` events.
+
+### Epic B2 — Graduated interventions ✅
 
 Replace binary guide mode with levels:
 
-1. Micro-hint  
-2. Worked example (from library when available)  
-3. Full step-by-step guide (existing intervention mode)  
-4. Suggest break / easier related skill (uses graph from A1)  
+| Level | Name | Status |
+|------:|------|--------|
+| 1 | Micro-hint | ✅ |
+| 2 | Worked example (pilot library when available) | ✅ |
+| 3 | Full step-by-step guide | ✅ |
+| 4 | Suggest break / easier related skill (A1 graph) | ✅ |
 
-UI: tools panel + in-chat cards reflect level; always exit-able.
+UI: tools panel + in-chat cards reflect level; always exit-able. ✅  
+Escalation: “More help” while active; session escalates after lighter levels used.
 
-### Epic B3 — Affective check-ins
+**How:** Tools → Help ladder (4 rungs). Struggle offers pick a level by severity; accept enters that mode. Worked examples from pilot pack on Fraction sense / equations.
 
-- Periodic gentle affect prompts after frustration streaks or long sessions  
-- Celebrate **persistence** in tutor copy and parent digest, not only accuracy  
-- Store affect events; never shame in student UI  
+### Epic B3 — Affective check-ins ✅
 
-### Epic B4 — Worked-example library (pilot)
+| Work | Status |
+|------|--------|
+| Periodic gentle affect prompts after frustration streaks or long sessions | ✅ |
+| Celebrate **persistence** in tutor copy and parent digest, not only accuracy | ✅ |
+| Store affect events; never shame in student UI | ✅ |
+
+**How:** After ~2 frustrated turns or a long lesson, in-chat “How are you feeling?” card (4 warm options). Persistence chips + learner-pulse spark; digest “Effort & heart”; events `affect.checkin` / `affect.persistence`.
+
+### Epic B4 — Worked-example library (pilot) ✅
 
 **CAPABILITIES:** §3.1.3
 
-- Curated examples + counterexamples per pilot skill  
-- Age-appropriate language; linked to skills  
-- Tutor prefers library example over free generation when available  
+| Work | Status |
+|------|--------|
+| Curated examples + counterexamples per pilot skill | ✅ DB `WorkedExample` + seed pack |
+| Age-appropriate language; linked to skills | ✅ grade_min/max + Skill FK |
+| Tutor prefers library example over free generation when available | ✅ system prompt block + ladder L2 |
 
-### Epic B5 — Misconception engine v1
+**How:** `seed_kindling` loads library; `GET /api/learning/worked-examples/?subject=&topic=&grade=`; tools **Show library example**; intervention L2 uses best match.
+
+### Epic B5 — Misconception engine v1 ✅
 
 **CAPABILITIES:** §3.1.5
 
-- Replace/extend tiny regex set with stored misconceptions per domain  
-- Detect → label → remediating prompt playbook  
-- Feed remediation success into mastery  
+| Work | Status |
+|------|--------|
+| Replace/extend tiny regex set with stored misconceptions per domain | ✅ `MisconceptionDef` + seed |
+| Detect → label → remediating prompt playbook | ✅ FE/BE detect + tutor playbook block |
+| Feed remediation success into mastery | ✅ clear active MC + skill BKT nudge |
 
-### Epic B6 — Multi-step “show your work”
+**How:** Say “I added the denominators” on Adding fractions → learner pulse tip + playbook in tutor prompt; correct later → `misconception.remediated` + skill spark lift.
+
+### Epic B6 — Multi-step “show your work” ✅
 
 **CAPABILITIES:** §3.1.6
 
-- Structured intermediate checks  
-- Partial credit pedagogy aligned with A3 checker  
-- Session UI for step list (optional panel)  
+| Work | Status |
+|------|--------|
+| Structured intermediate checks | ✅ step engine + A3 verifier |
+| Partial credit pedagogy aligned with A3 checker | ✅ % solid steps → mastery grade |
+| Session UI for step list (optional panel) | ✅ `MultiStepPanel` + tools CTA |
+
+**Pilot skills:** `frac.add_unlike` (Adding fractions), `alg.one_step_equation` (Simple equations).
+
+**How:** Tools → **Show your work** on Adding fractions; answer each step in chat; panel tracks ✓/→ and partial credit; exit anytime.
 
 **Phase 2 exit criteria**
 
-- [ ] ≥5 struggle signals drive intervention decisions  
-- [ ] Graduated intervention ladder live in lesson  
-- [ ] Affective check-in flow without breaking tutor character  
-- [ ] Pilot worked examples + misconception records in DB  
-- [ ] Multi-step problem mode on at least one skill  
+- [x] ≥5 struggle signals drive intervention decisions  
+- [x] Graduated intervention ladder live in lesson  
+- [x] Affective check-in flow without breaking tutor character  
+- [x] Pilot worked examples + misconception records in DB  
+- [x] Multi-step problem mode on at least one skill  
 
 ---
 
@@ -562,12 +587,18 @@ Track as features land:
 | Based on | `CAPABILITIES.md` §3, §4, §5 |
 | Codebase | `frontend/` + `backend/` monorepo |
 | Status | Active execution plan |
-| Last updated | 2026-08-12 |
+| Last updated | 2026-08-13 |
 
 ### Changelog
 
 | Date | Note |
 |------|------|
+| 2026-08-13 | Phase 2 Epic B6: multi-step show-your-work (panel, intermediate checks, partial credit). |
+| 2026-08-13 | Phase 2 Epic B5: misconception engine (catalog, playbooks, detect/remediate, mastery boost). |
+| 2026-08-13 | Phase 2 Epic B4: worked-example library (DB + seed + API + tutor prefer + tools button). |
+| 2026-08-13 | Phase 2 Epic B3: affective check-ins + persistence celebration (events, tutor directives, parent digest). |
+| 2026-08-13 | Phase 2 Epic B2: graduated intervention ladder (micro-hint → worked example → full guide → break/easier skill). |
+| 2026-08-13 | Phase 2 Epic B1: richer struggle signals (idle nudge/offer, short answers, thrashing, rapid guessing, off-topic) + `struggle.signal` events. |
 | 2026-08-12 | Initial PLAN.md created from CAPABILITIES “excellent go-to tutor” section and Horizon A–C priorities. |
 | 2026-08-12 | Phase 0.2 Observability implemented (skipped 0.1 Postgres per product decision). |
 | 2026-08-12 | Phase 0.3 Resilience & failure UX (AI recovery, connectivity banner, durable queue/history). |

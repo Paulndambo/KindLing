@@ -8,6 +8,7 @@ import {
 import { useChatSession } from "../../hooks/useChatSession";
 import { useStudentLearning } from "../../hooks/useStudentLearning";
 import { useConnectivity } from "../../hooks/useConnectivity";
+import { useMultiStep } from "../../hooks/useMultiStep";
 import {
   buildLocalSkillPath,
 } from "../../services/learning/skillGraph";
@@ -36,18 +37,32 @@ import ChatPanel from "./ChatPanel";
 import LessonTools from "./LessonTools";
 import ConversationJournal from "./ConversationJournal";
 import ManipulativePanel from "./manipulatives/ManipulativePanel";
+import MultiStepPanel from "./MultiStepPanel";
 import "../../styles/lesson.css";
 
 export default function Lesson({ activeLesson, student, subjects }) {
   const subjectName = activeLesson?.subject || "Math";
   const studentName = student?.name?.trim() || "Student";
 
-  const subjectTopics = useMemo(() => {
-    const subjectObj = subjects?.find((s) => s.name === subjectName);
-    return subjectObj?.topics?.length
-      ? subjectObj.topics.map((t) => t.name)
-      : DEFAULT_LESSON_TOPICS;
-  }, [subjects, subjectName]);
+  const subjectObj = useMemo(
+    () => subjects?.find((s) => s.name === subjectName) || null,
+    [subjects, subjectName]
+  );
+
+  const subjectTopicRecords = useMemo(() => {
+    if (subjectObj?.topics?.length) return subjectObj.topics;
+    return DEFAULT_LESSON_TOPICS.map((name, i) => ({
+      id: `local-${i}`,
+      name,
+      familiarity: "new",
+      learningGoal: "",
+    }));
+  }, [subjectObj]);
+
+  const subjectTopics = useMemo(
+    () => subjectTopicRecords.map((t) => t.name),
+    [subjectTopicRecords]
+  );
 
   const defaultIdx = Math.max(
     0,
@@ -55,6 +70,16 @@ export default function Lesson({ activeLesson, student, subjects }) {
   );
   const [activeTopicIdx, setActiveTopicIdx] = useState(defaultIdx);
   const topicName = subjectTopics[activeTopicIdx];
+  const activeTopicRecord = subjectTopicRecords[activeTopicIdx] || null;
+
+  const topicContext = useMemo(
+    () => ({
+      familiarity: activeTopicRecord?.familiarity || "new",
+      learningGoal: activeTopicRecord?.learningGoal || "",
+      subjectGoal: subjectObj?.learningGoal || "",
+    }),
+    [activeTopicRecord, subjectObj]
+  );
 
   const [tools, setTools] = useState({
     visuals: true,
@@ -105,6 +130,9 @@ export default function Lesson({ activeLesson, student, subjects }) {
     lastSignals,
     sessionSummary,
     intervention,
+    softNudge,
+    affectCheckIn,
+    persistenceNote,
     beginSession,
     recordExchange,
     recordToolToggle,
@@ -114,9 +142,19 @@ export default function Lesson({ activeLesson, student, subjects }) {
     acceptIntervention,
     declineIntervention,
     exitIntervention,
+    requestInterventionLevel,
+    requestLibraryExample,
+    escalateIntervention,
+    dismissSoftNudge,
+    acceptSoftNudgeHelp,
+    respondAffectCheckIn,
+    dismissAffectCheckIn,
+    dismissPersistenceNote,
     applyResumeSnapshot,
     getSessionId,
     offerIntervention,
+    exampleLibrary,
+    activeMisconceptionHits,
   } = useStudentLearning({
     student,
     subjectName,
@@ -244,6 +282,14 @@ export default function Lesson({ activeLesson, student, subjects }) {
     beginSession();
   }, [beginSession]);
 
+  // Epic B6 — multi-step show-your-work (hook needs getSessionId from learning)
+  const multiStep = useMultiStep({
+    studentId,
+    subjectName,
+    topicName,
+    getSessionId,
+  });
+
   const {
     messages,
     isStreaming,
@@ -256,6 +302,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
     continueAfterEnd,
     enterInterventionMode,
     exitInterventionMode,
+    enterMultiStepMode,
+    exitMultiStepMode,
     conversationMeta,
     journalOpen,
     openJournal,
@@ -281,16 +329,23 @@ export default function Lesson({ activeLesson, student, subjects }) {
     studentId,
     tools,
     learningInsights: insights,
+    topicContext,
     interventionActive: intervention.status === "active",
     interventionContext: intervention.context,
+    multiStepSession: multiStep.multiStepSession,
     onTutorReply: handleTutorReply,
     onSessionReset: stopSpeaking,
     onSessionBegin: handleSessionBegin,
     onExchangeComplete: async ({ studentText, tutorText, wasHintRequest }) => {
+      // Epic B6 — grade current show-your-work step when mode is active
+      const stepOutcome = multiStep.recordStepAnswer(studentText, {
+        tutorText,
+      });
       const result = await recordExchange({
         studentText,
         tutorText,
         wasHintRequest,
+        multiStepOutcome: stepOutcome,
       });
       // Auto-enter only for *this* topic — attach topic so a later switch discards it
       if (result?.interventionAction?.action === "auto_enter") {
@@ -305,6 +360,35 @@ export default function Lesson({ activeLesson, student, subjects }) {
     onResumeSnapshot: applyResumeSnapshot,
   });
 
+  const handleStartMultiStep = useCallback(async () => {
+    if (tools.voiceOutput) prepareAudio();
+    const ses = multiStep.startMultiStep();
+    if (ses) {
+      await enterMultiStepMode(ses);
+      setMobilePanel("chat");
+    }
+  }, [
+    multiStep,
+    enterMultiStepMode,
+    tools.voiceOutput,
+    prepareAudio,
+  ]);
+
+  const handleExitMultiStep = useCallback(async () => {
+    if (tools.voiceOutput) prepareAudio();
+    const prev = multiStep.multiStepSession;
+    multiStep.exitMultiStep();
+    await exitMultiStepMode(prev);
+  }, [multiStep, exitMultiStepMode, tools.voiceOutput, prepareAudio]);
+
+  const handleMultiStepHint = useCallback(() => {
+    const step = multiStep.multiStepCurrentStep;
+    const hint = step?.hint;
+    if (!hint) return;
+    noteInputModality("text");
+    sendMessage(`Can you give me a hint for this step? (${step.label})`);
+  }, [multiStep.multiStepCurrentStep, noteInputModality, sendMessage]);
+
   // Persist resume snapshot when intervention/tools change (Epic A2)
   useEffect(() => {
     if (!persistResumeSnapshot) return undefined;
@@ -315,6 +399,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
           reason: intervention.reason,
           context: intervention.context,
           autoEntered: intervention.autoEntered,
+          level: intervention.level || intervention.context?.level,
         },
         tools,
         personalization: insights
@@ -549,27 +634,137 @@ export default function Lesson({ activeLesson, student, subjects }) {
     declineIntervention();
   }, [declineIntervention]);
 
+  const handleNudgeThinking = useCallback(() => {
+    dismissSoftNudge();
+  }, [dismissSoftNudge]);
+
+  const handleNudgeHelp = useCallback(async () => {
+    if (tools.voiceOutput) prepareAudio();
+    const result = acceptSoftNudgeHelp();
+    const context = result?.context;
+    if (!context) return;
+    if (isStreaming) {
+      pendingAutoInterventionRef.current = {
+        ...context,
+        topic: topicName,
+        subject: subjectName,
+      };
+      return;
+    }
+    await enterInterventionMode(context);
+    setMobilePanel("chat");
+  }, [
+    acceptSoftNudgeHelp,
+    enterInterventionMode,
+    tools.voiceOutput,
+    prepareAudio,
+    topicName,
+    subjectName,
+    isStreaming,
+  ]);
+
   const handleExitIntervention = useCallback(async () => {
     if (tools.voiceOutput) prepareAudio();
     const topic = intervention.context?.topic || topicName;
+    const level = intervention.level || intervention.context?.level;
     exitIntervention();
-    await exitInterventionMode({ topic });
+    await exitInterventionMode({ topic, level });
   }, [
     exitIntervention,
     exitInterventionMode,
     intervention.context,
+    intervention.level,
     topicName,
     tools.voiceOutput,
     prepareAudio,
   ]);
 
-  /** Manual request for step-by-step guide from tools panel. */
+  /** Manual request for full guide (legacy entry). */
   const handleRequestGuide = useCallback(async () => {
     if (tools.voiceOutput) prepareAudio();
-    const context = acceptIntervention();
+    const context = requestInterventionLevel(3);
     await enterInterventionMode(context);
     setMobilePanel("chat");
-  }, [acceptIntervention, enterInterventionMode, tools.voiceOutput, prepareAudio]);
+  }, [
+    requestInterventionLevel,
+    enterInterventionMode,
+    tools.voiceOutput,
+    prepareAudio,
+  ]);
+
+  /** Epic B2 — start a specific ladder level from tools. */
+  const handleRequestLevel = useCallback(
+    async (level) => {
+      if (tools.voiceOutput) prepareAudio();
+      const context = requestInterventionLevel(level);
+      await enterInterventionMode(context);
+      setMobilePanel("chat");
+    },
+    [
+      requestInterventionLevel,
+      enterInterventionMode,
+      tools.voiceOutput,
+      prepareAudio,
+    ]
+  );
+
+  /** Epic B4 — start library worked example for this topic. */
+  const handleRequestLibraryExample = useCallback(async () => {
+    if (tools.voiceOutput) prepareAudio();
+    const context = requestLibraryExample();
+    await enterInterventionMode(context);
+    setMobilePanel("chat");
+  }, [
+    requestLibraryExample,
+    enterInterventionMode,
+    tools.voiceOutput,
+    prepareAudio,
+  ]);
+
+  /** Offer or jump to next ladder rung while help is active. */
+  const handleEscalateIntervention = useCallback(async () => {
+    if (tools.voiceOutput) prepareAudio();
+    // If already offered escalate card, accept it; else offer next level and enter
+    if (
+      intervention.status === "offered" &&
+      (intervention.escalate || intervention.reason === "escalate")
+    ) {
+      const context = acceptIntervention();
+      await enterInterventionMode(context);
+      setMobilePanel("chat");
+      return;
+    }
+    const result = escalateIntervention({ autoEnter: true });
+    const context = result?.context;
+    if (context) {
+      await enterInterventionMode(context);
+      setMobilePanel("chat");
+    }
+  }, [
+    tools.voiceOutput,
+    prepareAudio,
+    intervention.status,
+    intervention.escalate,
+    intervention.reason,
+    acceptIntervention,
+    escalateIntervention,
+    enterInterventionMode,
+  ]);
+
+  const handlePickOfferLevel = useCallback(
+    async (level) => {
+      if (tools.voiceOutput) prepareAudio();
+      const context = acceptIntervention({ level, reason: "student_request" });
+      await enterInterventionMode(context);
+      setMobilePanel("chat");
+    },
+    [
+      acceptIntervention,
+      enterInterventionMode,
+      tools.voiceOutput,
+      prepareAudio,
+    ]
+  );
 
   // Difficulty from live mastery + session progress (not just message count)
   const topicMastery =
@@ -596,21 +791,25 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const skillLabel = skillPath?.topicStateLabel;
 
   const diffLabel =
-    intervention.status === "active"
-      ? "Guide mode — step by step"
-      : skillLabel && skillPath?.hasGraph
-        ? skillLabel
-        : lastSignals?.correctness === "incorrect"
-          ? "Scaffolding…"
-          : lastSignals?.correctness === "correct"
-            ? "Leveling up"
-            : diffPct < 30
-              ? "Warming up…"
-              : diffPct < 55
-                ? "Building momentum"
-                : diffPct < 80
-                  ? "Pushing further!"
-                  : "🏆 Near mastery!";
+    multiStep.multiStepActive
+      ? `Show your work · ${multiStep.multiStepPartialCredit?.percent || 0}%`
+      : multiStep.multiStepCompleted
+        ? "Work path complete"
+        : intervention.status === "active"
+          ? "Guide mode — step by step"
+          : skillLabel && skillPath?.hasGraph
+            ? skillLabel
+            : lastSignals?.correctness === "incorrect"
+              ? "Scaffolding…"
+              : lastSignals?.correctness === "correct"
+                ? "Leveling up"
+                : diffPct < 30
+                  ? "Warming up…"
+                  : diffPct < 55
+                    ? "Building momentum"
+                    : diffPct < 80
+                      ? "Pushing further!"
+                      : "🏆 Near mastery!";
 
   // Prefer skill-blend mastery when graph is active
   const skillBlend =
@@ -676,9 +875,19 @@ export default function Lesson({ activeLesson, student, subjects }) {
           onSpeak={handleReadAloud}
           onStopSpeaking={stopSpeaking}
           intervention={intervention}
+          softNudge={softNudge}
           onAcceptIntervention={handleAcceptIntervention}
           onDeclineIntervention={handleDeclineIntervention}
           onExitIntervention={handleExitIntervention}
+          onNudgeThinking={handleNudgeThinking}
+          onNudgeHelp={handleNudgeHelp}
+          onEscalateIntervention={handleEscalateIntervention}
+          onPickLevel={handlePickOfferLevel}
+          affectCheckIn={affectCheckIn}
+          onAffectRespond={respondAffectCheckIn}
+          onAffectDismiss={dismissAffectCheckIn}
+          persistenceNote={persistenceNote}
+          onDismissPersistenceNote={dismissPersistenceNote}
           pathCollapsed={pathCollapsed}
           onExpandPath={() => setPathCollapsed(false)}
           isResume={conversationMeta?.isResume}
@@ -702,6 +911,17 @@ export default function Lesson({ activeLesson, student, subjects }) {
           homeworkBusy={homeworkBusy}
           homeworkError={homeworkError}
           onClearHomeworkError={() => setHomeworkError("")}
+          multiStepSlot={
+            multiStep.multiStepSession ? (
+              <MultiStepPanel
+                session={multiStep.multiStepSession}
+                open
+                onExit={handleExitMultiStep}
+                onHint={handleMultiStepHint}
+                disabled={isStreaming || isSummarizing}
+              />
+            ) : null
+          }
           manipulativeSlot={
             availableManipulatives.length > 0 && tools.visuals !== false ? (
               <ManipulativePanel
@@ -770,9 +990,23 @@ export default function Lesson({ activeLesson, student, subjects }) {
           learningInsights={insights}
           intervention={intervention}
           onRequestGuide={handleRequestGuide}
+          onRequestLevel={handleRequestLevel}
+          onRequestLibraryExample={handleRequestLibraryExample}
+          libraryExampleTitle={
+            exampleLibrary?.best?.title || insights?.libraryExampleTitle
+          }
+          libraryExampleCount={exampleLibrary?.examples?.length || 0}
+          activeMisconceptions={activeMisconceptionHits}
+          multiStepAvailable={multiStep.multiStepAvailable}
+          multiStepActive={multiStep.multiStepActive}
+          multiStepTitle={multiStep.multiStepSession?.problem?.title}
+          multiStepPercent={multiStep.multiStepPartialCredit?.percent}
+          onStartMultiStep={handleStartMultiStep}
+          onExitMultiStep={handleExitMultiStep}
           onExitIntervention={handleExitIntervention}
           onAcceptIntervention={handleAcceptIntervention}
           onDeclineIntervention={handleDeclineIntervention}
+          onEscalateIntervention={handleEscalateIntervention}
         />
       </div>
 

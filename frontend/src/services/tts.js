@@ -1,4 +1,4 @@
-import { ai } from "./gemini";
+import { getGeminiClientForTts, resolveRoute } from "./ai";
 import {
   base64ToBytes,
   pcmToWavBlob,
@@ -165,16 +165,20 @@ function extractAudioFromResponse(response) {
  * @param {{ retries?: number }} [options]
  */
 export async function synthesizeSpeech(text, { retries = 1 } = {}) {
+  const ai = getGeminiClientForTts();
   if (!ai || !text?.trim()) return null;
 
   const clean = stripMarkdown(text);
   if (!clean) return null;
 
+  const ttsRoute = resolveRoute("tts");
+  const model = ttsRoute?.model || TTS_MODEL;
+
   let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const response = await ai.models.generateContent({
-        model: TTS_MODEL,
+        model,
         contents: buildSpeechPrompt(clean),
         config: {
           responseModalities: ["AUDIO"],
@@ -250,6 +254,6 @@ export async function synthesizeSpeech(text, { retries = 1 } = {}) {
  * Fire-and-forget; safe to ignore failures.
  */
 export function warmUpTts() {
-  if (!ai) return;
+  if (!getGeminiClientForTts()) return;
   synthesizeSpeech("Hello there.", { retries: 0 }).catch(() => {});
 }

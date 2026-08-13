@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ai,
   buildSystemPrompt,
   createChatSession,
   buildInterventionEnterMessage,
   buildInterventionExitMessage,
+  buildShowYourWorkEnterMessage,
+  buildShowYourWorkExitMessage,
+  buildLessonOpeningPrompt,
+  normalizeTopicContext,
   summarizeConversation,
+  isAiAvailable,
 } from "../services/gemini";
+import { AI_CONFIG_CHANGED } from "../services/ai";
 import {
   getActiveConversation,
   listArchivedConversations,
@@ -65,7 +70,8 @@ function sanitizeApiHistory(apiHistory = []) {
           h.role === "user" &&
           (/\[INTERNAL/i.test(h.text) ||
             /Still in step-by-step guide mode/i.test(h.text) ||
-            /^Start the lesson on /i.test(h.text))
+            /^Start the lesson on /i.test(h.text) ||
+            /^Open the FIRST live lesson on /i.test(h.text))
         )
     )
     .map((h) => ({ role: h.role, text: h.text }));
@@ -99,8 +105,11 @@ export function useChatSession({
   studentId: studentIdProp,
   tools,
   learningInsights = null,
+  /** @type {{ familiarity?: string, learningGoal?: string, subjectGoal?: string } | null} */
+  topicContext = null,
   interventionActive = false,
   interventionContext = null,
+  multiStepSession = null,
   onTutorReply,
   onSessionReset,
   onSessionBegin,
@@ -135,6 +144,20 @@ export function useChatSession({
    * @type {[null | { category: string, code: string, copy: object }, Function]}
    */
   const [safetyEscalation, setSafetyEscalation] = useState(null);
+  /** Re-render when BYOK keys / routing prefs change. */
+  const [aiConfigTick, setAiConfigTick] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setAiConfigTick((t) => t + 1);
+    window.addEventListener(AI_CONFIG_CHANGED, bump);
+    window.addEventListener("storage", bump);
+    return () => {
+      window.removeEventListener(AI_CONFIG_CHANGED, bump);
+      window.removeEventListener("storage", bump);
+    };
+  }, []);
+
+  const hasAi = isAiAvailable();
 
   const chatRef = useRef(null);
   /** Last failed action so Retry can re-run without re-showing the student bubble. */
@@ -143,6 +166,8 @@ export function useChatSession({
   const insightsRef = useRef(learningInsights);
   const interventionActiveRef = useRef(interventionActive);
   const interventionContextRef = useRef(interventionContext);
+  const multiStepSessionRef = useRef(multiStepSession);
+  const topicContextRef = useRef(topicContext);
   const chatAreaRef = useRef(null);
   const onTutorReplyRef = useRef(onTutorReply);
   const onSessionResetRef = useRef(onSessionReset);
@@ -171,6 +196,12 @@ export function useChatSession({
   useEffect(() => {
     interventionContextRef.current = interventionContext;
   }, [interventionContext]);
+  useEffect(() => {
+    multiStepSessionRef.current = multiStepSession;
+  }, [multiStepSession]);
+  useEffect(() => {
+    topicContextRef.current = topicContext;
+  }, [topicContext]);
   useEffect(() => {
     onTutorReplyRef.current = onTutorReply;
   }, [onTutorReply]);
@@ -279,8 +310,13 @@ export function useChatSession({
   );
 
   const rebuildChatWithHistory = useCallback(
-    (activeIntervention, context) => {
+    (activeIntervention, context, multiStep) => {
       const currentStudent = studentRef.current;
+      // undefined → keep ref; null → clear multi-step from prompt
+      const msForPrompt =
+        multiStep === undefined
+          ? multiStepSessionRef.current
+          : multiStep;
       const systemPrompt = buildSystemPrompt(
         subjectName,
         topicName,
@@ -288,8 +324,15 @@ export function useChatSession({
         currentStudent,
         insightsRef.current,
         {
-          interventionActive: activeIntervention,
+          interventionActive:
+            Boolean(activeIntervention) &&
+            !(msForPrompt && msForPrompt.status === "active"),
           interventionContext: context,
+          multiStepSession: msForPrompt,
+          topicContext: {
+            ...normalizeTopicContext(topicContextRef.current),
+            isFirstSession: false,
+          },
         }
       );
       const history = historyRef.current
@@ -309,9 +352,25 @@ export function useChatSession({
     [subjectName, topicName]
   );
 
+  // Keep tutor checklist in sync as multi-step advances
+  useEffect(() => {
+    multiStepSessionRef.current = multiStepSession;
+    if (!chatRef.current) return;
+    if (!multiStepSession) return;
+    try {
+      rebuildChatWithHistory(
+        interventionActiveRef.current,
+        interventionContextRef.current,
+        multiStepSession
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [multiStepSession, rebuildChatWithHistory]);
+
   // Start / resume when topic or session trigger changes
   useEffect(() => {
-    if (!ai) return undefined;
+    if (!isAiAvailable()) return undefined;
 
     let cancelled = false;
     // Invalidate any in-flight stream / greeting from the previous topic
@@ -405,6 +464,7 @@ export function useChatSession({
       interventionActiveRef.current = restoredActive;
       interventionContextRef.current = restoredActive ? restoredCtx : null;
 
+      const baseTopicCtx = normalizeTopicContext(topicContextRef.current);
       const systemPrompt = buildSystemPrompt(
         subjectName,
         topicName,
@@ -414,6 +474,10 @@ export function useChatSession({
         {
           interventionActive: restoredActive,
           interventionContext: restoredActive ? restoredCtx : null,
+          topicContext: {
+            ...baseTopicCtx,
+            isFirstSession: !hasHistory,
+          },
         }
       );
 
@@ -545,7 +609,15 @@ export function useChatSession({
         return;
       }
       setIsStreaming(true);
-      const greetingPrompt = `Start the lesson on "${topicName}" for ${studentName}. Introduce yourself warmly, acknowledge the ${currentStudent?.curriculum || "curriculum"} and ${currentStudent?.grade || "grade"} level, then ask a compelling opening question. Keep it concise.`;
+      const greetingPrompt = buildLessonOpeningPrompt({
+        topicName,
+        studentName,
+        student: currentStudent,
+        topicContext: {
+          ...baseTopicCtx,
+          isFirstSession: true,
+        },
+      });
       try {
         const response = await withStreamTimeout(
           chat.sendMessageStream({
@@ -647,7 +719,7 @@ export function useChatSession({
       bootGenRef.current += 0; // keep generation; next effect increments
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicName, sessionTrigger, studentId, subjectName]);
+  }, [topicName, sessionTrigger, studentId, subjectName, aiConfigTick, hasAi]);
 
   const streamTutorFromMessage = useCallback(
     async (
@@ -865,7 +937,7 @@ export function useChatSession({
         return false;
       }
 
-      if (!ai) {
+      if (!isAiAvailable()) {
         surfaceAiError(new Error("API key missing"), { phase: "config" });
         return false;
       }
@@ -976,7 +1048,7 @@ export function useChatSession({
         return false;
       }
 
-      if (!ai) {
+      if (!isAiAvailable()) {
         surfaceAiError(new Error("API key missing"), { phase: "config" });
         return false;
       }
@@ -1009,9 +1081,14 @@ export function useChatSession({
           )
       );
 
-      const apiMessage = interventionActiveRef.current
-        ? `[Still in step-by-step guide mode for "${topicName}". Continue explaining/demonstrating as needed. Student says:]\n${trimmed}`
-        : trimmed;
+      const ms = multiStepSessionRef.current;
+      const msActive = ms && ms.status === "active";
+      const curStep = msActive ? ms.steps?.[ms.currentIndex] : null;
+      const apiMessage = msActive
+        ? `[Show-your-work mode. Current step ${curStep?.index || "?"}: ${curStep?.prompt || curStep?.label || ""}. Student responds:]\n${trimmed}`
+        : interventionActiveRef.current
+          ? `[Still in step-by-step guide mode for "${topicName}". Continue explaining/demonstrating as needed. Student says:]\n${trimmed}`
+          : trimmed;
 
       return streamTutorFromMessage(apiMessage, {
         showStudentText: trimmed,
@@ -1097,9 +1174,14 @@ export function useChatSession({
 
       const wasHintRequest = Boolean(failed.wasHintRequest);
       const trimmed = failed.studentText;
-      const apiMessage = interventionActiveRef.current
-        ? `[Still in step-by-step guide mode for "${topicName}". Continue explaining/demonstrating as needed. Student says:]\n${trimmed}`
-        : trimmed;
+      const ms = multiStepSessionRef.current;
+      const msActive = ms && ms.status === "active";
+      const curStep = msActive ? ms.steps?.[ms.currentIndex] : null;
+      const apiMessage = msActive
+        ? `[Show-your-work mode. Current step ${curStep?.index || "?"}: ${curStep?.prompt || curStep?.label || ""}. Student responds:]\n${trimmed}`
+        : interventionActiveRef.current
+          ? `[Still in step-by-step guide mode for "${topicName}". Continue explaining/demonstrating as needed. Student says:]\n${trimmed}`
+          : trimmed;
 
       pendingStudentRef.current = {
         text: trimmed,
@@ -1125,13 +1207,20 @@ export function useChatSession({
 
   const enterInterventionMode = useCallback(
     async (context = {}) => {
-      if (isStreaming || !ai || modeRef.current === "archive_view") return false;
+      if (isStreaming || !isAiAvailable() || modeRef.current === "archive_view")
+        return false;
 
-      // Refuse to open guide mode for a topic we are no longer on
+      // Refuse to open help mode for a topic we are no longer on
       const ctx = {
+        ...context,
         subject: context.subject || subjectName,
         topic: context.topic || topicName,
         reasonText: context.reasonText,
+        level: context.level,
+        levelId: context.levelId,
+        levelLabel: context.levelLabel,
+        workedExample: context.workedExample,
+        easierSkill: context.easierSkill,
       };
       if (
         ctx.topic !== topicName ||
@@ -1152,13 +1241,26 @@ export function useChatSession({
         topic: ctx.topic,
         subject: ctx.subject,
         reasonText: ctx.reasonText,
+        level: ctx.level,
+        workedExample: ctx.workedExample,
+        easierSkill: ctx.easierSkill,
       });
+
+      const chip =
+        ctx.levelLabel ||
+        (ctx.level === 1
+          ? "Micro-hint"
+          : ctx.level === 2
+            ? "Worked example"
+            : ctx.level === 4
+              ? "Easier path"
+              : "Guide mode");
 
       return streamTutorFromMessage(directive, {
         showStudentText: null,
         systemUi: {
           kind: "intervention_enter",
-          text: `Guide mode · ${ctx.topic}`,
+          text: `${chip} · ${ctx.topic}`,
         },
       });
     },
@@ -1173,11 +1275,13 @@ export function useChatSession({
 
   const exitInterventionMode = useCallback(
     async (context = {}) => {
-      if (isStreaming || !ai || modeRef.current === "archive_view") return false;
+      if (isStreaming || !isAiAvailable() || modeRef.current === "archive_view")
+        return false;
 
       const currentStudent = studentRef.current;
       const studentName = currentStudent?.name?.trim() || "the student";
       const topic = context.topic || topicName;
+      const level = context.level ?? interventionContextRef.current?.level;
 
       interventionActiveRef.current = false;
       interventionContextRef.current = null;
@@ -1186,6 +1290,7 @@ export function useChatSession({
       const directive = buildInterventionExitMessage({
         studentName,
         topic,
+        level,
       });
 
       return streamTutorFromMessage(directive, {
@@ -1194,6 +1299,66 @@ export function useChatSession({
       });
     },
     [isStreaming, rebuildChatWithHistory, streamTutorFromMessage, topicName]
+  );
+
+  /** Epic B6 — enter show-your-work multi-step mode */
+  const enterMultiStepMode = useCallback(
+    async (session) => {
+      if (
+        isStreaming ||
+        !isAiAvailable() ||
+        modeRef.current === "archive_view" ||
+        !session
+      ) {
+        return false;
+      }
+      multiStepSessionRef.current = session;
+      rebuildChatWithHistory(
+        interventionActiveRef.current,
+        interventionContextRef.current,
+        session
+      );
+      const currentStudent = studentRef.current;
+      const studentName = currentStudent?.name?.trim() || "the student";
+      const directive = buildShowYourWorkEnterMessage({
+        studentName,
+        session,
+      });
+      return streamTutorFromMessage(directive, {
+        showStudentText: null,
+        systemUi: {
+          kind: "multistep_enter",
+          text: `Show your work · ${session.problem?.title || "problem"}`,
+        },
+      });
+    },
+    [isStreaming, rebuildChatWithHistory, streamTutorFromMessage]
+  );
+
+  const exitMultiStepMode = useCallback(
+    async (session = null) => {
+      if (isStreaming || !isAiAvailable() || modeRef.current === "archive_view") {
+        return false;
+      }
+      const prev = session || multiStepSessionRef.current;
+      multiStepSessionRef.current = null;
+      rebuildChatWithHistory(
+        interventionActiveRef.current,
+        interventionContextRef.current,
+        null
+      );
+      const currentStudent = studentRef.current;
+      const studentName = currentStudent?.name?.trim() || "the student";
+      const directive = buildShowYourWorkExitMessage({
+        studentName,
+        session: prev,
+      });
+      return streamTutorFromMessage(directive, {
+        showStudentText: null,
+        systemUi: { kind: "multistep_exit", text: "Back to open practice" },
+      });
+    },
+    [isStreaming, rebuildChatWithHistory, streamTutorFromMessage]
   );
 
   /**
@@ -1453,6 +1618,8 @@ export function useChatSession({
     continueAfterEnd,
     enterInterventionMode,
     exitInterventionMode,
+    enterMultiStepMode,
+    exitMultiStepMode,
     conversationMeta,
     journalOpen,
     openJournal,
@@ -1461,7 +1628,7 @@ export function useChatSession({
     exitArchiveView,
     viewingArchiveId,
     isArchiveView: Boolean(viewingArchiveId),
-    hasAi: Boolean(ai),
+    hasAi,
     chatError,
     clearChatError,
     retryLastFailed,

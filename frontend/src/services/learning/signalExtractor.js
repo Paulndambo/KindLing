@@ -1,4 +1,4 @@
-import { Correctness, Affect } from "./types";
+import { Correctness, Affect, StruggleSignal } from "./types";
 import {
   isMathPilotContext,
   parseCheckTags,
@@ -6,6 +6,8 @@ import {
   stripMathCheckTags,
   verifyMathAnswer,
 } from "./mathVerifier";
+import { STRUGGLE_THRESHOLDS } from "./struggleThresholds";
+import { detectMisconceptions as detectMisconceptionsEngine } from "./misconceptionEngine";
 
 /**
  * Infer learning signals from a student ↔ tutor exchange.
@@ -56,12 +58,6 @@ const DISENGAGED_PATTERNS = [
   /^.{0,2}$/,
 ];
 
-const MISCONCEPTION_CUES = [
-  { id: "adds_denominators", re: /\badd(ing|ed)? the denominators\b/i, label: "Adding denominators" },
-  { id: "bigger_bottom_bigger", re: /\bbigger (bottom|denominator).{0,20}(bigger|larger) fraction\b/i, label: "Larger denominator = larger fraction" },
-  { id: "confuses_multiply_divide", re: /\b(multiply|times).{0,15}(when|instead).{0,15}divid/i, label: "Multiply/divide confusion" },
-];
-
 const VISUAL_PREF_CUES = [
   /\b(picture|draw|diagram|visual|see it|show me|image|slices|pizza|bars?)\b/i,
 ];
@@ -74,8 +70,140 @@ const STEP_PREF_CUES = [
   /\b(step by step|steps|first .+ then|break it down|one at a time|slowly)\b/i,
 ];
 
+/** Explicit off-topic / drift language (Epic B1). */
+const OFF_TOPIC_PATTERNS = [
+  /\b(let'?s (talk|do|play) something else|different topic|change (the )?topic|can we (stop|switch|do something else)|bored of this|i don'?t want to (do|learn) this)\b/i,
+  /\b(youtube|tiktok|instagram|minecraft|fortnite|roblox|valorant|video ?games?|play a game)\b/i,
+  /\b(what('s| is) your favorite(?! .*fraction|.*number|.*math)|tell me a joke|who (are|is) you|are you (real|a robot|an? ai))\b/i,
+  /\b(can we talk about|i want to talk about)\b.+/i,
+];
+
+/** Pure math / numeric answers — short is fine, not "thin reasoning". */
+const MATHY_ANSWER = /^[\d\s./+\-*=()½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞,:]+$/;
+
 function matchAny(text, patterns) {
   return patterns.some((re) => re.test(text));
+}
+
+/**
+ * Very short reply that is not a legitimate math token answer.
+ */
+export function isShortAnswer(
+  studentText,
+  {
+    maxWords = STRUGGLE_THRESHOLDS.SHORT_ANSWER_MAX_WORDS,
+    maxChars = STRUGGLE_THRESHOLDS.SHORT_ANSWER_MAX_CHARS,
+  } = {}
+) {
+  const s = (studentText || "").trim();
+  if (!s) return true;
+  if (MATHY_ANSWER.test(s)) return false;
+  if (/^[a-z]$/i.test(s)) return true; // lone letter guesses
+  const words = s.split(/\s+/).filter(Boolean);
+  return words.length <= maxWords && s.length <= maxChars;
+}
+
+/**
+ * Fast, thin answer — likely guessing rather than reasoning.
+ */
+export function isRapidGuess({
+  responseMs,
+  studentText,
+  correctness,
+  isHintRequest = false,
+  maxMs = STRUGGLE_THRESHOLDS.RAPID_GUESS_MS,
+  maxWords = STRUGGLE_THRESHOLDS.RAPID_GUESS_MAX_WORDS,
+} = {}) {
+  if (isHintRequest) return false;
+  if (responseMs == null || responseMs > maxMs) return false;
+  const s = (studentText || "").trim();
+  if (!s) return false;
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length > maxWords && s.length > 40) return false;
+  // Confident long correct answers can be fast without being guesses
+  if (correctness === Correctness.CORRECT && s.length > 12 && !isShortAnswer(s)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Heuristic off-topic drift relative to the current lesson topic.
+ */
+export function detectOffTopicDrift({
+  studentText,
+  topic = "",
+  subject = "",
+  isHintRequest = false,
+} = {}) {
+  const s = (studentText || "").trim();
+  if (!s || isHintRequest) {
+    return { isOffTopic: false, confidence: 0, cues: [] };
+  }
+  if (MATHY_ANSWER.test(s) || s.length < 8) {
+    return { isOffTopic: false, confidence: 0, cues: [] };
+  }
+
+  const cues = [];
+  if (matchAny(s, OFF_TOPIC_PATTERNS)) {
+    cues.push("explicit_pattern");
+  }
+
+  // Lexical overlap with topic/subject tokens (very light bag-of-words)
+  const stop = new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "to",
+    "of",
+    "in",
+    "on",
+    "for",
+    "with",
+    "is",
+    "it",
+    "this",
+    "that",
+    "i",
+    "my",
+    "we",
+    "you",
+    "about",
+    "can",
+    "do",
+    "what",
+    "how",
+    "why",
+  ]);
+  const topicTokens = `${topic} ${subject}`
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2 && !stop.has(t));
+  const studentTokens = s
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2 && !stop.has(t));
+
+  let overlap = 0;
+  if (topicTokens.length && studentTokens.length >= 6) {
+    const set = new Set(studentTokens);
+    overlap = topicTokens.filter((t) => set.has(t)).length;
+    // Long student message with zero topic overlap and no numbers → soft drift
+    if (overlap === 0 && !/\d/.test(s) && studentTokens.length >= 8) {
+      cues.push("low_topic_overlap");
+    }
+  }
+
+  const isOffTopic = cues.length > 0;
+  const confidence = cues.includes("explicit_pattern")
+    ? 0.9
+    : cues.includes("low_topic_overlap")
+      ? 0.55
+      : 0;
+
+  return { isOffTopic, confidence, cues, topicOverlap: overlap };
 }
 
 function clamp(n, min, max) {
@@ -118,12 +246,9 @@ export function inferAffect(studentText) {
   return Affect.NEUTRAL;
 }
 
-export function detectMisconceptions(studentText, tutorText) {
-  const blob = `${studentText || ""} ${tutorText || ""}`;
-  return MISCONCEPTION_CUES.filter((m) => m.re.test(blob)).map((m) => ({
-    id: m.id,
-    label: m.label,
-  }));
+/** Epic B5 — catalog-backed detection (playbook attached). */
+export function detectMisconceptions(studentText, tutorText, opts = {}) {
+  return detectMisconceptionsEngine(studentText, tutorText, opts);
 }
 
 export function detectDeliveryPreferences(studentText, tutorText) {
@@ -180,7 +305,10 @@ export function analyzeExchange({
   const tutorClean = stripMathCheckTags(tutorText);
   const linguistic = inferCorrectness(studentText, tutorClean);
   const affect = inferAffect(studentText);
-  const misconceptions = detectMisconceptions(studentText, tutorClean);
+  const misconceptions = detectMisconceptions(studentText, tutorClean, {
+    subject,
+    topic,
+  });
   const deliveryPreferences = detectDeliveryPreferences(studentText, tutorClean);
   const engagement = scoreEngagement(studentText, affect, responseMs);
   const isHint =
@@ -210,6 +338,28 @@ export function analyzeExchange({
   });
   const correctness = graded.correctness;
 
+  // Epic B1 struggle facets (per-turn; session tracker aggregates streaks)
+  const shortAnswer = !isHint && isShortAnswer(studentText);
+  const rapidGuess = isRapidGuess({
+    responseMs,
+    studentText,
+    correctness,
+    isHintRequest: isHint,
+  });
+  const offTopic = detectOffTopicDrift({
+    studentText,
+    topic,
+    subject,
+    isHintRequest: isHint,
+  });
+
+  // Prefer math verifier on rapid guesses in pilot contexts (already ran above when applicable)
+  const preferSlowDown =
+    rapidGuess &&
+    (correctness === Correctness.INCORRECT ||
+      correctness === Correctness.UNKNOWN ||
+      shortAnswer);
+
   // Confidence proxy: high if confident language or correct+quick; low if hesitant/frustrated
   let confidence = 0.5;
   if (affect === Affect.CONFIDENT) confidence = 0.8;
@@ -218,9 +368,15 @@ export function analyzeExchange({
   if (correctness === Correctness.CORRECT) confidence = Math.min(1, confidence + 0.15);
   if (correctness === Correctness.INCORRECT) confidence = Math.max(0, confidence - 0.1);
   if (isHint) confidence = Math.max(0.15, confidence - 0.2);
+  if (rapidGuess) confidence = Math.max(0.1, confidence - 0.15);
   if (verification?.checked && verification.confidence >= 0.85) {
     confidence = Math.min(1, Math.max(confidence, 0.55));
   }
+
+  const struggleFlags = [];
+  if (shortAnswer) struggleFlags.push(StruggleSignal.SHORT_ANSWERS);
+  if (rapidGuess) struggleFlags.push(StruggleSignal.RAPID_GUESSING);
+  if (offTopic.isOffTopic) struggleFlags.push(StruggleSignal.OFF_TOPIC);
 
   const tags = buildTags({
     correctness,
@@ -230,6 +386,7 @@ export function analyzeExchange({
     misconceptions,
     gradeSource: graded.source,
     discrepancy: Boolean(verification?.discrepancy),
+    struggleFlags,
   });
 
   return {
@@ -248,6 +405,13 @@ export function analyzeExchange({
     charCount: (studentText || "").length,
     responseMs,
     inputModality,
+    // Epic B1
+    shortAnswer,
+    rapidGuess,
+    preferSlowDown,
+    offTopic: offTopic.isOffTopic,
+    offTopicMeta: offTopic,
+    struggleFlags,
     tags,
   };
 }
@@ -260,6 +424,7 @@ function buildTags({
   misconceptions,
   gradeSource,
   discrepancy,
+  struggleFlags = [],
 }) {
   const tags = [`correctness:${correctness}`, `affect:${affect}`];
   if (gradeSource) tags.push(`grade_source:${gradeSource}`);
@@ -267,6 +432,7 @@ function buildTags({
   if (isHint) tags.push("behavior:hint");
   deliveryPreferences.forEach((p) => tags.push(`pref:${p}`));
   misconceptions.forEach((m) => tags.push(`misconception:${m.id}`));
+  struggleFlags.forEach((s) => tags.push(`struggle:${s}`));
   return tags;
 }
 

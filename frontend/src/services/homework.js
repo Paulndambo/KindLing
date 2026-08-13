@@ -3,7 +3,7 @@
  */
 
 import { API_BASE_URL, getAccessToken } from "./api/config";
-import { ai, GEMINI_MODEL } from "./gemini";
+import { generateVision, isAiAvailable } from "./ai";
 
 export const HOMEWORK_MAX_BYTES = 5 * 1024 * 1024;
 export const HOMEWORK_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
@@ -122,8 +122,8 @@ export async function analyzeHomeworkWithGemini({
   topic = "",
   studentName = "the student",
 }) {
-  if (!ai) {
-    throw new Error("AI is not configured (missing API key).");
+  if (!isAiAvailable("vision")) {
+    throw new Error("AI is not configured (missing API key). Add a key in Settings → AI providers.");
   }
 
   const prompt = `You are helping Kindling, a warm children's tutor, understand a photo of school work.
@@ -151,31 +151,11 @@ Rules:
 - Keep strings concise. errors max 4 items.
 - confidence is 0–1 for how sure you are of the OCR/read.`;
 
-  const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: mimeType || "image/jpeg",
-              data: base64,
-            },
-          },
-        ],
-      },
-    ],
+  const text = await generateVision({
+    prompt,
+    mimeType: mimeType || "image/jpeg",
+    base64,
   });
-
-  const text =
-    typeof response?.text === "string"
-      ? response.text
-      : response?.candidates?.[0]?.content?.parts
-          ?.map((p) => p.text)
-          .filter(Boolean)
-          .join("") || "";
 
   const cleaned = String(text)
     .replace(/^```json\s*/i, "")

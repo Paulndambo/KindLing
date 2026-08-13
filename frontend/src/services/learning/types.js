@@ -19,6 +19,20 @@ export const LearningEventType = {
   INTERVENTION_DECLINED: "intervention.declined",
   /** Interactive manipulative use (Epic A6) */
   MANIPULATIVE_USED: "behavior.manipulative_used",
+  /** Epic B1 — richer struggle signals (payload.signal = subtype) */
+  STRUGGLE_SIGNAL: "struggle.signal",
+  /** Epic B3 — affective check-in prompted / answered */
+  AFFECT_CHECKIN: "affect.checkin",
+  /** Epic B3 — persistence moment celebrated (optional metric) */
+  PERSISTENCE_NOTED: "affect.persistence",
+  /** Epic B5 */
+  MISCONCEPTION_DETECTED: "misconception.detected",
+  MISCONCEPTION_REMEDIATED: "misconception.remediated",
+  /** Epic B6 */
+  MULTISTEP_STARTED: "multistep.started",
+  MULTISTEP_STEP: "multistep.step",
+  MULTISTEP_COMPLETED: "multistep.completed",
+  MULTISTEP_EXITED: "multistep.exited",
 };
 
 /** Live intervention (step-by-step guide) lifecycle. */
@@ -26,6 +40,32 @@ export const InterventionStatus = {
   IDLE: "idle",
   OFFERED: "offered",
   ACTIVE: "active",
+};
+
+/**
+ * Epic B2 — graduated intervention ladder ranks / ids.
+ * Prefer InterventionLevel from interventionLadder.js for full metadata.
+ */
+export const InterventionLevelId = {
+  MICRO_HINT: "micro_hint",
+  WORKED_EXAMPLE: "worked_example",
+  FULL_GUIDE: "full_guide",
+  BREAK_OR_EASIER: "break_or_easier",
+};
+
+/**
+ * Struggle signal subtypes (Epic B1).
+ * Used as intervention reasons and struggle.signal event payload.signal.
+ */
+export const StruggleSignal = {
+  IDLE: "idle",
+  SHORT_ANSWERS: "short_answers",
+  TOPIC_THRASHING: "topic_thrashing",
+  RAPID_GUESSING: "rapid_guessing",
+  OFF_TOPIC: "off_topic",
+  INCORRECT_STREAK: "incorrect_streak",
+  FRUSTRATION: "frustration",
+  REPEATED_HINTS: "repeated_hints",
 };
 
 /** Assessment of a student turn relative to the tutor's response. */

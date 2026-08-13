@@ -93,15 +93,28 @@ export function useSubjects({
   );
 
   const addTopic = useCallback(
-    async (subjId, topicName) => {
-      const name = (topicName || "").trim();
+    async (subjId, topicInput) => {
+      const payload =
+        typeof topicInput === "string"
+          ? { name: topicInput }
+          : topicInput || {};
+      const name = (payload.name || "").trim();
       if (!name) return null;
       setMutating(true);
       setError("");
       try {
         const subject = subjects.find((s) => s.id === subjId);
         const sortOrder = subject?.topics?.length || 0;
-        const topic = await apiCreateTopic(subjId, name, sortOrder);
+        const topic = await apiCreateTopic(
+          subjId,
+          {
+            name,
+            familiarity: payload.familiarity || "new",
+            learningGoal: payload.learningGoal || payload.learning_goal || "",
+            sortOrder,
+          },
+          sortOrder
+        );
         setSubjects((prev) =>
           prev.map((s) =>
             s.id === subjId

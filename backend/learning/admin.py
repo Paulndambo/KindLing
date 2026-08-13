@@ -90,8 +90,17 @@ class TopicMasteryAdmin(admin.ModelAdmin):
 
 @admin.register(Misconception)
 class MisconceptionAdmin(admin.ModelAdmin):
-    list_display = ("label", "count", "last_seen", "profile")
-    search_fields = ("label", "misconception_id")
+    list_display = (
+        "label",
+        "count",
+        "remediation_success_count",
+        "is_active",
+        "last_seen",
+        "last_remediated_at",
+        "profile",
+    )
+    list_filter = ("is_active",)
+    search_fields = ("label", "misconception_id", "skill_slug")
 
 
 class ConversationMessageInline(admin.TabularInline):

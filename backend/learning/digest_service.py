@@ -91,6 +91,20 @@ def build_digest_summary(
     hints = type_counts.get(LearningEventType.HINT_REQUESTED, 0)
     interventions = type_counts.get(LearningEventType.INTERVENTION_ENTERED, 0)
     homework = type_counts.get("behavior.manipulative_used", 0)
+    affect_checkins = type_counts.get(
+        getattr(LearningEventType, "AFFECT_CHECKIN", "affect.checkin"), 0
+    )
+    # Count response-phase check-ins when payload present
+    checkin_responses = 0
+    persistence_notes = type_counts.get(
+        getattr(LearningEventType, "PERSISTENCE_NOTED", "affect.persistence"), 0
+    )
+    for ev in events.filter(
+        event_type=getattr(LearningEventType, "AFFECT_CHECKIN", "affect.checkin")
+    ):
+        phase = (ev.payload or {}).get("phase")
+        if phase == "response":
+            checkin_responses += 1
 
     # Correctness from turn payloads
     correct = partial = incorrect = 0
@@ -187,6 +201,9 @@ def build_digest_summary(
         "focusAreas": focus[:4],
         "skillSparks": skill_glow,
         "struggleHotspots": struggle_hotspots,
+        "affectCheckIns": affect_checkins,
+        "affectCheckInResponses": checkin_responses,
+        "persistenceNotes": persistence_notes,
         "eventCounts": dict(type_counts),
         "active": session_count > 0 or exchanges > 0,
     }
@@ -281,6 +298,29 @@ def render_digest_copy(summary: Dict[str, Any]) -> Tuple[str, str, str]:
             ]
         )
 
+    persistence = summary.get("persistenceNotes") or 0
+    checkins = summary.get("affectCheckInResponses") or 0
+    if persistence or checkins:
+        bits = []
+        if persistence:
+            bits.append(
+                f"Kindling noticed {persistence} persistence moment"
+                f"{'s' if persistence != 1 else ''} "
+                "(thinking time, bounce-backs, sticking with hard ideas)"
+            )
+        if checkins:
+            bits.append(
+                f"{name} shared how they felt in {checkins} gentle check-in"
+                f"{'s' if checkins != 1 else ''}"
+            )
+        lines.extend(
+            [
+                "",
+                "Effort & heart: " + "; ".join(bits) + ".",
+                "We celebrate sticking with it — not only correct answers.",
+            ]
+        )
+
     top = summary.get("topTopics") or []
     if top:
         lines.extend(
@@ -295,7 +335,7 @@ def render_digest_copy(summary: Dict[str, Any]) -> Tuple[str, str, str]:
         [
             "",
             "Thank you for supporting their learning. Kindling will keep adapting quietly "
-            "and celebrating progress.",
+            "and celebrating progress and persistence.",
             "",
             "— Kindling",
             "",
@@ -334,6 +374,25 @@ def render_digest_copy(summary: Dict[str, Any]) -> Tuple[str, str, str]:
         parts.append(
             f"<p>{escape(name)} used step-by-step guide mode {interventions}× — "
             f"a sign of persistence.</p>"
+        )
+    persistence = summary.get("persistenceNotes") or 0
+    checkins = summary.get("affectCheckInResponses") or 0
+    if persistence or checkins:
+        effort_bits = []
+        if persistence:
+            effort_bits.append(
+                f"{persistence} persistence moment"
+                f"{'s' if persistence != 1 else ''} noticed"
+            )
+        if checkins:
+            effort_bits.append(
+                f"{checkins} feeling check-in"
+                f"{'s' if checkins != 1 else ''}"
+            )
+        parts.append(
+            "<p><strong>Effort &amp; heart:</strong> "
+            + escape("; ".join(effort_bits))
+            + ". We celebrate sticking with it — not only accuracy.</p>"
         )
     parts.append(
         "<p>Thank you for supporting their learning.</p><p>— Kindling</p>"

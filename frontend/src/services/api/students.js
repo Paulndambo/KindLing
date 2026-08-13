@@ -38,6 +38,7 @@ export async function saveStudentProfile(profile) {
       academicTarget: profile.academicTarget || "",
       learningStyle: profile.learningStyle || "visual",
       interests: profile.interests || [],
+      focusSubjects: profile.focusSubjects || profile.focus_subjects || [],
       goal: profile.goal || "",
       isOnboarded: true,
       digestOptIn: profile.digestOptIn ?? false,

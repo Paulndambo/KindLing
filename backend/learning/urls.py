@@ -22,6 +22,9 @@ from .views import (
     SkillCatalogView,
     SkillPathView,
     SkillRecommendView,
+    WorkedExampleListView,
+    MisconceptionCatalogView,
+    MultiStepProblemListView,
     TopicConversationAppendMessageView,
     TopicConversationArchiveView,
     TopicConversationDetailView,
@@ -42,6 +45,21 @@ urlpatterns = [
     path("skills/", SkillCatalogView.as_view(), name="learning-skills-catalog"),
     path("skills/path/", SkillPathView.as_view(), name="learning-skills-path"),
     path("skills/next/", SkillRecommendView.as_view(), name="learning-skills-next"),
+    path(
+        "worked-examples/",
+        WorkedExampleListView.as_view(),
+        name="learning-worked-examples",
+    ),
+    path(
+        "misconceptions/",
+        MisconceptionCatalogView.as_view(),
+        name="learning-misconceptions",
+    ),
+    path(
+        "multistep/",
+        MultiStepProblemListView.as_view(),
+        name="learning-multistep",
+    ),
     path("verify-math/", MathVerifyView.as_view(), name="learning-verify-math"),
     path("homework/", HomeworkUploadView.as_view(), name="learning-homework-upload"),
     path(

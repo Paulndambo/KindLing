@@ -362,6 +362,34 @@ export function applySkillsToProfile(profile, { subject, topic, signals }) {
     sm.stateLabel = STATE_LABELS[sm.state] || sm.state;
   }
 
+  // Epic B5 — remediation success boosts linked skills
+  for (const mid of signals?.misconceptionsRemediated || []) {
+    const id = typeof mid === "string" ? mid : mid?.id;
+    const mcObj = typeof mid === "object" && mid ? mid : null;
+    const mc =
+      mcObj ||
+      (next.misconceptions || {})[id] ||
+      (profile.misconceptions || {})[id] ||
+      {};
+    const skillSlug = mc.skillSlug || mcObj?.skillSlug;
+    if (!skillSlug || !skillBySlug[skillSlug]) continue;
+    const meta = skillBySlug[skillSlug];
+    const sm = {
+      ...emptySkillState(skillSlug),
+      ...(next.skills[skillSlug] || {}),
+    };
+    const pBefore = sm.pKnow || meta.pInit || 0.2;
+    const pAfter = clamp(pBefore + 0.08 * (1 - pBefore));
+    sm.pKnow = pAfter;
+    sm.score = Math.round(pAfter * 1000) / 10;
+    sm.lastEvidenceAt = new Date().toISOString();
+    sm.lastCorrectness = Correctness.PARTIAL;
+    const { ready } = prereqReady(next.skills, skillSlug);
+    sm.state = deriveState(sm, !ready);
+    sm.stateLabel = STATE_LABELS[sm.state] || sm.state;
+    next.skills[skillSlug] = sm;
+  }
+
   // Blend topic mastery from skills
   const key = `${subject || "General"}::${topic || "General"}`;
   if (!next.mastery) next.mastery = {};
@@ -513,4 +541,91 @@ export function topicSkillScore(profile, topic) {
   const avg =
     primary.reduce((a, s) => a + (s.score || 0), 0) / primary.length;
   return Math.round(avg);
+}
+
+/** Reverse map: skill slug → first topic that lists it. */
+function topicForSkillSlug(slug) {
+  for (const [topic, links] of Object.entries(TOPIC_SKILL_MAP)) {
+    if ((links || []).some((l) => l.slug === slug)) return topic;
+  }
+  return null;
+}
+
+/**
+ * Epic B2 level 4 — suggest a related easier / prerequisite skill.
+ * Prefers blocking prereqs, then lowest-score foundation skill on the path.
+ */
+export function suggestEasierRelatedSkill(profile, subject, topic) {
+  const path = buildLocalSkillPath(profile, subject, topic);
+  const skillsMap = profile?.skills || {};
+
+  // 1) Blocking required prereqs on this topic's skills
+  for (const s of path.skills || []) {
+    const blockers = s.blockingPrereqs || [];
+    if (blockers.length) {
+      const b = blockers[0];
+      return {
+        slug: b.slug,
+        name: b.name,
+        shortLabel: skillBySlug[b.slug]?.shortLabel || b.name,
+        topic: topicForSkillSlug(b.slug),
+        subject: subject || PILOT_SUBJECT,
+        reason: "prerequisite",
+        score: b.score,
+      };
+    }
+  }
+
+  // 2) Weakest primary skill on this topic (if any attempts / low p)
+  const primaries = (path.skills || [])
+    .filter((s) => s.isPrimary)
+    .slice()
+    .sort((a, b) => (a.pKnow || 0) - (b.pKnow || 0));
+  if (primaries.length && (primaries[0].pKnow || 0) < 0.55) {
+    const s = primaries[0];
+    // Prefer a prereq of that primary if one exists and is weaker/equal
+    const meta = skillBySlug[s.slug];
+    for (const p of meta?.prereqs || []) {
+      const sm = skillsMap[p.slug] || emptySkillState(p.slug);
+      if ((sm.pKnow || 0) < READY_PREREQ_P + 0.15) {
+        return {
+          slug: p.slug,
+          name: skillBySlug[p.slug]?.name || p.slug,
+          shortLabel: skillBySlug[p.slug]?.shortLabel,
+          topic: topicForSkillSlug(p.slug),
+          subject: subject || PILOT_SUBJECT,
+          reason: "foundation",
+          score: Math.round((sm.pKnow || 0) * 100),
+        };
+      }
+    }
+    return {
+      slug: s.slug,
+      name: s.name,
+      shortLabel: s.shortLabel,
+      topic: topic || path.topic,
+      subject: subject || PILOT_SUBJECT,
+      reason: "strengthen_current",
+      score: s.score,
+    };
+  }
+
+  // 3) Domain-wide easiest non-mastered ready skill
+  const next = recommendLocalNext(skillsMap, topic);
+  if (next && next.slug) {
+    // Prefer something other than the hardest on this topic if possible
+    const meta = skillBySlug[next.slug];
+    return {
+      slug: next.slug,
+      name: next.name,
+      shortLabel: next.shortLabel,
+      topic: topicForSkillSlug(next.slug) || topic,
+      subject: subject || PILOT_SUBJECT,
+      reason: "ready_next",
+      score: next.score,
+      domain: meta?.domain,
+    };
+  }
+
+  return null;
 }

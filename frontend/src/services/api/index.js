@@ -30,6 +30,10 @@ export {
   getLearningProfile,
   getSkillCatalog,
   getSkillPath,
+  getWorkedExamples,
+  getMisconceptionCatalog,
+  detectMisconceptionsApi,
+  getMultiStepProblems,
   listDigests,
   generateDigest,
   getDigest,
@@ -46,6 +50,14 @@ export {
   searchTranscripts,
   putResumeSnapshot,
 } from "./conversations";
+export {
+  fetchPlanCatalog,
+  fetchSubscription,
+  selectSubscriptionPlan,
+  patchSubscription,
+  fetchAiRouting,
+  patchAiRouting,
+} from "./platform";
 
 // Re-export telemetry helpers for app-wide use
 export {

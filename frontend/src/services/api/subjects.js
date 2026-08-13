@@ -2,8 +2,28 @@ import { apiRequest } from "./client";
 
 /**
  * Normalize a subject from the API into the shape the SPA uses.
- * Topics stay as { id, name } objects.
+ * Topics stay as { id, name, familiarity, learningGoal } objects.
  */
+export function normalizeTopic(raw, fallbackName = "") {
+  if (!raw && !fallbackName) return null;
+  if (typeof raw === "string") {
+    return {
+      id: null,
+      name: raw,
+      sortOrder: 0,
+      familiarity: "new",
+      learningGoal: "",
+    };
+  }
+  return {
+    id: raw?.id ?? null,
+    name: raw?.name || fallbackName || "",
+    sortOrder: raw?.sort_order ?? raw?.sortOrder ?? 0,
+    familiarity: raw?.familiarity || "new",
+    learningGoal: raw?.learning_goal ?? raw?.learningGoal ?? "",
+  };
+}
+
 export function normalizeSubject(raw) {
   if (!raw) return null;
   return {
@@ -12,12 +32,9 @@ export function normalizeSubject(raw) {
     icon: raw.icon || "book",
     color: raw.color || "#E8F4F8",
     sortOrder: raw.sort_order ?? 0,
+    learningGoal: raw.learning_goal ?? raw.learningGoal ?? "",
     topics: Array.isArray(raw.topics)
-      ? raw.topics.map((t) => ({
-          id: t.id,
-          name: t.name || "",
-          sortOrder: t.sort_order ?? 0,
-        }))
+      ? raw.topics.map((t) => normalizeTopic(t)).filter(Boolean)
       : [],
   };
 }
@@ -31,13 +48,32 @@ export async function listSubjects() {
 
 /**
  * Create a subject owned by the current student.
- * @param {{ name: string, icon?: string, color?: string, topics?: string[] | {name:string}[] }} payload
+ * @param {{
+ *   name: string,
+ *   icon?: string,
+ *   color?: string,
+ *   learningGoal?: string,
+ *   topics?: string[] | { name: string, familiarity?: string, learningGoal?: string }[]
+ * }} payload
  */
 export async function createSubject(payload) {
-  const topicNames = (payload.topics || [])
-    .map((t) => (typeof t === "string" ? t : t?.name))
-    .filter((n) => typeof n === "string" && n.trim())
-    .map((n) => n.trim());
+  const topics = (payload.topics || [])
+    .map((t) => {
+      if (typeof t === "string") {
+        const name = t.trim();
+        return name
+          ? { name, familiarity: "new", learning_goal: "" }
+          : null;
+      }
+      const name = String(t?.name || "").trim();
+      if (!name) return null;
+      return {
+        name,
+        familiarity: t.familiarity || "new",
+        learning_goal: String(t.learningGoal ?? t.learning_goal ?? "").trim(),
+      };
+    })
+    .filter(Boolean);
 
   const data = await apiRequest("/api/subjects/", {
     method: "POST",
@@ -47,7 +83,10 @@ export async function createSubject(payload) {
       icon: payload.icon || "book",
       color: payload.color || "#E8F4F8",
       sort_order: payload.sortOrder ?? payload.sort_order ?? 0,
-      topics: topicNames,
+      learning_goal: String(
+        payload.learningGoal ?? payload.learning_goal ?? ""
+      ).trim(),
+      topics,
     },
   });
   return normalizeSubject(data);
@@ -60,17 +99,35 @@ export async function deleteSubject(subjectId) {
   });
 }
 
-export async function createTopic(subjectId, name, sortOrder = 0) {
+/**
+ * @param {string|number} subjectId
+ * @param {string | { name: string, familiarity?: string, learningGoal?: string, sortOrder?: number }} topicOrName
+ * @param {number} [sortOrder]
+ */
+export async function createTopic(subjectId, topicOrName, sortOrder = 0) {
+  const payload =
+    typeof topicOrName === "string"
+      ? {
+          name: topicOrName.trim(),
+          sort_order: sortOrder,
+          familiarity: "new",
+          learning_goal: "",
+        }
+      : {
+          name: String(topicOrName?.name || "").trim(),
+          sort_order: topicOrName?.sortOrder ?? topicOrName?.sort_order ?? sortOrder,
+          familiarity: topicOrName?.familiarity || "new",
+          learning_goal: String(
+            topicOrName?.learningGoal ?? topicOrName?.learning_goal ?? ""
+          ).trim(),
+        };
+
   const data = await apiRequest(`/api/subjects/${subjectId}/topics/`, {
     method: "POST",
     auth: true,
-    json: { name, sort_order: sortOrder },
+    json: payload,
   });
-  return {
-    id: data.id,
-    name: data.name || name,
-    sortOrder: data.sort_order ?? sortOrder,
-  };
+  return normalizeTopic(data, payload.name);
 }
 
 export async function deleteTopic(topicId) {

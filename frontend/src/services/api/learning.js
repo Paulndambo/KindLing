@@ -31,6 +31,75 @@ export async function getSkillCatalog() {
   });
 }
 
+/**
+ * Epic B6 — multi-step show-your-work problems.
+ */
+export async function getMultiStepProblems(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.subject) params.set("subject", opts.subject);
+  if (opts.topic) params.set("topic", opts.topic);
+  if (opts.skill) params.set("skill", opts.skill);
+  if (opts.limit) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return apiRequest(`/api/learning/multistep/${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+    auth: false,
+  });
+}
+
+/**
+ * Epic B5 — misconception catalog.
+ * @param {{ topic?: string, skill?: string, domain?: string, limit?: number }} opts
+ */
+export async function getMisconceptionCatalog(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.topic) params.set("topic", opts.topic);
+  if (opts.skill) params.set("skill", opts.skill);
+  if (opts.domain) params.set("domain", opts.domain);
+  if (opts.limit) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return apiRequest(`/api/learning/misconceptions/${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+    auth: false,
+  });
+}
+
+/**
+ * Epic B5 — server-side detect.
+ */
+export async function detectMisconceptionsApi({
+  studentText,
+  tutorText = "",
+  topic = "",
+  subject = "",
+  skill = "",
+} = {}) {
+  return apiRequest("/api/learning/misconceptions/", {
+    method: "POST",
+    auth: false,
+    json: { studentText, tutorText, topic, subject, skill },
+  });
+}
+
+/**
+ * Epic B4 — curated worked-example library.
+ * @param {{ subject?: string, topic?: string, skill?: string, grade?: string, kind?: string, limit?: number }} opts
+ */
+export async function getWorkedExamples(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.subject) params.set("subject", opts.subject);
+  if (opts.topic) params.set("topic", opts.topic);
+  if (opts.skill) params.set("skill", opts.skill);
+  if (opts.grade) params.set("grade", String(opts.grade));
+  if (opts.kind) params.set("kind", opts.kind);
+  if (opts.limit) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return apiRequest(`/api/learning/worked-examples/${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+    auth: false,
+  });
+}
+
 /** Skills + readiness for a lesson topic. */
 export async function getSkillPath({ subject, topic, studentId } = {}) {
   const params = new URLSearchParams();

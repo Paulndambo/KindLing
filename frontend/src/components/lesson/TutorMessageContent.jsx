@@ -7,6 +7,7 @@ import { Check, Copy } from "lucide-react";
 import "katex/dist/katex.min.css";
 import { stripMathCheckTags } from "../../services/learning/mathVerifier";
 import { stripVisualTags } from "../../services/learning/manipulatives";
+import { stripStepTags } from "../../services/learning/multiStepEngine";
 
 /**
  * Renders Kindling tutor replies as structured, learner-friendly content:
@@ -161,7 +162,9 @@ const STATIC_COMPONENTS = markdownComponents();
 
 function TutorMessageContent({ text, streaming = false }) {
   // Epic A3/A6: never show machine check/visual tags to learners
-  const content = stripVisualTags(stripMathCheckTags(text || ""));
+  const content = stripStepTags(
+    stripVisualTags(stripMathCheckTags(text || ""))
+  );
 
   // components object is stable; streaming only affects CSS class
   const components = useMemo(() => STATIC_COMPONENTS, []);

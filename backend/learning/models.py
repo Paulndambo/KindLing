@@ -17,6 +17,20 @@ class LearningEventType(models.TextChoices):
     INTERVENTION_EXITED = "intervention.exited", "Intervention exited"
     INTERVENTION_DECLINED = "intervention.declined", "Intervention declined"
     MANIPULATIVE_USED = "behavior.manipulative_used", "Manipulative used"
+    # Epic B1 — payload.signal subtypes: idle, short_answers, topic_thrashing,
+    # rapid_guessing, off_topic (plus legacy streak/frustration/hints)
+    STRUGGLE_SIGNAL = "struggle.signal", "Struggle signal"
+    # Epic B3 — phase: prompted | response | skipped
+    AFFECT_CHECKIN = "affect.checkin", "Affect check-in"
+    PERSISTENCE_NOTED = "affect.persistence", "Persistence noted"
+    # Epic B5
+    MISCONCEPTION_DETECTED = "misconception.detected", "Misconception detected"
+    MISCONCEPTION_REMEDIATED = "misconception.remediated", "Misconception remediated"
+    # Epic B6
+    MULTISTEP_STARTED = "multistep.started", "Multi-step started"
+    MULTISTEP_STEP = "multistep.step", "Multi-step step checked"
+    MULTISTEP_COMPLETED = "multistep.completed", "Multi-step completed"
+    MULTISTEP_EXITED = "multistep.exited", "Multi-step exited"
 
 
 class Correctness(models.TextChoices):
@@ -228,7 +242,7 @@ class TopicMastery(models.Model):
 
 
 class Misconception(models.Model):
-    """Accumulated misconception signals for a learner."""
+    """Accumulated misconception signals for a learner (Epic B5 adds remediation)."""
 
     profile = models.ForeignKey(
         LearningProfile,
@@ -240,6 +254,15 @@ class Misconception(models.Model):
     count = models.PositiveIntegerField(default=0)
     last_seen = models.DateTimeField(null=True, blank=True)
     subjects = models.JSONField(default=dict, blank=True)
+    # Epic B5 — remediation tracking
+    remediation_success_count = models.PositiveIntegerField(default=0)
+    last_remediated_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(
+        default=True,
+        help_text="False after successful remediation until seen again.",
+    )
+    skill_slug = models.CharField(max_length=80, blank=True, default="")
+    last_playbook = models.JSONField(default=dict, blank=True)
 
     class Meta:
         constraints = [
@@ -252,7 +275,6 @@ class Misconception(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.count}×)"
-
 
 class SkillMastery(models.Model):
     """

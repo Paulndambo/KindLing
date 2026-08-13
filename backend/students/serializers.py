@@ -21,6 +21,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     learningStyle = serializers.CharField(
         source="learning_style", required=False, allow_blank=True
     )
+    focusSubjects = serializers.ListField(
+        child=serializers.CharField(max_length=80),
+        source="focus_subjects",
+        required=False,
+        allow_empty=True,
+    )
     isOnboarded = serializers.BooleanField(source="is_onboarded", required=False)
     digestOptIn = serializers.BooleanField(source="digest_opt_in", required=False)
     familyEmail = serializers.EmailField(
@@ -42,6 +48,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "academicTarget",
             "learningStyle",
             "interests",
+            "focusSubjects",
             "goal",
             "isOnboarded",
             "digestOptIn",

@@ -40,14 +40,23 @@ export function createEmptyProfile(studentId = "anonymous") {
     affectHistory: [], // last N affect labels
     engagementHistory: [], // last N scores 0–1
     confidenceHistory: [], // last N scores 0–1
+    /** Epic B3 self-reported check-in option ids */
+    affectCheckInHistory: [],
     strengths: [], // topic keys recently mastered
     focusAreas: [], // topic keys needing work
     behavior: {
       hintRate: 0,
       avgResponseMs: null,
       shortAnswerRate: 0,
+      rapidGuessRate: 0,
+      offTopicRate: 0,
       voiceInputCount: 0,
       sessionRestarts: 0,
+      shortAnswers: 0,
+      rapidGuesses: 0,
+      offTopic: 0,
+      persistenceScore: 0,
+      affectCheckIns: 0,
     },
     lastSession: null,
     /** Per-skill BKT mastery keyed by skill slug (Epic A1) */
@@ -148,7 +157,7 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
     m.score = Math.max(5, m.score - 2);
   }
 
-  // Misconceptions accumulate
+  // Misconceptions accumulate (Epic B5: playbook + active flag)
   for (const mc of signals.misconceptions || []) {
     if (!next.misconceptions[mc.id]) {
       next.misconceptions[mc.id] = {
@@ -157,12 +166,33 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
         count: 0,
         lastSeen: null,
         subjects: {},
+        isActive: true,
+        remediationSuccessCount: 0,
+        skillSlug: mc.skillSlug || null,
+        playbook: mc.playbook || null,
+        tutorDirectives: mc.tutorDirectives || [],
       };
     }
-    next.misconceptions[mc.id].count += 1;
-    next.misconceptions[mc.id].lastSeen = new Date().toISOString();
-    next.misconceptions[mc.id].subjects[subject] =
-      (next.misconceptions[mc.id].subjects[subject] || 0) + 1;
+    const row = next.misconceptions[mc.id];
+    row.count += 1;
+    row.lastSeen = new Date().toISOString();
+    row.isActive = true;
+    row.label = mc.label || row.label;
+    if (mc.skillSlug) row.skillSlug = mc.skillSlug;
+    if (mc.playbook) row.playbook = mc.playbook;
+    if (mc.tutorDirectives?.length) row.tutorDirectives = mc.tutorDirectives;
+    row.subjects = row.subjects || {};
+    row.subjects[subject] = (row.subjects[subject] || 0) + 1;
+  }
+
+  // Remediation success → deactivate + mastery nudge via skillGraph later
+  for (const mid of signals.misconceptionsRemediated || []) {
+    const id = typeof mid === "string" ? mid : mid?.id;
+    if (!id || !next.misconceptions[id]) continue;
+    const row = next.misconceptions[id];
+    row.remediationSuccessCount = (row.remediationSuccessCount || 0) + 1;
+    row.lastRemediatedAt = new Date().toISOString();
+    row.isActive = false;
   }
 
   // Delivery preference weights
@@ -182,13 +212,34 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
     signals.confidence
   );
 
-  // Behavior rates
+  // Behavior rates (Epic B1: explicit short/rapid/off-topic counters)
   const ex = next.totals.exchanges || 1;
   next.behavior.hintRate = Number((next.totals.hints / ex).toFixed(3));
-  const shortAnswers = next.engagementHistory.filter((e) => e < 0.35).length;
+  if (signals.shortAnswer) {
+    next.behavior.shortAnswers = (next.behavior.shortAnswers || 0) + 1;
+  }
+  if (signals.rapidGuess) {
+    next.behavior.rapidGuesses = (next.behavior.rapidGuesses || 0) + 1;
+  }
+  if (signals.offTopic) {
+    next.behavior.offTopic = (next.behavior.offTopic || 0) + 1;
+  }
   next.behavior.shortAnswerRate = Number(
-    (shortAnswers / Math.max(next.engagementHistory.length, 1)).toFixed(3)
+    ((next.behavior.shortAnswers || 0) / ex).toFixed(3)
   );
+  next.behavior.rapidGuessRate = Number(
+    ((next.behavior.rapidGuesses || 0) / ex).toFixed(3)
+  );
+  next.behavior.offTopicRate = Number(
+    ((next.behavior.offTopic || 0) / ex).toFixed(3)
+  );
+  // Fallback: low-engagement turns still count toward short-answer feel
+  if (!next.behavior.shortAnswers) {
+    const lowEng = next.engagementHistory.filter((e) => e < 0.35).length;
+    next.behavior.shortAnswerRate = Number(
+      (lowEng / Math.max(next.engagementHistory.length, 1)).toFixed(3)
+    );
+  }
 
   // Strengths / focus from mastery scores
   const ranked = Object.values(next.mastery).sort((a, b) => b.score - a.score);
@@ -201,10 +252,36 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
     .slice(0, 5)
     .map((x) => ({ subject: x.subject, topic: x.topic, score: Math.round(x.score) }));
 
+  // Epic B3: fold session persistence tags when present on signals
+  if (signals.persistenceDelta > 0) {
+    next.behavior.persistenceScore =
+      (next.behavior.persistenceScore || 0) + signals.persistenceDelta;
+  }
+
   // Epic A1: BKT skill-graph update for pilot topics
   const withSkills = applySkillsToProfile(next, { subject, topic, signals });
   withSkills.updatedAt = new Date().toISOString();
   return withSkills;
+}
+
+/**
+ * Fold a self-reported affect check-in into the longitudinal profile.
+ */
+export function applyAffectCheckInToProfile(profile, { optionId, affect } = {}) {
+  const next = structuredClone(profile);
+  next.behavior.affectCheckIns = (next.behavior.affectCheckIns || 0) + 1;
+  if (optionId) {
+    next.affectCheckInHistory = pushRolling(
+      next.affectCheckInHistory || [],
+      optionId,
+      20
+    );
+  }
+  if (affect) {
+    next.affectHistory = pushRolling(next.affectHistory || [], affect);
+  }
+  next.updatedAt = new Date().toISOString();
+  return next;
 }
 
 export function applySessionStart(profile, sessionMeta) {
@@ -223,6 +300,11 @@ export function applySessionEnd(profile, sessionSummary) {
   const next = structuredClone(profile);
   if (next.lastSession) {
     next.lastSession = { ...next.lastSession, ...sessionSummary, endedAt: new Date().toISOString() };
+  }
+  if (sessionSummary?.persistenceScore) {
+    next.behavior.persistenceScore =
+      (next.behavior.persistenceScore || 0) +
+      Math.min(3, sessionSummary.persistenceScore);
   }
   return next;
 }
@@ -266,6 +348,7 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
     .map(([k]) => k);
 
   const topMisconceptions = Object.values(profile.misconceptions)
+    .filter((m) => m.isActive !== false)
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
 
@@ -293,9 +376,43 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
     );
   }
 
+  // Epic B3 — persistence over pure accuracy
+  if ((profile.behavior.persistenceScore || 0) >= 3) {
+    directives.push(
+      "Celebrate persistence and effort explicitly (thinking time, bounce-backs, sticking with hard ideas) — not only correct answers."
+    );
+  }
+  const recentCheckIns = (profile.affectCheckInHistory || []).slice(-3);
+  if (recentCheckIns.includes("break")) {
+    directives.push(
+      "Student recently asked for a break — honor energy, offer short resets, never push through shame."
+    );
+  } else if (recentCheckIns.includes("stuck")) {
+    directives.push(
+      "Student recently said they felt stuck — validate, smaller steps, celebrate naming the sticky part."
+    );
+  }
+
   if (profile.behavior.hintRate > 0.35) {
     directives.push(
       "High hint usage — offer lighter nudges first (questions, not answers)."
+    );
+  }
+
+  // Epic B1 longitudinal struggle patterns
+  if ((profile.behavior.shortAnswerRate || 0) > 0.4) {
+    directives.push(
+      "Student often gives very short answers — increase scaffolding bias: smaller steps, invite “how did you get that?”, celebrate elaborated reasoning."
+    );
+  }
+  if ((profile.behavior.rapidGuessRate || 0) > 0.25) {
+    directives.push(
+      "Rapid guessing pattern — slow the pace, ask for a reason before the next try, and verify checkable answers carefully."
+    );
+  }
+  if ((profile.behavior.offTopicRate || 0) > 0.15) {
+    directives.push(
+      "Occasional off-topic drift — acknowledge warmly, then redirect with a short bridge back to the lesson goal."
     );
   }
 
@@ -316,7 +433,11 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
   }
 
   for (const mc of topMisconceptions) {
+    if (mc.isActive === false) continue;
     directives.push(`Watch for misconception: ${mc.label} (seen ${mc.count}×).`);
+    for (const d of mc.tutorDirectives || mc.playbook?.tutor_directives || []) {
+      if (d && !directives.includes(d)) directives.push(d);
+    }
   }
 
   const skillPath = buildLocalSkillPath(profile, subject, topic);

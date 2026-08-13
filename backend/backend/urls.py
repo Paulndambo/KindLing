@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/learning/", include("learning.urls")),
     # Convenience alias used by frontend VITE_LEARNING_API_URL
     path("api/v1/learning/", include("learning.urls")),
+    path("api/platform/", include("kindling_platform.urls")),
 ]
 
 # Dev media serving for homework images

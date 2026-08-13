@@ -5,7 +5,7 @@ import {
   warmUpTts,
   TTS_CHUNK_MAX_LEN,
 } from "../services/tts";
-import { ai } from "../services/gemini";
+import { getGeminiClientForTts } from "../services/ai";
 import {
   unlockAudio,
   enqueueAudioBlob,
@@ -81,7 +81,7 @@ export function useSpeechSynthesis() {
    */
   const speakNeural = useCallback(
     async (text, generation) => {
-      if (!ai) return false;
+      if (!getGeminiClientForTts()) return false;
 
       const chunks = splitIntoSpeechChunks(text, TTS_CHUNK_MAX_LEN);
       if (!chunks.length) return false;
@@ -222,8 +222,10 @@ export function useSpeechSynthesis() {
       setIsSpeaking(true);
       setIsLoadingVoice(true);
 
-      if (!ai) {
-        console.warn("Gemini TTS unavailable — set VITE_GEMINI_API_KEY");
+      if (!getGeminiClientForTts()) {
+        console.warn(
+          "Gemini TTS unavailable — set VITE_GEMINI_API_KEY or add a Gemini key in Settings"
+        );
         setIsSpeaking(false);
         setIsLoadingVoice(false);
         return;
