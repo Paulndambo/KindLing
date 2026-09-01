@@ -5,6 +5,8 @@ import {
   STATE,
   STATE_LABELS,
 } from "../../services/learning/skillGraph";
+import { truncateGoal } from "../../services/learning/goalsSurface";
+import GoalsChip from "./GoalsChip";
 
 function SkillSparkBar({ skills = [] }) {
   if (!skills.length) return null;
@@ -37,6 +39,11 @@ function SkillSparkBar({ skills = [] }) {
   );
 }
 
+function topicNameOf(entry) {
+  if (typeof entry === "string") return entry;
+  return entry?.name || "";
+}
+
 export default function LessonPath({
   subjectName,
   topics,
@@ -47,6 +54,8 @@ export default function LessonPath({
   learningProfile = null,
   activeSkillPath = null,
   recommendedNext = null,
+  /** Epic C5 — resolved goals for the active topic */
+  lessonGoals = null,
 }) {
   const studentName = student?.name?.trim() || "Student";
 
@@ -67,6 +76,12 @@ export default function LessonPath({
             </button>
           )}
         </div>
+
+        {lessonGoals && (lessonGoals.hasLessonGoal || lessonGoals.weekFocus) && (
+          <div className="lesson-path-goals">
+            <GoalsChip goals={lessonGoals} compact />
+          </div>
+        )}
 
         {activeSkillPath?.hasGraph && (
           <div className="skill-path-panel">
@@ -96,7 +111,14 @@ export default function LessonPath({
             gap: 2,
           }}
         >
-          {topics.map((t, i) => {
+          {topics.map((entry, i) => {
+            const t = topicNameOf(entry);
+            const recGoal =
+              typeof entry === "object"
+                ? entry?.learningGoal || entry?.learning_goal || ""
+                : "";
+            const recFam =
+              typeof entry === "object" ? entry?.familiarity || "" : "";
             const status =
               i < activeTopicIdx
                 ? "done-topic"
@@ -108,20 +130,24 @@ export default function LessonPath({
             const locked =
               path.hasGraph && path.topicState === STATE.LOCKED && i !== activeTopicIdx;
 
+            const titleBits = [
+              i === activeTopicIdx
+                ? "Current topic"
+                : locked
+                  ? `Growing roots — warm up prereqs before ${t}`
+                  : score != null
+                    ? `${t} · ~${score}% skill blend`
+                    : `Switch to: ${t}`,
+            ];
+            if (recFam) titleBits.push(`Familiarity: ${recFam}`);
+            if (recGoal) titleBits.push(truncateGoal(recGoal, 100));
+
             return (
               <button
-                key={t}
+                key={t || i}
                 disabled={i === activeTopicIdx}
                 className={`topic-node-row ${status}${locked ? " topic-locked" : ""}`}
-                title={
-                  i === activeTopicIdx
-                    ? "Current topic"
-                    : locked
-                      ? `Growing roots — warm up prereqs before ${t}`
-                      : score != null
-                        ? `${t} · ~${score}% skill blend`
-                        : `Switch to: ${t}`
-                }
+                title={titleBits.join(" · ")}
                 onClick={() => onSelectTopic(i)}
               >
                 <span
@@ -164,24 +190,27 @@ export default function LessonPath({
         </div>
       </div>
 
-      <div className="session-info">
-        <b>Student Profile</b>
-        {studentName}
-        {student?.grade ? ` (${student.grade})` : ""}
-        <br />
-        <span style={{ fontSize: 11, opacity: 0.8 }}>
-          {student?.countryFlag ? `${student.countryFlag} ` : ""}
-          {student?.schoolName || "—"}
-        </span>
-      </div>
-      <div className="session-info">
-        <b>Curriculum</b>
-        {student?.curriculum || "—"}
-      </div>
-      <div className="session-info">
-        <b>AI Tutor</b>
-        Kindling · Skill-aware · Gemini
-      </div>
+      <details className="session-info-details">
+        <summary>About this session</summary>
+        <div className="session-info">
+          <b>Student</b>
+          {studentName}
+          {student?.grade ? ` (${student.grade})` : ""}
+          <br />
+          <span style={{ fontSize: 11, opacity: 0.8 }}>
+            {student?.countryFlag ? `${student.countryFlag} ` : ""}
+            {student?.schoolName || "—"}
+          </span>
+        </div>
+        <div className="session-info">
+          <b>Curriculum</b>
+          {student?.curriculum || "—"}
+        </div>
+        <div className="session-info">
+          <b>Tutor</b>
+          Kindling · adaptive
+        </div>
+      </details>
     </aside>
   );
 }

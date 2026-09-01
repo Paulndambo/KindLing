@@ -10,6 +10,7 @@ from .models import (
     ParentDigest,
     SessionTurn,
     SkillMastery,
+    SkillReviewItem,
     TopicConversation,
     TopicMastery,
 )
@@ -80,6 +81,22 @@ class SkillMasteryAdmin(admin.ModelAdmin):
     list_display = ("skill", "score", "p_know", "state", "attempts", "profile")
     list_filter = ("state", "skill__domain")
     search_fields = ("skill__slug", "skill__name")
+
+
+@admin.register(SkillReviewItem)
+class SkillReviewItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "skill",
+        "status",
+        "due_at",
+        "reason",
+        "priority",
+        "interval_days",
+        "profile",
+    )
+    list_filter = ("status", "reason")
+    search_fields = ("skill__slug", "skill__name", "topic_name")
+    raw_id_fields = ("profile", "skill")
 
 
 @admin.register(TopicMastery)

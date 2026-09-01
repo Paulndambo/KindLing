@@ -1,6 +1,13 @@
-export default function BrandLogo() {
+export default function BrandLogo({ onClick, title = "Kindling home" }) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="brand">
+    <Tag
+      type={onClick ? "button" : undefined}
+      className={`brand${onClick ? " brand-btn" : ""}`}
+      onClick={onClick}
+      title={onClick ? title : undefined}
+      aria-label={onClick ? title : undefined}
+    >
       <svg
         width="30"
         height="30"
@@ -20,6 +27,6 @@ export default function BrandLogo() {
         />
       </svg>
       <span>Kindling</span>
-    </div>
+    </Tag>
   );
 }

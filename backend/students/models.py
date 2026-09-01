@@ -26,6 +26,13 @@ class StudentProfile(models.Model):
     # Subjects the learner wants help with most (onboarding signal for tutor + GTM)
     focus_subjects = models.JSONField(default=list, blank=True)
     goal = models.CharField(max_length=200, blank=True, default="")
+    # Epic C5 lite — optional weekly focus line (student-editable, not a planner)
+    week_focus = models.CharField(
+        max_length=240,
+        blank=True,
+        default="",
+        help_text="One-line 'this week I'm working on…' reminder for the learner.",
+    )
     is_onboarded = models.BooleanField(default=False)
     # Family digest preferences (Epic A5) — single-student account for now
     digest_opt_in = models.BooleanField(

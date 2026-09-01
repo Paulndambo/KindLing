@@ -22,6 +22,8 @@ from .views import (
     SkillCatalogView,
     SkillPathView,
     SkillRecommendView,
+    ReviewListView,
+    ReviewCompleteView,
     WorkedExampleListView,
     MisconceptionCatalogView,
     MultiStepProblemListView,
@@ -45,6 +47,13 @@ urlpatterns = [
     path("skills/", SkillCatalogView.as_view(), name="learning-skills-catalog"),
     path("skills/path/", SkillPathView.as_view(), name="learning-skills-path"),
     path("skills/next/", SkillRecommendView.as_view(), name="learning-skills-next"),
+    # Epic C1 — spaced review / Review spark
+    path("reviews/", ReviewListView.as_view(), name="learning-reviews"),
+    path(
+        "reviews/complete/",
+        ReviewCompleteView.as_view(),
+        name="learning-reviews-complete",
+    ),
     path(
         "worked-examples/",
         WorkedExampleListView.as_view(),

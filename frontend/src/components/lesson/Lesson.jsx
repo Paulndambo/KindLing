@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { List, MessageSquare, Settings } from "lucide-react";
+import { List, MessageSquare, Settings, Flame } from "lucide-react";
 import { DEFAULT_LESSON_TOPICS } from "../../constants/subjects";
 import {
   useSpeechSynthesis,
@@ -12,6 +12,10 @@ import { useMultiStep } from "../../hooks/useMultiStep";
 import {
   buildLocalSkillPath,
 } from "../../services/learning/skillGraph";
+import {
+  resolveLessonGoals,
+  goalsToTopicContext,
+} from "../../services/learning/goalsSurface";
 import {
   analyzeHomeworkWithGemini,
   attachHomeworkAnalysis,
@@ -43,6 +47,21 @@ import "../../styles/lesson.css";
 export default function Lesson({ activeLesson, student, subjects }) {
   const subjectName = activeLesson?.subject || "Math";
   const studentName = student?.name?.trim() || "Student";
+  const reviewMode = Boolean(activeLesson?.reviewMode && activeLesson?.reviewSkill);
+  const reviewSkill = activeLesson?.reviewSkill || null;
+  const reviewSkillLabel =
+    activeLesson?.reviewSkillLabel || activeLesson?.reviewSkill || null;
+  const reviewId = activeLesson?.reviewId || null;
+  const challengeMode = Boolean(
+    activeLesson?.challengeMode &&
+      (activeLesson?.challengeSkill || activeLesson?.challengeSkillLabel)
+  );
+  const challengeSkill = activeLesson?.challengeSkill || null;
+  const challengeSkillLabel =
+    activeLesson?.challengeSkillLabel ||
+    activeLesson?.challengeSkill ||
+    null;
+  const challengeTarget = activeLesson?.challengeTarget || 3;
 
   const subjectObj = useMemo(
     () => subjects?.find((s) => s.name === subjectName) || null,
@@ -72,13 +91,21 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const topicName = subjectTopics[activeTopicIdx];
   const activeTopicRecord = subjectTopicRecords[activeTopicIdx] || null;
 
+  const lessonGoals = useMemo(
+    () =>
+      resolveLessonGoals({
+        topicName,
+        subjectName,
+        topic: activeTopicRecord,
+        subject: subjectObj,
+        student,
+      }),
+    [topicName, subjectName, activeTopicRecord, subjectObj, student]
+  );
+
   const topicContext = useMemo(
-    () => ({
-      familiarity: activeTopicRecord?.familiarity || "new",
-      learningGoal: activeTopicRecord?.learningGoal || "",
-      subjectGoal: subjectObj?.learningGoal || "",
-    }),
-    [activeTopicRecord, subjectObj]
+    () => goalsToTopicContext(lessonGoals),
+    [lessonGoals]
   );
 
   const [tools, setTools] = useState({
@@ -132,8 +159,12 @@ export default function Lesson({ activeLesson, student, subjects }) {
     intervention,
     softNudge,
     affectCheckIn,
+    sessionReflection,
+    lastSessionReflection,
     persistenceNote,
+    challengeProgress,
     beginSession,
+    endSession,
     recordExchange,
     recordToolToggle,
     recordTopicSwitch,
@@ -150,8 +181,12 @@ export default function Lesson({ activeLesson, student, subjects }) {
     respondAffectCheckIn,
     dismissAffectCheckIn,
     dismissPersistenceNote,
+    requestSessionReflection,
+    respondSessionReflection,
+    dismissSessionReflection,
     applyResumeSnapshot,
     getSessionId,
+    waitForSessionStartEnergy,
     offerIntervention,
     exampleLibrary,
     activeMisconceptionHits,
@@ -160,6 +195,14 @@ export default function Lesson({ activeLesson, student, subjects }) {
     subjectName,
     topicName,
     tools,
+    reviewMode,
+    reviewSkill,
+    reviewSkillLabel,
+    reviewId,
+    challengeMode,
+    challengeSkill,
+    challengeSkillLabel,
+    challengeTarget,
   });
 
   const toggle = useCallback(
@@ -336,6 +379,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
     onTutorReply: handleTutorReply,
     onSessionReset: stopSpeaking,
     onSessionBegin: handleSessionBegin,
+    onAwaitSessionStartEnergy: waitForSessionStartEnergy,
     onExchangeComplete: async ({ studentText, tutorText, wasHintRequest }) => {
       // Epic B6 — grade current show-your-work step when mode is active
       const stepOutcome = multiStep.recordStepAnswer(studentText, {
@@ -413,6 +457,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
         sessionId: getSessionId?.() || null,
         subject: subjectName,
         topic: topicName,
+        // Epic B8 — last wrap-up note for next open (if any)
+        lastReflection: lastSessionReflection || profile?.lastReflection || null,
       });
     }, 800);
     return () => window.clearTimeout(handle);
@@ -427,6 +473,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
     topicName,
     persistResumeSnapshot,
     getSessionId,
+    lastSessionReflection,
+    profile?.lastReflection,
   ]);
 
   // When struggle auto-triggers intervention, start guide mode after streaming settles.
@@ -837,7 +885,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
       >
         <LessonPath
           subjectName={subjectName}
-          topics={subjectTopics}
+          topics={subjectTopicRecords}
           activeTopicIdx={activeTopicIdx}
           onSelectTopic={(i) => {
             setActiveTopicIdx(i);
@@ -850,6 +898,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
           recommendedNext={
             insights?.stats?.recommendedNextSkill || skillPath?.recommendedNext
           }
+          lessonGoals={lessonGoals}
         />
 
         <ChatPanel
@@ -857,6 +906,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
           subjectName={subjectName}
           studentName={studentName}
           curriculum={student?.curriculum}
+          lessonGoals={lessonGoals}
           messages={messages}
           isStreaming={isStreaming}
           isSpeaking={isSpeaking}
@@ -886,6 +936,9 @@ export default function Lesson({ activeLesson, student, subjects }) {
           affectCheckIn={affectCheckIn}
           onAffectRespond={respondAffectCheckIn}
           onAffectDismiss={dismissAffectCheckIn}
+          sessionReflection={sessionReflection}
+          onReflectionSubmit={respondSessionReflection}
+          onReflectionSkip={dismissSessionReflection}
           persistenceNote={persistenceNote}
           onDismissPersistenceNote={dismissPersistenceNote}
           pathCollapsed={pathCollapsed}
@@ -894,10 +947,29 @@ export default function Lesson({ activeLesson, student, subjects }) {
           isArchiveView={isArchiveView || Boolean(viewingArchiveId)}
           conversationEnded={conversationMeta?.status === "ended"}
           endedSummary={conversationMeta?.lastEndedSummary}
+          reflectionResult={lastSessionReflection}
           isSummarizing={isSummarizing}
           onStartNewConversation={startNewConversation}
           onContinueAfterEnd={continueAfterEnd}
           onOpenJournal={openJournal}
+          onReviewSparkCta={
+            lastSessionReflection?.reviewCta
+              ? () => {
+                  const cta = lastSessionReflection.reviewCta;
+                  if (cta?.skillSlug && typeof window !== "undefined") {
+                    // Re-enter review mode on the due skill when possible
+                    continueAfterEnd?.() || startNewConversation?.();
+                    return;
+                  }
+                  continueAfterEnd?.() || startNewConversation?.();
+                }
+              : undefined
+          }
+          reviewMode={reviewMode}
+          reviewSkillLabel={reviewSkillLabel}
+          challengeMode={challengeMode}
+          challengeSkillLabel={challengeSkillLabel}
+          challengeProgress={challengeProgress}
           onExitArchiveView={exitArchiveView}
           archiveCount={conversationMeta?.archived?.length || 0}
           chatError={chatError}
@@ -967,6 +1039,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
           isStreaming={isStreaming || isSummarizing}
           hasAi={hasAi}
           student={student}
+          lessonGoals={lessonGoals}
           hasManipulatives={availableManipulatives.length > 0}
           manipOpen={manipOpen}
           onOpenManipulative={() => {
@@ -978,7 +1051,20 @@ export default function Lesson({ activeLesson, student, subjects }) {
           studentName={studentName}
           onRequestHint={requestHint}
           onRestart={startNewConversation}
-          onEndConversation={endConversation}
+          onEndConversation={async () => {
+            // Epic B8 — optional wrap-up reflection before archive (never on empty/error)
+            // Epic C5 — echo topic goal / week focus on the reflection card
+            const msgCount = (messages || []).filter(
+              (m) => m.role === "child" || m.role === "tutor"
+            ).length;
+            await requestSessionReflection({
+              messageCount: msgCount,
+              learningGoal: lessonGoals?.effectiveGoal || "",
+              weekFocus: lessonGoals?.weekFocus || "",
+            });
+            await endConversation();
+            await endSession?.();
+          }}
           onStartNewConversation={startNewConversation}
           onOpenJournal={openJournal}
           isSummarizing={isSummarizing}

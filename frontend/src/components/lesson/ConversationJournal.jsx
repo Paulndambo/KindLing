@@ -121,29 +121,50 @@ export default function ConversationJournal({
 }
 
 /** Summary card shown in-chat after ending a conversation */
-export function ConversationEndedCard({ summary, onStartNew, onOpenJournal }) {
-  if (!summary) return null;
+export function ConversationEndedCard({
+  summary,
+  reflection = null,
+  onStartNew,
+  onOpenJournal,
+  onReviewSpark,
+}) {
+  if (!summary && !reflection) return null;
+  const reviewLabel = reflection?.reviewCta?.label;
+  const nextFromReflection =
+    !reflection?.skipped && reflection?.note
+      ? reflection.note
+      : summary?.nextStep;
+
   return (
     <div className="conv-ended-card" role="status">
       <div className="conv-ended-badge">
         <BookOpen size={14} />
         Saved to Learning Journal
       </div>
-      <h4>{summary.title || "Session complete"}</h4>
-      {summary.summary && <p>{summary.summary}</p>}
-      {summary.highlights?.length > 0 && (
+      <h4>{summary?.title || "Session complete"}</h4>
+      {summary?.summary && <p>{summary.summary}</p>}
+      {summary?.highlights?.length > 0 && (
         <ul>
           {summary.highlights.map((h, i) => (
             <li key={i}>{h}</li>
           ))}
         </ul>
       )}
-      {summary.nextStep && (
+      {nextFromReflection && (
         <p className="conv-ended-next">
-          <strong>Next time:</strong> {summary.nextStep}
+          <strong>Next time:</strong> {nextFromReflection}
         </p>
       )}
       <div className="conv-ended-actions">
+        {reviewLabel && onReviewSpark && (
+          <button
+            type="button"
+            className="journal-primary-btn"
+            onClick={onReviewSpark}
+          >
+            {reviewLabel}
+          </button>
+        )}
         <button type="button" className="journal-primary-btn" onClick={onStartNew}>
           Start new conversation
         </button>

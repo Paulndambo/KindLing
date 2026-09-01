@@ -276,6 +276,12 @@ const REASON_COPY = {
     body: (topic) =>
       `Want me to gently bring us back to "${topic}" with a clear step-by-step guide? You can leave anytime.`,
   },
+  /** Epic B7 — low energy at session start → offer L4 break/easier */
+  session_start_low_energy: {
+    reasonText: "you started with lower energy",
+    body: (topic) =>
+      `Want an easy warm-up or a short break before "${topic}"? No pressure — we can take the gentler path. You can leave anytime.`,
+  },
 };
 
 /**
@@ -352,7 +358,9 @@ export function describeInterventionContext({
     headline:
       reason === "escalate"
         ? `Want a bit more help on "${topicLabel}"?`
-        : `I noticed ${reasonText}`,
+        : reason === "session_start_low_energy"
+          ? `Want a gentler start on "${topicLabel}"?`
+          : `I noticed ${reasonText}`,
     body: pack.body ? pack.body(topicLabel) : meta.description,
     level: resolvedLevel,
   };

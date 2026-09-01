@@ -28,6 +28,11 @@ from .serializers import (
     TopicShelfSerializer,
 )
 from .mastery_engine import build_topic_skill_path, recommend_next_skill
+from .review_service import (
+    build_reviews_payload,
+    complete_review,
+    schedule_reviews_for_profile,
+)
 from .services import (
     build_dashboard,
     build_personalization_insights,
@@ -204,6 +209,61 @@ class SkillRecommendView(APIView):
             request.query_params.get("topic", ""),
         )
         return Response({"recommended": rec})
+
+
+class ReviewListView(APIView):
+    """
+    Epic C1 — GET /api/learning/reviews/
+    Due / upcoming Review spark items (on-read refresh by default).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        student = get_student_profile(request.user)
+        profile = get_or_create_profile(
+            student, request.query_params.get("studentId", "")
+        )
+        refresh = request.query_params.get("refresh", "1") not in ("0", "false", "no")
+        payload = build_reviews_payload(profile, refresh=refresh)
+        return Response(payload)
+
+    def post(self, request):
+        """Force reschedule (same as refresh job for this learner)."""
+        student = get_student_profile(request.user)
+        profile = get_or_create_profile(
+            student, request.data.get("studentId") or request.query_params.get("studentId", "")
+        )
+        if not profile:
+            return Response({"ok": False, "error": "no_profile"}, status=400)
+        result = schedule_reviews_for_profile(profile, dry_run=False)
+        payload = build_reviews_payload(profile, refresh=False)
+        return Response({**payload, "schedule": result})
+
+
+class ReviewCompleteView(APIView):
+    """
+    Epic C1 — POST /api/learning/reviews/complete/
+    Body: { skillSlug? , reviewId?, outcome: success|fail|partial }
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        student = get_student_profile(request.user)
+        profile = get_or_create_profile(
+            student, request.data.get("studentId") or ""
+        )
+        if not profile:
+            return Response({"ok": False, "error": "no_profile"}, status=400)
+        result = complete_review(
+            profile,
+            skill_slug=request.data.get("skillSlug") or request.data.get("skill_slug") or "",
+            review_id=request.data.get("reviewId") or request.data.get("review_id"),
+            outcome=request.data.get("outcome") or "success",
+        )
+        code = status.HTTP_200_OK if result.get("ok") else status.HTTP_404_NOT_FOUND
+        return Response(result, status=code)
 
 
 class SkillCatalogView(APIView):

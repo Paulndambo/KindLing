@@ -54,8 +54,9 @@ Do not invent parallel roadmaps in code comments. Link the epic id (`A3`, `B5`, 
 ```text
 Phase 0  Production floor     observability, resilience UX, safety, jobs skeleton
 Phase 1  Horizon A            mastery graph, resume, math check, homework, digests, manipulatives
-Phase 2  Intervention depth   struggle signals, ladder, affect, examples, misconceptions, multistep
-Phase 3+ Relationships /      spaced review, parent accounts, classroom, evals, scale
+Phase 2  Intervention depth   struggle signals, ladder, affect, examples, misconceptions, multistep  ✅
+Phase 2.5 Session rhythm      B7 start energy, B8 reflection, C1 review v1, C5 goals lite, G1 challenge  ✅
+Phase 3+ Wave 2               deploy/Postgres; C1+ / C6–C10; Phase 4 diagrams/a11y; Phase 5 scale  ⬜
          assessment / scale
 ```
 
@@ -68,7 +69,7 @@ Phase 3+ Relationships /      spaced review, parent accounts, classroom, evals, 
 | **P** | Pedagogy | `skillGraph`, mastery engine, worked examples, misconceptions, multistep |
 | **I** | Intervention & affect | `interventionDetector`, ladder, affect check-in |
 | **M** | Multimodal | homework upload, manipulatives, future diagrams |
-| **R** | Relationships | digests, future parent/classroom |
+| **R** | Relationships | student-configured digests only (no multi-child / classroom products) |
 | **T** | Trust | safety/, math verifier, privacy export |
 | **X** | Experience | lesson UI, resume, failure banners |
 | **S** | Platform | core jobs, telemetry, `kindling_platform`, deploy |
@@ -158,7 +159,7 @@ That is intentional (see §8 trade-offs). The SPA can still teach in degraded mo
 ### 4.1 Student-centric identity
 
 - One **User** ↔ one **StudentProfile**.  
-- No multi-child parent hierarchy yet (Phase 3).  
+- No multi-child parent hierarchy **by design** (permanent: one seat per learner; digests via student-configured email).  
 - Family email + `digest_opt_in` hang off the student profile; digests are summaries for a linked adult, not a separate ACL model.
 
 When you add roles later, **extend** JWT claims / permissions; do not break the student token shape without a migration plan.
@@ -365,7 +366,7 @@ No Redis/Celery requirement in v1. `core.jobs` registry + `run_job` / `run_sched
 | `heartbeat` | Ops proof |
 | `weekly_digest` | A5 delivery |
 | `mastery_recompute` | Placeholder for batch repair |
-| `review_schedule` | Placeholder for Phase 3 spaced review |
+| `review_schedule` | C1 spaced review materialize (Wave 1); deepen in Wave 2 C1+ |
 
 Cron-friendly by design. Heavy pedagogy stays request-path or explicit job — not hidden threads inside WSGI.
 
@@ -447,7 +448,7 @@ These are the decisions most likely to be “helpfully refactored” by newcomer
 
 **Choice:** No parent user type yet; digests email a family address.  
 **Why:** Unblocks A5 without ACL explosion.  
-**Cost:** Real household permissions deferred.  
+**Cost:** Household multi-profile is **out of product**; digests stay on the student profile.  
 **Mitigation:** Store digest content as first-class rows; avoid embedding “parent” assumptions into student JWT.
 
 ### 8.7 Prompt-directed teaching vs scripted ITS
@@ -571,7 +572,7 @@ Honest backlog for engineers (not a product pitch):
 |------|-------|-----------|
 | DB | SQLite default | Env `DATABASE_URL` Postgres for staging/prod |
 | Platform AI keys | Vite-exposed demo pattern | Server-side proxy, quotas, spend caps |
-| Parent model | Email on student | Real multi-child accounts + permissions |
+| Parent / adult progress notes | Email on student (A5) | Stay email-only; never multi-child accounts |
 | Spaced review | Job placeholder | Scheduler from weak/rusty skills |
 | Eval | Manual + unit | Harness for Socratic fidelity / intervention timing |
 | FE/BE drift | Mirrored logic | Consolidate pure math/verify into shared fixtures or generated JSON tests |
@@ -614,4 +615,4 @@ Phase gates: do not open large Horizon B surface area until Phase 0 deploy gaps 
 
 ---
 
-*Last updated: 2026-08-13 — reflects monorepo state through Phase 2 (A1–A6, B1–B6) and multi-provider AI gateway.*
+*Last updated: 2026-09-01 — Wave 1 through Phase 2.5; single-seat commercial lock; Wave 2 in PLAN.md §15–16.*

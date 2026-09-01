@@ -3,7 +3,7 @@
 **Company:** Kindling  
 **One-liner:** The AI private tutor that notices when a learner is stuck—and knows how to teach through it.  
 **Stage:** Pre-seed · working product (consumer adaptive tutoring)  
-**Category:** EdTech · AI tutoring · Consumer subscription (→ B2B2C schools)  
+**Category:** EdTech · AI tutoring · Individual student subscription (per-seat; multi-learner buyers purchase multiple seats)  
 
 | Asset | Use |
 |-------|-----|
@@ -73,17 +73,17 @@ Great 1-on-1 tutoring is one of the highest-impact education interventions, but 
 **Our wedge:** intervention and learning science as product infrastructure, not a prompt accident—plus family trust surfaces and correctness/trust tooling where it matters—across the learner's full curriculum.
 
 ### What do you understand about your users?
-**Primary buyer:** parent (pays). **Primary user:** student ~8–16 (and older learners who want the same care).  
-Students need non-shaming help and agency (exit help anytime) on **whatever they're studying tonight**. Parents need clarity without surveillance theater—effort-first digests, not just grades. Beachhead: families who need reliable daily 1-on-1 help across school subjects; then exam windows, multi-child households, and schools.
+**Primary customer:** the **individual student** (one account = one learner = one seat). For younger teens, a parent/guardian may pay *for that seat*. A parent with multiple children buys **multiple seats**. Older learners buy and use themselves. Schools/institutions buy **per-student seats**, not a classroom product.  
+Students need non-shaming help and agency (exit help anytime) on **whatever they're studying tonight**. Optional **email digests** (student configures the recipient) are a trust add-on, not a parent portal.
 
 ### How do you know customers need this?
 Structural demand: tutoring spend already exists across subjects; teacher shortage and learning gaps are not a fad; parents already pay for apps and human tutors. Product hypothesis validated by building the full struggle-to-rescue loop (not just chat). **Next proof:** paid beta retention, intervention accept rate, post-guide success—UPDATE with real interviews / waitlist data.
 
 ### How will you make money?
-Consumer subscription first (family plans; pilot catalog Spark / Ember / Forge). Later: multi-child households, exam packs, school/district B2B2C licenses. Unit economics hinge on session design + tiered models vs ARPU.
+Consumer subscription first (**individual student seats**; pilot catalog Spark / Ember / Forge). Optional student-configured progress digests by email. Multi-child and institutional buyers = **N seats**, never a household or class SKU. Later: exam packs; bulk seat sales if useful—still one login per learner. Unit economics hinge on session design + tiered models vs ARPU per learner.
 
 ### How far along are you?
-**Working product**, not slideware. Shipped through production foundation + core product slice (mastery graph, resume, correctness checks, homework photo, digests, manipulatives) + intervention depth (struggle signals, graduated ladder, affect check-ins, worked examples, misconceptions, multi-step). Learners create custom subjects and topics today. Pre-revenue / private demo stage unless updated.
+**Working product**, not slideware. Shipped **Wave 1**: production foundation (minus Postgres host) + core product slice (mastery graph, resume, correctness, homework photo, digests, manipulatives) + intervention depth (struggle ladder, affect, examples, misconceptions, multi-step) + **session rhythm** (start energy check-in, end reflection, Review spark, goals lite, light spark challenge). Learners create custom subjects and topics today. **Wave 2** (see PLAN.md §15): hostable beta deploy, assessment/review depth, single-learner export and digest polish—**not** multi-child or classroom products. Pre-revenue / private demo stage unless updated.
 
 ### How long have each of you been working on this?
 UPDATE
@@ -103,7 +103,7 @@ UPDATE standard founder split · incorporated? · location
 - Safety: age-aware policy, distress escalation, export/delete
 
 ### What is the next step?
-1. Paid family beta in one geography (multi-subject usage, quality bar high)
+1. Paid student beta in one geography (individual seats; multi-subject usage, quality bar high)
 2. Instrument PMF metrics (sessions/week, D30, intervention success, parent NPS)
 3. Deepen pedagogy data flywheel + eval harness across domains
 4. First school or tutoring-center design partner
@@ -118,7 +118,7 @@ UPDATE standard founder split · incorporated? · location
 **Kindling** — The AI private tutor that notices when a learner is stuck—and knows how to teach.  
 Pre-seed · Working product · Adaptive tutoring across subjects
 
-**30-second open:** "We're building Kindling—an AI tutor for families that doesn't just answer homework. It watches how a kid thinks and feels, and when they're stuck it steps in with real teaching—then gets out of the way. Any subject they need help with."
+**30-second open:** "We're building Kindling—an AI tutor for the individual learner that doesn't just answer homework. It watches how a student thinks and feels, and when they're stuck it steps in with real teaching—then gets out of the way. Any subject they need help with."
 
 ### 2 — Problem
 Great tutoring works. Almost nobody gets it daily. Human tutors are scarce/expensive; chatbots answer without teaching; parents see grades too late.
@@ -145,10 +145,10 @@ Rent foundation models; own the learning system. Moat path = session data × pol
 LLM UX ready; parents already pay; structural gaps; window to own pedagogy + trust layer before free answers become the habit.
 
 ### 7 — Market and wedge
-Beachhead: parents of ~8–16 who need **nightly 1-on-1 help across school subjects**. Expand exam prep → multi-child → schools. Wedge is **how we teach when stuck**, not a single subject silo. Lead with wedge, not vanity TAM.
+Beachhead: learners ~8–16 (or their payer) who need **nightly 1-on-1 help across school subjects**. Expand exam prep; multi-child families and schools buy **additional seats**. Wedge is **how we teach when stuck**, not a single subject silo. Lead with wedge, not vanity TAM.
 
 ### 8 — Business model and GTM
-Consumer subscription first; B2B2C school licenses later. GTM: paid beta one geo → parent loops → creators/micro-schools → districts.  
+Consumer per-seat subscription first; bulk seats for schools later (still one account per learner). GTM: paid beta one geo → student/payer loops → creators/micro-schools buying seats.  
 North stars: sessions/learner/week · intervention success · D30 · parent NPS · GM after AI COGS.
 
 ### 9 — Competition

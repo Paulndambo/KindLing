@@ -285,8 +285,8 @@ async function main() {
 
     const expand = [
       { t: "Next", d: "Exam prep across subjects" },
-      { t: "Then", d: "Multi-child households" },
-      { t: "Scale", d: "Schools & tutoring centers (B2B2C)" },
+      { t: "Then", d: "Exam packs & more subjects" },
+      { t: "Scale", d: "Per-seat bulk for schools (still 1 login = 1 learner)" },
     ];
     expand.forEach((e, i) => {
       const y = 1.45 + i * 1.15;
@@ -319,7 +319,7 @@ async function main() {
 
     const cols = [
       { h: "Revenue", items: ["Family subscription (core)", "Exam packs (seasonal)", "School / center licenses later"] },
-      { h: "GTM", items: ["Paid beta, one geography", "Parent digests + referrals", "Creators → micro-schools → districts"] },
+      { h: "GTM", items: ["Paid beta, one geography", "Student digests to parent email + referrals", "Creators → micro-schools buying seats"] },
       { h: "North stars", items: ["Sessions / learner / week", "Intervention → success", "D30 + parent NPS + GM"] },
     ];
     cols.forEach((c, i) => {

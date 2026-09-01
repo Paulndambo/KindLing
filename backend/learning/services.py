@@ -1059,6 +1059,16 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         except Exception:
             next_skill = None
 
+    # Epic C1 — Review spark due items
+    review_sparks = {"due": [], "dueNow": [], "count": 0, "hasDue": False}
+    if profile:
+        try:
+            from learning.review_service import build_reviews_payload
+
+            review_sparks = build_reviews_payload(profile, refresh=True)
+        except Exception:
+            review_sparks = {"due": [], "dueNow": [], "count": 0, "hasDue": False}
+
     return {
         "hasData": has_data,
         "weekStats": {
@@ -1068,6 +1078,7 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         "masteryMap": mastery_map,
         "skillSparks": skill_sparks,
         "recommendedNextSkill": next_skill,
+        "reviewSparks": review_sparks,
         "recentActivity": recent,
         "strengths": strength_cards,
         "focusAreas": focus_cards,

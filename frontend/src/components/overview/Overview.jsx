@@ -22,7 +22,7 @@ export default function Overview({
         <div>
           <p className="eyebrow">Your AI tutor, endlessly attentive</p>
           <h1>
-            Private-school teaching, <em>tuned</em> to {studentName}, every
+            Patient 1-on-1 tutoring, <em>tuned</em> to {studentName}, every
             single minute.
           </h1>
           <p className="hero-sub">
@@ -37,15 +37,24 @@ export default function Overview({
             {isLoggedIn ? (
               <>
                 <button className="btn-primary" onClick={onStartLesson}>
-                  Start a free lesson
+                  {isOnboarded ? "Continue learning" : "Complete setup"}
                 </button>
                 <button className="btn-ghost" onClick={onOpenOnboarding}>
                   <Edit3
                     size={15}
                     style={{ marginRight: 6, display: "inline" }}
+                    aria-hidden
                   />
                   {isOnboarded ? "Edit your profile" : "Complete your profile"}
                 </button>
+                {isOnboarded && (
+                  <button
+                    className="btn-ghost"
+                    onClick={() => goTo?.("dashboard")}
+                  >
+                    View dashboard
+                  </button>
+                )}
               </>
             ) : (
               <>
@@ -53,6 +62,7 @@ export default function Overview({
                   <Sparkles
                     size={15}
                     style={{ marginRight: 6, display: "inline" }}
+                    aria-hidden
                   />
                   Get started
                 </button>
@@ -60,6 +70,7 @@ export default function Overview({
                   <LogIn
                     size={15}
                     style={{ marginRight: 6, display: "inline" }}
+                    aria-hidden
                   />
                   Log in
                 </button>
@@ -67,8 +78,12 @@ export default function Overview({
             )}
           </div>
           <div className="hero-note">
-            <span className="dot" /> Create your free student account, set up
-            your profile, and start learning.
+            <span className="dot" aria-hidden />
+            {isLoggedIn
+              ? isOnboarded
+                ? "Pick a subject or resume a lesson — Kindling adapts as you go."
+                : "Finish your profile so lessons match your grade and curriculum."
+              : "Create a free student account, set up your profile, and start learning."}
           </div>
         </div>
         <div className="path-card">

@@ -36,16 +36,16 @@ export const PLAN_CATALOG = [
   {
     id: PLAN_IDS.EMBER,
     name: "Ember",
-    tagline: "Family plan for daily tutoring",
+    tagline: "Daily tutoring for one learner",
     priceMonthly: 19,
     priceYearly: 190,
     highlight: true,
     features: [
       "Everything in Spark",
       "Generous daily lessons on platform AI",
-      "Weekly family digests",
       "Homework photo help",
       "Priority session continuity",
+      "Optional weekly progress note to a guardian email",
     ],
     entitlements: {
       platformAi: true,

@@ -1,8 +1,13 @@
-import { Heart, X } from "lucide-react";
-import { AFFECT_CHECKIN_OPTIONS } from "../../services/learning/affectCheckIn";
+import { Heart, Sparkles, X } from "lucide-react";
+import {
+  AFFECT_CHECKIN_OPTIONS,
+  SESSION_START_ENERGY_OPTIONS,
+  SESSION_START_REASON,
+} from "../../services/learning/affectCheckIn";
 
 /**
  * Epic B3 — gentle affective check-in card (never shaming).
+ * Epic B7 — also renders session-start energy chip (variant + options from checkIn).
  */
 export default function AffectCheckInCard({
   checkIn,
@@ -12,18 +17,32 @@ export default function AffectCheckInCard({
 }) {
   if (!checkIn) return null;
 
+  const isSessionStart =
+    checkIn.reason === SESSION_START_REASON ||
+    checkIn.variant === "session-start";
+  const options =
+    (Array.isArray(checkIn.options) && checkIn.options.length
+      ? checkIn.options
+      : null) ||
+    (isSessionStart ? SESSION_START_ENERGY_OPTIONS : AFFECT_CHECKIN_OPTIONS);
+  const eyebrow = checkIn.eyebrow || (isSessionStart ? "Before we dive in" : "Kindling cares");
+  const ariaLabel = isSessionStart
+    ? "Energy check-in before lesson"
+    : "How are you feeling check-in";
+  const Icon = isSessionStart ? Sparkles : Heart;
+
   return (
     <div
-      className="affect-checkin"
+      className={`affect-checkin${isSessionStart ? " session-start" : ""}`}
       role="region"
-      aria-label="How are you feeling check-in"
+      aria-label={ariaLabel}
     >
       <div className="affect-checkin-icon" aria-hidden>
-        <Heart size={18} />
+        <Icon size={18} />
       </div>
       <div className="affect-checkin-body">
         <div className="affect-checkin-top">
-          <p className="affect-checkin-eyebrow">Kindling cares</p>
+          <p className="affect-checkin-eyebrow">{eyebrow}</p>
           {onDismiss && (
             <button
               type="button"
@@ -39,8 +58,12 @@ export default function AffectCheckInCard({
         </div>
         <h4 className="affect-checkin-title">{checkIn.headline}</h4>
         <p className="affect-checkin-text">{checkIn.body}</p>
-        <div className="affect-checkin-options" role="group" aria-label="How I feel">
-          {AFFECT_CHECKIN_OPTIONS.map((opt) => (
+        <div
+          className="affect-checkin-options"
+          role="group"
+          aria-label={isSessionStart ? "My energy" : "How I feel"}
+        >
+          {options.map((opt) => (
             <button
               key={opt.id}
               type="button"

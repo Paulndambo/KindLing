@@ -106,32 +106,22 @@ def job_mastery_recompute(**kwargs) -> Dict[str, Any]:
 
 @register_job(
     "review_schedule",
-    description="Placeholder: spaced review scheduling from weak mastery",
+    description="Epic C1: spaced review scheduling from weak/rusty pilot skills",
     interval_seconds=24 * 3600,
     enabled=True,
 )
 def job_review_schedule(**kwargs) -> Dict[str, Any]:
     """
-    Skeleton for spaced review engine (Horizon B). Dry-run only.
+    Materialize SkillReviewItem rows for learners with skill mastery data.
+    dry_run=True: count candidates only; dry_run=False: write schedule.
     """
-    from learning.models import TopicMastery
+    from learning.review_service import schedule_reviews_all_profiles
 
-    dry_run = kwargs.get("dry_run", True)
-    # Heuristic placeholder: low mastery scores as "weak"
-    weak = (
-        TopicMastery.objects.filter(score__lt=50).count()
-        if _has_field(TopicMastery, "score")
-        else TopicMastery.objects.count()
-    )
-
-    return {
-        "ok": True,
-        "job": "review_schedule",
-        "dry_run": dry_run,
-        "weak_topics": weak,
-        "reviews_scheduled": 0,
-        "note": "Spaced review not implemented — placeholder for Horizon B",
-    }
+    dry_run = kwargs.get("dry_run", False)
+    result = schedule_reviews_all_profiles(dry_run=bool(dry_run))
+    result["job"] = "review_schedule"
+    result["reviews_scheduled"] = result.get("created", 0) + result.get("updated", 0)
+    return result
 
 
 def _has_field(model, name: str) -> bool:

@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { NAV } from "./constants/navigation";
 import { useAuth } from "./hooks/useAuth";
 import { useStudentProfile } from "./hooks/useStudentProfile";
@@ -15,15 +15,9 @@ const Settings = lazy(() => import("./components/settings/Settings"));
 
 function ScreenFallback() {
   return (
-    <div
-      style={{
-        padding: "80px 40px",
-        textAlign: "center",
-        color: "var(--ink-soft)",
-        fontSize: 14,
-      }}
-    >
-      Loading…
+    <div className="screen-fallback" role="status" aria-live="polite">
+      <div className="screen-fallback-spinner" aria-hidden />
+      <p>Loading…</p>
     </div>
   );
 }
@@ -31,6 +25,28 @@ function ScreenFallback() {
 export default function App() {
   const [screen, setScreen] = useState("overview");
   const [activeLesson, setActiveLesson] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Scroll to top + close mobile nav when the primary screen changes
+  useEffect(() => {
+    setMobileNavOpen(false);
+    window.scrollTo(0, 0);
+    // Move focus into main content for keyboard / screen-reader continuity
+    const main = document.getElementById("main-content");
+    if (main) {
+      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+      // Avoid stealing focus while typing in inputs
+      const active = document.activeElement;
+      const tag = active?.tagName?.toLowerCase();
+      if (!active || tag === "body" || active === document.body || active.closest?.("nav")) {
+        try {
+          main.focus({ preventScroll: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [screen]);
 
   const {
     isLoggedIn,
@@ -128,6 +144,10 @@ export default function App() {
     openAuth("login", null);
   }, [openAuth]);
 
+  const handleClearAuthError = useCallback(() => {
+    setAuthError("");
+  }, [setAuthError]);
+
   const handleNavigate = useCallback(
     (tabId) => {
       const navItem = NAV.find((n) => n.id === tabId);
@@ -141,7 +161,7 @@ export default function App() {
   );
 
   const startLesson = useCallback(
-    (subjectName, topicName) => {
+    (subjectName, topicName, opts = null) => {
       if (!isLoggedIn) {
         requireAuth("lesson", "register");
         return;
@@ -150,7 +170,14 @@ export default function App() {
         setOnboardingOpen(true);
         return;
       }
-      setActiveLesson({ subject: subjectName, topic: topicName });
+      // opts: reviewMode (C1), challengeMode (G1), skill labels, etc.
+      const extra =
+        opts && typeof opts === "object" && !Array.isArray(opts) ? opts : {};
+      setActiveLesson({
+        subject: subjectName,
+        topic: topicName,
+        ...extra,
+      });
       setScreen("lesson");
     },
     [isLoggedIn, requireAuth, student, setOnboardingOpen]
@@ -158,6 +185,9 @@ export default function App() {
 
   return (
     <div className="kdl">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <TopNav
         screen={screen}
         isLoggedIn={isLoggedIn}
@@ -167,71 +197,80 @@ export default function App() {
         onGetStarted={handleGetStarted}
         onLogout={handleLogout}
         onOpenOnboarding={handleOpenOnboarding}
+        mobileOpen={mobileNavOpen}
+        onMobileOpenChange={setMobileNavOpen}
       />
 
-      <Suspense fallback={<ScreenFallback />}>
-        {screen === "overview" && (
-          <Overview
-            goTo={handleNavigate}
-            student={student}
-            isLoggedIn={isLoggedIn}
-            onOpenOnboarding={handleOpenOnboarding}
-            onGetStarted={handleGetStarted}
-            onOpenLogin={handleOpenLogin}
-            onStartLesson={() => {
-              if (!isLoggedIn) {
-                handleGetStarted();
-                return;
-              }
-              if (student && !student.isOnboarded) {
-                setOnboardingOpen(true);
-                return;
-              }
-              setScreen("lesson");
-            }}
-          />
-        )}
-        {screen === "subjects" && (
-          <MySubjects
-            subjects={subjects}
-            loading={subjectsLoading}
-            error={subjectsError}
-            onCreateSubject={createSubject}
-            onAddTopic={addTopic}
-            onDeleteSubject={deleteSubject}
-            onDeleteTopic={deleteTopic}
-            onStartLesson={startLesson}
-            student={student}
-            isLoggedIn={isLoggedIn}
-            onGetStarted={handleGetStarted}
-            onOpenLogin={handleOpenLogin}
-            onOpenOnboarding={handleOpenOnboarding}
-          />
-        )}
-        {screen === "lesson" && (
-          <Lesson
-            key={`${activeLesson?.subject ?? "general"}-${activeLesson?.topic ?? "default"}`}
-            activeLesson={activeLesson}
-            student={student}
-            subjects={subjects}
-          />
-        )}
-        {screen === "dashboard" && (
-          <Dashboard
-            key={student?.id || student?.name || "dashboard"}
-            student={student}
-            subjects={subjects}
-            onStartLesson={startLesson}
-            onStudentUpdate={applyProfileUpdate}
-          />
-        )}
-        {screen === "settings" && (
-          <Settings
-            isLoggedIn={isLoggedIn}
-            onOpenLogin={handleOpenLogin}
-          />
-        )}
-      </Suspense>
+      <main id="main-content" className="app-main" tabIndex={-1}>
+        <Suspense fallback={<ScreenFallback />}>
+          {screen === "overview" && (
+            <Overview
+              goTo={handleNavigate}
+              student={student}
+              isLoggedIn={isLoggedIn}
+              onOpenOnboarding={handleOpenOnboarding}
+              onGetStarted={handleGetStarted}
+              onOpenLogin={handleOpenLogin}
+              onStartLesson={() => {
+                if (!isLoggedIn) {
+                  handleGetStarted();
+                  return;
+                }
+                if (student && !student.isOnboarded) {
+                  setOnboardingOpen(true);
+                  return;
+                }
+                // Prefer subjects so learners pick a topic rather than a blank lesson
+                if (subjects?.length) {
+                  setScreen("subjects");
+                  return;
+                }
+                setScreen("lesson");
+              }}
+            />
+          )}
+          {screen === "subjects" && (
+            <MySubjects
+              subjects={subjects}
+              loading={subjectsLoading}
+              error={subjectsError}
+              onCreateSubject={createSubject}
+              onAddTopic={addTopic}
+              onDeleteSubject={deleteSubject}
+              onDeleteTopic={deleteTopic}
+              onStartLesson={startLesson}
+              student={student}
+              isLoggedIn={isLoggedIn}
+              onGetStarted={handleGetStarted}
+              onOpenLogin={handleOpenLogin}
+              onOpenOnboarding={handleOpenOnboarding}
+            />
+          )}
+          {screen === "lesson" && (
+            <Lesson
+              key={`${activeLesson?.subject ?? "general"}-${activeLesson?.topic ?? "default"}-${activeLesson?.reviewSkill ?? activeLesson?.challengeSkill ?? "open"}`}
+              activeLesson={activeLesson}
+              student={student}
+              subjects={subjects}
+            />
+          )}
+          {screen === "dashboard" && (
+            <Dashboard
+              key={student?.id || student?.name || "dashboard"}
+              student={student}
+              subjects={subjects}
+              onStartLesson={startLesson}
+              onStudentUpdate={applyProfileUpdate}
+            />
+          )}
+          {screen === "settings" && (
+            <Settings
+              isLoggedIn={isLoggedIn}
+              onOpenLogin={handleOpenLogin}
+            />
+          )}
+        </Suspense>
+      </main>
 
       <AuthModal
         isOpen={authOpen}
@@ -245,7 +284,7 @@ export default function App() {
         redirectTab={pendingTab}
         loading={authLoading}
         error={authError}
-        onClearError={() => setAuthError("")}
+        onClearError={handleClearAuthError}
       />
 
       {onboardingOpen && isLoggedIn && (

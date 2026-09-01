@@ -37,16 +37,16 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
     PlanId.EMBER: {
         "id": PlanId.EMBER,
         "name": "Ember",
-        "tagline": "Family plan for daily tutoring",
+        "tagline": "Daily tutoring for one learner",
         "priceMonthly": 19,
         "priceYearly": 190,
         "highlight": True,
         "features": [
             "Everything in Spark",
             "Generous daily lessons on platform AI",
-            "Weekly family digests",
             "Homework photo help",
             "Priority session continuity",
+            "Optional weekly progress note to a guardian email",
         ],
         "entitlements": {
             "platformAi": True,

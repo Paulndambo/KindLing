@@ -145,3 +145,42 @@ export async function getDigest(id) {
     auth: true,
   });
 }
+
+/**
+ * Epic C1 — spaced review / Review spark list.
+ * @param {{ refresh?: boolean }} opts
+ */
+export async function getReviewSparks(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.refresh === false) params.set("refresh", "0");
+  const qs = params.toString();
+  return apiRequest(`/api/learning/reviews/${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+/** Force reschedule for current learner. */
+export async function refreshReviewSchedule() {
+  return apiRequest("/api/learning/reviews/", {
+    method: "POST",
+    auth: true,
+    json: {},
+  });
+}
+
+/**
+ * Mark a review complete and reschedule.
+ * @param {{ skillSlug?: string, reviewId?: number, outcome?: 'success'|'fail'|'partial' }} body
+ */
+export async function completeReviewSpark(body = {}) {
+  return apiRequest("/api/learning/reviews/complete/", {
+    method: "POST",
+    auth: true,
+    json: {
+      skillSlug: body.skillSlug || body.skill_slug || "",
+      reviewId: body.reviewId || body.review_id || null,
+      outcome: body.outcome || "success",
+    },
+  });
+}

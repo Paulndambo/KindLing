@@ -12,7 +12,9 @@ import {
   Trees,
   ArrowUpRight,
   ListOrdered,
+  Target,
 } from "lucide-react";
+import { truncateGoal } from "../../services/learning/goalsSurface";
 
 const LADDER_BTNS = [
   { level: 1, label: "Micro-hint", Icon: Lightbulb },
@@ -90,6 +92,8 @@ export default function LessonTools({
   manipOpen = false,
   onOpenManipulative,
   manipState = null,
+  /** Epic C5 — resolved lesson goals */
+  lessonGoals = null,
 }) {
   const last = lastSignals ? signalLabel(lastSignals.correctness) : null;
   const accuracyPct =
@@ -108,6 +112,44 @@ export default function LessonTools({
 
   return (
     <aside className="lesson-tools">
+      {/* Epic C5 lite — goals surface */}
+      {lessonGoals && (
+        <div className="goals-tools-panel" role="region" aria-label="Your focus">
+          <h4>
+            <Target size={13} style={{ marginRight: 6, verticalAlign: -2 }} />
+            Your focus
+          </h4>
+          <div className="goals-tools-rows">
+            <div className="goals-tools-row">
+              <span>Familiarity</span>
+              <strong>{lessonGoals.familiarityLabel || "—"}</strong>
+            </div>
+            {lessonGoals.effectiveGoal ? (
+              <p className="goals-tools-goal" title={lessonGoals.effectiveGoal}>
+                <span className="goals-tools-label">Topic goal</span>
+                {truncateGoal(lessonGoals.effectiveGoal, 140)}
+              </p>
+            ) : (
+              <p className="goals-tools-empty">
+                No topic goal yet — set one when you add topics under Subjects.
+              </p>
+            )}
+            {lessonGoals.weekFocus ? (
+              <p className="goals-tools-goal week" title={lessonGoals.weekFocus}>
+                <span className="goals-tools-label">This week</span>
+                {truncateGoal(lessonGoals.weekFocus, 120)}
+              </p>
+            ) : null}
+            {!lessonGoals.weekFocus && lessonGoals.profileGoal ? (
+              <p className="goals-tools-goal profile" title={lessonGoals.profileGoal}>
+                <span className="goals-tools-label">Longer-term</span>
+                {truncateGoal(lessonGoals.profileGoal, 100)}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       <div>
         <h4>Live difficulty</h4>
         <div className="diff-track">
@@ -560,9 +602,10 @@ export default function LessonTools({
               isArchiveView ||
               !hasAi
             }
+            title="Reflect briefly, then save this chat to your Learning Journal"
           >
             <Square size={13} />
-            {isSummarizing ? "Saving summary…" : "End & save summary"}
+            {isSummarizing ? "Saving summary…" : "Wrap up"}
           </button>
         </div>
         <button

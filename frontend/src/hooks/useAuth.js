@@ -11,6 +11,26 @@ import {
   ApiError,
 } from "../services/api";
 
+function formatAuthFailure(err, fallback) {
+  if (err instanceof ApiError) {
+    const data = err.data;
+    if (data && typeof data === "object") {
+      if (typeof data.detail === "string" && data.detail.trim()) return data.detail;
+      if (Array.isArray(data.detail) && data.detail[0]) return String(data.detail[0]);
+      if (typeof data.non_field_errors?.[0] === "string") return data.non_field_errors[0];
+      const first = Object.values(data).flat?.()?.[0];
+      if (typeof first === "string" && first.trim()) return first;
+    }
+    if (err.message?.trim()) return err.message;
+  }
+  const raw = err?.message || "";
+  if (/failed to fetch|networkerror|load failed/i.test(raw)) {
+    return "Unable to reach Kindling. Check that the server is running and try again.";
+  }
+  if (raw.trim()) return raw;
+  return fallback;
+}
+
 /**
  * Student authentication against the Kindling Django API.
  * Session (user + login flag) is cached in localStorage; JWT tokens live
@@ -92,11 +112,14 @@ export function useAuth() {
         const session = await apiLogin(email, password);
         return applySession(session);
       } catch (err) {
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : "Unable to log in. Check your connection and try again.";
+        const message = formatAuthFailure(
+          err,
+          "Unable to log in. Check your email and password, then try again."
+        );
         setAuthError(message);
+        // Attach readable message so UI catch blocks can show it even if
+        // parent state is cleared by a re-render race.
+        if (err && typeof err === "object") err.message = message;
         throw err;
       } finally {
         setAuthLoading(false);
@@ -118,16 +141,12 @@ export function useAuth() {
         });
         return applySession(session);
       } catch (err) {
-        let message = "Unable to create account.";
-        if (err instanceof ApiError) {
-          if (err.data && typeof err.data === "object") {
-            const first = Object.values(err.data).flat?.()?.[0] || err.message;
-            message = typeof first === "string" ? first : err.message;
-          } else {
-            message = err.message;
-          }
-        }
+        const message = formatAuthFailure(
+          err,
+          "Unable to create account. Please try again."
+        );
         setAuthError(message);
+        if (err && typeof err === "object") err.message = message;
         throw err;
       } finally {
         setAuthLoading(false);

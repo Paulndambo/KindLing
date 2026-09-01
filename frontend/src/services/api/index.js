@@ -37,6 +37,9 @@ export {
   listDigests,
   generateDigest,
   getDigest,
+  getReviewSparks,
+  refreshReviewSchedule,
+  completeReviewSpark,
 } from "./learning";
 export {
   fetchConversationShelf,

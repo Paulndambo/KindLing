@@ -36,7 +36,7 @@ class RoutingMode(models.TextChoices):
 
 
 class PlatformSubscription(models.Model):
-    """One subscription row per account (family seat root)."""
+    """One subscription row per student account (1 seat = 1 learner)."""
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

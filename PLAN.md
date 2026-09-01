@@ -10,7 +10,7 @@ This plan turns **§3 What “excellent go-to tutor” requires next** and **§4
 
 ## 1. Goal
 
-Move Kindling from a **strong adaptive prototype** to a product families and schools can trust as a **default go-to tutor**—production-ready on reliability, safety, learning science, and parent-visible value—without losing the warm, patient teaching voice.
+Move Kindling from a **strong adaptive prototype** to a product each **individual learner** (and the adult paying for that seat) can trust as a **default go-to tutor**—production-ready on reliability, safety, learning science, and optional email digests—without losing the warm, patient teaching voice. **One account = one student subscription**, always.
 
 **Production-ready means:**
 
@@ -41,7 +41,11 @@ Kindling already has a coherent spine. New work should **extend** these layers:
 | Family surfaces | Dashboard mastery/confidence views, learning API | `Dashboard.jsx`, learning views |
 | Session continuity (partial) | Topic conversations / journal primitives | `conversation_service.py`, `ConversationJournal.jsx` |
 
-**Explicit gaps for production:** true skill mastery, curriculum graph, spaced review, homework image flow, correctness verification, parent accounts/digests, safety policies, Postgres + jobs + observability.
+**Shipped (do not re-build):** pilot skill mastery + graph (A1), resume (A2), math verify (A3), homework photos (A4), guardian digests (A5), manipulatives (A6), struggle ladder B1–B6, session rhythm B7–B8 / C1 / C5 lite / G1, observability + safety floor + jobs skeleton.
+
+**Commercial model (permanent):** **one account = one learner = one subscription.** Parents or schools who support multiple children buy **separate seats** (same as any multi-learner institution). There is **no** multi-child household product, parent portal hierarchy, or classroom/roster product. Adults may only receive **optional email digests** when the student configures an address on their own profile (A5).
+
+**Still open for production / Wave 2:** Postgres + hostable deploy (0.1), AI failover/cost controls, assessment modes, domain playbook expansion, eval harness, student-facing standards export, diagram rendering, a11y pack, duplex voice, PWA/i18n, full goals planner (single-learner), portfolios, digest polish.
 
 ---
 
@@ -77,14 +81,25 @@ Every feature maps to one or more streams:
 | **I** | Intervention & affect | Struggle signals, graduated help, check-ins, alerts |
 | **M** | Multimodal teaching | Visuals, diagrams, image homework, whiteboard later |
 | **V** | Voice & language | Duplex, i18n, personas (mostly post-A) |
-| **R** | Relationships | Parents, digests, teachers, goals, portfolios |
+| **R** | Relationships | Student-configured digests/email, single-learner goals, portfolios (no multi-child or classroom products) |
 | **T** | Trust, safety & quality | Safety policies, correctness, privacy, evals |
 | **X** | Product experience | Resume, uploads, resilience, a11y, theming |
 | **S** | Platform & scale | Postgres, jobs, observability, AI gateway, deploy |
 
 ### 4.3 Phase gate rule
 
-Do not start Horizon B product surface area until **Phase 0–2** below are complete (or explicitly waived with a documented risk acceptance). Platform and trust work runs **in parallel** with Horizon A features, not after them.
+**Wave 1 (complete for product pedagogy):** Phases **0.2–0.5**, **1 (A1–A6)**, **2 (B1–B6)**, and **2.5 (B7, B8, C1 v1, C5 lite, G1)** are implemented in-repo.
+
+**Wave 2 (active backlog):** Everything still open in CAPABILITIES §3 that is not checked off above — and that fits the **single-learner seat** model — organized in [§15 Wave 2](#15-wave-2--second-development-cycle-post-phase-25) and Phases **3–5**. **Never** schedule multi-child households, parent multi-profile accounts, or classroom/roster products (see §16). Bulk buyers (parents with several kids, schools) = **N separate student subscriptions**. **Phase 0.1 deploy/Postgres** may run in parallel with early Wave 2 product work — it remains a hard gate for *external* beta.
+
+Platform and trust work runs **in parallel** with product features, not after them.
+
+### 4.4 Two-wave framing (execution)
+
+| Wave | Scope | Status |
+|------|--------|--------|
+| **Wave 1** | Adaptive tutor spine + intervention depth + session rhythm (Phases 0.2–2.5 product epics) | ✅ Shipped in monorepo |
+| **Wave 2** | Hostable production closeout + relationships/assessment + multimodal polish + scale (0.1 + Phases 3–5) | ⬜ Active plan — see §15 |
 
 ---
 
@@ -228,7 +243,7 @@ Do not start Horizon B product surface area until **Phase 0–2** below are comp
 
 ### Epic A5 — Parent digest from existing learning events ✅
 
-**CAPABILITIES:** §3.2.4 (alerts), §3.5.1 (partial: digest without full multi-child yet), §3.8.2
+**CAPABILITIES:** §3.2.4 (optional email alerts), §3.5 progress digests (student-configured), §3.8.2
 
 | Step | Work | Status |
 |------|------|--------|
@@ -237,7 +252,7 @@ Do not start Horizon B product surface area until **Phase 0–2** below are comp
 | A5.3 | `weekly_digest` job + in-app / console / email delivery | ✅ |
 | A5.4 | `digest_opt_in` + `family_email` on profile; Dashboard UI | ✅ |
 
-**Note:** Full multi-child parent hierarchy can wait for Phase 3; digests can target the linked family email on the student account first.
+**Note (permanent model):** Digests stay on the **student** profile (`digest_opt_in` + `family_email` or any recipient email the student sets). No separate parent login, no multi-child tree—ever. A parent of three children buys three seats.
 
 **Done when:** Opted-in demo family receives a weekly summary generated from real `LearningEvent` data.  
 **How:** Dashboard → Family weekly digest (opt-in + generate preview); job: `python manage.py run_job weekly_digest --dry-run`.
@@ -377,75 +392,248 @@ Escalation: “More help” while active; session escalates after lighter levels
 
 ---
 
-## 8. Phase 3 — Relationships, assessment, and differentiation (Horizon B)
+## 8. Phase 2.5 — Session rhythm (SUGGESTIONS-feasible, beta-relevant)
 
-**Goal:** Kindling becomes sticky for households and classrooms.
+**Goal:** Capture the *useful* parts of the day-in-the-life vision ([`SUGGESTIONS.md`](./SUGGESTIONS.md)) without VR, global collab, wearables, or heavy gamification. Thin rituals at **start** and **end** of a lesson, plus the retention engine that makes multi-day adaptation feel automatic.
 
-**Maps to:** §3.1.4, §3.1.7–3.1.8, §3.5, remaining §3.2.4
+**Source:** SUGGESTIONS “natural next steps” — session-start check-in, end-of-session reflection, spaced review, light goals surface.  
+**Explicitly deferred here:** mindfulness content packs, voice-tone affect, quests/badges, external course/book recommenders, peer collaboration (see §15).
 
-| Epic | Capability | Deliverable |
-|------|------------|-------------|
-| C1 | §3.1.4 Spaced review | Scheduler uses weak mastery + forgetting curve; short review sessions |
-| C2 | §3.5.1 Parent accounts | Multi-child households, permissions, digest ownership |
-| C3 | §3.5.2 Classroom mode | Rosters, assignments, privacy-safe aggregates |
-| C4 | §3.5.3 Standards reports | Export progress vs framework codes on pilot graph |
-| C5 | §3.5.4 Goals & plans | Exam prep timelines, weekly focus contracts |
-| C6 | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat |
-| C7 | §3.1.8 Domain playbooks | Early math / algebra packs + scaffold consistency |
-| C8 | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing |
-| C9 | §3.6.3 Human review | Flagged sessions for parent/teacher |
+**Maps to:** CAPABILITIES §3.2.3 (extend), §3.1.4, §3.5.4 (lite), §3.7 experience
 
-**Phase 3 exit criteria (Horizon B)**
+### Epic B7 — Session-start energy check-in ✅
 
-- [ ] Spaced review appears automatically for weak skills  
-- [ ] Real parent multi-child account path  
-- [ ] One classroom pilot flow (roster + assignment)  
-- [ ] Exportable standards-aligned report for pilot subjects  
-- [ ] Offline eval harness produces quality scores on recorded sessions  
+**Extends:** B3 (in-lesson affect) → optional **pre-lesson** mood/energy chip.
+
+| Step | Work | Status |
+|------|------|--------|
+| B7.1 | Optional chip on lesson open / first turn: 3–4 warm energy options (e.g. ready / okay / low / need a break) | ✅ |
+| B7.2 | Emit `affect.session_start` (or reuse `affect.checkin` with `reason=session_start`); never block starting the lesson | ✅ `reason=session_start`; greeting waits ≤14s then continues |
+| B7.3 | **Low energy → softer open:** tutor directive for shorter steps / lighter load; optional one-tap offer of break or easier related skill (reuse B2 L4, do not invent new ladder) | ✅ |
+| B7.4 | Skip / dismiss forever-this-session; no shame copy; respect existing distress safety path | ✅ |
+
+**Done when:** Student can optionally set energy at session start; choosing low energy changes tutor pacing or offers break/easier path within one turn.  
+**How:** Open Math Foundations → chip appears once → pick “low” → first tutor message or banner reflects lighter pace / break offer.  
+**Beta map:** [`BETA_LAUNCH.md`](./BETA_LAUNCH.md) **P1.8**  
+**Verify:** `frontend/scripts/smoke-session-start-b7.mjs` (esbuild bundle); backend `learning.tests_affect_b3` B7 case.
+
+### Epic B8 — End-of-session reflection ✅
+
+**Vision beat:** evening “reflection & growth” without a separate product surface.
+
+| Step | Work | Status |
+|------|------|--------|
+| B8.1 | On natural session end (leave lesson, topic complete, or explicit “Wrap up”): short card — *what clicked?* + *what’s next?* (2–4 choices or one free line) | ✅ Tools **Wrap up** → reflection card |
+| B8.2 | Persist as learning event(s) e.g. `session.reflect`; feed optional one-line note into resume snapshot / next session open | ✅ `session.reflect` + profile `lastReflection` + resume snapshot |
+| B8.3 | Student-facing close copy stays encouraging; optional deep-link CTA to **Review spark** when C1 has a due item | ✅ Thin local CTA until C1; ended-card button |
+| B8.4 | Skip always available; do not force reflection on crash/error exits | ✅ |
+
+**Done when:** Ending a normal lesson can capture a 10-second reflection and surface a sensible next step (continue topic, review spark, or rest).  
+**How:** Practice → **Wrap up** → reflection card → Save & finish / Skip → journal summary + optional Review spark CTA.  
+**Beta map:** **P1.9**  
+**Verify:** `frontend/scripts/smoke-session-reflect-b8.mjs`; backend `learning.tests_session_reflect_b8`; browser `verify-session-reflect-b8.mjs`.
+
+### Epic C1 — Spaced review v1 (detail) ✅
+
+**CAPABILITIES:** §3.1.4 · **Primary retention bet for paid beta**
+
+| Step | Work | Status |
+|------|------|--------|
+| C1.1 | Selection: weak / rusty pilot skills from BKT + recent struggle / incorrect streaks (7-day window default) | ✅ `review_service.select_review_candidates` |
+| C1.2 | `review_schedule` job (or on-read compute) materializes due reviews; honor existing jobs skeleton hook | ✅ job + on-read via GET `/api/learning/reviews/` |
+| C1.3 | Student UI: **Review spark** entry on Dashboard + My Subjects; one-tap start short review session | ✅ `ReviewSparkCard` |
+| C1.4 | Review session mode: brief retrieval practice on the skill (not full new-topic lecture); mastery update on graded turns | ✅ review mode banner + tutor directives; graded turns still drive BKT |
+| C1.5 | After review success, reschedule further out; after fail, sooner + optional easier prerequisite | ✅ SM-2-lite `complete_review` |
+
+**Done when:** Within 7 days of struggle on a pilot skill, learner sees an auto-suggested review and can complete it in-product.  
+**How:** Miss fraction items → later open Dashboard → Review spark → short practice → skill spark moves.  
+**Beta map:** **P1.2**  
+**Verify:** `learning.tests_review_c1`; `frontend/scripts/smoke-review-c1.mjs`; browser `verify-review-c1.mjs`.
+
+### Epic C5 — Goals surface (lite) ✅
+
+**CAPABILITIES:** §3.5.4 lite only — **not** full exam planners or multi-week contracts.
+
+| Step | Work | Status |
+|------|------|--------|
+| C5.1 | Surface existing topic `learning_goal` + familiarity on lesson path / tools / first-session orientation | ✅ path chip, tools “Your focus”, chat header |
+| C5.2 | Optional one-line “this week I’m working on…” from profile or subject (student-editable) | ✅ `week_focus` / `weekFocus` + Dashboard editor |
+| C5.3 | Inject goal into tutor system prompt when present; reflection (B8) may echo goal language | ✅ gemini topic intent + week focus; B8 body echo |
+| C5.4 | **Defer:** exam timelines, homework windows, guardian-set contracts | — |
+
+**Done when:** Student can see and lightly set a goal that shapes the first turns of a lesson without a planning product.  
+**How:** Set goal on subject/topic → open lesson → tutor references it; path or tools shows the goal chip.  
+**Beta map:** **P2.4**  
+**Verify:** `frontend/scripts/smoke-goals-c5.mjs`; backend `students.tests_goals_c5`; browser `verify-goals-c5.mjs`.
+
+### Epic G1 — Light spark challenge (optional, post-C1) ✅
+
+**Only after** C1 + session rhythm are sticky. Stays tutor-first — not a badge platform.
+
+| Step | Work | Status |
+|------|------|--------|
+| G1.1 | Optional “Spark challenge”: e.g. 3 solid graded turns on a weak pilot skill from Dashboard | ✅ Dashboard card → challenge lesson mode |
+| G1.2 | Completion = persistence / mastery celebration only (reuse B3 chips + skill sparks) — **no** collectible badge inventory | ✅ chips + `challenge.*` events; optional C1 reschedule |
+| G1.3 | **Defer:** unlockable sims, global portfolios, employer/university credentials | — |
+
+**Done when:** A motivated student can take a short optional challenge that reuses mastery events without new economy systems.  
+**Beta map:** **P2.9** (only if P0/P1 green and learners ask for “something to beat”)  
+**Verify:** `frontend/scripts/smoke-challenge-g1.mjs`; backend `learning.tests_challenge_g1`; browser `verify-challenge-g1.mjs`.
+
+**Phase 2.5 exit criteria (beta product slice)**
+
+- [x] Optional session-start energy check-in can soften pacing or offer break/easier skill (**B7**)  
+- [x] End-of-session reflection captures next-step signal without blocking exit (**B8**)  
+- [x] Spaced review v1 surfaces and completes for at least one pilot skill path (**C1**)  
+- [x] Topic/subject goal visible in lesson when set (C5 lite)  
+- [x] No VR / collab / badge portfolio work shipped under this phase  
 
 ---
 
-## 9. Phase 4 — Multimodal, voice, and experience polish
+## 9. Phase 3 — Single-learner depth & differentiation (Horizon B) · **Wave 2 core**
+
+**Goal:** After Phase 2.5 retention loops, deepen **one student's** learning quality and shareable progress—without ever building multi-child households or classroom products.
+
+**Commercial invariant:** one subscription seat per learner. A parent with two children = two accounts. A school with 30 students = 30 seats (billing/ops only—no roster UI, no class aggregates product).
+
+**Maps to:** CAPABILITIES §3.1.4 (depth beyond v1), §3.1.7–3.1.8, §3.5.3–3.5.4 (student-facing), §3.6.3/5 · digest polish stays on A5
+
+| Epic | Capability | Deliverable | Status | Notes |
+|------|------------|-------------|--------|-------|
+| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, stronger schedule UX, richer forgetting curve | ⬜ | v1 ✅ in Phase 2.5 |
+| **C2** | §3.5.1 Parent accounts | — | ❌ | **Out of product forever** — student-configured digest email only (A5) |
+| **C3** | §3.5.2 Classroom mode | — | ❌ | **Out of product forever** — institutions buy per-seat; no roster product |
+| **C4** | §3.5.3 Standards reports | Export progress vs framework codes for **this student** | ⬜ | Single-learner export only |
+| **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⬜ | Lite ✅ Phase 2.5; no guardian contract product |
+| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ⬜ | |
+| **C7** | §3.1.8 Domain playbooks | Second thin domain pack + scaffold consistency beyond math pilot | ⬜ | Beta P2.2 if sessions leave math |
+| **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ⬜ | Manual rubric = beta P2.3 |
+| **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ⬜ | Beta P2.8 lite; **not** a parent app |
+| **C10** | §3.2.4 Optional email alerts | Extra “stuck N sessions” email to the **same** student-configured digest address | ⬜ | Extends A5 only; student controls opt-in |
+
+### Phase 3 epic sketches (Wave 2 backlog detail)
+
+#### C1+ — Spaced review depth
+| Step | Work | Status |
+|------|------|--------|
+| C1+.1 | Multi-subject / multi-domain due selection (not only pilot math) | ⬜ |
+| C1+.2 | Student schedule UX (upcoming vs due, snooze, “why this skill”) | ⬜ |
+| C1+.3 | Stronger interval model (forgetting curve params per skill family) | ⬜ |
+| C1+.4 | Tie B8 next-step + week focus (C5) into review ranking | ⬜ |
+
+#### C2 / C3 — Explicitly not planned
+| Epic | Stance |
+|------|--------|
+| **C2** Parent multi-child accounts | **Never.** Digest email only (student configures recipient on their profile). |
+| **C3** Classroom / roster / LMS class product | **Never.** Schools purchase individual seats; no class dashboard. |
+
+#### C4 — Standards alignment reports (single learner)
+| Step | Work | Status |
+|------|------|--------|
+| C4.1 | Map pilot skills → standard codes (expand A1 `standard_codes`) | ⬜ |
+| C4.2 | Export PDF/CSV progress for **this student** (student or payer downloads) | ⬜ |
+| C4.3 | Plain-language narrative suitable to forward by email | ⬜ |
+
+#### C5+ — Goals & plans (full, single learner)
+| Step | Work | Status |
+|------|------|--------|
+| C5+.1 | Exam / target date + countdown orientation | ⬜ |
+| C5+.2 | Homework help windows (time-boxed tutor modes) | ⬜ |
+| C5+.3 | Weekly focus the **student** sets (no guardian contract UI) | ⬜ |
+| C5+.4 | **Keep lite surface** as default; fuller planner opt-in | — |
+
+#### C6 — Assessment modes
+| Step | Work | Status |
+|------|------|--------|
+| C6.1 | End-of-topic check (short graded set, not open chat) | ⬜ |
+| C6.2 | Low-stakes quiz mode with A3 verification where applicable | ⬜ |
+| C6.3 | Optional timed practice flag | ⬜ |
+| C6.4 | Results feed mastery + optional Review spark seeds | ⬜ |
+
+#### C7 — Domain playbooks
+| Step | Work | Status |
+|------|------|--------|
+| C7.1 | Codify early-math / algebra scaffold pack as data (not only prompts) | ⬜ |
+| C7.2 | Second thin pack (science or writing) if >40% sessions leave math | ⬜ |
+| C7.3 | Consistency checks via C8 samples | ⬜ |
+
+#### C8 — Eval harness
+| Step | Work | Status |
+|------|------|--------|
+| C8.1 | Offline scorer on recorded transcripts (hint quality, Socratic fidelity, intervention timing) | ⬜ |
+| C8.2 | Dashboard or CLI report for weekly sample | ⬜ |
+| C8.3 | Beta bridge: manual 10-session rubric (BETA P2.3) until automated | ⬜ |
+
+#### C9 / C10 — Ops flags & digest-channel alerts (still single seat)
+| Step | Work | Status |
+|------|------|--------|
+| C9.1 | Flag model: distress (reuse safety), repeated fail — for **ops/support** | ⬜ |
+| C9.2 | Simple ops review list (admin), not a parent app | ⬜ |
+| C10.1 | Optional rule: email digest recipient when stuck N sessions (student opt-in) | ⬜ |
+| C10.2 | Same email channel as A5; never shame copy in student chat | ⬜ |
+
+**Phase 3 exit criteria (Horizon B / Wave 2 product)**
+
+- [x] Spaced review v1 appears for weak pilot skills — Phase 2.5 / beta P1.2 (**C1 done**)  
+- [ ] Spaced review depth beyond v1 (multi-subject, stronger schedule UX) (**C1+**)  
+- [x] **No** multi-child or classroom product (strategy lock)  
+- [ ] Exportable standards-aligned report for **one** student (**C4**)  
+- [ ] At least one assessment mode distinct from open chat (**C6**)  
+- [ ] Offline or weekly eval path produces quality scores on recorded sessions (**C8**)  
+- [ ] Digest remains student-configured email only (A5; optional C10 on same channel)  
+
+---
+
+## 10. Phase 4 — Multimodal, voice, and experience polish · **Wave 2 experience**
 
 **Goal:** Teaching medium matches how children actually learn and how families use devices.
 
-**Maps to:** remaining §3.3, §3.4, §3.7
+**Maps to:** CAPABILITIES remaining §3.3, §3.4, §3.7
 
-| Priority | Item | Notes |
-|----------|------|-------|
-| P0 | Rendered diagrams (Mermaid/SVG/geometry) | Beyond ASCII; streaming-safe |
-| P0 | Accessible content | Dyslexia-friendly option, high contrast, captions for TTS, keyboard-first lesson |
-| P1 | Attachments & work upload generalization | Beyond homework photo (PDF/docs) |
-| P1 | Keyboard shortcuts & focus modes | Distraction-free lesson |
-| P1 | Theming | Calm light, high-contrast, reduced motion |
-| P2 | Whiteboard co-drawing | Shared sketch space |
-| P2 | Video micro-lessons | Optional clips when density high |
-| P2 | Low-latency duplex voice | Continuous conversation mode |
-| P2 | Multi-language tutoring | UI + tutor pairs; EAL bilingual |
-| P3 | Pronunciation coaching | Languages / early reading |
-| P3 | Age-tuned TTS personas | Stable voice identity per preference |
+| Priority | Item | CAPABILITIES | Status | Notes |
+|----------|------|--------------|--------|-------|
+| **P0** | Rendered diagrams (Mermaid/SVG/geometry) | §3.3.2 | ⬜ | Beyond ASCII; streaming-safe |
+| **P0** | Accessible content pack | §3.3.6 | ⬜ | Dyslexia-friendly option, high contrast, TTS captions, keyboard-first lesson (partial reduced-motion already in CSS) |
+| **P1** | Attachments & work upload generalization | §3.7.3 | ⬜ | Beyond homework photo (PDF/docs) |
+| **P1** | Keyboard shortcuts & focus modes | §3.7.4 | ⬜ | Distraction-free lesson |
+| **P1** | Theming | §3.7.5 | ⬜ | Calm light, high-contrast toggle; reduced-motion respect ✅ partial |
+| **P1** | Offline practice packs | §3.7.1 deepen | ⬜ | Failure UX ✅; offline *practice content* still open |
+| **P2** | Whiteboard co-drawing | §3.3.4 | ⬜ | Shared sketch space |
+| **P2** | Video micro-lessons | §3.3.5 | ⬜ | Optional clips when density high |
+| **P2** | Low-latency duplex voice | §3.4.1 | ⬜ | Continuous conversation mode |
+| **P2** | Multi-language tutoring | §3.4.2 | ⬜ | UI + tutor pairs; EAL bilingual |
+| **P3** | Pronunciation coaching | §3.4.3 | ⬜ | Languages / early reading |
+| **P3** | Age-tuned TTS personas | §3.4.4 | ⬜ | Stable voice identity per preference |
+| **P3** | Voice-tone / prosody affect | SUGGESTIONS | ⬜ | After duplex voice — not beta |
+| **P3** | Guided mindfulness micro-pack | SUGGESTIONS | ⬜ | Optional L4 companion if B7 low-energy is used |
+
+**Shipped multimodal baseline (Wave 1 — do not rebuild):** fraction bars / number line (A6), homework image upload (A4), ASCII diagrams, TTS/STT toggles, session resume + transcript search (A2), connectivity failure UX (0.3).
 
 **Done when (Phase 4 minimum):** diagram rendering + accessibility pack + focus mode ship; voice/language items scheduled by demand.
 
 ---
 
-## 10. Phase 5 — Platform scale & category leadership (Horizon C)
+## 11. Phase 5 — Platform scale & category leadership (Horizon C) · **Wave 2 scale**
 
-**Maps to:** §3.8 remaining, Horizon C
+**Maps to:** CAPABILITIES §3.8 remaining, Horizon C · SUGGESTIONS stretch (collab, credentials, immersive)
 
-| Track | Work |
-|-------|------|
-| AI gateway | Abstract multi-model failover, cost controls; stop hard-binding all paths to one client pattern |
-| Mobile | PWA first (voice + offline notes), native later if needed |
-| i18n / RTL | Full UI string extraction + RTL layout |
-| Lifelong learner model | Cross-subject knowledge that persists years |
-| School integrations | LMS, SSO |
-| Research instrumentation | Learning-science-grade event schema & consent |
-| Enterprise | Multi-region hosting, admin, compliance packs |
+| Track | Work | Status |
+|-------|------|--------|
+| AI gateway depth | Multi-model failover chains + cost controls (adapters/BYOK already ship) | ⬜ |
+| Mobile | PWA first (install, voice, offline notes); native later if needed | ⬜ |
+| i18n / RTL | Full UI string extraction + RTL layout | ⬜ |
+| Lifelong learner model | Cross-subject knowledge that persists years | ⬜ |
+| School integrations | Optional SSO / bulk seat purchase for **individual** learner logins—no classroom product | ⬜ |
+| Research instrumentation | Learning-science-grade event schema & consent | ⬜ |
+| Enterprise | Multi-region hosting, admin, compliance packs | ⬜ |
+| Privacy deepen | Retention controls UX, regional hosting options beyond baseline export/delete | ⬜ |
+| Peer / global collaboration | SUGGESTIONS “global collab” — not until strategy changes | ⬜ deferred |
+| Credential portfolios | Employer/university-recognized portfolios — post-PMF | ⬜ deferred |
+| Immersive / VR lessons | Virtual labs & story environments — post Phase 4 media | ⬜ deferred |
 
 ---
 
-## 11. Cross-cutting engineering standards
+## 12. Cross-cutting engineering standards
 
 Apply to every phase:
 
@@ -462,7 +650,7 @@ Apply to every phase:
 
 ---
 
-## 12. Suggested milestone map
+## 13. Suggested milestone map
 
 | Milestone | Name | Includes | Outcome |
 |-----------|------|----------|---------|
@@ -472,99 +660,246 @@ Apply to every phase:
 | **M3** | Multimodal help | A4 + A6 | Photo homework + one manipulative |
 | **M4** | Family loop | A5 + digest job | Weekly parent clarity without shaming |
 | **M5** | Adaptive depth | Phase 2 | Graduated help + misconceptions + examples |
-| **M6** | Institution-ready | Phase 3 subset | Spaced review + parent accounts + reports |
-| **M7** | Scale | Phase 4–5 as needed | Voice/i18n/gateway/school integrations |
+| **M5.5** | Session rhythm | Phase 2.5 · B7, B8, C1 v1, C5 lite, G1 | Start/end rituals + review spark + light challenge — **Wave 1 complete** |
+| **M6** | Wave 2 product | Phase 3 subset (C1+, C6/C7/C8, C4 single-learner export) | Assessment + playbooks + eval; **never** multi-child/classroom products |
+| **M6.5** | Wave 2 experience | Phase 4 P0–P1 | Diagrams, a11y, focus mode, attachment generalize |
+| **M7** | Wave 2 scale | Phase 5 as needed | PWA, gateway failover, i18n, school SSO |
 
 ---
 
-## 13. Traceability: CAPABILITIES §3 → plan phases
+## 14. Traceability: CAPABILITIES §3 → plan phases
 
 | §3 area | Item | Phase / epic |
 |---------|------|----------------|
 | 3.1 Pedagogy | True mastery model | Phase 1 · A1 |
 | 3.1 | Curriculum graph | Phase 1 · A1 (pilot); expand later |
 | 3.1 | Worked-example library | Phase 2 · B4 |
-| 3.1 | Retrieval / spaced review | Phase 3 · C1 |
-| 3.1 | Misconception engine | Phase 2 · B5 |
-| 3.1 | Multi-step problem solving | Phase 2 · B6 |
-| 3.1 | Assessment modes | Phase 3 · C6 |
-| 3.1 | Teacher/tutor playbooks | Phase 3 · C7 |
-| 3.2 Intervention | Richer struggle signals | Phase 2 · B1 |
-| 3.2 | Graduated interventions | Phase 2 · B2 |
-| 3.2 | Affective check-ins | Phase 2 · B3 |
-| 3.2 | Parent/teacher alerts | Phase 1 · A5; Phase 3 · C2/C9 |
-| 3.3 Multimodal | Interactive visuals | Phase 1 · A6 |
-| 3.3 | Rendered diagrams | Phase 4 |
-| 3.3 | Image input | Phase 1 · A4 |
-| 3.3 | Whiteboard | Phase 4 |
-| 3.3 | Video micro-lessons | Phase 4 |
-| 3.3 | Accessible content | Phase 4 |
-| 3.4 Voice & language | All items | Phase 4–5 |
-| 3.5 Progress & institutions | Parent accounts | Phase 3 · C2 |
-| 3.5 | Teacher/classroom | Phase 3 · C3 |
-| 3.5 | Standards reports | Phase 3 · C4 |
-| 3.5 | Goals & plans | Phase 3 · C5 |
-| 3.5 | Portfolios | Phase 3+ backlog |
-| 3.6 Trust | Child-safe policies | Phase 0 · 0.4 |
-| 3.6 | Answer correctness | Phase 1 · A3 |
-| 3.6 | Human-in-the-loop | Phase 3 · C9 |
-| 3.6 | Privacy by design | Phase 0; deepen Phase 5 |
-| 3.6 | Eval harness | Phase 3 · C8 |
-| 3.7 Experience | Offline / flaky network | Phase 0 · 0.3 |
-| 3.7 | Session history & resume | Phase 1 · A2 |
-| 3.7 | Attachments | Phase 1 · A4; Phase 4 generalize |
-| 3.7 | Keyboard / focus | Phase 4 |
-| 3.7 | Theming | Phase 4 |
-| 3.8 Platform | Postgres | Phase 0 · 0.1 |
-| 3.8 | Background jobs | Phase 0 · 0.5; used by A5/C1 |
-| 3.8 | Observability | Phase 0 · 0.2 |
-| 3.8 | Provider flexibility | Phase 5 |
-| 3.8 | Mobile apps | Phase 5 |
-| 3.8 | Internationalization | Phase 5 |
+| 3.1 | Retrieval / spaced review | Phase 2.5 · **C1 v1** ✅; deepen **Wave 2 · C1+** |
+| 3.1 | Misconception engine | Phase 2 · B5 ✅ |
+| 3.1 | Multi-step problem solving | Phase 2 · B6 ✅ |
+| 3.1 | Assessment modes | **Wave 2 · Phase 3 · C6** ⬜ |
+| 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⬜ |
+| 3.2 Intervention | Richer struggle signals | Phase 2 · B1 ✅ |
+| 3.2 | Graduated interventions | Phase 2 · B2 ✅ |
+| 3.2 | Affective check-ins | Phase 2 · B3 ✅; session-start Phase 2.5 · B7 ✅ |
+| 3.2 | Parent/teacher alerts | A5 digest email ✅; optional stuck email on same channel **C10** ⬜ |
+| 3.3 Multimodal | Interactive visuals | Phase 1 · A6 ✅ |
+| 3.3 | Rendered diagrams | **Wave 2 · Phase 4 P0** ⬜ |
+| 3.3 | Image input | Phase 1 · A4 ✅ |
+| 3.3 | Whiteboard | **Wave 2 · Phase 4 P2** ⬜ |
+| 3.3 | Video micro-lessons | **Wave 2 · Phase 4 P2** ⬜ |
+| 3.3 | Accessible content | **Wave 2 · Phase 4 P0** ⬜ (reduced-motion partial) |
+| 3.4 Voice & language | Duplex / i18n / personas | **Wave 2 · Phase 4–5** ⬜ |
+| 3.5 Progress & institutions | Parent multi-child accounts | ❌ **Never** — digest email only (A5) |
+| 3.5 | Teacher/classroom product | ❌ **Never** — institutions = per-seat subscriptions only |
+| 3.5 | Standards reports | **Wave 2 · Phase 3 · C4** (single student export) ⬜ |
+| 3.5 | Goals & plans | Phase 2.5 · **C5 lite** ✅; full **Wave 2 · C5+** (student-owned) ⬜ |
+| 3.5 | Portfolios / credentials | Phase 5 stretch ⬜; light challenge = G1 ✅ |
+| 3.5 | End-of-session reflection | Phase 2.5 · **B8** ✅ |
+| 3.6 Trust | Child-safe policies | Phase 0 · 0.4 ✅ |
+| 3.6 | Answer correctness | Phase 1 · A3 ✅ |
+| 3.6 | Human-in-the-loop | **Wave 2 · Phase 3 · C9** ⬜ |
+| 3.6 | Privacy by design | Phase 0 baseline ✅; deepen Phase 5 ⬜ |
+| 3.6 | Eval harness | **Wave 2 · Phase 3 · C8** ⬜ |
+| 3.7 Experience | Offline / flaky network | Phase 0 · 0.3 ✅; offline packs Phase 4 ⬜ |
+| 3.7 | Session history & resume | Phase 1 · A2 ✅ |
+| 3.7 | Attachments | Phase 1 · A4 ✅; generalize Phase 4 ⬜ |
+| 3.7 | Keyboard / focus | **Wave 2 · Phase 4** ⬜ |
+| 3.7 | Theming | **Wave 2 · Phase 4** ⬜ |
+| 3.8 Platform | Postgres | Phase 0 · **0.1** ⬜ (Wave 2 deploy track) |
+| 3.8 | Background jobs | Phase 0 · 0.5 ✅ skeleton; production cron = beta P0 |
+| 3.8 | Observability | Phase 0 · 0.2 ✅ |
+| 3.8 | Provider flexibility | Gateway/BYOK ✅; failover/cost **Wave 2 · Phase 5** ⬜ |
+| 3.8 | Mobile apps | **Wave 2 · Phase 5** PWA ⬜ |
+| 3.8 | Internationalization | **Wave 2 · Phase 5** ⬜ |
 
 ---
 
-## 14. Immediate next actions (start here)
+## 15. Wave 2 — Second development cycle (post Phase 2.5)
 
-Use this checklist for the next development cycle:
+**Context:** Wave 1 delivered the adaptive tutor, intervention depth, and session-rhythm retention slice. CAPABILITIES §3 items that remain open are the **Wave 2 backlog**. Default commercial model remains **one account = one learner**.
 
-1. **Stand up Phase 0**  
-   - Postgres settings + `.env.example`  
-   - Health endpoint + basic structured logging  
-   - Lesson failure UX for Gemini/API errors  
-   - Draft `docs/SAFETY_AND_PRIVACY.md` (or section in README)
+### 15.1 Wave 1 complete (do not restart)
 
-2. **Ship M1 — Session resume**  
-   - Harden server transcript persistence  
-   - “Continue lesson” UX on subjects/dashboard  
+| Area | Epics / phases | Status |
+|------|----------------|--------|
+| Platform floor (minus Postgres host) | 0.2–0.5 | ✅ |
+| Horizon A product | A1–A6 | ✅ |
+| Intervention depth | B1–B6 | ✅ |
+| Session rhythm | B7, B8, C1 v1, C5 lite, G1 | ✅ |
+| UX usability pass | Nav, home, lesson chrome, skeletons | ✅ (2026-09) |
 
-3. **Ship M2 — Correctness + mastery foundation**  
-   - Graded-turn checker for pilot math  
-   - Skill model + seed graph for fractions / early algebra  
-   - Wire verified correctness into profile recompute  
+### 15.2 Wave 2 tracks (priority order)
 
-4. **Parallel tracks**  
-   - Image attach API (A4)  
-   - Fraction manipulative prototype (A6)  
-   - Digest query from `LearningEvent` (A5 dry-run, no email yet)
+Execute **Track D** in parallel with product tracks. **Never** add multi-child households or classroom/roster products—schools and multi-child parents buy **separate seats** only.
 
-5. **Update this plan**  
-   - After each milestone, mark exit criteria and note deviations in a short changelog at the bottom of this file.
+#### Track D — Deployable production closeout (hard gate for external beta)
+
+Maps to: CAPABILITIES §3.8.1–3.8.3 remaining · [`BETA_LAUNCH.md`](./BETA_LAUNCH.md) **P0**
+
+| ID | Work | PLAN | Status |
+|----|------|------|--------|
+| D.1 | Postgres + migrations on staging/prod | Phase 0 · 0.1 | ⬜ |
+| D.2 | Host + HTTPS + `ALLOWED_HOSTS` / CORS / `DEBUG=0` | Beta P0 | ⬜ |
+| D.3 | Secrets out of repo; platform AI key server-side or capped proxy | Beta P0 | ⬜ |
+| D.4 | Real email (ESP) for digests + transactional | Beta P0 | ⬜ |
+| D.5 | Cron: `run_scheduled_jobs` (digest, review_schedule, heartbeat) | 0.5 + C1 | ⬜ |
+| D.6 | Per-student billing (Checkout or invoice) + daily AI caps | Beta P0 | ⬜ |
+| D.7 | Backup + restore drill; support + Terms/Privacy links | Beta P0 | ⬜ |
+
+**Done when:** A stranger can complete signup → lesson → (optional) pay on staging without SSH folklore.
+
+#### Track P — Pedagogy depth (highest product leverage after deploy)
+
+Maps to: CAPABILITIES §3.1.4 depth, §3.1.7–3.1.8, §3.6.5
+
+| ID | Work | PLAN epic | Status |
+|----|------|-----------|--------|
+| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⬜ |
+| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ⬜ |
+| P.3 | Domain playbook #2 (science or writing thin pack) | **C7** | ⬜ |
+| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ⬜ |
+| P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⬜ |
+
+#### Track R — Shareable progress (single learner only)
+
+Maps to: CAPABILITIES §3.5.3–3.5.4, §3.2.4 · **A5 digests remain the only adult channel**
+
+| ID | Work | PLAN epic | Status |
+|----|------|-----------|--------|
+| R.1 | A5 digest polish (preview send, clearer copy, student configures recipient email) | A5 polish · Beta P2.1 | ⬜ |
+| R.2 | Optional stuck-session email on the **same** digest address (student opt-in) | **C10** | ⬜ |
+| R.3 | Standards-aligned export for **this** student | **C4** | ⬜ |
+| R.4 | Full goals/plans (exam timelines) — student-owned | **C5+** | ⬜ |
+| R.5 | Ops support flags (distress / repeated fail) — admin only | **C9** | ⬜ |
+| — | Multi-child parent accounts / classroom rosters | **C2 / C3** | ❌ never |
+
+#### Track X — Experience & multimodal polish
+
+Maps to: CAPABILITIES §3.3.2/6, §3.7.3–3.7.5
+
+| ID | Work | PLAN | Status |
+|----|------|------|--------|
+| X.1 | Mermaid/SVG/geometry diagram rendering | Phase 4 P0 | ⬜ |
+| X.2 | Accessibility pack (contrast, type, captions, keyboard lesson) | Phase 4 P0 | ⬜ |
+| X.3 | Focus mode + keyboard shortcuts | Phase 4 P1 | ⬜ |
+| X.4 | Theme toggle (incl. high contrast) | Phase 4 P1 | ⬜ |
+| X.5 | Generalize attachments (PDF/docs) | Phase 4 P1 | ⬜ |
+| X.6 | Offline practice packs | Phase 4 P1 | ⬜ |
+
+#### Track V — Voice & language (demand-driven)
+
+Maps to: CAPABILITIES §3.4
+
+| ID | Work | Status |
+|----|------|--------|
+| V.1 | Low-latency duplex voice lesson mode | ⬜ |
+| V.2 | Multi-language UI + tutor pairs / EAL | ⬜ |
+| V.3 | TTS personas; pronunciation later | ⬜ |
+
+#### Track S — Scale & category leadership
+
+Maps to: CAPABILITIES §3.8 remaining · Horizon C
+
+| ID | Work | Status |
+|----|------|--------|
+| S.1 | Gateway failover chains + cost controls | ⬜ |
+| S.2 | PWA install + reliable mobile voice | ⬜ |
+| S.3 | Full i18n + RTL | ⬜ |
+| S.4 | School LMS/SSO; multi-region compliance | ⬜ |
+| S.5 | Lifelong cross-subject learner model | ⬜ |
+
+### 15.3 Suggested Wave 2 sequencing
+
+```text
+Wave 2a — Hostable beta (Track D)
+  D.1–D.7 until staging dogfood is boring
+  Keep product changes limited to beta blockers
+
+Wave 2b — Retention depth (Track P, while beta runs)
+  P.1 C1+ review depth
+  P.2 C6 assessment mode (one thin path)
+  P.4 C8 manual rubric → automated later
+  P.3 C7 second domain only if sessions leave math
+
+Wave 2c — Teach medium (Track X P0–P1)
+  X.1 diagrams + X.2 a11y + X.3 focus mode
+  X.5 attachments if homework PDF demand appears
+
+Wave 2d — Shareable progress (Track R) — still one seat per learner
+  R.1 digest polish first (cheap; student configures email)
+  R.2 optional stuck email on same channel
+  R.3 single-student standards export (forwardable by email)
+  R.4 full goals planner last (lite already ships)
+  Never: parent multi-profile login, household SKUs, classroom dashboards
+
+Wave 2e — Scale (Tracks V + S) — post PMF signals
+  S.1 cost/failover if COGS hurts
+  S.2 PWA if mobile majority
+  V.* only if voice is a top interview theme
+```
+
+### 15.4 Wave 2 exit criteria (definition of “second wave done enough”)
+
+- [ ] External staging/prod path green (Track D)  
+- [ ] C1+ or C6 ships measurable retention/assessment lift beyond Wave 1  
+- [ ] Phase 4 P0 (diagrams + a11y) shipped or explicitly deferred with reason  
+- [x] Strategy lock: no multi-child / classroom products; multi-learner = multi-seat  
+- [ ] CAPABILITIES §3 / this plan still agree on ✅ vs ⬜ / ❌
+
+### 15.5 Immediate next actions (start here)
+
+1. **Track D** — follow [`BETA_LAUNCH.md`](./BETA_LAUNCH.md) P0 (Postgres, host, email, cron, billing, caps).  
+2. **Do not re-implement** Wave 1 epics (A1–A6, B1–B8, C1 v1, C5 lite, G1).  
+3. After D is green, pull **P.1 / P.2** from Track P; Track R = digest polish + single-learner export only.  
+4. Optional digests: student configures recipient email—**not** a parent account product. Multi-child families buy multiple seats.  
+
+### Historical bootstrap checklist (Wave 1 — completed)
+
+1. **Stand up Phase 0.2–0.5** — observability, failure UX, safety doc, jobs ✅ (Postgres staging still open → Track D).  
+2. **Ship M1–M5** — resume, correctness, mastery, homework, visuals, digests, B1–B6 ✅.  
+3. **Ship M5.5 session rhythm** — B7, B8, C1 v1, C5 lite, G1 ✅.  
+4. **Update this plan** when Wave 2 epics land (changelog §18).
 
 ---
 
-## 15. Out of scope (until later unless re-prioritized)
+## 16. Out of scope (permanent or deferred)
+
+**Permanent product exclusions (do not re-open without a full strategy rewrite)**
+
+- **Multi-child household accounts** / parent multi-profile hierarchy (**C2**)  
+- **Family multi-seat SKUs** or “manage my kids” parent portal  
+- **Classroom mode**: rosters, class assignments, class leaderboards, teacher org product (**C3**)  
+- LMS class sync that implies multi-learner management UI (seat provisioning APIs for bulk purchase may exist later; **no class product**)  
+
+**How multi-learner buyers work instead**
+
+- Parent of 3 children → **3 separate student subscriptions**  
+- School / tutoring center → **N individual seats** (billing/ops), each learner logs in as themselves  
+- Adults who want progress notes → student turns on **digest email** to that address (A5)
+
+**Platform / market deferred (not excluded forever)**
 
 - Full multi-region compliance / enterprise admin  
 - Research-grade multi-year learner model  
 - Native mobile apps (prefer PWA first)  
 - Complete bilingual product localization  
-- Whiteboard and video micro-lessons before Horizon A MVP  
-- Classroom LMS SSO before parent digest + multi-child accounts  
+- Whiteboard and video micro-lessons before review depth sticks  
+- School SSO for **single-learner** login convenience (still one seat per account)
+
+**From SUGGESTIONS — explicitly not “now”** (do not sneak into beta sprints)
+
+- Wearables or voice-tone / prosody mood sensing  
+- VR / immersive virtual environments or digital chem labs  
+- Global peer collaboration / multiplayer projects  
+- Employer- or university-recognized badge portfolios  
+- Heavy quest / unlock economies (G1 light challenge is the ceiling for gamification)  
+- External book / Coursera / side-project recommender without curated quality bar  
+- Full guided mindfulness content library (optional later companion to B7 L4 path)
 
 ---
 
-## 16. Success metrics (product)
+## 17. Success metrics (product)
 
 Track as features land:
 
@@ -577,22 +912,36 @@ Track as features land:
 | Correctness checker agreement vs model | Trust |
 | AI/API error recovery (no abandoned sessions) | Production quality |
 | Time-to-first-helpful-turn after homework photo | Multimodal value |
+| Review spark start → complete rate (C1) | Spaced review is used, not ignored |
+| Session-start check-in completion % (B7) | Ritual is light enough to use |
+| End reflection completion % (B8) | Growth beat without friction |
+| D7 / D14 return among students with ≥1 review due | Multi-day adaptive loop works |
 
 ---
 
-## 17. Document control
+## 18. Document control
 
 | Field | Value |
 |-------|--------|
-| Based on | `CAPABILITIES.md` §3, §4, §5 |
+| Based on | `CAPABILITIES.md` §3, §4, §5; feasible slice of `SUGGESTIONS.md` |
 | Codebase | `frontend/` + `backend/` monorepo |
-| Status | Active execution plan |
-| Last updated | 2026-08-13 |
+| Status | Active execution plan — **Wave 2** backlog live; Wave 1 shipped |
+| Last updated | 2026-09-01 |
 
 ### Changelog
 
 | Date | Note |
 |------|------|
+| 2026-09-01 | **Strategy lock:** Kindling is permanently **one student = one seat**. C2 multi-child and C3 classroom marked ❌ never; digests stay student-configured email (A5). Schools/multi-child parents buy separate seats. Wave 2 Track R reframed to shareable single-learner progress only. |
+| 2026-09-01 | **Wave 2** defined: compared CAPABILITIES §3 pending items vs shipped Phase 0–2.5; expanded Phase 3 epic sketches (C1+, C4–C10), Phase 4/5 status table; new §15 Wave 2 tracks (D deploy, P pedagogy, R shareable progress, X experience, V voice, S scale). Marked C5 lite + G1 complete in Phase 2.5. |
+| 2026-08-31 | Phase 2.5 Epic **G1** light spark challenge: Dashboard card, 3 solid turns, celebration chips, `challenge.*` events. |
+| 2026-08-31 | Phase 2.5 Epic **C5 lite** goals surface: path/tools/header chips, `week_focus`, tutor + B8 echo. |
+| 2026-08-30 | Phase 2.5 Epic **C1** spaced review v1: `SkillReviewItem`, review_schedule job, GET/POST reviews API, Dashboard + My Subjects Review spark, lesson review mode, SM-2-lite complete; B8 CTA prefers due items. |
+| 2026-08-30 | Phase 2.5 Epic **B8** implemented: Wrap up → reflection card (what clicked / what’s next / optional note), `session.reflect` events, profile + resume note, Review spark CTA (thin until C1); smoke + browser verify. |
+| 2026-08-30 | Phase 2.5 Epic **B7** implemented: session-start energy chip, `reason=session_start` events, low→softer directives + L4 break/easier offer, greeting wait ≤14s; smoke + browser verify. |
+| 2026-08-30 | Phase **2.5 Session rhythm** from SUGGESTIONS feasible set: **B7** start check-in, **B8** end reflection, **C1** spaced review detail, **C5 lite** goals, optional **G1** spark challenge; defer VR/collab/credentials/wearables to §16 / Phase 5. |
+| 2026-08-17 | Point immediate actions at `BETA_LAUNCH.md` for paid **student** beta (individual seats; P0 deploy/billing, C1 spaced review v1); mark historical M1–M2 checklist complete. |
+| 2026-08-17 | Commercial framing: student-first subscriptions; family multi-seat / C2 not beta-critical. |
 | 2026-08-13 | Phase 2 Epic B6: multi-step show-your-work (panel, intermediate checks, partial credit). |
 | 2026-08-13 | Phase 2 Epic B5: misconception engine (catalog, playbooks, detect/remediate, mastery boost). |
 | 2026-08-13 | Phase 2 Epic B4: worked-example library (DB + seed + API + tutor prefer + tools button). |
@@ -613,4 +962,4 @@ Track as features land:
 
 ---
 
-*When product intent and execution disagree, update CAPABILITIES for vision and this PLAN for sequencing—then keep them cross-linked.*
+*When product intent and execution disagree, update CAPABILITIES for vision and this PLAN for sequencing—then keep them cross-linked. Feasible day-in-the-life ideas live in `SUGGESTIONS.md` and land here only when promoted.*

@@ -418,6 +418,7 @@ export const EMPTY_STUDENT_PROFILE = {
   interests: [],
   focusSubjects: [],
   goal: "",
+  weekFocus: "",
   isOnboarded: false,
 };
 

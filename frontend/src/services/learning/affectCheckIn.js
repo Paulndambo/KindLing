@@ -1,5 +1,6 @@
 /**
  * Epic B3 — Affective check-ins + persistence celebration.
+ * Epic B7 — Session-start energy check-in (optional, non-blocking).
  *
  * Gentle “how are you feeling?” prompts after frustration streaks or long
  * sessions. Never shame. Celebrate sticking with it, not only accuracy.
@@ -21,14 +22,22 @@ export const AFFECT_CHECKIN_THRESHOLDS = {
   MIN_TURNS: 3,
   /** Cooldown between check-ins in one session */
   COOLDOWN_MS: 8 * 60_000,
-  /** Max check-ins per session */
+  /** Max mid-session check-ins per session (B3; excludes B7 session-start) */
   MAX_PER_SESSION: 2,
   /** Persistence: long think-time counts as effort */
   PERSISTENCE_THINK_MS: 20_000,
+  /**
+   * Epic B7 — max wait for optional energy chip before fresh greeting continues.
+   * Check-in never blocks starting the lesson forever.
+   */
+  SESSION_START_GREETING_WAIT_MS: 14_000,
 };
 
+/** Reason tag for Epic B7 session-start energy chip. */
+export const SESSION_START_REASON = "session_start";
+
 /**
- * Self-report options shown on the student card.
+ * Self-report options shown on the mid-session B3 card.
  * Labels are warm and non-judgmental.
  */
 export const AFFECT_CHECKIN_OPTIONS = [
@@ -64,8 +73,99 @@ export const AFFECT_CHECKIN_OPTIONS = [
   },
 ];
 
+/**
+ * Epic B7 — energy options at lesson open (distinct copy from mid-session affect).
+ */
+export const SESSION_START_ENERGY_OPTIONS = [
+  {
+    id: "ready",
+    label: "Feeling ready",
+    emoji: "✨",
+    affect: Affect.CONFIDENT,
+    lowEnergy: false,
+    tutorHint:
+      "Student opened feeling ready — warm welcome, steady pace, celebrate showing up.",
+  },
+  {
+    id: "okay",
+    label: "Doing okay",
+    emoji: "🙂",
+    affect: Affect.NEUTRAL,
+    lowEnergy: false,
+    tutorHint:
+      "Student opened feeling okay — stay encouraging, keep early steps clear and light.",
+  },
+  {
+    id: "low",
+    label: "A bit low",
+    emoji: "🌙",
+    affect: Affect.HESITANT,
+    lowEnergy: true,
+    tutorHint:
+      "Student opened with low energy — use shorter steps, lighter load, and a slower warmer pace. Prefer small wins before hard new material.",
+  },
+  {
+    id: "break",
+    label: "Need a break",
+    emoji: "🌿",
+    affect: Affect.FRUSTRATED,
+    lowEnergy: true,
+    tutorHint:
+      "Student opened needing a break — warmly validate, offer a short reset or easier warm-up before new challenge. No pressure to push through.",
+  },
+];
+
 export function getCheckInOption(id) {
   return AFFECT_CHECKIN_OPTIONS.find((o) => o.id === id) || null;
+}
+
+export function getSessionStartOption(id) {
+  return SESSION_START_ENERGY_OPTIONS.find((o) => o.id === id) || null;
+}
+
+/** Resolve option from B3 or B7 catalogs. */
+export function getAffectOption(id, reason = null) {
+  if (reason === SESSION_START_REASON || reason === "session_start") {
+    return getSessionStartOption(id) || getCheckInOption(id);
+  }
+  return getCheckInOption(id) || getSessionStartOption(id);
+}
+
+export function isLowEnergyOption(optionOrId) {
+  if (!optionOrId) return false;
+  if (typeof optionOrId === "string") {
+    const opt = getSessionStartOption(optionOrId) || getCheckInOption(optionOrId);
+    if (opt?.lowEnergy != null) return Boolean(opt.lowEnergy);
+    return optionOrId === "low" || optionOrId === "break" || optionOrId === "stuck";
+  }
+  if (optionOrId.lowEnergy != null) return Boolean(optionOrId.lowEnergy);
+  return (
+    optionOrId.id === "low" ||
+    optionOrId.id === "break" ||
+    optionOrId.id === "stuck"
+  );
+}
+
+/** Copy + options for the session-start energy card. */
+export function describeSessionStartCheckIn() {
+  return {
+    reason: SESSION_START_REASON,
+    headline: "Quick energy check",
+    body: "No wrong answers — how’s your energy as we start? You can skip anytime.",
+    eyebrow: "Before we dive in",
+    options: SESSION_START_ENERGY_OPTIONS,
+    variant: "session-start",
+  };
+}
+
+/**
+ * Build the session-start card payload (always optional / dismissible).
+ */
+export function buildSessionStartCheckInCard({ now = Date.now() } = {}) {
+  return {
+    ...describeSessionStartCheckIn(),
+    openedAt: now,
+  };
 }
 
 /**
@@ -210,6 +310,7 @@ export function scorePersistenceDelta(signals = {}, prior = {}) {
 
 /**
  * Tutor directives from check-in response + session persistence.
+ * Includes Epic B7 session-start energy (low → softer open).
  */
 export function affectDirectivesFromState({
   lastCheckIn = null,
@@ -217,18 +318,31 @@ export function affectDirectivesFromState({
   persistenceTags = [],
 } = {}) {
   const directives = [];
+  const optionId = lastCheckIn?.optionId || lastCheckIn?.id || null;
+  const reason = lastCheckIn?.reason || null;
+  const isSessionStart = reason === SESSION_START_REASON || reason === "session_start";
 
   if (lastCheckIn?.tutorHint) {
     directives.push(lastCheckIn.tutorHint);
   }
-  if (lastCheckIn?.optionId === "break") {
+  if (optionId === "break") {
     directives.push(
       "Prefer a micro-reset or easier related idea before hard new material. Celebrate that they asked for what they need."
     );
   }
-  if (lastCheckIn?.optionId === "stuck") {
+  if (optionId === "stuck") {
     directives.push(
       "Name that asking for help is smart. Use one smaller step and celebrate any partial reasoning."
+    );
+  }
+  if (optionId === "low" || (isSessionStart && isLowEnergyOption(optionId))) {
+    directives.push(
+      "Open gently: shorter sentences, one small step at a time, and check understanding before adding challenge."
+    );
+  }
+  if (isSessionStart && optionId === "ready") {
+    directives.push(
+      "They arrived ready — match energy with a clear warm start without rushing difficulty."
     );
   }
   if (persistenceScore >= 2) {

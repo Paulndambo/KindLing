@@ -4,12 +4,14 @@ import { searchTranscriptsAsync } from "../../services/learning";
 
 /**
  * Search past lesson transcripts by keyword (Epic A2.4).
+ * embedded — omit outer chrome when inside a Subjects panel.
  */
 export default function TranscriptSearch({
   studentId,
   subject = "",
   topic = "",
   onOpenLesson,
+  embedded = false,
 }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
@@ -42,11 +44,15 @@ export default function TranscriptSearch({
   }, [q, studentId, subject, topic]);
 
   return (
-    <div className="transcript-search">
-      <div className="transcript-search-head">
-        <BookOpen size={15} />
-        <span>Search your lesson history</span>
-      </div>
+    <div
+      className={`transcript-search${embedded ? " transcript-search--embedded" : ""}`}
+    >
+      {!embedded && (
+        <div className="transcript-search-head">
+          <BookOpen size={15} aria-hidden />
+          <span>Search your lesson history</span>
+        </div>
+      )}
       <div className="transcript-search-row">
         <input
           type="search"
@@ -61,8 +67,17 @@ export default function TranscriptSearch({
           }}
           aria-label="Search transcripts"
         />
-        <button type="button" className="transcript-search-btn" onClick={runSearch} disabled={loading}>
-          {loading ? <Loader2 size={16} className="spin" /> : <Search size={16} />}
+        <button
+          type="button"
+          className="transcript-search-btn"
+          onClick={runSearch}
+          disabled={loading}
+        >
+          {loading ? (
+            <Loader2 size={16} className="spin" aria-hidden />
+          ) : (
+            <Search size={16} aria-hidden />
+          )}
           Search
         </button>
         {searched && (
@@ -77,11 +92,15 @@ export default function TranscriptSearch({
             }}
             aria-label="Clear search"
           >
-            <X size={15} />
+            <X size={15} aria-hidden />
           </button>
         )}
       </div>
-      {error && <p className="transcript-search-error">{error}</p>}
+      {error && (
+        <p className="transcript-search-error" role="alert">
+          {error}
+        </p>
+      )}
       {searched && !loading && !error && (
         <p className="transcript-search-meta">
           {results.length

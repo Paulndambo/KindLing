@@ -32,6 +32,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     familyEmail = serializers.EmailField(
         source="family_email", required=False, allow_blank=True
     )
+    weekFocus = serializers.CharField(
+        source="week_focus",
+        required=False,
+        allow_blank=True,
+        max_length=240,
+    )
 
     class Meta:
         model = StudentProfile
@@ -50,6 +56,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "interests",
             "focusSubjects",
             "goal",
+            "weekFocus",
             "isOnboarded",
             "digestOptIn",
             "familyEmail",

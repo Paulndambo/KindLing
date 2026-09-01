@@ -86,6 +86,54 @@ class AffectCheckInEventTests(TestCase):
             1,
         )
 
+    def test_ingest_session_start_energy_checkin_b7(self):
+        """Epic B7 — reason=session_start reuses affect.checkin event type."""
+        events = [
+            {
+                "id": "b7-energy-prompt",
+                "type": LearningEventType.AFFECT_CHECKIN,
+                "timestamp": "2026-08-30T10:00:00.000Z",
+                "context": {"studentId": "b3_kid", "sessionId": "ses_b7"},
+                "payload": {
+                    "sessionId": "ses_b7",
+                    "phase": "prompted",
+                    "reason": "session_start",
+                },
+            },
+            {
+                "id": "b7-energy-resp",
+                "type": LearningEventType.AFFECT_CHECKIN,
+                "timestamp": "2026-08-30T10:00:05.000Z",
+                "context": {"studentId": "b3_kid", "sessionId": "ses_b7"},
+                "payload": {
+                    "sessionId": "ses_b7",
+                    "phase": "response",
+                    "reason": "session_start",
+                    "optionId": "low",
+                    "affect": "hesitant",
+                    "label": "A bit low",
+                    "lowEnergy": True,
+                },
+            },
+        ]
+        res = self.client.post(
+            "/api/learning/events/",
+            {"events": events, "source": "kindling-web", "schemaVersion": 1},
+            format="json",
+        )
+        self.assertIn(res.status_code, (200, 201, 202), res.content)
+        rows = list(
+            LearningEvent.objects.filter(
+                event_type=LearningEventType.AFFECT_CHECKIN,
+                session_id="ses_b7",
+            ).order_by("id")
+        )
+        self.assertEqual(len(rows), 2)
+        payloads = [r.payload for r in rows]
+        self.assertEqual(payloads[0].get("reason"), "session_start")
+        self.assertEqual(payloads[1].get("optionId"), "low")
+        self.assertTrue(payloads[1].get("lowEnergy"))
+
 
 class AffectDigestCopyTests(TestCase):
     def test_digest_celebrates_persistence_not_only_accuracy(self):

@@ -1,6 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Lock, Sparkles, X, Loader2 } from "lucide-react";
 import { TAB_LABELS } from "../../constants/navigation";
+
+function messageFromAuthError(err, fallback) {
+  if (!err) return fallback;
+  const data = err.data;
+  if (data && typeof data === "object") {
+    if (typeof data.detail === "string" && data.detail.trim()) return data.detail;
+    if (Array.isArray(data.detail) && data.detail[0]) return String(data.detail[0]);
+    if (typeof data.error === "string" && data.error.trim()) return data.error;
+    if (typeof data.message === "string" && data.message.trim()) return data.message;
+    const firstField = Object.values(data).flat?.()?.[0];
+    if (typeof firstField === "string" && firstField.trim()) return firstField;
+  }
+  if (typeof err.message === "string" && err.message.trim()) {
+    // fetch() network failures often look like "Failed to fetch"
+    if (/failed to fetch|networkerror|load failed/i.test(err.message)) {
+      return "Unable to reach Kindling. Check that the server is running and try again.";
+    }
+    return err.message;
+  }
+  return fallback;
+}
 
 /**
  * Student auth: Log in (existing account) or Get Started (register).
@@ -23,14 +44,23 @@ export default function AuthModal({
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [name, setName] = useState("");
   const [localError, setLocalError] = useState("");
+  const errorRef = useRef(null);
 
   const isRegister = mode === "register";
 
+  // Clear form errors only when the modal opens or the mode switches —
+  // not when parent re-renders (inline onClearError used to wipe failures instantly).
   useEffect(() => {
     if (!isOpen) return;
     setLocalError("");
     onClearError?.();
-  }, [isOpen, mode, onClearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only isOpen/mode
+  }, [isOpen, mode]);
+
+  useEffect(() => {
+    if (!(localError || error)) return;
+    errorRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [localError, error]);
 
   if (!isOpen) return null;
 
@@ -68,16 +98,23 @@ export default function AuthModal({
           passwordConfirm,
           name: name.trim(),
         });
-      } catch {
-        // Error surfaced via parent authError
+      } catch (err) {
+        setLocalError(
+          messageFromAuthError(err, "Unable to create account. Please try again.")
+        );
       }
       return;
     }
 
     try {
       await onLogin(email.trim(), password);
-    } catch {
-      // Error surfaced via parent authError
+    } catch (err) {
+      setLocalError(
+        messageFromAuthError(
+          err,
+          "Unable to log in. Check your email and password, then try again."
+        )
+      );
     }
   };
 
@@ -241,12 +278,10 @@ export default function AuthModal({
 
           {displayError && (
             <div
-              style={{
-                color: "var(--berry)",
-                fontSize: 12.5,
-                marginBottom: 14,
-                fontWeight: 600,
-              }}
+              ref={errorRef}
+              className="auth-error"
+              role="alert"
+              aria-live="assertive"
             >
               {displayError}
             </div>

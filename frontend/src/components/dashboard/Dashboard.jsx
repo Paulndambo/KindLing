@@ -19,6 +19,10 @@ import { getDashboard, ApiError } from "../../services/api";
 import ConfidenceChart from "../charts/ConfidenceChart";
 import ContinueStrip from "../subjects/ContinueStrip";
 import FamilyDigestCard from "./FamilyDigestCard";
+import ReviewSparkCard from "./ReviewSparkCard";
+import WeekFocusCard from "./WeekFocusCard";
+import SparkChallengeCard from "./SparkChallengeCard";
+import { pickSparkChallengeCandidate } from "../../services/learning/sparkChallenge";
 
 function StatCard({ eyebrow, value, cap, icon: Icon }) {
   return (
@@ -175,10 +179,59 @@ export default function Dashboard({
 
   const masteryRows = data?.masteryMap || [];
   const recommendedNextSkill = data?.recommendedNextSkill || null;
+  const reviewSparks = data?.reviewSparks || {};
+  const reviewItems = reviewSparks.due || reviewSparks.dueNow || [];
   const strengths = data?.strengths || [];
   const focusAreas = data?.focusAreas || [];
   const recentActivity = data?.recentActivity || [];
   const weekPlan = data?.weekPlan || [];
+
+  const handleStartReview = useCallback(
+    (item) => {
+      if (!onStartLesson || !item) return;
+      onStartLesson(item.subject || "Math Foundations", item.topic || item.shortLabel, {
+        reviewMode: true,
+        reviewSkill: item.skillSlug,
+        reviewSkillLabel: item.shortLabel || item.skillName,
+        reviewId: item.id,
+      });
+    },
+    [onStartLesson]
+  );
+
+  /** Epic G1 — optional 3-solid-turn spark challenge */
+  const sparkChallenge = useMemo(
+    () =>
+      pickSparkChallengeCandidate({
+        dueReviews: reviewItems,
+        recommendedNextSkill,
+        focusAreas,
+        masteryMap: masteryRows,
+      }),
+    [reviewItems, recommendedNextSkill, focusAreas, masteryRows]
+  );
+
+  const handleStartChallenge = useCallback(
+    (candidate) => {
+      if (!onStartLesson || !candidate) return;
+      onStartLesson(
+        candidate.subject || "Math Foundations",
+        candidate.topic || candidate.skillLabel,
+        {
+          challengeMode: true,
+          challengeSkill: candidate.skillSlug || null,
+          challengeSkillLabel: candidate.skillLabel,
+          challengeTarget: candidate.target || 3,
+          // If this skill is also a due review, completing the challenge reschedules it
+          reviewId: candidate.reviewId || null,
+          reviewMode: Boolean(candidate.reviewId),
+          reviewSkill: candidate.reviewId ? candidate.skillSlug : null,
+          reviewSkillLabel: candidate.reviewId ? candidate.skillLabel : null,
+        }
+      );
+    },
+    [onStartLesson]
+  );
 
   const subjectCount = subjects.length || 0;
   const topicCount = useMemo(() => {
@@ -203,24 +256,29 @@ export default function Dashboard({
 
   if (loading) {
     return (
-      <section id="dashboard">
-        <div
-          className="dash-wrap"
-          style={{
-            padding: "80px 40px",
-            textAlign: "center",
-            color: "var(--ink-soft)",
-          }}
-        >
-          <Loader2
-            size={22}
-            style={{
-              display: "inline-block",
-              marginBottom: 10,
-              animation: "spin 1s linear infinite",
-            }}
-          />
-          <div style={{ fontSize: 14 }}>Loading dashboard from Kindling…</div>
+      <section id="dashboard" aria-busy="true">
+        <div className="dash-wrap dash-loading-wrap">
+          <div className="dash-skeleton-hero" aria-hidden>
+            <div className="skel skel-avatar" />
+            <div className="skel-lines">
+              <div className="skel skel-line w40" />
+              <div className="skel skel-line w70" />
+              <div className="skel skel-line w55" />
+            </div>
+          </div>
+          <div className="snap-grid dash-skeleton-stats" aria-hidden>
+            {[1, 2, 3, 4].map((i) => (
+              <div className="snap-card dash-stat skel-card" key={i}>
+                <div className="skel skel-line w50" />
+                <div className="skel skel-line w30 tall" />
+                <div className="skel skel-line w60" />
+              </div>
+            ))}
+          </div>
+          <p className="dash-loading-label" role="status">
+            <Loader2 size={16} className="spin" aria-hidden />
+            Loading your dashboard…
+          </p>
         </div>
       </section>
     );
@@ -236,6 +294,24 @@ export default function Dashboard({
             title="Pick up a lesson"
           />
         )}
+
+        {/* Epic C1 — Review spark */}
+        <ReviewSparkCard
+          items={reviewItems}
+          loading={refreshing}
+          onStartReview={handleStartReview}
+          onRefresh={() => refreshDashboard({ silent: true })}
+        />
+
+        {/* Epic G1 — light spark challenge (optional) */}
+        <SparkChallengeCard
+          candidate={sparkChallenge}
+          onStartChallenge={handleStartChallenge}
+        />
+
+        {/* Epic C5 lite — week focus */}
+        <WeekFocusCard student={student} onStudentUpdate={onStudentUpdate} />
+
         {/* Hero header */}
         <div className="dash-hero">
           <div className="dash-hero-main">
@@ -243,7 +319,7 @@ export default function Dashboard({
               <AvatarIcon size={22} />
             </div>
             <div>
-              <p className="eyebrow">Student dashboard</p>
+              <p className="eyebrow">Dashboard</p>
               <h2>
                 {greeting}, {studentName}
               </h2>
@@ -267,6 +343,15 @@ export default function Dashboard({
                 Goal: <strong>{goal}</strong>
               </span>
             </div>
+            {(student?.weekFocus || student?.week_focus) && (
+              <div className="dash-goal-chip dash-week-chip">
+                <Target size={14} />
+                <span>
+                  This week:{" "}
+                  <strong>{student.weekFocus || student.week_focus}</strong>
+                </span>
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 type="button"

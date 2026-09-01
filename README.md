@@ -1,6 +1,6 @@
 # Kindling
 
-**Kindling** is an AI-powered adaptive tutoring platform. It provides warm, private-school-style 1-on-1 lessons that adapt in real time to how a student thinks, struggles, and succeeds—backed by a Django learning API and a multi-provider AI gateway (platform Gemini by default, optional BYOK).
+**Kindling** is an AI-powered adaptive tutoring platform. It provides warm, patient 1-on-1 lessons that adapt in real time to how a student thinks, struggles, and succeeds—backed by a Django learning API and a multi-provider AI gateway (platform Gemini by default, optional BYOK).
 
 ```
 Kindling/
@@ -15,11 +15,12 @@ Kindling/
 
 | Doc | Purpose |
 |-----|---------|
-| [CAPABILITIES.md](./CAPABILITIES.md) | Full inventory + longer-term vision |
-| [PLAN.md](./PLAN.md) | Phased execution (0 foundation → 2 intervention depth → …) |
+| [CAPABILITIES.md](./CAPABILITIES.md) | Full inventory + longer-term vision (✅ shipped vs ⬜ Wave 2) |
+| [PLAN.md](./PLAN.md) | Execution order — **Wave 1 shipped**; **Wave 2** = §15 + Phases 3–5 |
 | [docs/ENGINEERING.md](./docs/ENGINEERING.md) | Architecture, concepts, design decisions & trade-offs (eng team) |
 | [docs/SAFETY_AND_PRIVACY.md](./docs/SAFETY_AND_PRIVACY.md) | Child-safety & privacy baseline |
 | [PITCH_DECK.md](./PITCH_DECK.md) | YC pitch materials + application answer bank |
+| [BETA_LAUNCH.md](./BETA_LAUNCH.md) | Paid student beta checklist (individual seats; must-ship, 4–6 week order) |
 | [Kindling_YC_Pitch.pptx](./Kindling_YC_Pitch.pptx) | 10-slide YC partner deck |
 | [backend/README.md](./backend/README.md) | Full API map, jobs, observability |
 | [frontend/README.md](./frontend/README.md) | Frontend-focused notes |
@@ -34,9 +35,10 @@ Kindling/
 - **Pilot pedagogy depth** — Skill graph + BKT-lite mastery, math verification, worked-example library, misconception playbooks, multi-step “show your work”
 - **Presentation matters** — Math, lists, code, tables, and diagrams render cleanly while streaming
 - **Voice-ready** — Optional speak-aloud (TTS) and speech-to-text answers
-- **Progress families can trust** — Subjects, resume, skill sparks, learner pulse, weekly digests (opt-in)
+- **Progress the learner can trust** — Subjects, resume, skill sparks, Review spark, goals/week focus, learner pulse; optional guardian digests
+- **Session rhythm** — Start energy check-in, end reflection, light spark challenge (no badge economy)
 - **Flexible AI** — Platform Gemini and/or bring-your-own-key (Gemini, OpenAI-compatible, Anthropic, Groq, OpenRouter)
-- **Production floor** — Health probes, telemetry, failure UX, safety escalation, background jobs skeleton
+- **Production floor** — Health probes, telemetry, failure UX, safety escalation, background jobs skeleton (Postgres/host deploy = Wave 2)
 
 ---
 
@@ -50,7 +52,7 @@ Kindling/
 | Data | Student profile, curriculum graph, learning events/sessions, mastery, digests, homework media |
 | Seed | `seed_kindling` — demo student + Math Foundations pilot pack |
 
-**Domain model:** each user account is one student (one `StudentProfile`). There is no multi-child parent hierarchy yet; family digests are opt-in summaries on the student account.
+**Domain model:** each user account is one student (one `StudentProfile`). Commercial model is **always individual seats**—a parent or school with multiple learners buys **one subscription per learner**. Optional progress digests: the student configures a recipient email (parent/teacher); there is no multi-child parent account or classroom product.
 
 ---
 
@@ -332,7 +334,9 @@ backend/
 
 **Done (see PLAN.md Phases 0–2):** production floor (observability, resilience UX, safety, jobs), Horizon A core slice (mastery graph, resume, math check, homework photo, digests, manipulatives), intervention depth (richer struggle signals, graduated ladder, affective check-ins, worked examples, misconception engine, multi-step work), multi-provider AI + pilot plans.
 
-**Next (Phase 3+):** spaced review scheduler, real parent multi-child accounts, classroom mode, standards reports, assessment modes, eval harness, deeper multimodal/voice polish, Postgres-by-default deploy path.
+**Next (Wave 2 — PLAN §15):** Postgres/hostable deploy, review depth, assessment modes, domain playbooks, eval harness, single-learner standards export, diagrams/a11y, digest polish. **Not planned:** multi-child households or classroom software (multi-learner = multi-seat).
+
+**Paid beta path (~25 students, individual seats):** **[BETA_LAUNCH.md](./BETA_LAUNCH.md)** — hosting, per-student billing; optional student-configured digest email.
 
 Full detail: **[PLAN.md](./PLAN.md)** and **[CAPABILITIES.md](./CAPABILITIES.md)**.
 

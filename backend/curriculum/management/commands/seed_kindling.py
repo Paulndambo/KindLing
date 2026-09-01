@@ -401,13 +401,19 @@ class Command(BaseCommand):
 
     def _seed_demo_skill_mastery(self, profile):
         """Give Maya a believable spark trail into fractions."""
+        from django.utils import timezone
+        from datetime import timedelta
+        from learning.review_service import schedule_reviews_for_profile
+
+        now = timezone.now()
         seeds = {
-            "frac.parts_of_whole": (0.78, "mastered", 5, 4, 1),
-            "frac.numerator_denominator": (0.62, "learning", 4, 2, 1),
-            "frac.number_line": (0.35, "learning", 2, 0, 1),
-            "frac.equivalent": (0.22, "ready", 0, 0, 0),
+            # slug: p, state, attempts, correct, incorrect, consecutive_incorrect, last_days_ago
+            "frac.parts_of_whole": (0.78, "mastered", 5, 4, 1, 0, 10),
+            "frac.numerator_denominator": (0.62, "learning", 4, 2, 1, 0, 5),
+            "frac.number_line": (0.35, "learning", 4, 1, 3, 2, 1),
+            "frac.equivalent": (0.28, "learning", 3, 0, 3, 2, 2),
         }
-        for slug, (p, state, attempts, correct, incorrect) in seeds.items():
+        for slug, (p, state, attempts, correct, incorrect, cinc, days_ago) in seeds.items():
             skill = Skill.objects.filter(slug=slug).first()
             if not skill:
                 continue
@@ -422,6 +428,17 @@ class Command(BaseCommand):
                     "correct": correct,
                     "incorrect": incorrect,
                     "consecutive_correct": 2 if state == "mastered" else 0,
+                    "consecutive_incorrect": cinc,
+                    "last_evidence_at": now - timedelta(days=days_ago),
+                    "last_correctness": "incorrect" if cinc else "correct",
                 },
             )
+        # Epic C1 — materialize Review spark due items for demo
+        result = schedule_reviews_for_profile(profile, dry_run=False)
         self.stdout.write(self.style.SUCCESS("Seeded demo skill mastery sparks"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Review spark schedule: due≈{result.get('due', 0)} "
+                f"(created {result.get('created', 0)}, updated {result.get('updated', 0)})"
+            )
+        )

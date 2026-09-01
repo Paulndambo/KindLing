@@ -6,6 +6,14 @@ from students.models import StudentProfile
 class LearningEventType(models.TextChoices):
     SESSION_START = "session.start", "Session start"
     SESSION_END = "session.end", "Session end"
+    # Epic B8 — phase: prompted | response | skipped
+    SESSION_REFLECT = "session.reflect", "Session reflection"
+    # Epic C1 — spaced review
+    REVIEW_STARTED = "review.started", "Review started"
+    REVIEW_COMPLETED = "review.completed", "Review completed"
+    # Epic G1 — light spark challenge (optional; no badge inventory)
+    CHALLENGE_STARTED = "challenge.started", "Spark challenge started"
+    CHALLENGE_COMPLETED = "challenge.completed", "Spark challenge completed"
     TURN_EXCHANGE = "turn.exchange", "Turn exchange"
     HINT_REQUESTED = "behavior.hint_requested", "Hint requested"
     TOOL_TOGGLED = "behavior.tool_toggled", "Tool toggled"
@@ -333,6 +341,71 @@ class SkillMastery(models.Model):
 
     def __str__(self):
         return f"{self.skill.slug}: {self.score:.0f} ({self.state})"
+
+
+class SkillReviewItem(models.Model):
+    """
+    Epic C1 — spaced review schedule for one learner × pilot skill.
+
+    Materialized by review_schedule job or on-read refresh; student UI shows
+    due items as “Review spark”.
+    """
+
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        DUE = "due", "Due"
+        COMPLETED = "completed", "Completed"
+        SKIPPED = "skipped", "Skipped"
+
+    profile = models.ForeignKey(
+        LearningProfile,
+        on_delete=models.CASCADE,
+        related_name="skill_reviews",
+    )
+    skill = models.ForeignKey(
+        "curriculum.Skill",
+        on_delete=models.CASCADE,
+        related_name="review_items",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SCHEDULED,
+        db_index=True,
+    )
+    due_at = models.DateTimeField(db_index=True)
+    # Selection reasons: weak, rusty, streak, recent_struggle
+    reason = models.CharField(max_length=40, blank=True, default="")
+    priority = models.FloatField(
+        default=0.5,
+        help_text="Higher = show first among due items",
+    )
+    # SM-2-lite interval state
+    interval_days = models.FloatField(default=1.0)
+    ease = models.FloatField(default=2.3)
+    repetitions = models.PositiveIntegerField(default=0)
+    last_outcome = models.CharField(max_length=20, blank=True, default="")
+    last_reviewed_at = models.DateTimeField(null=True, blank=True)
+    # Denormalized launch targets for the SPA
+    subject_name = models.CharField(max_length=160, blank=True, default="")
+    topic_name = models.CharField(max_length=200, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["due_at", "-priority"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "skill"],
+                name="uniq_profile_skill_review",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["profile", "status", "due_at"]),
+        ]
+
+    def __str__(self):
+        return f"review {self.skill.slug} due {self.due_at} ({self.status})"
 
 
 class ConversationStatus(models.TextChoices):

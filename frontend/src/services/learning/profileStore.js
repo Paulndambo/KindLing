@@ -4,6 +4,7 @@ import {
   buildLocalSkillPath,
   skillDirectivesLocal,
 } from "./skillGraph";
+import { reflectionDirectivesFromLast } from "./sessionReflection";
 
 /**
  * Longitudinal student learning profile.
@@ -310,6 +311,40 @@ export function applySessionEnd(profile, sessionSummary) {
 }
 
 /**
+ * Epic B8 — store last wrap-up reflection for next-open directives / CTAs.
+ */
+export function applySessionReflectionToProfile(profile, reflection = {}) {
+  const next = structuredClone(profile);
+  next.behavior = next.behavior || {};
+  next.behavior.sessionReflections =
+    (next.behavior.sessionReflections || 0) + (reflection.skipped ? 0 : 1);
+  next.lastReflection = {
+    at: reflection.at || new Date().toISOString(),
+    subject: reflection.subject || "",
+    topic: reflection.topic || "",
+    clickedId: reflection.clickedId || null,
+    nextId: reflection.nextId || null,
+    note: reflection.note || "",
+    skipped: Boolean(reflection.skipped),
+    sessionId: reflection.sessionId || null,
+  };
+  // Rolling short history for digests / analytics later
+  next.reflectionHistory = pushRolling(
+    next.reflectionHistory || [],
+    {
+      at: next.lastReflection.at,
+      topic: next.lastReflection.topic,
+      clickedId: next.lastReflection.clickedId,
+      nextId: next.lastReflection.nextId,
+      skipped: next.lastReflection.skipped,
+    },
+    12
+  );
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+/**
  * Compact insights for the tutor system prompt — the product's adaptive brain.
  */
 export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
@@ -382,6 +417,21 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
       "Celebrate persistence and effort explicitly (thinking time, bounce-backs, sticking with hard ideas) — not only correct answers."
     );
   }
+
+  // Epic B8 — last wrap-up reflection (same topic preferred)
+  const lastRef = profile.lastReflection;
+  if (
+    lastRef &&
+    !lastRef.skipped &&
+    (!topic ||
+      !lastRef.topic ||
+      String(lastRef.topic).toLowerCase() === String(topic).toLowerCase())
+  ) {
+    for (const d of reflectionDirectivesFromLast(lastRef)) {
+      if (!directives.includes(d)) directives.push(d);
+    }
+  }
+
   const recentCheckIns = (profile.affectCheckInHistory || []).slice(-3);
   if (recentCheckIns.includes("break")) {
     directives.push(

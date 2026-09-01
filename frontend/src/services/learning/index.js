@@ -37,18 +37,66 @@ export {
   applyAffectCheckInToProfile,
   applySessionStart,
   applySessionEnd,
+  applySessionReflectionToProfile,
   buildPersonalizationInsights,
 } from "./profileStore";
 export {
   AFFECT_CHECKIN_THRESHOLDS,
   AFFECT_CHECKIN_OPTIONS,
+  SESSION_START_ENERGY_OPTIONS,
+  SESSION_START_REASON,
   getCheckInOption,
+  getSessionStartOption,
+  getAffectOption,
+  isLowEnergyOption,
+  describeSessionStartCheckIn,
+  buildSessionStartCheckInCard,
   evaluateAffectCheckIn,
   describeAffectCheckIn,
   scorePersistenceDelta,
   affectDirectivesFromState,
   persistenceCelebrationCopy,
 } from "./affectCheckIn";
+export {
+  REFLECTION_CLICKED_OPTIONS,
+  REFLECTION_NEXT_OPTIONS,
+  getClickedOption,
+  getNextOption,
+  buildSessionReflectionCard,
+  formatReflectionNote,
+  reflectionDirectivesFromLast,
+  suggestReviewSparkCta,
+  shouldOfferSessionReflection,
+} from "./sessionReflection";
+export {
+  reviewModeDirectives,
+  buildReviewOpeningHint,
+  loadReviewSparks,
+  finishReviewSpark,
+  pickReviewCtaFromDue,
+} from "./reviewSpark";
+export {
+  WEEK_FOCUS_MAX,
+  LEARNING_GOAL_PREVIEW_MAX,
+  resolveLessonGoals,
+  goalsToTopicContext,
+  truncateGoal,
+  formatGoalsOrientationLine,
+  buildWeekFocusPromptLines,
+  goalEchoForReflection,
+  sanitizeWeekFocus,
+} from "./goalsSurface";
+export {
+  SPARK_CHALLENGE_TARGET,
+  challengeModeDirectives,
+  buildChallengeOpeningHint,
+  pickSparkChallengeCandidate,
+  emptyChallengeProgress,
+  applyChallengeGradedTurn,
+  challengeProgressLabel,
+  challengeCelebrationCopy,
+  challengeProgressChipCopy,
+} from "./sparkChallenge";
 export {
   PILOT_SUBJECT,
   STATE as SkillState,

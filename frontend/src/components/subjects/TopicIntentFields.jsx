@@ -17,10 +17,17 @@ export default function TopicIntentFields({
   disabled = false,
   compact = false,
 }) {
+  const active = FAMILIARITY_LEVELS.find((l) => l.id === familiarity);
+
   return (
     <div className={`topic-intent${compact ? " compact" : ""}`}>
-      <div className="field-block" style={{ marginBottom: compact ? 12 : 16 }}>
-        <span className="field-label">{familiarityLabel}</span>
+      <div className="topic-intent-field">
+        <div className="topic-intent-label-row">
+          <span className="field-label">{familiarityLabel}</span>
+          {active ? (
+            <span className="topic-intent-active-hint">{active.hint}</span>
+          ) : null}
+        </div>
         <div className="familiarity-pills" role="group" aria-label={familiarityLabel}>
           {FAMILIARITY_LEVELS.map((level) => (
             <button
@@ -29,19 +36,17 @@ export default function TopicIntentFields({
               className={`familiarity-pill${familiarity === level.id ? " selected" : ""}`}
               disabled={disabled}
               title={level.hint}
+              aria-pressed={familiarity === level.id}
               onClick={() => onFamiliarityChange?.(level.id)}
             >
-              {level.short}
+              <span className="familiarity-pill-short">{level.short}</span>
+              <span className="familiarity-pill-label">{level.label}</span>
             </button>
           ))}
         </div>
-        <p className="field-hint">
-          {FAMILIARITY_LEVELS.find((l) => l.id === familiarity)?.hint ||
-            "Helps Kindling start at the right pace"}
-        </p>
       </div>
 
-      <div className="field-block" style={{ marginBottom: 0 }}>
+      <div className="topic-intent-field topic-intent-field-last">
         <span className="field-label">{goalLabel}</span>
         <textarea
           className="modal-input topic-goal-input"

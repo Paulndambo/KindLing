@@ -9,13 +9,18 @@ import {
   X,
   Loader2,
   Image as ImageIcon,
+  Flame,
+  Zap,
 } from "lucide-react";
+import { challengeProgressLabel } from "../../services/learning/sparkChallenge";
 import TypingDots from "./TypingDots";
 import TutorMessageContent from "./TutorMessageContent";
 import InterventionBanner, {
   InterventionSystemChip,
 } from "./InterventionBanner";
 import AffectCheckInCard, { PersistenceChip } from "./AffectCheckInCard";
+import SessionReflectionCard from "./SessionReflectionCard";
+import GoalsChip from "./GoalsChip";
 import { ConversationEndedCard } from "./ConversationJournal";
 import ConnectionBanner from "./ConnectionBanner";
 import ChatErrorBanner from "./ChatErrorBanner";
@@ -64,8 +69,18 @@ export default function ChatPanel({
   affectCheckIn = null,
   onAffectRespond,
   onAffectDismiss,
+  sessionReflection = null,
+  onReflectionSubmit,
+  onReflectionSkip,
   persistenceNote = null,
   onDismissPersistenceNote,
+  reflectionResult = null,
+  onReviewSparkCta,
+  reviewMode = false,
+  reviewSkillLabel = null,
+  challengeMode = false,
+  challengeSkillLabel = null,
+  challengeProgress = null,
   pathCollapsed = false,
   onExpandPath,
   isResume = false,
@@ -91,6 +106,9 @@ export default function ChatPanel({
   onClearHomeworkError,
   manipulativeSlot = null,
   multiStepSlot = null,
+  /** Epic C5 — orientation goal chip under header */
+  lessonGoals = null,
+  showGoalsOrientation = true,
 }) {
   const fileInputRef = useRef(null);
   const interventionActive = intervention?.status === "active";
@@ -103,8 +121,13 @@ export default function ChatPanel({
     !conversationEnded;
   const showAffectCheckIn =
     Boolean(affectCheckIn) &&
+    !sessionReflection &&
     !interventionOffered &&
     !showSoftNudge &&
+    !isArchiveView &&
+    !conversationEnded;
+  const showSessionReflection =
+    Boolean(sessionReflection) &&
     !isArchiveView &&
     !conversationEnded;
   const offline = connectivity && connectivity.online === false;
@@ -116,6 +139,7 @@ export default function ChatPanel({
     isArchiveView ||
     conversationEnded ||
     isSummarizing ||
+    showSessionReflection ||
     offline ||
     safetyActive ||
     safetyPaused ||
@@ -151,15 +175,31 @@ export default function ChatPanel({
           <div style={{ minWidth: 0 }}>
             <h3>{topicName}</h3>
             <p className="sub">
-              {subjectName} · {curriculum || "Standard"} · {studentName}
-              {isResume && !isArchiveView && !conversationEnded
-                ? " · Continuing"
-                : ""}
+              {subjectName}
+              {curriculum ? ` · ${curriculum}` : ""}
               {isArchiveView ? " · Journal view" : ""}
             </p>
+            {/* Goals chip only when path is collapsed — path sidebar already shows it */}
+            {showGoalsOrientation &&
+              pathCollapsed &&
+              lessonGoals &&
+              (lessonGoals.hasLessonGoal ||
+                lessonGoals.weekFocus ||
+                lessonGoals.familiarity) &&
+              !isArchiveView &&
+              !conversationEnded && (
+                <div className="lesson-header-goals">
+                  <GoalsChip goals={lessonGoals} compact />
+                </div>
+              )}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <div className="lesson-header-actions">
+          {isResume && !isArchiveView && !conversationEnded && (
+            <span className="resume-pill" title="Continuing a previous conversation">
+              Resuming
+            </span>
+          )}
           {onOpenJournal && (
             <button
               type="button"
@@ -167,7 +207,7 @@ export default function ChatPanel({
               onClick={onOpenJournal}
               title="Learning Journal"
             >
-              <BookOpen size={14} />
+              <BookOpen size={14} aria-hidden />
               Journal
               {archiveCount > 0 && (
                 <span className="journal-count">{archiveCount}</span>
@@ -228,9 +268,7 @@ export default function ChatPanel({
                             ? intervention?.context?.levelLabel ||
                               intervention?.context?.activeTitle ||
                               "Help mode"
-                            : isResume
-                              ? "Picking up where you left"
-                              : "Kindling is live"}
+                            : "Kindling is live"}
           </div>
         </div>
       </div>
@@ -267,6 +305,44 @@ export default function ChatPanel({
           onExit={onExitIntervention}
           onEscalate={onEscalateIntervention}
         />
+      )}
+
+      {challengeMode && !isArchiveView && !conversationEnded && (
+        <div
+          className="review-mode-banner challenge-mode"
+          role="status"
+          aria-label="Spark challenge"
+        >
+          <Zap size={16} aria-hidden />
+          Spark challenge
+          <span>
+            {challengeProgress?.target || 3} solid turns
+            {challengeSkillLabel || reviewSkillLabel
+              ? ` · ${challengeSkillLabel || reviewSkillLabel}`
+              : ""}{" "}
+            — optional, no badges
+          </span>
+          {challengeProgress && (
+            <span className="challenge-progress">
+              {challengeProgressLabel(challengeProgress)}
+            </span>
+          )}
+        </div>
+      )}
+
+      {reviewMode &&
+        !challengeMode &&
+        !isArchiveView &&
+        !conversationEnded && (
+        <div className="review-mode-banner" role="status">
+          <Flame size={16} aria-hidden />
+          Review spark
+          <span>
+            Short warm-up
+            {reviewSkillLabel ? ` · ${reviewSkillLabel}` : ""} — not a full new
+            lesson
+          </span>
+        </div>
       )}
 
       <div className="chat-area" ref={chatAreaRef}>
@@ -356,11 +432,13 @@ export default function ChatPanel({
           );
         })}
 
-        {conversationEnded && endedSummary && (
+        {conversationEnded && (endedSummary || reflectionResult) && (
           <ConversationEndedCard
             summary={endedSummary}
+            reflection={reflectionResult}
             onStartNew={onContinueAfterEnd || onStartNewConversation}
             onOpenJournal={onOpenJournal}
+            onReviewSpark={onReviewSparkCta}
           />
         )}
 
@@ -380,7 +458,20 @@ export default function ChatPanel({
             checkIn={affectCheckIn}
             onRespond={onAffectRespond}
             onDismiss={onAffectDismiss}
-            disabled={isStreaming}
+            /* B7 session-start stays tappable if greeting begins after wait timeout */
+            disabled={
+              isStreaming && affectCheckIn?.reason !== "session_start"
+            }
+          />
+        )}
+
+        {showSessionReflection && (
+          <SessionReflectionCard
+            reflection={sessionReflection}
+            onSubmit={onReflectionSubmit}
+            onSkip={onReflectionSkip}
+            disabled={isSummarizing}
+            reviewCta={sessionReflection?.reviewCtaPreview || null}
           />
         )}
 

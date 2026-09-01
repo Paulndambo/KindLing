@@ -81,6 +81,14 @@ export function createSessionTracker({
       lastOptionId: null,
       lastReason: null,
     },
+    /** Epic B7 — session-start energy (does not consume B3 mid-session budget) */
+    sessionStartEnergy: {
+      prompted: false,
+      responded: false,
+      skipped: false,
+      optionId: null,
+      at: null,
+    },
     persistenceScore: 0,
     persistenceTags: [],
     lastWasHint: false,
@@ -369,19 +377,46 @@ export function createSessionTracker({
         sessionDurationMs: Date.now() - startedAt,
         persistenceScore: state.persistenceScore,
         persistenceTags: [...state.persistenceTags],
+        sessionStartEnergy: { ...state.sessionStartEnergy },
       };
     },
 
+    getSessionStartEnergyState() {
+      return { ...state.sessionStartEnergy };
+    },
+
     noteAffectCheckInPrompted(reason) {
+      // B7 session-start is tracked separately so it doesn't burn B3 budget
+      if (reason === "session_start") {
+        state.sessionStartEnergy.prompted = true;
+        state.sessionStartEnergy.at = Date.now();
+        state.counters.affectCheckIns += 1;
+        return;
+      }
       state.affectCheckIn.count += 1;
       state.affectCheckIn.lastAt = Date.now();
       state.affectCheckIn.lastReason = reason || null;
       state.counters.affectCheckIns += 1;
     },
 
-    noteAffectCheckInResponse(optionId, affectLabel) {
-      state.affectCheckIn.lastOptionId = optionId || null;
-      state.affectCheckIn.lastAt = Date.now();
+    noteSessionStartEnergyPrompted() {
+      state.sessionStartEnergy.prompted = true;
+      state.sessionStartEnergy.at = Date.now();
+      state.counters.affectCheckIns += 1;
+    },
+
+    noteAffectCheckInResponse(optionId, affectLabel, { reason = null } = {}) {
+      const isSessionStart = reason === "session_start";
+      if (isSessionStart) {
+        state.sessionStartEnergy.responded = optionId !== "skipped";
+        state.sessionStartEnergy.skipped = optionId === "skipped";
+        state.sessionStartEnergy.optionId =
+          optionId && optionId !== "skipped" ? optionId : null;
+        state.sessionStartEnergy.at = Date.now();
+      } else {
+        state.affectCheckIn.lastOptionId = optionId || null;
+        state.affectCheckIn.lastAt = Date.now();
+      }
       if (affectLabel) {
         state.recentAffects = pushRolling(state.recentAffects, affectLabel);
         if (affectLabel === Affect.FRUSTRATED) {
@@ -390,8 +425,12 @@ export function createSessionTracker({
           state.consecutiveFrustrated = 0;
         }
       }
-      // "stuck" / "break" → next real turn can earn stay-after-checkin persistence
-      if (optionId === "stuck" || optionId === "break") {
+      // low / stuck / break → next real turn can earn stay-after-checkin persistence
+      if (
+        optionId === "stuck" ||
+        optionId === "break" ||
+        optionId === "low"
+      ) {
         state.afterCheckInStuck = true;
       }
     },

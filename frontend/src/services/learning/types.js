@@ -7,6 +7,14 @@
 export const LearningEventType = {
   SESSION_START: "session.start",
   SESSION_END: "session.end",
+  /** Epic B8 — end-of-session reflection (phase: prompted | response | skipped) */
+  SESSION_REFLECT: "session.reflect",
+  /** Epic C1 — spaced review */
+  REVIEW_STARTED: "review.started",
+  REVIEW_COMPLETED: "review.completed",
+  /** Epic G1 — light spark challenge (optional, no badge inventory) */
+  CHALLENGE_STARTED: "challenge.started",
+  CHALLENGE_COMPLETED: "challenge.completed",
   TURN_EXCHANGE: "turn.exchange",
   HINT_REQUESTED: "behavior.hint_requested",
   TOOL_TOGGLED: "behavior.tool_toggled",

@@ -67,6 +67,7 @@ def build_user_export(user) -> Dict[str, Any]:
         "learning_style": profile.learning_style,
         "interests": profile.interests,
         "goal": profile.goal,
+        "week_focus": profile.week_focus,
         "is_onboarded": profile.is_onboarded,
         "created_at": profile.created_at.isoformat() if profile.created_at else None,
         "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,

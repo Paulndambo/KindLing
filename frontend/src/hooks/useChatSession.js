@@ -113,6 +113,11 @@ export function useChatSession({
   onTutorReply,
   onSessionReset,
   onSessionBegin,
+  /**
+   * Epic B7 — optional await before fresh greeting so energy chip can shape first turn.
+   * Should resolve quickly on skip/answer or after a short timeout (never hang forever).
+   */
+  onAwaitSessionStartEnergy = null,
   onExchangeComplete,
   onAwaitingStudent,
   onResumeSnapshot,
@@ -172,6 +177,7 @@ export function useChatSession({
   const onTutorReplyRef = useRef(onTutorReply);
   const onSessionResetRef = useRef(onSessionReset);
   const onSessionBeginRef = useRef(onSessionBegin);
+  const onAwaitSessionStartEnergyRef = useRef(onAwaitSessionStartEnergy);
   const onExchangeCompleteRef = useRef(onExchangeComplete);
   const onAwaitingStudentRef = useRef(onAwaitingStudent);
   const onResumeSnapshotRef = useRef(onResumeSnapshot);
@@ -211,6 +217,9 @@ export function useChatSession({
   useEffect(() => {
     onSessionBeginRef.current = onSessionBegin;
   }, [onSessionBegin]);
+  useEffect(() => {
+    onAwaitSessionStartEnergyRef.current = onAwaitSessionStartEnergy;
+  }, [onAwaitSessionStartEnergy]);
   useEffect(() => {
     onExchangeCompleteRef.current = onExchangeComplete;
   }, [onExchangeComplete]);
@@ -511,24 +520,16 @@ export function useChatSession({
           lastMsgAt && dayKey(lastMsgAt) === dayKey(new Date().toISOString());
 
         const resumeBits = [];
+        // Day boundary only when needed; header already shows a "Resuming" pill
+        // so avoid stacking another "picking up" system chip on every reopen.
         if (lastMsgAt && !isSameDay) {
           resumeBits.push({
             id: newMessageId(),
             role: "day_boundary",
-            text: "Interaction for today starts here",
+            text: "New day — continuing this topic",
             at: new Date().toISOString(),
           });
         }
-        resumeBits.push({
-          id: newMessageId(),
-          role: "system",
-          kind: "resume",
-          text:
-            lastMsgAt && !isSameDay
-              ? "Picking up where you left off"
-              : "Continuing this topic",
-          at: new Date().toISOString(),
-        });
         if (resumeIntervention) {
           resumeBits.push({
             id: newMessageId(),
@@ -592,9 +593,36 @@ export function useChatSession({
       if (isStale()) return;
       setMessages([]);
       setMsgCount(0);
+
+      // Epic B7 — briefly wait for optional energy chip so first turn can soften pace.
+      // Resolves on answer/skip or timeout; never blocks the lesson permanently.
+      try {
+        await onAwaitSessionStartEnergyRef.current?.();
+      } catch {
+        /* ignore gate errors */
+      }
+      if (isStale()) return;
+
+      // Rebuild system prompt after energy response may have updated insights
+      const greetingSystemPrompt = buildSystemPrompt(
+        subjectName,
+        topicName,
+        toolsRef.current,
+        currentStudent,
+        insightsRef.current,
+        {
+          interventionActive: false,
+          interventionContext: null,
+          topicContext: {
+            ...baseTopicCtx,
+            isFirstSession: true,
+          },
+        }
+      );
+
       let chat;
       try {
-        chat = createChatSession(systemPrompt, []);
+        chat = createChatSession(greetingSystemPrompt, []);
         chatRef.current = chat;
       } catch (err) {
         console.error(err);
