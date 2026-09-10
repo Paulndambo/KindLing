@@ -113,6 +113,8 @@ export function evaluateInterventionTrigger({
   highestLevelUsed = 0,
   currentLevel = 0,
   alreadyOfferedEscalate = false,
+  /** Epic L3 ADI snapshot for ladder fade */
+  adi = null,
 } = {}) {
   // Offered — wait for accept/decline
   if (currentStatus === InterventionStatus.OFFERED) {
@@ -221,6 +223,7 @@ export function evaluateInterventionTrigger({
         topicThrashing,
         shouldAutoEnter,
         highestLevelUsed,
+        adi,
       })
     : InterventionLevel.NONE;
 

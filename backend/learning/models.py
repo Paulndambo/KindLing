@@ -39,6 +39,22 @@ class LearningEventType(models.TextChoices):
     MULTISTEP_STEP = "multistep.step", "Multi-step step checked"
     MULTISTEP_COMPLETED = "multistep.completed", "Multi-step completed"
     MULTISTEP_EXITED = "multistep.exited", "Multi-step exited"
+    # Epic C6 — low-stakes MCQ quick check (offline-capable revision)
+    ASSESSMENT_STARTED = "assessment.started", "Assessment started"
+    ASSESSMENT_ANSWERED = "assessment.answered", "Assessment item answered"
+    ASSESSMENT_COMPLETED = "assessment.completed", "Assessment completed"
+    ASSESSMENT_EXITED = "assessment.exited", "Assessment exited"
+    # Epic L3 — Assistance Dependency Index
+    LEARNING_ADI = "learning.adi", "Assistance dependency index"
+    # Epic L2 — pedagogical policy decision
+    PEDAGOGY_DECISION = "pedagogy.decision", "Pedagogical decision"
+    # Epic L4 — no-scaffold independence twin
+    INDEPENDENCE_OFFERED = "independence.offered", "Independence twin offered"
+    INDEPENDENCE_STARTED = "independence.started", "Independence twin started"
+    INDEPENDENCE_ANSWERED = "independence.answered", "Independence twin answered"
+    INDEPENDENCE_COMPLETED = "independence.completed", "Independence twin completed"
+    INDEPENDENCE_DECLINED = "independence.declined", "Independence twin declined"
+    INDEPENDENCE_SKIPPED = "independence.skipped", "Independence twin skipped"
 
 
 class Correctness(models.TextChoices):
@@ -616,3 +632,63 @@ class ConversationMessage(models.Model):
 
     def __str__(self):
         return f"{self.role} @ {self.occurred_at}"
+
+class ManualSessionEval(models.Model):
+    """
+    Epic C8.3 - human-scored session rubric row (beta bridge to C8.1).
+
+    One score sheet per session per cohort (re-score updates the same row when
+    session_id + cohort match).
+    """
+
+    lesson_session = models.ForeignKey(
+        LessonSession,
+        on_delete=models.SET_NULL,
+        related_name="manual_evals",
+        null=True,
+        blank=True,
+    )
+    client_session_key = models.CharField(max_length=64, db_index=True)
+    cohort = models.CharField(
+        max_length=80,
+        blank=True,
+        default="beta-c8.3",
+        db_index=True,
+        help_text="e.g. beta-c8.3 or beta-10-2026-09",
+    )
+    rubric_version = models.PositiveSmallIntegerField(default=1)
+    # { dimension_id: 1-5 or null }
+    scores = models.JSONField(default=dict, blank=True)
+    dimension_notes = models.JSONField(default=dict, blank=True)
+    overall_notes = models.TextField(blank=True, default="")
+    scorer = models.CharField(max_length=120, blank=True, default="")
+    # Auto evidence snapshot at score time
+    evidence = models.JSONField(default=dict, blank=True)
+    weighted_mean = models.FloatField(null=True, blank=True)
+    completeness = models.FloatField(null=True, blank=True)
+    scored_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-scored_at"]
+        verbose_name = "Manual session eval (C8.3)"
+        verbose_name_plural = "Manual session evals (C8.3)"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["client_session_key", "cohort"],
+                name="uniq_manual_eval_client_session_cohort",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["cohort", "-scored_at"]),
+        ]
+
+    def __str__(self):
+        mean = (
+            f"{self.weighted_mean:.2f}"
+            if self.weighted_mean is not None
+            else "-"
+        )
+        return f"Eval {self.client_session_key} / {self.cohort} / mean {mean}"
+

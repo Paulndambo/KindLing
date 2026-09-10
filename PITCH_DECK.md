@@ -112,59 +112,48 @@ UPDATE standard founder split · incorporated? · location
 
 # B. Partner meeting deck (10 slides)
 
-*Matches [Kindling_YC_Pitch.pptx](./Kindling_YC_Pitch.pptx). Speak to slides; demo live if possible.*
+*Matches [Kindling_YC_Pitch.pptx](./Kindling_YC_Pitch.pptx). Speak to slides; demo live if possible.*  
+*Regenerate PPTX: `node scripts/generate-yc-pitch.js`*
 
 ### 1 — Title
-**Kindling** — The AI private tutor that notices when a learner is stuck—and knows how to teach.  
-Pre-seed · Working product · Adaptive tutoring across subjects
+**The tutor that stays when learning gets hard.**  
+Spots struggle → teaches through it → builds mastery.  
+Pre-seed · Working product · Multi-subject adaptive tutoring
 
-**30-second open:** "We're building Kindling—an AI tutor for the individual learner that doesn't just answer homework. It watches how a student thinks and feels, and when they're stuck it steps in with real teaching—then gets out of the way. Any subject they need help with."
+**30-second open:** "We're building Kindling—an AI private tutor that doesn't just answer homework. It notices when a learner is stuck, teaches through it, and gets out of the way. Any subject they need help with tonight."
 
 ### 2 — Problem
-Great tutoring works. Almost nobody gets it daily. Human tutors are scarce/expensive; chatbots answer without teaching; parents see grades too late.
+Great tutoring works. Almost nobody gets it nightly.  
+**Scene:** 9:40 PM. Homework open. The child is stuck. Human tutors are scarce; ChatGPT hands over the answer; parents see grades too late—the teaching moment dies.
 
-**Pain line:** When a child is stuck, the teaching moment either never arrives—or arrives as a spoon-fed answer that doesn't stick.
-
-**Insight:** Tutoring quality is judgment under uncertainty—not more fluent text.
-
-### 3 — Solution
-Living private tutor for the whole school bag: Socratic default, learner model every turn, graduated intervention (exit-able), family digests, mastery and trust tooling.
-
-**Thesis:** Kindling doesn't just chat. It teaches—and it knows when to change how it teaches.
+### 3 — Insight + solution
+**Insight:** Tutoring quality is judgment under uncertainty—not more fluent AI text.  
+**Contrast:** Most AI answers first and moves on. Kindling notices, teaches, then gets out of the way—Socratic default, learner model every turn, graduated ladder (exit-able), mastery + family clarity as systems.
 
 ### 4 — Product (what is real)
-Working monorepo: live lessons on **student-created subjects**, intelligence pipeline, intervention ladder, pedagogy engines (examples, misconceptions, multistep), safety floor, resume/digests, familiarity-aware first session. Rich rendering for math, code, lists, and diagrams.
-
-**Demo punchline:** Other bots give the answer. Kindling notices the struggle—and teaches through it.
+**When a learner is stuck, Kindling has a plan.** Intervention ladder L1–L4 (micro-hint → example → full guide → break/easier) plus live lessons, any subject, learner model, trust layer.  
+**Demo punchline:** Other bots give the answer. Kindling teaches through the stuck moment.
 
 ### 5 — How it works
-Student turn → signals → learner model → teaching policy → ladder / examples / mastery / digests.  
-Rent foundation models; own the learning system. Moat path = session data × policies × curriculum graphs × parent trust.
+Turn → signals → model → policy.  
+**Own the learning system. Rent the model.** Moat = session data × intervention policies × curriculum graphs × parent trust—not the base LLM.
 
 ### 6 — Why now
-LLM UX ready; parents already pay; structural gaps; window to own pedagogy + trust layer before free answers become the habit.
+Pedagogy company window: LLM UX ready; budgets exist; structural gaps permanent; free-answer habit is a category risk—own trust + teaching policy now.
 
 ### 7 — Market and wedge
-Beachhead: learners ~8–16 (or their payer) who need **nightly 1-on-1 help across school subjects**. Expand exam prep; multi-child families and schools buy **additional seats**. Wedge is **how we teach when stuck**, not a single subject silo. Lead with wedge, not vanity TAM.
+Beachhead: learners ~8–16 who need **1-on-1 help across school subjects—tonight**. Expand exam prep → packs → per-seat bulk. Wedge is **intervention quality**, not a single-subject silo.
 
 ### 8 — Business model and GTM
-Consumer per-seat subscription first; bulk seats for schools later (still one account per learner). GTM: paid beta one geo → student/payer loops → creators/micro-schools buying seats.  
-North stars: sessions/learner/week · intervention success · D30 · parent NPS · GM after AI COGS.
+Consumer seats first; institutions when trust is earned. Revenue / GTM / north stars (sessions/week, intervention→success, D30 · parent NPS · GM after AI).
 
 ### 9 — Competition
-| | Gap |
-|--|-----|
-| ChatGPT et al. | No child learning product system |
-| Solvers | Answer ≠ mastery |
-| Adaptive banks | Weak conversational rescue + affect; often subject-siloed |
-| Human marketplaces | Cost and logistics |
-| AI tutor apps | Often wrappers; thin intervention/mastery |
+**Not ChatGPT for homework.** Generic LLMs, solvers, adaptive banks, marketplaces, AI tutor apps—each missing durable learner model, rescue, or intervention stack.  
+**Wedge:** intervention + mastery + family loop + safety as infrastructure—across subjects.
 
-**Kindling:** intervention ladder + event graph + mastery + family loop + safety as product—**across subjects**.
-
-### 10 — Team, status, ask
-Honest status (working product; UPDATE GTM/revenue/users). Team UPDATE.  
-Raising UPDATE pre-seed for 12–18 months: paid beta PMF, learning science, safety, parent acquisition.  
+### 10 — Ask / close
+Working full-stack tutor · pre-seed private demo · per-learner seats.  
+Raising pre-seed for 12–18 months: paid beta PMF, learning science + eval, safety depth, parent acquisition.  
 **Close:** We're not building a better answer engine. We're building the tutor that stays—especially when learning is hard.
 
 ---

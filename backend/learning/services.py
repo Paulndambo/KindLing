@@ -817,7 +817,6 @@ def ingest_events(
                         profile.focus_areas = snap["focusAreas"]
                     if "lastSession" in snap:
                         profile.last_session = snap["lastSession"]
-                    profile.save()
 
                     for key, m in (snap.get("mastery") or {}).items():
                         TopicMastery.objects.update_or_create(
@@ -848,6 +847,20 @@ def ingest_events(
                             },
                         )
 
+                # Epic L1 — accept client-built LearnerState on snapshot payload
+                # (stored inside raw_snapshot envelope for research / L5 export)
+                ls = payload.get("learnerState")
+                if ls and isinstance(ls, dict):
+                    base = (
+                        profile.raw_snapshot
+                        if isinstance(profile.raw_snapshot, dict)
+                        else {}
+                    )
+                    profile.raw_snapshot = {**base, "_learnerState": ls}
+
+                if snap or ls:
+                    profile.save()
+
             elif event_type == LearningEventType.TOPIC_SWITCHED:
                 sid = payload.get("sessionId") or session_id
                 to = payload.get("to") or {}
@@ -859,6 +872,34 @@ def ingest_events(
                     counters["topicSwitches"] = counters.get("topicSwitches", 0) + 1
                     session.counters = counters
                     session.save()
+
+            elif event_type == getattr(
+                LearningEventType, "LEARNING_ADI", "learning.adi"
+            ) or event_type == "learning.adi":
+                # Epic L3 — fold ADI into longitudinal profile.behavior
+                if profile is not None and payload.get("value") is not None:
+                    behavior = dict(profile.behavior or {})
+                    behavior["adi"] = payload.get("value")
+                    if payload.get("band"):
+                        behavior["adiBand"] = payload.get("band")
+                    if payload.get("trend"):
+                        behavior["adiTrend"] = payload.get("trend")
+                    if payload.get("independence") is not None:
+                        try:
+                            behavior["independencePct"] = int(
+                                round(float(payload["independence"]) * 100)
+                            )
+                        except (TypeError, ValueError):
+                            pass
+                    elif payload.get("independencePct") is not None:
+                        behavior["independencePct"] = payload.get("independencePct")
+                    behavior["adiUpdatedAt"] = (
+                        payload.get("updatedAt")
+                        or raw.get("timestamp")
+                        or ""
+                    )
+                    profile.behavior = behavior
+                    profile.save(update_fields=["behavior", "updated_at"])
 
         except Exception as exc:  # noqa: BLE001 — isolate bad events in a batch
             errors.append(f"{raw.get('id', '?')}: {exc}")
@@ -1069,6 +1110,25 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         except Exception:
             review_sparks = {"due": [], "dueNow": [], "count": 0, "hasDue": False}
 
+    # Epic L2.4 — ranked next-best actions (thin NBA)
+    next_best_actions = []
+    try:
+        from learning.learner_state import build_learner_state_from_profile
+        from learning.pedagogical_policy import rank_next_best_actions
+
+        profile_dict = profile_to_api_dict(profile) if profile else {}
+        ls = build_learner_state_from_profile(profile_dict)
+        due_list = review_sparks.get("due") or review_sparks.get("dueNow") or []
+        next_best_actions = rank_next_best_actions(
+            learner_state=ls,
+            due_reviews=due_list,
+            recommended_skill=next_skill,
+            focus_areas=focus_areas,
+            can_assess=True,
+        )
+    except Exception:
+        next_best_actions = []
+
     return {
         "hasData": has_data,
         "weekStats": {
@@ -1079,6 +1139,7 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         "skillSparks": skill_sparks,
         "recommendedNextSkill": next_skill,
         "reviewSparks": review_sparks,
+        "nextBestActions": next_best_actions,
         "recentActivity": recent,
         "strengths": strength_cards,
         "focusAreas": focus_cards,

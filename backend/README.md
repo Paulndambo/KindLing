@@ -68,6 +68,10 @@ python manage.py run_job weekly_digest --dry-run
 # Real email (console backend prints to stdout in local dev)
 python manage.py run_job weekly_digest
 
+# Weekly eval sample (Epic C8.2) — auto-score + MEDIA/eval_reports
+python manage.py run_job weekly_eval_sample --dry-run
+python manage.py run_job weekly_eval_sample
+
 # Run every job that is due by interval
 python manage.py run_scheduled_jobs
 ```
@@ -85,7 +89,8 @@ python manage.py run_scheduled_jobs
 | `heartbeat` | 1h | Health proof + 24h counters |
 | `weekly_digest` | 7d | Parent digests for opted-in students |
 | `mastery_recompute` | 1d | Placeholder mastery recompute |
-| `review_schedule` | 1d | Placeholder spaced review |
+| `review_schedule` | 1d | Spaced review scheduling (C1) |
+| `weekly_eval_sample` | 7d | Offline eval sample auto-score + report (C8.2) |
 
 Configure in `settings.KINDLING_JOBS`. Ops snapshot: `GET /api/jobs/status/`.
 
@@ -103,6 +108,27 @@ Graded `turn.exchange` events update **BKT-lite** `SkillMastery` rows and blend 
 
 ```bash
 python manage.py seed_kindling   # seeds graph + demo mastery sparks
+```
+
+## Session eval harness (Epic C8)
+
+Manual rubric (C8.3), offline auto scorer (C8.1), weekly job (C8.2).  
+Protocol: [`docs/EVAL_RUBRIC_C8.md`](../docs/EVAL_RUBRIC_C8.md).
+
+```bash
+python manage.py eval_sample_export --limit 10 --out eval_samples
+python manage.py eval_score --session-id <SID> --scores socratic=4,hint=4,timing=3,decision=4,affect=5,mc=3,realworld=4,independence=4,persistence=4,overall=4 --scorer you
+python manage.py eval_report --cohort beta-c8.3 --out eval_samples/report.md
+
+# C8.1 automated offline scorer
+python manage.py eval_auto_score --limit 10 --save --cohort auto-c8.1
+python manage.py eval_auto_score --limit 20 --compare-cohort beta-c8.3
+python manage.py eval_report --cohort auto-c8.1
+
+# C8.2 weekly sample job (also via run_scheduled_jobs)
+python manage.py eval_weekly_sample --dry-run
+python manage.py run_job weekly_eval_sample
+python manage.py eval_weekly_sample --list-cohorts
 ```
 
 ## Math correctness verification (Epic A3)

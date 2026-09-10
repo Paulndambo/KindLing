@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ListOrdered,
   Target,
+  ClipboardCheck,
 } from "lucide-react";
 import { truncateGoal } from "../../services/learning/goalsSurface";
 
@@ -22,33 +23,6 @@ const LADDER_BTNS = [
   { level: 3, label: "Full guide", Icon: LifeBuoy },
   { level: 4, label: "Easier path", Icon: Trees },
 ];
-
-function signalLabel(correctness) {
-  switch (correctness) {
-    case "correct":
-      return { text: "On track", tone: "good" };
-    case "partial":
-      return { text: "Partial understanding", tone: "mid" };
-    case "incorrect":
-      return { text: "Needs scaffold", tone: "focus" };
-    case "exploring":
-      return { text: "Exploring / asking", tone: "mid" };
-    default:
-      return { text: "Observing…", tone: "muted" };
-  }
-}
-
-function affectLabel(affect) {
-  const map = {
-    confident: "Confident",
-    hesitant: "Hesitant",
-    frustrated: "Frustrated",
-    curious: "Curious",
-    disengaged: "Low engagement",
-    neutral: "Steady",
-  };
-  return map[affect] || "—";
-}
 
 export default function LessonTools({
   tools,
@@ -69,6 +43,8 @@ export default function LessonTools({
   isArchiveView = false,
   archiveCount = 0,
   lastSignals = null,
+  /** Epic L1 — structured multi-slice learner snapshot */
+  learnerState = null,
   sessionSummary = null,
   learningInsights = null,
   intervention = null,
@@ -84,6 +60,11 @@ export default function LessonTools({
   multiStepPercent = null,
   onStartMultiStep,
   onExitMultiStep,
+  assessmentAvailable = false,
+  assessmentActive = false,
+  assessmentScore = null,
+  onStartAssessment,
+  onExitAssessment,
   onExitIntervention,
   onAcceptIntervention,
   onDeclineIntervention,
@@ -95,7 +76,30 @@ export default function LessonTools({
   /** Epic C5 — resolved lesson goals */
   lessonGoals = null,
 }) {
-  const last = lastSignals ? signalLabel(lastSignals.correctness) : null;
+  /** L1.2 — pulse binds to structured slices (fallback to raw lastSignals) */
+  const pulse = learnerState?.pulse || null;
+  const hasLongitudinal =
+    (learnerState?.knowledge?.topicAttempts || 0) > 0 ||
+    (learnerState?.misconceptions?.length || 0) > 0 ||
+    learnerState?.confidence?.level != null ||
+    learnerState?.engagement?.level != null ||
+    Boolean(pulse?.knowledgeLabel) ||
+    Boolean(pulse?.assistanceLabel) ||
+    Boolean(pulse?.calibrationLabel) ||
+    Boolean(pulse?.independenceNote) ||
+    (learnerState?.adi?.reliable && learnerState.adi.value != null) ||
+    (learnerState?.behaviour?.flags?.length || 0) > 0 ||
+    (learnerState?.knowledge?.focusAreas?.length || 0) > 0 ||
+    (learnerState?.knowledge?.strengths?.length || 0) > 0;
+  const hasObservation =
+    Boolean(lastSignals) ||
+    Boolean(
+      pulse &&
+        pulse.correctnessText &&
+        pulse.correctnessText !== "Observing…"
+    ) ||
+    hasLongitudinal;
+
   const accuracyPct =
     sessionSummary?.accuracy != null
       ? Math.round(sessionSummary.accuracy * 100)
@@ -109,6 +113,14 @@ export default function LessonTools({
     intervention?.context?.levelLabel ||
     intervention?.context?.activeTitle ||
     "Help mode";
+
+  const mcLabels =
+    pulse?.misconceptionLabels?.length > 0
+      ? pulse.misconceptionLabels
+      : (activeMisconceptions?.length
+          ? activeMisconceptions
+          : lastSignals?.misconceptions || []
+        ).map((m) => m.label || m);
 
   return (
     <aside className="lesson-tools">
@@ -290,7 +302,7 @@ export default function LessonTools({
           )}
 
         {/* Epic B6 — show your work */}
-        {(multiStepAvailable || multiStepActive) && (
+        {(multiStepAvailable || multiStepActive) && !assessmentActive && (
           <div className="multistep-tools-block">
             <p className="intervention-tools-text" style={{ marginTop: 10 }}>
               {multiStepActive
@@ -335,68 +347,159 @@ export default function LessonTools({
             )}
           </div>
         )}
+
+        {/* Epic C6 — quick check (works offline; no AI required) */}
+        {(assessmentAvailable || assessmentActive) && (
+          <div className="assessment-tools-block">
+            <p className="intervention-tools-text" style={{ marginTop: 10 }}>
+              {assessmentActive
+                ? `Quick check${
+                    assessmentScore?.answered != null
+                      ? ` · ${assessmentScore.correct || 0}/${
+                          assessmentScore.total || 0
+                        }`
+                      : ""
+                  }`
+                : "Short multiple-choice on this lesson’s concept — one question at a time, with a tutor note after each answer."}
+            </p>
+            {assessmentActive ? (
+              <button
+                type="button"
+                className="intervention-exit-btn full"
+                onClick={onExitAssessment}
+                disabled={isStreaming}
+              >
+                <X size={14} />
+                Exit quick check
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="guide-btn library-example-btn"
+                onClick={onStartAssessment}
+                disabled={isArchiveView || interventionActive || multiStepActive}
+                style={{
+                  opacity:
+                    isArchiveView || interventionActive || multiStepActive
+                      ? 0.45
+                      : 1,
+                }}
+              >
+                <ClipboardCheck size={14} />
+                Quick check
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Learner pulse — Kindling's understanding of this student right now */}
+      {/* Learner pulse — L1 structured slices of what Kindling believes right now */}
       <div className="learner-pulse">
         <h4>
           <Brain size={13} style={{ marginRight: 6, verticalAlign: -2 }} />
           Learner pulse
         </h4>
-        {lastSignals ? (
+        {hasObservation && pulse ? (
           <div className="learner-pulse-body">
-            <div className={`pulse-chip tone-${last.tone}`}>{last.text}</div>
+            <div
+              className={`pulse-chip tone-${pulse.correctnessTone || "muted"}`}
+            >
+              {pulse.correctnessText || "Observing…"}
+            </div>
             <div className="pulse-row">
               <span>Affect</span>
-              <strong>{affectLabel(lastSignals.affect)}</strong>
+              <strong>{pulse.affectLabel || "—"}</strong>
             </div>
             <div className="pulse-row">
               <span>Confidence</span>
-              <strong>{Math.round(lastSignals.confidence * 100)}%</strong>
+              <strong>
+                {pulse.confidencePct != null ? `${pulse.confidencePct}%` : "—"}
+              </strong>
             </div>
             <div className="pulse-row">
               <span>Engagement</span>
-              <strong>{Math.round(lastSignals.engagement * 100)}%</strong>
+              <strong>
+                {pulse.engagementPct != null
+                  ? `${pulse.engagementPct}%`
+                  : learnerState?.engagement?.label &&
+                      learnerState.engagement.label !== "unknown"
+                    ? learnerState.engagement.label
+                    : "—"}
+              </strong>
             </div>
-            {lastSignals.responseMs != null && (
+            {pulse.thinkTimeLabel && (
               <div className="pulse-row">
                 <span>Think time</span>
-                <strong>
-                  {lastSignals.responseMs < 1000
-                    ? "<1s"
-                    : `${Math.round(lastSignals.responseMs / 1000)}s`}
+                <strong>{pulse.thinkTimeLabel}</strong>
+              </div>
+            )}
+            {pulse.knowledgeLabel && (
+              <div className="pulse-row">
+                <span>Knowledge</span>
+                <strong className="pulse-strong-wrap">{pulse.knowledgeLabel}</strong>
+              </div>
+            )}
+            {pulse.assistanceLabel && (
+              <div className="pulse-row">
+                <span>Support</span>
+                <strong>{pulse.assistanceLabel}</strong>
+              </div>
+            )}
+            {pulse.calibrationLabel && (
+              <p className="pulse-note calibration-note">
+                {pulse.calibrationLabel}
+              </p>
+            )}
+            {pulse.independenceNote && (
+              <div className="pulse-row pulse-independence">
+                <span>Independence</span>
+                <strong className="pulse-strong-wrap">
+                  {learnerState?.adi?.independencePct != null
+                    ? `${learnerState.adi.independencePct}%`
+                    : learnerState?.assistance?.independencePct != null
+                      ? `${learnerState.assistance.independencePct}%`
+                      : "—"}
                 </strong>
               </div>
             )}
-            {(activeMisconceptions?.length > 0 ||
-              lastSignals.misconceptions?.length > 0) && (
-              <div className="misconception-pulse">
-                <p className="pulse-note">
-                  Pattern to gently rework:{" "}
-                  {(activeMisconceptions?.length
-                    ? activeMisconceptions
-                    : lastSignals.misconceptions
-                  )
-                    .map((m) => m.label)
-                    .join(", ")}
-                </p>
-                {(activeMisconceptions || lastSignals.misconceptions)
-                  ?.slice(0, 1)
-                  .map((m) =>
-                    m.playbook?.check_question || m.playbook?.checkQuestion ? (
-                      <p key={m.id} className="pulse-note misconception-tip">
-                        Try asking: “
-                        {m.playbook.check_question || m.playbook.checkQuestion}”
-                      </p>
-                    ) : null
-                  )}
+            {pulse.independenceNote && (
+              <p className="pulse-note independence-note">
+                {pulse.independenceNote}
+              </p>
+            )}
+            {learningInsights?.pedagogyDecision?.action && (
+              <div className="pulse-row">
+                <span>Next move</span>
+                <strong className="pulse-strong-wrap">
+                  {learningInsights.pedagogyDecision.shortLabel ||
+                    learningInsights.pedagogyDecision.label ||
+                    learningInsights.pedagogyDecision.action}
+                </strong>
               </div>
             )}
-            {(sessionSummary?.persistenceScore > 0 ||
+            {mcLabels.length > 0 && (
+              <div className="misconception-pulse">
+                <p className="pulse-note">
+                  Pattern to gently rework: {mcLabels.slice(0, 3).join(", ")}
+                </p>
+                {pulse.misconceptionTip ? (
+                  <p className="pulse-note misconception-tip">
+                    Try asking: “{pulse.misconceptionTip}”
+                  </p>
+                ) : null}
+              </div>
+            )}
+            {(pulse.persistenceNote ||
+              sessionSummary?.persistenceScore > 0 ||
               learningInsights?.persistenceScore > 0) && (
               <p className="pulse-note persistence-note">
-                Persistence spark: effort and bounce-backs count here — not only
-                correct answers.
+                {pulse.persistenceNote ||
+                  "Persistence spark: effort and bounce-backs count here — not only correct answers."}
+              </p>
+            )}
+            {learnerState?.summary && (
+              <p className="pulse-note pulse-summary" title={learnerState.summary}>
+                {learnerState.summary}
               </p>
             )}
           </div>
@@ -448,12 +551,18 @@ export default function LessonTools({
           </div>
         )}
 
-        {learningInsights?.stats?.focusAreas?.length > 0 && (
+        {(learnerState?.knowledge?.focusAreas?.length > 0 ||
+          learningInsights?.stats?.focusAreas?.length > 0) && (
           <p className="pulse-note">
             Focus areas:{" "}
-            {learningInsights.stats.focusAreas
+            {(
+              learnerState?.knowledge?.focusAreas?.length
+                ? learnerState.knowledge.focusAreas
+                : learningInsights.stats.focusAreas
+            )
               .slice(0, 2)
-              .map((f) => f.topic)
+              .map((f) => (typeof f === "string" ? f : f.topic || f.label || ""))
+              .filter(Boolean)
               .join(", ")}
           </p>
         )}

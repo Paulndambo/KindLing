@@ -41,6 +41,22 @@ export const LearningEventType = {
   MULTISTEP_STEP: "multistep.step",
   MULTISTEP_COMPLETED: "multistep.completed",
   MULTISTEP_EXITED: "multistep.exited",
+  /** Epic C6 — low-stakes assessment / quick check */
+  ASSESSMENT_STARTED: "assessment.started",
+  ASSESSMENT_ANSWERED: "assessment.answered",
+  ASSESSMENT_COMPLETED: "assessment.completed",
+  ASSESSMENT_EXITED: "assessment.exited",
+  /** Epic L3 — Assistance Dependency Index snapshot */
+  LEARNING_ADI: "learning.adi",
+  /** Epic L2 — pedagogical policy decision (LLM executes this move) */
+  PEDAGOGY_DECISION: "pedagogy.decision",
+  /** Epic L4 — no-scaffold independence twin after heavy help */
+  INDEPENDENCE_OFFERED: "independence.offered",
+  INDEPENDENCE_STARTED: "independence.started",
+  INDEPENDENCE_ANSWERED: "independence.answered",
+  INDEPENDENCE_COMPLETED: "independence.completed",
+  INDEPENDENCE_DECLINED: "independence.declined",
+  INDEPENDENCE_SKIPPED: "independence.skipped",
 };
 
 /** Live intervention (step-by-step guide) lifecycle. */

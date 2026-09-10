@@ -5,6 +5,8 @@ from .views import (
     SubjectListCreateView,
     TopicDetailView,
     TopicListCreateView,
+    SubtopicDetailView,
+    SubtopicListCreateView,
 )
 
 urlpatterns = [
@@ -16,4 +18,14 @@ urlpatterns = [
         name="topic-list-create",
     ),
     path("topics/<int:pk>/", TopicDetailView.as_view(), name="topic-detail"),
+    path(
+        "topics/<int:topic_id>/subtopics/",
+        SubtopicListCreateView.as_view(),
+        name="subtopic-list-create",
+    ),
+    path(
+        "subtopics/<int:pk>/",
+        SubtopicDetailView.as_view(),
+        name="subtopic-detail",
+    ),
 ]

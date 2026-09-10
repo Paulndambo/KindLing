@@ -108,7 +108,8 @@ def build_digest_summary(
 
     # Correctness from turn payloads
     correct = partial = incorrect = 0
-    for ev in events.filter(event_type=LearningEventType.TURN_EXCHANGE):
+    turn_events = list(events.filter(event_type=LearningEventType.TURN_EXCHANGE))
+    for ev in turn_events:
         payload = ev.payload or {}
         signals = payload.get("signals") or {}
         c = signals.get("correctness") or payload.get("correctness") or ""
@@ -124,6 +125,51 @@ def build_digest_summary(
 
     # Mastery hotspots
     profile = LearningProfile.objects.filter(student=student).first()
+
+    # Epic L3 — Assistance Dependency Index (non-shaming independence framing)
+    adi_summary = None
+    try:
+        from learning.adi import compute_adi_from_events
+
+        # Prefer explicit learning.adi events (latest reliable)
+        adi_events = list(
+            events.filter(
+                event_type=getattr(LearningEventType, "LEARNING_ADI", "learning.adi")
+            ).order_by("-timestamp")[:5]
+        )
+        if adi_events:
+            payload = adi_events[0].payload or {}
+            if payload.get("value") is not None:
+                adi_summary = {
+                    "value": payload.get("value"),
+                    "band": payload.get("band") or "unknown",
+                    "independence": payload.get("independence"),
+                    "trend": payload.get("trend") or "unknown",
+                    "copy": payload.get("copy")
+                    or payload.get("digestCopy"),
+                    "reliable": True,
+                }
+        if not adi_summary and turn_events:
+            topic_score = None
+            if profile:
+                top = profile.mastery_entries.order_by("-score").first()
+                if top:
+                    topic_score = top.score
+            computed = compute_adi_from_events(
+                turn_events, topic_score=topic_score
+            )
+            if computed.get("reliable"):
+                adi_summary = {
+                    "value": computed.get("value"),
+                    "band": computed.get("band"),
+                    "independence": computed.get("independence"),
+                    "trend": computed.get("trend"),
+                    "copy": computed.get("digestCopy") or computed.get("copy"),
+                    "reliable": True,
+                }
+    except Exception:
+        adi_summary = None
+
     strengths: List[Dict[str, Any]] = []
     focus: List[Dict[str, Any]] = []
     if profile:
@@ -206,6 +252,7 @@ def build_digest_summary(
         "persistenceNotes": persistence_notes,
         "eventCounts": dict(type_counts),
         "active": session_count > 0 or exchanges > 0,
+        "adi": adi_summary,
     }
 
 
@@ -298,6 +345,18 @@ def render_digest_copy(summary: Dict[str, Any]) -> Tuple[str, str, str]:
             ]
         )
 
+    # Epic L3 — independence (never shame dependency)
+    adi = summary.get("adi") or {}
+    if adi.get("reliable") and adi.get("copy"):
+        lines.extend(["", f"Independence: {adi['copy']}"])
+    elif adi.get("reliable") and adi.get("band") == "gaining_independence":
+        lines.extend(
+            [
+                "",
+                f"{name} is gaining independence — more solid answers with lighter support.",
+            ]
+        )
+
     persistence = summary.get("persistenceNotes") or 0
     checkins = summary.get("affectCheckInResponses") or 0
     if persistence or checkins:
@@ -362,6 +421,13 @@ def render_digest_copy(summary: Dict[str, Any]) -> Tuple[str, str, str]:
         parts.append(
             "<p><strong>Growing strengths:</strong> "
             + escape(", ".join(s.get("topic", "") for s in strengths[:3]))
+            + "</p>"
+        )
+    adi_html = summary.get("adi") or {}
+    if adi_html.get("reliable") and adi_html.get("copy"):
+        parts.append(
+            "<p><strong>Independence:</strong> "
+            + escape(str(adi_html["copy"]))
             + "</p>"
         )
     if focus:

@@ -505,7 +505,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 | **C3** | §3.5.2 Classroom mode | — | ❌ | **Out of product forever** — institutions buy per-seat; no roster product |
 | **C4** | §3.5.3 Standards reports | Export progress vs framework codes for **this student** | ⬜ | Single-learner export only |
 | **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⬜ | Lite ✅ Phase 2.5; no guardian contract product |
-| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ⬜ | |
+| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ✅ v1 / ⬜ depth | v1 MCQ+explanations ✅; independence/transfer/timed = depth — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
 | **C7** | §3.1.8 Domain playbooks | Second thin domain pack + scaffold consistency beyond math pilot | ⬜ | Beta P2.2 if sessions leave math |
 | **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ⬜ | Manual rubric = beta P2.3 |
 | **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ⬜ | Beta P2.8 lite; **not** a parent app |
@@ -545,10 +545,10 @@ Escalation: “More help” while active; session escalates after lighter levels
 #### C6 — Assessment modes
 | Step | Work | Status |
 |------|------|--------|
-| C6.1 | End-of-topic check (short graded set, not open chat) | ⬜ |
-| C6.2 | Low-stakes quiz mode with A3 verification where applicable | ⬜ |
-| C6.3 | Optional timed practice flag | ⬜ |
-| C6.4 | Results feed mastery + optional Review spark seeds | ⬜ |
+| C6.1 | End-of-topic check (short graded set, not open chat) | ✅ Offline MCQ bank + AssessmentPanel (one-at-a-time) |
+| C6.2 | Low-stakes quiz mode with A3 verification where applicable | ✅ Deterministic MCQ grade + tutor explanation per item (revision) |
+| C6.3 | Optional timed practice flag | ⬜ Session flag exists; UI timer deferred |
+| C6.4 | Results feed mastery + optional Review spark seeds | ✅ Per-item grades → recordExchange / events; Review seeds thin |
 
 #### C7 — Domain playbooks
 | Step | Work | Status |
@@ -560,9 +560,9 @@ Escalation: “More help” while active; session escalates after lighter levels
 #### C8 — Eval harness
 | Step | Work | Status |
 |------|------|--------|
-| C8.1 | Offline scorer on recorded transcripts (hint quality, Socratic fidelity, intervention timing) | ⬜ |
-| C8.2 | Dashboard or CLI report for weekly sample | ⬜ |
-| C8.3 | Beta bridge: manual 10-session rubric (BETA P2.3) until automated | ⬜ |
+| C8.1 | Offline scorer on recorded transcripts (hint quality, Socratic fidelity, intervention timing) | ✅ heuristic scorer + `eval_auto_score` CLI · calibrate via `--compare-cohort` |
+| C8.2 | Dashboard or CLI report for weekly sample | ✅ `weekly_eval_sample` job + `eval_weekly_sample` CLI · reports under `MEDIA/eval_reports` |
+| C8.3 | Beta bridge: manual 10-session rubric (BETA P2.3) until automated | ✅ rubric + export/score/report CLI · see `docs/EVAL_RUBRIC_C8.md` |
 
 #### C9 / C10 — Ops flags & digest-channel alerts (still single seat)
 | Step | Work | Status |
@@ -578,8 +578,8 @@ Escalation: “More help” while active; session escalates after lighter levels
 - [ ] Spaced review depth beyond v1 (multi-subject, stronger schedule UX) (**C1+**)  
 - [x] **No** multi-child or classroom product (strategy lock)  
 - [ ] Exportable standards-aligned report for **one** student (**C4**)  
-- [ ] At least one assessment mode distinct from open chat (**C6**)  
-- [ ] Offline or weekly eval path produces quality scores on recorded sessions (**C8**)  
+- [x] At least one assessment mode distinct from open chat (**C6**) — quick check MCQ + explanations
+- [x] Offline or weekly eval path produces quality scores on recorded sessions (**C8** ✅ · C8.3/C8.1/C8.2)  
 - [ ] Digest remains student-configured email only (A5; optional C10 on same channel)  
 
 ---
@@ -677,7 +677,7 @@ Apply to every phase:
 | 3.1 | Retrieval / spaced review | Phase 2.5 · **C1 v1** ✅; deepen **Wave 2 · C1+** |
 | 3.1 | Misconception engine | Phase 2 · B5 ✅ |
 | 3.1 | Multi-step problem solving | Phase 2 · B6 ✅ |
-| 3.1 | Assessment modes | **Wave 2 · Phase 3 · C6** ⬜ |
+| 3.1 | Assessment modes | **Wave 2 · Phase 3 · C6** ✅ v1 / ⬜ depth |
 | 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⬜ |
 | 3.2 Intervention | Richer struggle signals | Phase 2 · B1 ✅ |
 | 3.2 | Graduated interventions | Phase 2 · B2 ✅ |
@@ -756,9 +756,9 @@ Maps to: CAPABILITIES §3.1.4 depth, §3.1.7–3.1.8, §3.6.5
 | ID | Work | PLAN epic | Status |
 |----|------|-----------|--------|
 | P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⬜ |
-| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ⬜ |
+| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ✅ v1 / ⬜ depth |
 | P.3 | Domain playbook #2 (science or writing thin pack) | **C7** | ⬜ |
-| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ⬜ |
+| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ |
 | P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⬜ |
 
 #### Track R — Shareable progress (single learner only)
@@ -816,10 +816,13 @@ Wave 2a — Hostable beta (Track D)
   D.1–D.7 until staging dogfood is boring
   Keep product changes limited to beta blockers
 
-Wave 2b — Retention depth (Track P, while beta runs)
+Wave 2b — Learning intelligence + retention (Track L proposed + Track P)
+  See [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) for expert-review gaps → epic map.
+  L1 LearnerState contract ✅ → L3 Assistance Dependency Index ✅ → L2 pedagogical policy v1 ✅
+  L4 Independence/transfer twins ✅
+  P.4 C8 eval harness ✅ (C8.3 manual · C8.1 auto · C8.2 weekly job)
   P.1 C1+ review depth
-  P.2 C6 assessment mode (one thin path)
-  P.4 C8 manual rubric → automated later
+  P.2 C6 assessment depth (v1 ✅; L4 twins cover independence/transfer thin)
   P.3 C7 second domain only if sessions leave math
 
 Wave 2c — Teach medium (Track X P0–P1)

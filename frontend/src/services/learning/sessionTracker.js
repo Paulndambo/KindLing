@@ -221,6 +221,25 @@ export function createSessionTracker({
     },
 
     recordTurn({ studentText, tutorText, signals, inputModality }) {
+      // Stamp live intervention onto the turn for L3 ADI (assistance weight)
+      const iv = state.intervention || {};
+      const ivActive = iv.status === "active";
+      const ivLevel = ivActive ? Number(iv.level) || 0 : 0;
+      const enrichedSignals = {
+        ...(signals || {}),
+        interventionActive:
+          signals?.interventionActive != null
+            ? signals.interventionActive
+            : ivActive,
+        interventionLevel:
+          signals?.interventionLevel != null
+            ? signals.interventionLevel
+            : ivLevel,
+        scaffoldingBias:
+          signals?.scaffoldingBias != null
+            ? signals.scaffoldingBias
+            : state.scaffoldingBias,
+      };
       const turn = {
         index: state.turns.length,
         at: new Date().toISOString(),
@@ -228,10 +247,14 @@ export function createSessionTracker({
         topic: state.topic,
         studentText,
         tutorText,
-        signals,
+        signals: enrichedSignals,
         inputModality,
+        interventionActive: enrichedSignals.interventionActive,
+        interventionLevel: enrichedSignals.interventionLevel,
       };
       state.turns.push(turn);
+      // Keep local name for rest of mutators below
+      signals = enrichedSignals;
 
       // Snapshot priors for persistence (before counters mutate)
       const priorForPersist = {

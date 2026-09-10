@@ -6,6 +6,7 @@ from .models import (
     Skill,
     SkillPrerequisite,
     Subject,
+    Subtopic,
     Topic,
     TopicSkillLink,
     WorkedExample,
@@ -14,6 +15,12 @@ from .models import (
 
 class TopicInline(admin.TabularInline):
     model = Topic
+    extra = 0
+    fields = ("name", "familiarity", "learning_goal", "sort_order")
+
+
+class SubtopicInline(admin.TabularInline):
+    model = Subtopic
     extra = 0
     fields = ("name", "familiarity", "learning_goal", "sort_order")
 
@@ -31,7 +38,14 @@ class TopicAdmin(admin.ModelAdmin):
     list_display = ("name", "subject", "familiarity", "sort_order")
     list_filter = ("familiarity",)
     search_fields = ("name", "subject__name", "learning_goal")
+    inlines = [SubtopicInline]
 
+
+@admin.register(Subtopic)
+class SubtopicAdmin(admin.ModelAdmin):
+    list_display = ("name", "topic", "familiarity", "sort_order")
+    list_filter = ("familiarity",)
+    search_fields = ("name", "topic__name", "topic__subject__name")
 
 class SkillPrerequisiteInline(admin.TabularInline):
     model = SkillPrerequisite

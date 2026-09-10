@@ -6,6 +6,7 @@ import {
   stripMathCheckTags,
   verifyMathAnswer,
 } from "./mathVerifier";
+import { stripSuggestTags } from "./tutorSuggestions";
 import { STRUGGLE_THRESHOLDS } from "./struggleThresholds";
 import { detectMisconceptions as detectMisconceptionsEngine } from "./misconceptionEngine";
 
@@ -302,7 +303,7 @@ export function analyzeExchange({
   expectedAnswer = null,
   expectedAlts = null,
 }) {
-  const tutorClean = stripMathCheckTags(tutorText);
+  const tutorClean = stripSuggestTags(stripMathCheckTags(tutorText));
   const linguistic = inferCorrectness(studentText, tutorClean);
   const affect = inferAffect(studentText);
   const misconceptions = detectMisconceptions(studentText, tutorClean, {

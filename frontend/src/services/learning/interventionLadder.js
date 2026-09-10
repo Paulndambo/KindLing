@@ -119,6 +119,13 @@ export function selectInterventionLevel({
   escalateFrom = 0,
   /** Force a specific level (manual tools pick). */
   forcedLevel = null,
+  /**
+   * Epic L3 — ADI result from computeAdi / computeAdiFromContext.
+   * When independence is rising, prefer lighter rungs (never increases help).
+   */
+  adi = null,
+  /** Skip ADI fade (manual tools / explicit escalate already handled). */
+  skipAdiPreference = false,
 } = {}) {
   if (forcedLevel != null) {
     return normalizeLevel(forcedLevel);
@@ -174,6 +181,28 @@ export function selectInterventionLevel({
     level = used + 1;
   } else if (used >= InterventionLevel.BREAK_OR_EASIER) {
     level = InterventionLevel.BREAK_OR_EASIER;
+  }
+
+  // Epic L3.2 — fade help when ADI says independence is growing
+  if (!skipAdiPreference && adi) {
+    // Lazy import avoided: apply inline to keep ladder free of circular deps
+    // (adi.js imports normalizeLevel from this module)
+    if (adi.reliable && adi.preferLighterHelp) {
+      if (shouldAutoEnter) {
+        level = Math.min(level, InterventionLevel.FULL_GUIDE);
+      } else {
+        const cap =
+          adi.ladderCap != null
+            ? normalizeLevel(adi.ladderCap)
+            : InterventionLevel.WORKED_EXAMPLE;
+        if (level > cap) {
+          level = Math.max(
+            InterventionLevel.MICRO_HINT,
+            Math.min(level - 1, cap)
+          );
+        }
+      }
+    }
   }
 
   return level;

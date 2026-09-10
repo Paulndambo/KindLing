@@ -639,6 +639,7 @@ export function useChatSession({
       setIsStreaming(true);
       const greetingPrompt = buildLessonOpeningPrompt({
         topicName,
+        subjectName,
         studentName,
         student: currentStudent,
         topicContext: {

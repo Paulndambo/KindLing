@@ -328,14 +328,18 @@ export const HIGHER_ED_GOAL_OPTIONS = [
 
 export const GOAL_OPTIONS = K12_GOAL_OPTIONS;
 
-/** Subjects learners often want help with (any domain — not math-only). */
+/** Subjects learners often want help with.
+ *  While multi-subject is off, Computer Science is the sole live path —
+ *  other options stay listed for preference signaling / later activation.
+ */
 export const FOCUS_SUBJECT_OPTIONS = [
+  "Computer Science",
+  "Coding / Computer science",
   "Math",
   "Science",
   "English / Language Arts",
   "Writing & essays",
   "History / Social studies",
-  "Coding / Computer science",
   "Languages",
   "Test prep",
   "Homework help (mixed)",

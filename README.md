@@ -17,6 +17,7 @@ Kindling/
 |-----|---------|
 | [CAPABILITIES.md](./CAPABILITIES.md) | Full inventory + longer-term vision (✅ shipped vs ⬜ Wave 2) |
 | [PLAN.md](./PLAN.md) | Execution order — **Wave 1 shipped**; **Wave 2** = §15 + Phases 3–5 |
+| [REVIEW_GAP_ANALYSIS.md](./REVIEW_GAP_ANALYSIS.md) | Expert review (`REVIEW_FEEDBACK.md`) vs shipped product — gaps, PLAN map, build order |
 | [docs/ENGINEERING.md](./docs/ENGINEERING.md) | Architecture, concepts, design decisions & trade-offs (eng team) |
 | [docs/SAFETY_AND_PRIVACY.md](./docs/SAFETY_AND_PRIVACY.md) | Child-safety & privacy baseline |
 | [PITCH_DECK.md](./PITCH_DECK.md) | YC pitch materials + application answer bank |
@@ -50,7 +51,7 @@ Kindling/
 | Backend | Django 5.1, DRF, SimpleJWT, CORS, SQLite by default |
 | AI | Multi-provider gateway in the browser; platform default = Gemini |
 | Data | Student profile, curriculum graph, learning events/sessions, mastery, digests, homework media |
-| Seed | `seed_kindling` — demo student + Math Foundations pilot pack |
+| Seed | `seed_kindling` — demo student + **Computer Science** pilot graph (sole subject for now) |
 
 **Domain model:** each user account is one student (one `StudentProfile`). Commercial model is **always individual seats**—a parent or school with multiple learners buys **one subscription per learner**. Optional progress digests: the student configures a recipient email (parent/teacher); there is no multi-child parent account or classroom product.
 

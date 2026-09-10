@@ -54,8 +54,17 @@ class StudentMeView(APIView):
                 data=data, context={"request": request}
             )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        student = serializer.save()
+        # Sole pilot subject while multi-subject is gated off
+        try:
+            from django.conf import settings
+            from curriculum.cs_provision import ensure_computer_science_subject
+
+            if not getattr(settings, "ALLOW_CUSTOM_SUBJECTS", False):
+                ensure_computer_science_subject(student)
+        except Exception:
+            pass
+        return Response(StudentProfileSerializer(student).data)
 
     def patch(self, request):
         student = get_student_profile(request.user)
@@ -68,5 +77,13 @@ class StudentMeView(APIView):
             student, data=request.data, partial=True, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        student = serializer.save()
+        try:
+            from django.conf import settings
+            from curriculum.cs_provision import ensure_computer_science_subject
+
+            if not getattr(settings, "ALLOW_CUSTOM_SUBJECTS", False):
+                ensure_computer_science_subject(student)
+        except Exception:
+            pass
+        return Response(StudentProfileSerializer(student).data)

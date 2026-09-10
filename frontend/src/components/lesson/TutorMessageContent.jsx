@@ -8,6 +8,7 @@ import "katex/dist/katex.min.css";
 import { stripMathCheckTags } from "../../services/learning/mathVerifier";
 import { stripVisualTags } from "../../services/learning/manipulatives";
 import { stripStepTags } from "../../services/learning/multiStepEngine";
+import { stripSuggestTags } from "../../services/learning/tutorSuggestions";
 
 /**
  * Renders Kindling tutor replies as structured, learner-friendly content:
@@ -161,9 +162,9 @@ function markdownComponents() {
 const STATIC_COMPONENTS = markdownComponents();
 
 function TutorMessageContent({ text, streaming = false }) {
-  // Epic A3/A6: never show machine check/visual tags to learners
-  const content = stripStepTags(
-    stripVisualTags(stripMathCheckTags(text || ""))
+  // Machine tags (check / visual / step / suggests) — never show to learners
+  const content = stripSuggestTags(
+    stripStepTags(stripVisualTags(stripMathCheckTags(text || "")))
   );
 
   // components object is stable; streaming only affects CSS class

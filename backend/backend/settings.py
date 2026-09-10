@@ -135,6 +135,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 KINDLING_HOMEWORK_MAX_BYTES: int = 5 * 1024 * 1024
 KINDLING_HOMEWORK_RETENTION_DAYS: int = 30
 
+# Multi-subject creation (POST /api/curriculum/subjects/). Off while Computer
+# Science is the sole pilot subject — flip True to re-enable custom subjects.
+ALLOW_CUSTOM_SUBJECTS: bool = False
+
 # ---------------------------------------------------------------------------
 # Email — parent digests (Epic A5). Console backend for local/dev.
 # ---------------------------------------------------------------------------
@@ -226,6 +230,11 @@ KINDLING_JOBS: Dict[str, Dict[str, Any]] = {
     "review_schedule": {
         "enabled": True,
         "interval_seconds": 24 * 3600,
+    },
+    # Epic C8.2 — weekly offline eval sample (auto-score + report)
+    "weekly_eval_sample": {
+        "enabled": True,
+        "interval_seconds": 7 * 24 * 3600,
     },
 }
 

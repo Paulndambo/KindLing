@@ -7,6 +7,10 @@ import {
   deleteTopic as apiDeleteTopic,
 } from "../services/api/subjects";
 import { ApiError } from "../services/api/client";
+import {
+  ALLOW_CUSTOM_SUBJECTS,
+  SOLE_SUBJECT_NAME,
+} from "../constants/features";
 
 /**
  * Subjects & topics for the logged-in student, loaded from the API.
@@ -32,7 +36,15 @@ export function useSubjects({
     setLoading(true);
     setError("");
     try {
-      const rows = await listSubjects();
+      let rows = await listSubjects();
+      // Sole-subject mode: only surface Computer Science
+      if (!ALLOW_CUSTOM_SUBJECTS) {
+        rows = (rows || []).filter(
+          (s) =>
+            String(s?.name || "").toLowerCase() ===
+            SOLE_SUBJECT_NAME.toLowerCase()
+        );
+      }
       setSubjects(rows);
       return rows;
     } catch (err) {
@@ -69,6 +81,11 @@ export function useSubjects({
 
   const createSubject = useCallback(
     async (subj) => {
+      if (!ALLOW_CUSTOM_SUBJECTS) {
+        throw new Error(
+          `Custom subjects are temporarily disabled. Kindling currently offers ${SOLE_SUBJECT_NAME} only.`
+        );
+      }
       if (!isLoggedIn || !hasStudentProfile) {
         throw new Error("Complete your student profile before adding subjects.");
       }

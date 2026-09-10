@@ -124,6 +124,59 @@ def job_review_schedule(**kwargs) -> Dict[str, Any]:
     return result
 
 
+@register_job(
+    "weekly_eval_sample",
+    description="Epic C8.2: weekly offline eval sample (auto-score + report)",
+    interval_seconds=7 * 24 * 3600,
+    enabled=True,
+)
+def job_weekly_eval_sample(**kwargs) -> Dict[str, Any]:
+    """
+    Score up to N recent sessions with C8.1 heuristics, persist cohort rows,
+    write markdown/json report under MEDIA/eval_reports.
+
+    dry_run=True: compute summary only (no DB score rows, no files).
+    """
+    from learning.eval_weekly import run_weekly_eval_sample
+
+    dry_run = bool(kwargs.get("dry_run", False))
+    lookback = int(kwargs.get("lookback_days") or 7)
+    limit = int(kwargs.get("limit") or 10)
+    min_turns = int(kwargs.get("min_turns") or 2)
+
+    result = run_weekly_eval_sample(
+        dry_run=dry_run,
+        lookback_days=lookback,
+        limit=limit,
+        min_turns=min_turns,
+        save=not dry_run,
+        write_report=not dry_run,
+    )
+    # JobRun.result should stay compact / low-PII
+    return {
+        "ok": bool(result.get("ok")),
+        "job": "weekly_eval_sample",
+        "dry_run": dry_run,
+        "cohort": result.get("cohort"),
+        "candidateSessions": result.get("candidateSessions", 0),
+        "scoredOk": result.get("scoredOk", 0),
+        "saved": result.get("saved", 0),
+        "overallMean": result.get("overallMean"),
+        "sampleComplete": result.get("sampleComplete"),
+        "errorCount": result.get("errorCount", 0),
+        "weakest": [
+            {"id": w.get("id"), "mean": w.get("mean")}
+            for w in (result.get("weakest") or [])[:3]
+        ],
+        "strongest": [
+            {"id": w.get("id"), "mean": w.get("mean")}
+            for w in (result.get("strongest") or [])[:3]
+        ],
+        "report": (result.get("reportPaths") or {}).get("markdown"),
+        "reportDir": (result.get("reportPaths") or {}).get("dir"),
+    }
+
+
 def _has_field(model, name: str) -> bool:
     try:
         model._meta.get_field(name)

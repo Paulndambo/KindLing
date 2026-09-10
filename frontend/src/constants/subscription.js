@@ -1,6 +1,7 @@
 /**
  * Plan catalog (mirrors backend kindling_platform.plans).
  * Used for offline UI; live API is preferred when available.
+ * Commercial thesis: MONEY.md — algorithm rent + token envelope / BYOK.
  */
 
 export const PLAN_IDS = {
@@ -13,15 +14,16 @@ export const PLAN_CATALOG = [
   {
     id: PLAN_IDS.SPARK,
     name: "Spark",
-    tagline: "Start learning with Kindling's tutor",
+    tagline: "30-day trial of Kindling's adaptive tutor",
     priceMonthly: 0,
     priceYearly: 0,
     highlight: false,
+    trialDays: 30,
     features: [
-      "Live adaptive lessons",
+      "Full teaching system for 30 days",
+      "Live adaptive lessons (capped platform AI)",
       "Student dashboard & mastery pulse",
-      "Platform AI (Gemini) when configured",
-      "Optional personal API keys (BYOK)",
+      "Then choose Forge or Ember to continue",
     ],
     entitlements: {
       platformAi: true,
@@ -30,46 +32,44 @@ export const PLAN_CATALOG = [
       advancedRouting: false,
       familyDigest: false,
       prioritySupport: false,
-      dailyLessonSoftCap: 20,
+      dailyLessonSoftCap: 4,
     },
   },
   {
-    id: PLAN_IDS.EMBER,
-    name: "Ember",
-    tagline: "Daily tutoring for one learner",
-    priceMonthly: 19,
-    priceYearly: 190,
-    highlight: true,
+    id: PLAN_IDS.FORGE,
+    name: "Forge",
+    tagline: "Rent the algorithm — bring your own AI keys",
+    priceMonthly: 30,
+    priceYearly: 300,
+    highlight: false,
     features: [
-      "Everything in Spark",
-      "Generous daily lessons on platform AI",
-      "Homework photo help",
-      "Priority session continuity",
-      "Optional weekly progress note to a guardian email",
+      "Kindling teaching system (algorithm rent)",
+      "You pay AI tokens via your own keys (BYOK)",
+      "Multi-provider routing (Gemini, OpenAI, Anthropic, Groq, OpenRouter)",
+      "Per-task model routing · homework photo · digests",
     ],
     entitlements: {
-      platformAi: true,
+      platformAi: false,
       byok: true,
       multiProvider: true,
-      advancedRouting: false,
+      advancedRouting: true,
       familyDigest: true,
       prioritySupport: false,
       dailyLessonSoftCap: null,
     },
   },
   {
-    id: PLAN_IDS.FORGE,
-    name: "Forge",
-    tagline: "Builder mode — bring your own AI keys",
-    priceMonthly: 9,
-    priceYearly: 90,
-    highlight: false,
+    id: PLAN_IDS.EMBER,
+    name: "Ember",
+    tagline: "Nightly tutoring with platform AI included",
+    priceMonthly: 99,
+    priceYearly: 990,
+    highlight: true,
     features: [
-      "Everything in Ember",
-      "Full multi-provider BYOK (Gemini, OpenAI, Anthropic, Groq, OpenRouter)",
-      "Per-task model routing (chat / vision / TTS)",
-      "Hot-switch providers without restarting lessons",
-      "Designed for power users & pilots",
+      "Everything in the teaching system",
+      "Platform AI tokens included (monthly envelope)",
+      "Homework photo help · guardian digests",
+      "BYOK optional · priority support",
     ],
     entitlements: {
       platformAi: true,

@@ -494,8 +494,8 @@ export default function OnboardingModal({
               most right now.
             </p>
             <WhyHint>
-              Focus subjects shape early lessons and suggestions. Pick any mix —
-              Kindling is not limited to one subject.
+              Focus preferences shape how Kindling talks with you. Live lessons
+              currently run on Computer Science — more subjects unlock later.
             </WhyHint>
 
             <div className="field-block">

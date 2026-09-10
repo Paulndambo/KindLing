@@ -30,11 +30,20 @@ function PlanIcon({ planId }) {
 }
 
 function formatPrice(plan, cycle) {
-  if (!plan) return "—";
-  const n = cycle === "yearly" ? plan.priceYearly : plan.priceMonthly;
-  if (!n) return "Free";
-  if (cycle === "yearly") return `$${n}/yr`;
-  return `$${n}/mo`;
+  if (!plan) return { main: "—", sub: "" };
+  const monthly = plan.priceMonthly ?? 0;
+  const yearly = plan.priceYearly ?? 0;
+  if (!monthly) {
+    const days = plan.trialDays || 30;
+    return { main: "Free", sub: `${days}-day trial` };
+  }
+  if (cycle === "yearly" && yearly) {
+    return {
+      main: `$${yearly}/yr`,
+      sub: `$${monthly}/mo billed yearly`,
+    };
+  }
+  return { main: `$${monthly}/mo`, sub: yearly ? `or $${yearly}/yr` : "" };
 }
 
 export default function Settings({ isLoggedIn, onOpenLogin }) {
@@ -192,6 +201,7 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
           <div className="plan-grid">
             {plans.map((plan) => {
               const selected = (subscription?.plan || "spark") === plan.id;
+              const price = formatPrice(plan, billingCycle);
               return (
                 <article
                   key={plan.id}
@@ -212,7 +222,10 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
                     </div>
                   </div>
                   <div className="plan-price">
-                    {formatPrice(plan, billingCycle)}
+                    <span className="plan-price-main">{price.main}</span>
+                    {price.sub ? (
+                      <span className="plan-price-sub">{price.sub}</span>
+                    ) : null}
                   </div>
                   <ul className="plan-features">
                     {(plan.features || []).map((f) => (
@@ -235,7 +248,7 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
                         <BadgeCheck size={15} /> Current plan
                       </>
                     ) : plan.priceMonthly === 0 ? (
-                      "Use Spark"
+                      "Start free trial"
                     ) : (
                       `Choose ${plan.name}`
                     )}
@@ -250,9 +263,12 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
               <h3>Billing notes</h3>
             </div>
             <p className="settings-muted">
-              Pilot checkout is instant (no card capture yet). Choosing a plan
-              activates entitlements for this account so you can exercise Forge
-              multi-provider routing and family features end-to-end.
+              You rent Kindling&apos;s teaching algorithm.{" "}
+              <strong>Ember</strong> includes platform AI tokens (monthly
+              envelope). <strong>Forge</strong> is algorithm rent only—you pay
+              model usage through your own keys. Spark is a 30-day trial with
+              capped platform AI. Pilot checkout is instant (no card capture
+              yet).
             </p>
             {subscription?.current_period_end && (
               <p className="settings-muted" style={{ marginTop: 8 }}>

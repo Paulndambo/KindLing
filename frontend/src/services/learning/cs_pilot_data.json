@@ -1,0 +1,1199 @@
+{
+  "PILOT_SUBJECT": "Computer Science",
+  "skills": [
+    {
+      "slug": "cs.l0.tech_basics",
+      "name": "Understanding technology",
+      "shortLabel": "Tech basics",
+      "domain": "cs_literacy",
+      "description": "What technology, information, and data are; digital vs analog; computers in everyday life.",
+      "pInit": 0.35,
+      "pTransit": 0.16,
+      "pSlip": 0.08,
+      "pGuess": 0.22,
+      "prereqs": []
+    },
+    {
+      "slug": "cs.l0.what_is_computer",
+      "name": "What is a computer?",
+      "shortLabel": "Computer model",
+      "domain": "cs_literacy",
+      "description": "Input \u2192 processing \u2192 output with storage; hardware, software, and users.",
+      "pInit": 0.3,
+      "pTransit": 0.15,
+      "pSlip": 0.08,
+      "pGuess": 0.2,
+      "prereqs": [
+        {
+          "slug": "cs.l0.tech_basics",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.computer_types",
+      "name": "Types of computers",
+      "shortLabel": "Device types",
+      "domain": "cs_literacy",
+      "description": "Desktops, laptops, phones, servers, embedded and IoT devices.",
+      "pInit": 0.28,
+      "pTransit": 0.14,
+      "pSlip": 0.08,
+      "pGuess": 0.2,
+      "prereqs": [
+        {
+          "slug": "cs.l0.what_is_computer",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.hardware",
+      "name": "Computer hardware",
+      "shortLabel": "Hardware",
+      "domain": "cs_literacy",
+      "description": "CPU, RAM, storage, motherboard, GPU, I/O devices and how they interact.",
+      "pInit": 0.22,
+      "pTransit": 0.13,
+      "pSlip": 0.09,
+      "pGuess": 0.18,
+      "prereqs": [
+        {
+          "slug": "cs.l0.what_is_computer",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.software",
+      "name": "Computer software",
+      "shortLabel": "Software",
+      "domain": "cs_literacy",
+      "description": "OS, apps, drivers, firmware; system vs application software; programs and processes.",
+      "pInit": 0.22,
+      "pTransit": 0.13,
+      "pSlip": 0.09,
+      "pGuess": 0.18,
+      "prereqs": [
+        {
+          "slug": "cs.l0.what_is_computer",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l0.hardware",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.files_folders",
+      "name": "Files & folders",
+      "shortLabel": "Files",
+      "domain": "cs_literacy",
+      "description": "Files, paths, extensions, copy/move/rename, compression and backups.",
+      "pInit": 0.25,
+      "pTransit": 0.14,
+      "pSlip": 0.08,
+      "pGuess": 0.2,
+      "prereqs": [
+        {
+          "slug": "cs.l0.software",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.operate_computer",
+      "name": "Operating a computer",
+      "shortLabel": "Using a PC",
+      "domain": "cs_literacy",
+      "description": "Desktop environments, apps, settings, install/update/uninstall, basic troubleshooting.",
+      "pInit": 0.24,
+      "pTransit": 0.14,
+      "pSlip": 0.08,
+      "pGuess": 0.2,
+      "prereqs": [
+        {
+          "slug": "cs.l0.software",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l0.files_folders",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.internet_literacy",
+      "name": "Internet literacy",
+      "shortLabel": "Internet",
+      "domain": "cs_literacy",
+      "description": "Internet vs web, browsers, search, accounts, and everyday online services.",
+      "pInit": 0.26,
+      "pTransit": 0.14,
+      "pSlip": 0.08,
+      "pGuess": 0.2,
+      "prereqs": [
+        {
+          "slug": "cs.l0.operate_computer",
+          "strength": "recommended"
+        },
+        {
+          "slug": "cs.l0.tech_basics",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l0.digital_safety",
+      "name": "Digital safety",
+      "shortLabel": "Safety",
+      "domain": "cs_literacy",
+      "description": "Passwords, phishing, privacy, safe sharing, and basic cyber hygiene.",
+      "pInit": 0.24,
+      "pTransit": 0.13,
+      "pSlip": 0.08,
+      "pGuess": 0.18,
+      "prereqs": [
+        {
+          "slug": "cs.l0.internet_literacy",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l1.problem_solving",
+      "name": "Problem solving",
+      "shortLabel": "Solve problems",
+      "domain": "comp_thinking",
+      "description": "Break problems into steps; define inputs, outputs, and success criteria.",
+      "pInit": 0.2,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.18,
+      "prereqs": [
+        {
+          "slug": "cs.l0.tech_basics",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l1.algorithms",
+      "name": "Algorithms (thinking)",
+      "shortLabel": "Algorithms",
+      "domain": "comp_thinking",
+      "description": "Sequences of steps that solve a problem; clear, finite, unambiguous.",
+      "pInit": 0.18,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l1.problem_solving",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l1.abstraction",
+      "name": "Abstraction",
+      "shortLabel": "Abstraction",
+      "domain": "comp_thinking",
+      "description": "Hide detail; focus on what matters for the current problem.",
+      "pInit": 0.16,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l1.problem_solving",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l1.pattern_recognition",
+      "name": "Pattern recognition",
+      "shortLabel": "Patterns",
+      "domain": "comp_thinking",
+      "description": "Spot repeated structure to reuse solutions.",
+      "pInit": 0.18,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l1.problem_solving",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l1.logical_thinking",
+      "name": "Logical thinking",
+      "shortLabel": "Logic",
+      "domain": "comp_thinking",
+      "description": "If/then reasoning, true/false conditions, and careful conclusions.",
+      "pInit": 0.18,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l1.problem_solving",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l1.representation",
+      "name": "Computational representation",
+      "shortLabel": "Represent",
+      "domain": "comp_thinking",
+      "description": "Represent real things as data structures and processes computers can use.",
+      "pInit": 0.15,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.15,
+      "prereqs": [
+        {
+          "slug": "cs.l1.abstraction",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l1.algorithms",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l2.history",
+      "name": "History of computing",
+      "shortLabel": "History",
+      "domain": "cs_foundations",
+      "description": "How computing evolved and why modern machines look the way they do.",
+      "pInit": 0.22,
+      "pTransit": 0.12,
+      "pSlip": 0.08,
+      "pGuess": 0.18,
+      "prereqs": [
+        {
+          "slug": "cs.l0.what_is_computer",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l2.number_systems",
+      "name": "Number systems",
+      "shortLabel": "Binary & bases",
+      "domain": "cs_foundations",
+      "description": "Binary, decimal, hex; why computers use binary.",
+      "pInit": 0.14,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l1.logical_thinking",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l0.hardware",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l2.data_representation",
+      "name": "Data representation",
+      "shortLabel": "Data bits",
+      "domain": "cs_foundations",
+      "description": "Bits/bytes; text, images, and sound as encoded data.",
+      "pInit": 0.14,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l2.number_systems",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l2.boolean",
+      "name": "Boolean algebra",
+      "shortLabel": "Boolean",
+      "domain": "cs_foundations",
+      "description": "AND, OR, NOT and simple truth tables.",
+      "pInit": 0.14,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l1.logical_thinking",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l2.digital_logic",
+      "name": "Digital logic",
+      "shortLabel": "Logic gates",
+      "domain": "cs_foundations",
+      "description": "Gates and how they build simple circuits.",
+      "pInit": 0.12,
+      "pTransit": 0.1,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l2.boolean",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l2.number_systems",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l2.how_computers_work",
+      "name": "How a computer actually works",
+      "shortLabel": "Inside the machine",
+      "domain": "cs_foundations",
+      "description": "Fetch-decode-execute; memory hierarchy at a conceptual level.",
+      "pInit": 0.12,
+      "pTransit": 0.1,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l0.hardware",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l2.digital_logic",
+          "strength": "recommended"
+        },
+        {
+          "slug": "cs.l2.data_representation",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.prog_concepts",
+      "name": "Programming concepts",
+      "shortLabel": "What is code?",
+      "domain": "programming",
+      "description": "Programs as instructions; source, run, and the idea of a language.",
+      "pInit": 0.16,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l1.algorithms",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l0.software",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.variables",
+      "name": "Variables",
+      "shortLabel": "Variables",
+      "domain": "programming",
+      "description": "Names that hold values; assignment and state over time.",
+      "pInit": 0.15,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l3.prog_concepts",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.types",
+      "name": "Primitive types",
+      "shortLabel": "Types",
+      "domain": "programming",
+      "description": "Numbers, text, booleans; why types matter.",
+      "pInit": 0.15,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l3.variables",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.operators",
+      "name": "Operators",
+      "shortLabel": "Operators",
+      "domain": "programming",
+      "description": "Arithmetic, comparison, and logical operators.",
+      "pInit": 0.15,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l3.types",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.control_flow",
+      "name": "Control flow",
+      "shortLabel": "If & loops",
+      "domain": "programming",
+      "description": "Branching and repetition; tracing simple programs.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.operators",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l1.logical_thinking",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.functions",
+      "name": "Functions",
+      "shortLabel": "Functions",
+      "domain": "programming",
+      "description": "Reusable blocks with inputs and outputs.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.control_flow",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.data_structures_intro",
+      "name": "Intro data structures",
+      "shortLabel": "Lists & maps",
+      "domain": "programming",
+      "description": "Lists/arrays and key-value maps at a beginner level.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.variables",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l3.functions",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.debugging",
+      "name": "Errors & debugging",
+      "shortLabel": "Debug",
+      "domain": "programming",
+      "description": "Read error messages; isolate bugs; fix and re-test.",
+      "pInit": 0.14,
+      "pTransit": 0.12,
+      "pSlip": 0.1,
+      "pGuess": 0.16,
+      "prereqs": [
+        {
+          "slug": "cs.l3.control_flow",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.files_io",
+      "name": "Program files & I/O",
+      "shortLabel": "File I/O",
+      "domain": "programming",
+      "description": "Reading and writing simple files from a program.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.functions",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l0.files_folders",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l3.modules",
+      "name": "Modules & packages",
+      "shortLabel": "Modules",
+      "domain": "programming",
+      "description": "Organizing code; importing libraries.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.functions",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.algorithm_analysis",
+      "name": "Algorithm analysis",
+      "shortLabel": "Big-O intro",
+      "domain": "algorithms",
+      "description": "Compare algorithms by growth; time/space at an intuitive level.",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
+      "prereqs": [
+        {
+          "slug": "cs.l3.control_flow",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l1.algorithms",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.searching",
+      "name": "Searching",
+      "shortLabel": "Search",
+      "domain": "algorithms",
+      "description": "Linear and binary search; when each applies.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.data_structures_intro",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l4.algorithm_analysis",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.sorting",
+      "name": "Sorting",
+      "shortLabel": "Sort",
+      "domain": "algorithms",
+      "description": "Simple sorts and why sorting unlocks faster search.",
+      "pInit": 0.11,
+      "pTransit": 0.1,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l4.searching",
+          "strength": "recommended"
+        },
+        {
+          "slug": "cs.l3.data_structures_intro",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.fundamental_ds",
+      "name": "Fundamental data structures",
+      "shortLabel": "Stacks & queues",
+      "domain": "algorithms",
+      "description": "Stacks, queues, and when to use each.",
+      "pInit": 0.11,
+      "pTransit": 0.1,
+      "pSlip": 0.11,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.data_structures_intro",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.trees",
+      "name": "Trees",
+      "shortLabel": "Trees",
+      "domain": "algorithms",
+      "description": "Tree structure, roots/leaves, basic traversal ideas.",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
+      "prereqs": [
+        {
+          "slug": "cs.l4.fundamental_ds",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.graphs",
+      "name": "Graphs",
+      "shortLabel": "Graphs",
+      "domain": "algorithms",
+      "description": "Nodes and edges; real-world graph examples.",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
+      "prereqs": [
+        {
+          "slug": "cs.l4.fundamental_ds",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l5.discrete_math_intro",
+      "name": "Discrete math foundations",
+      "shortLabel": "Discrete intro",
+      "domain": "math_for_cs",
+      "description": "Sets, logic links, and discrete ideas that support algorithms.",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
+      "prereqs": [
+        {
+          "slug": "cs.l2.boolean",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l1.logical_thinking",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l6.os_intro",
+      "name": "Operating systems intro",
+      "shortLabel": "OS intro",
+      "domain": "systems",
+      "description": "What an OS does: processes, memory, and files at a systems level.",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
+      "prereqs": [
+        {
+          "slug": "cs.l2.how_computers_work",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l0.software",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l7.version_control",
+      "name": "Version control",
+      "shortLabel": "Git basics",
+      "domain": "software_eng",
+      "description": "Why version control; commit, branch, and collaborate safely.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.prog_concepts",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l7.testing",
+      "name": "Software testing",
+      "shortLabel": "Testing",
+      "domain": "software_eng",
+      "description": "Why tests matter; simple unit-test thinking.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.functions",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l3.debugging",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l8.db_foundations",
+      "name": "Database foundations",
+      "shortLabel": "Databases",
+      "domain": "data_systems",
+      "description": "What databases store and why apps use them.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l3.data_structures_intro",
+          "strength": "required"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l9.net_foundations",
+      "name": "Networking foundations",
+      "shortLabel": "Networks",
+      "domain": "networks",
+      "description": "How devices talk; clients, servers, and packets at a conceptual level.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l0.internet_literacy",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l2.data_representation",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l11.web_intro",
+      "name": "Web & internet computing intro",
+      "shortLabel": "Web intro",
+      "domain": "web_cloud",
+      "description": "Browsers, HTTP ideas, front/back of the web.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l9.net_foundations",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l3.prog_concepts",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l13.ai_intro",
+      "name": "AI & data science intro",
+      "shortLabel": "AI intro",
+      "domain": "ai_ds",
+      "description": "What AI/ML try to do; data, models, and careful claims.",
+      "pInit": 0.12,
+      "pTransit": 0.11,
+      "pSlip": 0.1,
+      "pGuess": 0.14,
+      "prereqs": [
+        {
+          "slug": "cs.l1.representation",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l3.prog_concepts",
+          "strength": "recommended"
+        }
+      ]
+    }
+  ],
+  "topics": {
+    "Understanding technology": [
+      {
+        "slug": "cs.l0.tech_basics",
+        "weight": 1.0,
+        "isPrimary": true
+      }
+    ],
+    "What is a computer?": [
+      {
+        "slug": "cs.l0.what_is_computer",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.tech_basics",
+        "weight": 0.4,
+        "isPrimary": false
+      }
+    ],
+    "Types of computers": [
+      {
+        "slug": "cs.l0.computer_types",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.what_is_computer",
+        "weight": 0.5,
+        "isPrimary": false
+      }
+    ],
+    "Computer hardware": [
+      {
+        "slug": "cs.l0.hardware",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.what_is_computer",
+        "weight": 0.45,
+        "isPrimary": false
+      }
+    ],
+    "Computer software": [
+      {
+        "slug": "cs.l0.software",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.hardware",
+        "weight": 0.4,
+        "isPrimary": false
+      }
+    ],
+    "Files & folders": [
+      {
+        "slug": "cs.l0.files_folders",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.software",
+        "weight": 0.4,
+        "isPrimary": false
+      }
+    ],
+    "Operating a computer": [
+      {
+        "slug": "cs.l0.operate_computer",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.files_folders",
+        "weight": 0.45,
+        "isPrimary": false
+      }
+    ],
+    "Internet literacy": [
+      {
+        "slug": "cs.l0.internet_literacy",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.operate_computer",
+        "weight": 0.35,
+        "isPrimary": false
+      }
+    ],
+    "Digital safety": [
+      {
+        "slug": "cs.l0.digital_safety",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.internet_literacy",
+        "weight": 0.55,
+        "isPrimary": false
+      }
+    ],
+    "Problem solving": [
+      {
+        "slug": "cs.l1.problem_solving",
+        "weight": 1.0,
+        "isPrimary": true
+      }
+    ],
+    "Algorithms (thinking)": [
+      {
+        "slug": "cs.l1.algorithms",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l1.problem_solving",
+        "weight": 0.5,
+        "isPrimary": false
+      }
+    ],
+    "Abstraction & patterns": [
+      {
+        "slug": "cs.l1.abstraction",
+        "weight": 0.85,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l1.pattern_recognition",
+        "weight": 0.85,
+        "isPrimary": true
+      }
+    ],
+    "Logical thinking": [
+      {
+        "slug": "cs.l1.logical_thinking",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l1.problem_solving",
+        "weight": 0.4,
+        "isPrimary": false
+      }
+    ],
+    "Number systems & data": [
+      {
+        "slug": "cs.l2.number_systems",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l2.data_representation",
+        "weight": 0.9,
+        "isPrimary": true
+      }
+    ],
+    "Boolean logic & gates": [
+      {
+        "slug": "cs.l2.boolean",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l2.digital_logic",
+        "weight": 0.85,
+        "isPrimary": true
+      }
+    ],
+    "How computers work": [
+      {
+        "slug": "cs.l2.how_computers_work",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l0.hardware",
+        "weight": 0.4,
+        "isPrimary": false
+      }
+    ],
+    "Programming concepts": [
+      {
+        "slug": "cs.l3.prog_concepts",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l1.algorithms",
+        "weight": 0.45,
+        "isPrimary": false
+      }
+    ],
+    "Variables, types & operators": [
+      {
+        "slug": "cs.l3.variables",
+        "weight": 0.85,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l3.types",
+        "weight": 0.85,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l3.operators",
+        "weight": 0.8,
+        "isPrimary": true
+      }
+    ],
+    "Control flow & functions": [
+      {
+        "slug": "cs.l3.control_flow",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l3.functions",
+        "weight": 0.9,
+        "isPrimary": true
+      }
+    ],
+    "Debugging & modules": [
+      {
+        "slug": "cs.l3.debugging",
+        "weight": 0.85,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l3.modules",
+        "weight": 0.75,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l3.files_io",
+        "weight": 0.6,
+        "isPrimary": false
+      }
+    ],
+    "Lists, maps & structures": [
+      {
+        "slug": "cs.l3.data_structures_intro",
+        "weight": 1.0,
+        "isPrimary": true
+      }
+    ],
+    "Searching & sorting": [
+      {
+        "slug": "cs.l4.searching",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l4.sorting",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l4.algorithm_analysis",
+        "weight": 0.55,
+        "isPrimary": false
+      }
+    ],
+    "Stacks, queues, trees & graphs": [
+      {
+        "slug": "cs.l4.fundamental_ds",
+        "weight": 0.85,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l4.trees",
+        "weight": 0.75,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l4.graphs",
+        "weight": 0.75,
+        "isPrimary": true
+      }
+    ],
+    "Version control & testing": [
+      {
+        "slug": "cs.l7.version_control",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l7.testing",
+        "weight": 0.9,
+        "isPrimary": true
+      }
+    ],
+    "Databases intro": [
+      {
+        "slug": "cs.l8.db_foundations",
+        "weight": 1.0,
+        "isPrimary": true
+      }
+    ],
+    "Networks & the web": [
+      {
+        "slug": "cs.l9.net_foundations",
+        "weight": 0.9,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l11.web_intro",
+        "weight": 0.85,
+        "isPrimary": true
+      }
+    ],
+    "AI & data science intro": [
+      {
+        "slug": "cs.l13.ai_intro",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l1.representation",
+        "weight": 0.4,
+        "isPrimary": false
+      }
+    ],
+    "Operating systems intro": [
+      {
+        "slug": "cs.l6.os_intro",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l2.how_computers_work",
+        "weight": 0.45,
+        "isPrimary": false
+      }
+    ],
+    "Discrete math for CS": [
+      {
+        "slug": "cs.l5.discrete_math_intro",
+        "weight": 1.0,
+        "isPrimary": true
+      },
+      {
+        "slug": "cs.l2.boolean",
+        "weight": 0.45,
+        "isPrimary": false
+      }
+    ]
+  }
+}

@@ -80,7 +80,7 @@ export function pickSparkChallengeCandidate({
     return {
       skillSlug: item.skillSlug || item.skill || "",
       skillLabel: item.shortLabel || item.skillName || item.topic || "this skill",
-      subject: item.subject || "Math Foundations",
+      subject: item.subject || "Computer Science",
       topic: item.topic || item.shortLabel || item.skillName || "Practice",
       score: item.score ?? null,
       stateLabel: item.stateLabel || "",
@@ -97,7 +97,7 @@ export function pickSparkChallengeCandidate({
     return {
       skillSlug: slug,
       skillLabel: label,
-      subject: s.subject || s.subjectName || "Math Foundations",
+      subject: s.subject || s.subjectName || "Computer Science",
       topic: s.topic || s.topicName || label,
       score: s.score ?? null,
       stateLabel: s.stateLabel || s.state || "",
@@ -115,7 +115,7 @@ export function pickSparkChallengeCandidate({
     return {
       skillSlug: focus.skillSlug || focus.slug || "",
       skillLabel: label || "Focus skill",
-      subject: focus.subject || "Math Foundations",
+      subject: focus.subject || "Computer Science",
       topic: focus.topic || label || "Practice",
       score: focus.score ?? focus.level ?? null,
       stateLabel: focus.status || "",
@@ -138,7 +138,7 @@ export function pickSparkChallengeCandidate({
     return {
       skillSlug: weak.skillSlug || weak.slug || "",
       skillLabel: label,
-      subject: weak.subject || "Math Foundations",
+      subject: weak.subject || "Computer Science",
       topic: weak.topic || label,
       score: weak.level ?? weak.score ?? null,
       stateLabel: weak.status || "",

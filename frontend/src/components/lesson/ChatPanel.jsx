@@ -11,10 +11,14 @@ import {
   Image as ImageIcon,
   Flame,
   Zap,
+  ClipboardCheck,
 } from "lucide-react";
 import { challengeProgressLabel } from "../../services/learning/sparkChallenge";
+import { assessmentProgressLabel } from "../../services/learning/assessmentEngine";
+import { resolveTutorSuggestions } from "../../services/learning/tutorSuggestions";
 import TypingDots from "./TypingDots";
 import TutorMessageContent from "./TutorMessageContent";
+import TutorSuggestionChips from "./TutorSuggestionChips";
 import InterventionBanner, {
   InterventionSystemChip,
 } from "./InterventionBanner";
@@ -41,7 +45,10 @@ function DayBoundary({ text }) {
 export default function ChatPanel({
   topicName,
   subjectName,
+  /** Parent topic unit name (Subject → Topic → Subtopic) */
+  unitName = "",
   studentName,
+  student = null,
   curriculum,
   messages,
   isStreaming,
@@ -106,6 +113,13 @@ export default function ChatPanel({
   onClearHomeworkError,
   manipulativeSlot = null,
   multiStepSlot = null,
+  /** Epic C6 — quick check panel + readiness offer */
+  assessmentSlot = null,
+  assessmentOfferSlot = null,
+  assessmentSession = null,
+  /** Epic L4 — independence twin after heavy help */
+  independenceSlot = null,
+  independenceOfferSlot = null,
   /** Epic C5 — orientation goal chip under header */
   lessonGoals = null,
   showGoalsOrientation = true,
@@ -113,10 +127,14 @@ export default function ChatPanel({
   const fileInputRef = useRef(null);
   const interventionActive = intervention?.status === "active";
   const interventionOffered = intervention?.status === "offered";
+  const assessmentRunning = Boolean(assessmentSlot || assessmentSession);
+  const independenceRunning = Boolean(independenceSlot);
+  const focusModeRunning = assessmentRunning || independenceRunning;
   const showSoftNudge =
     Boolean(softNudge) &&
     !interventionOffered &&
     !interventionActive &&
+    !focusModeRunning &&
     !isArchiveView &&
     !conversationEnded;
   const showAffectCheckIn =
@@ -124,10 +142,19 @@ export default function ChatPanel({
     !sessionReflection &&
     !interventionOffered &&
     !showSoftNudge &&
+    !focusModeRunning &&
     !isArchiveView &&
     !conversationEnded;
   const showSessionReflection =
     Boolean(sessionReflection) &&
+    !isArchiveView &&
+    !conversationEnded;
+  const showAssessmentOffer =
+    Boolean(assessmentOfferSlot) &&
+    !showSessionReflection &&
+    !interventionOffered &&
+    !showAffectCheckIn &&
+    !assessmentRunning &&
     !isArchiveView &&
     !conversationEnded;
   const offline = connectivity && connectivity.online === false;
@@ -140,10 +167,35 @@ export default function ChatPanel({
     conversationEnded ||
     isSummarizing ||
     showSessionReflection ||
+    assessmentRunning ||
     offline ||
     safetyActive ||
     safetyPaused ||
     homeworkBusy;
+
+  // Latest completed tutor turn gets 3–5 one-tap follow-ups (supportive, low-typing)
+  let lastTutorIdx = -1;
+  for (let i = (messages || []).length - 1; i >= 0; i -= 1) {
+    const m = messages[i];
+    if (m?.role === "tutor" && !m.streaming && m.text) {
+      lastTutorIdx = i;
+      break;
+    }
+  }
+  const suggestCtx = {
+    topic: topicName,
+    subject: subjectName,
+    country: student?.country || "",
+    interests: student?.interests || [],
+  };
+  const chipsDisabled =
+    inputDisabled ||
+    isStreaming ||
+    showSoftNudge ||
+    showAffectCheckIn ||
+    showSessionReflection ||
+    interventionOffered ||
+    interventionActive;
 
   return (
     <main
@@ -176,6 +228,7 @@ export default function ChatPanel({
             <h3>{topicName}</h3>
             <p className="sub">
               {subjectName}
+              {unitName ? ` · ${unitName}` : ""}
               {curriculum ? ` · ${curriculum}` : ""}
               {isArchiveView ? " · Journal view" : ""}
             </p>
@@ -307,7 +360,29 @@ export default function ChatPanel({
         />
       )}
 
-      {challengeMode && !isArchiveView && !conversationEnded && (
+      {assessmentRunning && !isArchiveView && !conversationEnded && (
+        <div
+          className="review-mode-banner assessment-mode"
+          role="status"
+          aria-label="Quick check"
+        >
+          <ClipboardCheck size={16} aria-hidden />
+          Quick check
+          <span>
+            One question at a time · tutor explains after each answer
+          </span>
+          {assessmentSession && (
+            <span className="challenge-progress">
+              {assessmentProgressLabel(assessmentSession)}
+            </span>
+          )}
+        </div>
+      )}
+
+      {challengeMode &&
+        !assessmentRunning &&
+        !isArchiveView &&
+        !conversationEnded && (
         <div
           className="review-mode-banner challenge-mode"
           role="status"
@@ -332,6 +407,7 @@ export default function ChatPanel({
 
       {reviewMode &&
         !challengeMode &&
+        !assessmentRunning &&
         !isArchiveView &&
         !conversationEnded && (
         <div className="review-mode-banner" role="status">
@@ -372,6 +448,15 @@ export default function ChatPanel({
             );
           }
           if (msg.role === "tutor") {
+            const showChips =
+              i === lastTutorIdx &&
+              !msg.streaming &&
+              !isArchiveView &&
+              !conversationEnded &&
+              !assessmentRunning;
+            const resolved = showChips
+              ? resolveTutorSuggestions(msg.text, suggestCtx)
+              : null;
             return (
               <div key={msg.id || i} className="tutor-msg-stack">
                 <div
@@ -390,6 +475,16 @@ export default function ChatPanel({
                   >
                     <Volume2 size={11} /> Read aloud
                   </button>
+                )}
+                {showChips && resolved?.suggestions?.length > 0 && (
+                  <TutorSuggestionChips
+                    suggestions={resolved.suggestions}
+                    disabled={chipsDisabled}
+                    onSelect={(text) => {
+                      if (chipsDisabled || !onSend) return;
+                      onSend(text);
+                    }}
+                  />
                 )}
               </div>
             );
@@ -475,6 +570,19 @@ export default function ChatPanel({
           />
         )}
 
+        {showAssessmentOffer && assessmentOfferSlot}
+
+        {independenceOfferSlot &&
+          !showSessionReflection &&
+          !showAssessmentOffer &&
+          !interventionOffered &&
+          !focusModeRunning &&
+          !isArchiveView &&
+          !conversationEnded &&
+          independenceOfferSlot}
+
+        {independenceSlot}
+
         {persistenceNote?.text && !isArchiveView && (
           <PersistenceChip
             text={persistenceNote.text}
@@ -522,6 +630,7 @@ export default function ChatPanel({
         )}
       </div>
 
+      {assessmentSlot}
       {multiStepSlot}
       {manipulativeSlot}
 

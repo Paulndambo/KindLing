@@ -1,0 +1,98 @@
+{
+  "summary": {
+    "rubricVersion": 1,
+    "targetSampleSize": 10,
+    "scoredCount": 0,
+    "sampleComplete": false,
+    "overallMean": null,
+    "dimensions": {
+      "socratic_fidelity": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Socratic fidelity"
+      },
+      "hint_quality": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Hint / scaffold quality"
+      },
+      "intervention_timing": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Intervention timing"
+      },
+      "decision_compliance": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Decision compliance (L2)"
+      },
+      "affect_respect": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Affect & respect"
+      },
+      "misconception_handling": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Misconception handling"
+      },
+      "real_world_clarity": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Real-world clarity"
+      },
+      "independence_orientation": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Independence orientation (L3)"
+      },
+      "persistence_support": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Persistence support"
+      },
+      "overall_learning_quality": {
+        "n": 0,
+        "mean": null,
+        "min": null,
+        "max": null,
+        "label": "Overall learning quality"
+      }
+    },
+    "weakest": [],
+    "strongest": [],
+    "generatedAt": "2026-09-09T21:30:41.051963Z",
+    "nextStep": "Score 10 more session(s) to complete C8.3 cohort.",
+    "job": "weekly_eval_sample",
+    "cohort": "auto-weekly-2026-W37",
+    "scorer": "auto-c8.1",
+    "mode": "automated_weekly",
+    "lookbackDays": 7,
+    "candidateSessions": 0,
+    "scoredOk": 0,
+    "saved": 0,
+    "dryRun": false,
+    "errors": [],
+    "errorCount": 0,
+    "sessionIds": []
+  },
+  "results": []
+}

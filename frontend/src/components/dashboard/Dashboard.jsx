@@ -186,10 +186,75 @@ export default function Dashboard({
   const recentActivity = data?.recentActivity || [];
   const weekPlan = data?.weekPlan || [];
 
+  /** Epic L2.4 — prefer API ranking; fall back to client ranking */
+  const nextBestActions = useMemo(() => {
+    if (Array.isArray(data?.nextBestActions) && data.nextBestActions.length) {
+      return data.nextBestActions;
+    }
+    const items = [];
+    if (reviewItems.length) {
+      const d = reviewItems[0];
+      items.push({
+        action: "REVIEW",
+        score: 0.92,
+        label: "Review today",
+        reason: `Spaced practice on ${d.shortLabel || d.skillLabel || d.skillSlug || "a due skill"}`,
+        cta: "Start review spark",
+        kind: "review",
+        skillSlug: d.skillSlug,
+      });
+    }
+    if (recommendedNextSkill) {
+      items.push({
+        action: "CONTINUE_SOCRATIC",
+        score: 0.7,
+        label:
+          recommendedNextSkill.shortLabel ||
+          recommendedNextSkill.name ||
+          "Next skill",
+        reason: "Recommended next skill on your path",
+        cta: "Practice skill",
+        kind: "skill",
+        skillSlug: recommendedNextSkill.slug,
+      });
+    }
+    if (focusAreas[0]) {
+      const f = focusAreas[0];
+      const label = f.label || f.topic || "Focus area";
+      items.push({
+        action: "CONTINUE_SOCRATIC",
+        score: 0.5,
+        label: `Practice: ${label}`,
+        reason: "Gentle focus area",
+        cta: "Open lesson",
+        kind: "focus",
+      });
+    }
+    if (!items.length && onStartLesson) {
+      items.push({
+        action: "CONTINUE_SOCRATIC",
+        score: 0.4,
+        label: "Continue learning",
+        reason: "Keep the spark going with a short lesson",
+        cta: "Start a lesson",
+        kind: "default",
+      });
+    }
+    return items;
+  }, [
+    data?.nextBestActions,
+    reviewItems,
+    recommendedNextSkill,
+    focusAreas,
+    onStartLesson,
+  ]);
+
+  const topNba = nextBestActions[0] || null;
+
   const handleStartReview = useCallback(
     (item) => {
       if (!onStartLesson || !item) return;
-      onStartLesson(item.subject || "Math Foundations", item.topic || item.shortLabel, {
+      onStartLesson(item.subject || "Computer Science", item.topic || item.shortLabel, {
         reviewMode: true,
         reviewSkill: item.skillSlug,
         reviewSkillLabel: item.shortLabel || item.skillName,
@@ -215,7 +280,7 @@ export default function Dashboard({
     (candidate) => {
       if (!onStartLesson || !candidate) return;
       onStartLesson(
-        candidate.subject || "Math Foundations",
+        candidate.subject || "Computer Science",
         candidate.topic || candidate.skillLabel,
         {
           challengeMode: true,
@@ -231,6 +296,52 @@ export default function Dashboard({
       );
     },
     [onStartLesson]
+  );
+
+  /** Epic L2.4 — next-best-action from policy ranking */
+  const handleNba = useCallback(
+    (item) => {
+      if (!item || !onStartLesson) return;
+      if (item.kind === "review" || item.action === "REVIEW") {
+        const match =
+          reviewItems.find((r) => r.skillSlug === item.skillSlug) ||
+          reviewItems[0];
+        if (match) {
+          handleStartReview(match);
+          return;
+        }
+      }
+      if (item.kind === "challenge" || item.action === "CHALLENGE") {
+        if (sparkChallenge) {
+          handleStartChallenge(sparkChallenge);
+          return;
+        }
+      }
+      const subj =
+        item.subject ||
+        recommendedNextSkill?.subject ||
+        subjects[0]?.name ||
+        "Computer Science";
+      const top =
+        item.topic ||
+        recommendedNextSkill?.topic ||
+        (typeof item.label === "string" && !/^Review|Independent|Quick|Fair/i.test(item.label)
+          ? item.label
+          : null) ||
+        subjects[0]?.topics?.[0]?.name ||
+        subjects[0]?.topics?.[0]?.subtopics?.[0]?.name ||
+        "Lesson";
+      onStartLesson(subj, top, {});
+    },
+    [
+      onStartLesson,
+      reviewItems,
+      handleStartReview,
+      sparkChallenge,
+      handleStartChallenge,
+      recommendedNextSkill,
+      subjects,
+    ]
   );
 
   const subjectCount = subjects.length || 0;
@@ -311,6 +422,26 @@ export default function Dashboard({
 
         {/* Epic C5 lite — week focus */}
         <WeekFocusCard student={student} onStudentUpdate={onStudentUpdate} />
+
+        {/* Epic L2.4 — next best action (policy ranking) */}
+        {topNba && onStartLesson && (
+          <div className="nba-card" role="region" aria-label="Suggested next step">
+            <div className="nba-card-main">
+              <p className="eyebrow" style={{ marginBottom: 4 }}>
+                Suggested next step
+              </p>
+              <h3 className="nba-title">{topNba.label}</h3>
+              <p className="nba-reason">{topNba.reason}</p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary nba-cta"
+              onClick={() => handleNba(topNba)}
+            >
+              {topNba.cta || "Go"}
+            </button>
+          </div>
+        )}
 
         {/* Hero header */}
         <div className="dash-hero">
@@ -575,7 +706,7 @@ export default function Dashboard({
               ) : (
                 <EmptyState
                   title="No skill sparks yet"
-                  body="Practice Math Foundations topics — Kindling tracks fine-grained skills (not only whole topics) with a knowledge graph."
+                  body="Practice Computer Science topics — Kindling tracks fine-grained skills on a knowledge graph from digital literacy through programming and systems."
                 />
               )}
             </div>

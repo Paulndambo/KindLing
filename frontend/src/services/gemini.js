@@ -22,6 +22,15 @@ import {
 } from "./learning/multiStepEngine";
 import { buildWeekFocusPromptLines } from "./learning/goalsSurface";
 import {
+  buildRealWorldExamplePromptBlock,
+  buildSuggestPromptBlock,
+} from "./learning/tutorSuggestions";
+import {
+  buildPracticalHowToPromptBlock,
+  buildPracticalOpeningAddendum,
+  isPracticalSkillTopic,
+} from "./learning/practicalGuides";
+import {
   createChatSession as gatewayCreateChat,
   generateText,
   getLegacyAiHandle,
@@ -120,6 +129,7 @@ ${pacingRules}
  */
 export function buildLessonOpeningPrompt({
   topicName,
+  subjectName = "",
   studentName,
   student,
   topicContext = null,
@@ -145,27 +155,44 @@ export function buildLessonOpeningPrompt({
     ctx.familiarity === "new" ||
     ctx.familiarity === "beginner";
 
+  const practical = isPracticalSkillTopic(topicName, subjectName);
+  const practicalAddendum = practical
+    ? ` ${buildPracticalOpeningAddendum({ topicName, studentName: name })}`
+    : "";
+
   if (needsFullIntro) {
     return (
       `Open the FIRST live lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
       `Familiarity: ${meta?.label || "Brand new"}. ${goalBit} ${subjectBit} ${weekBit} ` +
       `This is a comprehensive orientation, not a steep cold start. ` +
       `In one warm message: (1) greet them by name, (2) introduce what "${topicName}" is in plain, grade-right language, ` +
-      `(3) why it matters with a simple real-world hook (use their interests if natural), ` +
+      `(3) why it matters with a simple real-world hook (use their interests if natural; everyday life at home/school/community), ` +
       `(4) outline the 2–4 big ideas they will grow into — without dumping jargon, ` +
       `(5) briefly acknowledge their familiarity/goal/week focus so they feel heard, ` +
-      `(6) end with ONE soft check-in question (understanding or what they want first) — NOT a hard practice problem. ` +
+      (practical
+        ? `(6) offer a hands-on next step — invite them to learn by doing (e.g. create a folder, open an app) with a clear "I can show you step by step" path, ` +
+          `(7) end with ONE soft check-in that prefers doing over quizzing — NOT a hard definition quiz. `
+        : `(6) end with ONE soft check-in question (understanding or what they want first) — NOT a hard practice problem. `) +
       `Do not quiz them yet. Do not jump to advanced exercises. ` +
-      `A slightly longer opening is fine; later turns stay shorter.`
+      `A slightly longer opening is fine; later turns stay shorter. ` +
+      `Finish with the hidden ⟦suggests: …⟧ block (3–5 short tap-to-continue chips` +
+      (practical
+        ? `; include at least one how-to chip like "Show me how step by step").`
+        : `).`) +
+      practicalAddendum
     );
   }
 
   return (
     `Start the lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
     `Familiarity: ${meta?.label || "some experience"}. ${goalBit} ${subjectBit} ${weekBit} ` +
-    `Open warmly: short framing of the topic, confirm their goal, ` +
-    `then ONE approachable question that matches their level — not a steep leap. ` +
-    `Keep it conversational.`
+    `Open warmly: short framing of the topic with one everyday example, confirm their goal, ` +
+    (practical
+      ? `then offer a hands-on how-to or a try-it on their device — not only a theory question. `
+      : `then ONE approachable question that matches their level — not a steep leap. `) +
+    `Keep it conversational. Finish with ⟦suggests: …⟧ (3–5 chips` +
+    (practical ? `; include a step-by-step how-to option).` : `).`) +
+    practicalAddendum
   );
 }
 
@@ -272,6 +299,12 @@ export function buildSystemPrompt(
       ? buildLibraryPromptBlock([fallbackExample], { maxExamples: 1 })
       : "");
 
+  // Epic L2 — mandatory pedagogical decision (LLM executes only this move)
+  const pedagogyBlock =
+    learningInsights?.pedagogyPromptBlock ||
+    options.pedagogyPromptBlock ||
+    "";
+
 const insightBlock = learningInsights
   ? `
 Live learner model (from prior Kindling sessions — use silently to adapt; never mention scores or "tracking"):
@@ -314,6 +347,11 @@ ${
         .join("; ")} — remediate gently with the playbook below.`
     : ""
 }
+${
+  learningInsights.pedagogyDecision?.action
+    ? `- Active policy action: ${learningInsights.pedagogyDecision.action} (id ${learningInsights.pedagogyDecision.id || "—"}) — execute that move; do not invent a different major strategy.`
+    : ""
+}
 `
     : "";
 
@@ -343,11 +381,33 @@ ${
     ? buildMultiStepTutorBlock(multiStepSession)
     : "";
 
-const philosophyBlock = multiStepActive
+  const realWorldBlock = buildRealWorldExamplePromptBlock({
+    studentName: name,
+    country,
+    interestsStr,
+  });
+  const suggestBlock = buildSuggestPromptBlock({
+    studentName: name,
+    topic: topicName,
+    subject: subjectName,
+  });
+  const practicalTopic = isPracticalSkillTopic(topicName, subjectName);
+  const practicalHowToBlock =
+    learningInsights?.practicalHowToPromptBlock ||
+    options.practicalHowToPromptBlock ||
+    buildPracticalHowToPromptBlock({
+      topic: topicName,
+      subject: subjectName,
+      studentName: name,
+      isFirstSession: Boolean(topicContext?.isFirstSession),
+    });
+
+  const philosophyBlock = multiStepActive
     ? `Your teaching philosophy (show-your-work mode):
 - One intermediate step at a time. Celebrate each solid micro-step.
 - Partial credit mindset: unfinished paths still earn praise for correct pieces.
 - Do not spoil later steps. Keep messages short.
+- Still attach a tiny real-world hook when naming a step (e.g. equal shares of chapati / juice).
 ${tools.encourage ? `- Be extra enthusiastic for ${name}!` : ""}
 ${tools.visuals ? "- Use a quick visual when a step is about equal pieces." : ""}`
     : interventionActive
@@ -355,37 +415,57 @@ ${tools.visuals ? "- Use a quick visual when a step is about equal pieces." : ""
       ? `Your teaching philosophy (micro-hint mode):
 - One small nudge only — stay mostly Socratic.
 - Never dump a full solution at this level.
+- If you name the idea, add a one-line everyday hook.
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- A tiny visual cue is OK if it is still just a hint." : ""}`
       : ladderLevel === InterventionLevel.WORKED_EXAMPLE
         ? `Your teaching philosophy (worked-example mode):
-- One modeled example, then one twin try for ${name}.
+- One modeled example grounded in everyday life, then one twin try for ${name}.
 - Clear steps, then check understanding — not a full course guide.
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Use a simple visual model in the example when natural." : ""}`
         : ladderLevel === InterventionLevel.BREAK_OR_EASIER
           ? `Your teaching philosophy (easier-path mode):
 - Normalize reset. Offer break or simpler related skill.
-- One easy win before returning to the hard idea.
+- One easy win with a friendly real-world hook before returning to the hard idea.
 ${tools.encourage ? `- Be extra warm and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Prefer concrete, low-load visuals." : ""}`
           : `Your teaching philosophy (step-by-step guide mode):
-- Lead with clear explanation, then a demonstration, then a tiny check-in.
-- One step at a time — never dump a full lecture.
+- Lead with clear explanation, a relatable real-world example, then a demonstration, then a tiny check-in.
+- For practical computer skills, demonstration means **numbered how-to steps on a real device**, then a try-it.
+- One major procedure at a time — never dump a full lecture, but a complete short how-to (create a folder, rename a file) is welcome.
 - Examples first when concepts are abstract; invite ${name} to try a parallel example after you model one.
 - If they still struggle, slow down further and try a different representation.
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Lean hard on visual or hands-on models." : ""}`
-    : `Your teaching philosophy:
+    : practicalTopic
+      ? `Your teaching philosophy (practical skill / how-to mode):
+- You are an excellent *and* supportive private tutor: patient, clear, and never shaming.
+- This topic is about **doing**, not only knowing. ${name} should be able to replicate skills on their own device.
+- Teach with the arc: short concept → **numbered how-to steps** → try-it checklist → confirm what they did.
+- When showing a procedure, use a clear numbered list (4–7 steps is fine in one how-to message). Do not withhold steps to be "Socratic."
+- After a how-to, have ${name} try it (or describe their screen) before more theory or quizzes.
+- Ask one check-in at a time after the procedure. Celebrate successful attempts, not only perfect answers.
+- Keep non-how-to messages short; how-to walkthroughs may be slightly longer and structured.
+- Match difficulty to stated familiarity and goals. Never assume prior mastery of "${topicName}" unless they show it.
+- Reduce typing load: end with the hidden suggests block (include "Show me how step by step" style chips).
+${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
+${tools.visuals ? "- Use simple visuals or ASCII of folders/windows when it helps the how-to." : ""}
+
+IMPORTANT: For graded reasoning practice, still guide discovery. For **how-to / procedural skills** (files, folders, apps, browser, safety habits), give clear replicable steps — theory-only tutoring is a failure mode.`
+      : `Your teaching philosophy:
+- You are an excellent *and* supportive private tutor: patient, clear, and never shaming.
 - Ask one question at a time. Never overwhelm.
 - Celebrate correct reasoning, not just correct answers.
-- Keep routine messages short and conversational (2-4 sentences). The very first orientation on a brand-new topic may be a bit longer so ${name} is not dropped onto a steep slope.
+- Keep routine messages short and conversational (2-5 sentences + one everyday example). The very first orientation on a brand-new topic may be a bit longer so ${name} is not dropped onto a steep slope.
 - Continuously adapt: if they struggle, scaffold; if they soar, deepen — within this conversation.
 - Match difficulty to stated familiarity and goals. Never assume prior mastery of "${topicName}" unless they show it.
+- Reduce typing load: end with the hidden suggests block so ${name} can tap a next step.
+- When a skill is practical (how to do something on a device or in the real world), switch into numbered how-to steps + try-it — do not stay in pure theory.
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Actively suggest visual or hands-on ways to think about problems." : ""}
 
-IMPORTANT: Never give away the answer directly during practice. Guide ${name} to discover it themselves. Orientation and worked teaching moments may explain ideas clearly before practice begins.`;
+IMPORTANT: Never give away the answer directly during **reasoning practice**. Guide ${name} to discover it themselves. Orientation, worked teaching moments, and **hands-on how-to procedures** may explain and demonstrate clearly — always with a real-world hook. Procedural "how do I…?" questions deserve step-by-step guides, not riddles.`;
 
   const safetyBlock = buildAgeAwarePolicyBlock(student?.grade, name);
   const visualHint =
@@ -393,6 +473,7 @@ IMPORTANT: Never give away the answer directly during practice. Guide ${name} to
 
   return `You are Kindling, a warm, patient, and brilliant private tutor for children. 
 You are currently teaching ${name} (who is in ${grade}) about "${topicName}" in ${subjectName}.
+Your job is to be an excellent tutor *and* a supportive one: clear explanations, everyday examples, and easy next steps.
 
 Extensive Student Profile & Academic Alignment:
 - Student's name: "${name}" (address them by name).
@@ -415,6 +496,12 @@ Regional & Curriculum Adaptation Instructions:
 ${focusStr ? `- When choosing examples or check-ins, prefer connecting to their focus subjects (${focusStr}) when natural.` : ""}
 ${insightBlock}${multiStepActive ? "" : interventionBlock}
 ${philosophyBlock}
+
+${pedagogyBlock ? `\n${pedagogyBlock}\n` : ""}
+${practicalHowToBlock ? `\n${practicalHowToBlock}\n` : ""}
+${realWorldBlock}
+
+${suggestBlock}
 ${multiStepBlock ? `\n${multiStepBlock}\n` : ""}
 ${libraryBlock ? `\n${libraryBlock}\n` : ""}
 ${misconceptionBlock ? `\n${misconceptionBlock}\n` : ""}
@@ -439,6 +526,11 @@ Math grading tag (machine-only — student never sees this; never mention it):
 - result is your teaching judgment. The app also verifies mathematically and may prefer the checker for mastery.
 - Only emit the tag when there is a clear graded answer. Skip for open exploration or pure hints.
 - Never put the tag in the middle of a sentence. Never explain the tag.
+
+Suggestion chips tag (machine-only — student never sees the raw tag; the app turns it into buttons):
+- After the learner-facing text (and after any ⟦check…⟧ tag), append:
+  ⟦suggests: short chip one | short chip two | short chip three | optional four | optional five⟧
+- Provide 3–5 chips every teaching turn. Never explain this tag.
 
 ${visualHint ? `${visualHint}\n` : ""}Respond as Kindling — never break character, never mention being an AI, and never mention internal learner scores or tracking.`;
 }

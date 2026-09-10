@@ -55,6 +55,21 @@ import {
   detectRemediationSuccess,
   buildMisconceptionPromptBlock,
   misconceptionDirectives,
+  buildLearnerState,
+  learnerStateDirectives,
+  serializeLearnerState,
+  computeAdiFromContext,
+  serializeAdi,
+  adiDirectives,
+  decidePedagogy,
+  buildPedagogyPromptBlock,
+  pedagogyDirectives,
+  serializePedagogyDecision,
+  rankNextBestActions,
+  buildPracticalHowToPromptBlock,
+  practicalHowToDirectives,
+  findPracticalGuide,
+  isPracticalSkillTopic,
 } from "../services/learning";
 import {
   markSessionStarted,
@@ -74,6 +89,8 @@ export function useStudentLearning({
   subjectName,
   topicName,
   tools,
+  /** Epic C5 — resolved lesson goals (feeds L1 objective slice) */
+  lessonGoals = null,
   /** Epic C1 — optional Review spark mode */
   reviewMode = false,
   reviewSkill = null,
@@ -144,6 +161,14 @@ export function useStudentLearning({
     profileRef.current = profile;
   }, [profile]);
 
+  // Reload local profile when student identity settles (first paint may be "anonymous")
+  useEffect(() => {
+    if (!studentId || studentId === "anonymous") return;
+    const loaded = loadLearningProfile(studentId);
+    setProfile(loaded);
+    profileRef.current = loaded;
+  }, [studentId]);
+
   useEffect(() => {
     toolsRef.current = tools;
     trackerRef.current?.setTools(tools);
@@ -169,6 +194,117 @@ export function useStudentLearning({
     subject: subjectName,
     topic: topicName,
   });
+
+  /** Epic L3 — live ADI from session turns + profile */
+  const adiResult = useMemo(() => {
+    const snap = trackerRef.current?.snapshot || null;
+    const key = `${subjectName || "General"}::${topicName || "General"}`;
+    const topicScore = profile?.mastery?.[key]?.score ?? null;
+    return computeAdiFromContext({
+      sessionSnapshot: snap,
+      intervention,
+      profile,
+      topicScore,
+      priorAdi: profile?.behavior?.adi ?? null,
+    });
+  }, [
+    profile,
+    intervention,
+    subjectName,
+    topicName,
+    // Recompute when session activity changes
+    lastSignals,
+    sessionSummary?.turnCount,
+    sessionSummary?.counters?.hints,
+    sessionSummary?.scaffoldingBias,
+  ]);
+
+  /** Epic L1 — first-class multi-slice learner snapshot */
+  const learnerState = useMemo(
+    () =>
+      buildLearnerState({
+        profile,
+        studentId,
+        subject: subjectName,
+        topic: topicName,
+        unit: lessonGoals?.unitName || "",
+        lastSignals,
+        sessionSummary,
+        intervention,
+        struggleSnapshot,
+        activeMisconceptions: activeMisconceptionHits,
+        lessonGoals,
+        scaffoldingBias: sessionSummary?.scaffoldingBias || 0,
+        sessionSnapshot: trackerRef.current?.snapshot || null,
+        adi: adiResult,
+      }),
+    [
+      profile,
+      studentId,
+      subjectName,
+      topicName,
+      lessonGoals,
+      lastSignals,
+      sessionSummary,
+      intervention,
+      struggleSnapshot,
+      activeMisconceptionHits,
+      adiResult,
+    ]
+  );
+
+  /** Epic L2 — pedagogical policy decision for this turn */
+  const pedagogyDecision = useMemo(
+    () =>
+      decidePedagogy(learnerState, {
+        subject: subjectName,
+        topic: topicName,
+        profile,
+        lastSignals,
+        intervention,
+        struggleSnapshot,
+        adi: adiResult,
+        reviewMode,
+        challengeMode,
+        reviewSkill,
+        reviewSkillLabel,
+        challengeSkill,
+        challengeSkillLabel,
+        consecutiveIncorrect: struggleSnapshot?.consecutiveIncorrect || 0,
+        activeMisconceptions: activeMisconceptionHits,
+        lastCheckIn: lastCheckInResponse,
+        lowEnergy: Boolean(lastCheckInResponse?.lowEnergy),
+        persistenceScore:
+          struggleSnapshot?.persistenceScore ||
+          profile?.behavior?.persistenceScore ||
+          0,
+        justPersisted: Boolean(persistenceNote),
+        preferPracticalHowTo: isPracticalSkillTopic(topicName, subjectName),
+        sessionPhase:
+          !lastSignals && !(sessionSummary?.turnCount > 0) ? "open" : "active",
+        // L4 twin context is injected by Lesson via insights merge when active
+      }),
+    [
+      learnerState,
+      subjectName,
+      topicName,
+      profile,
+      lastSignals,
+      intervention,
+      struggleSnapshot,
+      adiResult,
+      reviewMode,
+      challengeMode,
+      reviewSkill,
+      reviewSkillLabel,
+      challengeSkill,
+      challengeSkillLabel,
+      activeMisconceptionHits,
+      lastCheckInResponse,
+      persistenceNote,
+      sessionSummary?.turnCount,
+    ]
+  );
 
   const insights = useMemo(() => {
     const live = struggleDirectivesFromSnapshot(struggleSnapshot || {});
@@ -215,10 +351,27 @@ export function useStudentLearning({
       profile?.misconceptions || {}
     );
     extra.push(...mcDirs);
+    extra.push(...learnerStateDirectives(learnerState));
+    extra.push(...adiDirectives(adiResult));
+    extra.push(...pedagogyDirectives(pedagogyDecision));
+    extra.push(
+      ...practicalHowToDirectives({ topic: topicName, subject: subjectName })
+    );
     const directives = [...(baseInsights.directives || [])];
     for (const d of extra) {
       if (!directives.includes(d)) directives.push(d);
     }
+    const practicalGuide = isPracticalSkillTopic(topicName, subjectName)
+      ? findPracticalGuide({ topic: topicName, subject: subjectName })
+      : null;
+    const practicalHowToPromptBlock = buildPracticalHowToPromptBlock({
+      topic: topicName,
+      subject: subjectName,
+      studentName: student?.name || "the student",
+      isFirstSession: Boolean(
+        !lastSignals && !(sessionSummary?.turnCount > 0)
+      ),
+    });
     return {
       ...baseInsights,
       reviewMode: Boolean(reviewMode),
@@ -240,6 +393,27 @@ export function useStudentLearning({
         activeMisconceptionHits
       ),
       activeMisconceptions: activeMisconceptionHits,
+      /** Hands-on how-to guides for practical skill topics */
+      practicalHowToPromptBlock,
+      practicalGuideTitle: practicalGuide?.title || null,
+      practicalSkillTopic: Boolean(practicalGuide) || isPracticalSkillTopic(topicName, subjectName),
+      /** L1 compact for prompt / tools consumers */
+      learnerStateSummary: learnerState?.summary || "",
+      learnerCalibration: learnerState?.confidence?.calibration || "unknown",
+      learnerAssistance: learnerState?.assistance?.label || "unknown",
+      /** L3 ADI */
+      adi: serializeAdi(adiResult),
+      adiPreferLighterHelp: Boolean(adiResult?.preferLighterHelp),
+      /** L2 policy — mandatory execution contract for the tutor LLM */
+      pedagogyDecision: serializePedagogyDecision(pedagogyDecision),
+      pedagogyPromptBlock: buildPedagogyPromptBlock(pedagogyDecision),
+      nextBestActions: rankNextBestActions({
+        learnerState,
+        recommendedSkill: baseInsights?.stats?.recommendedNextSkill || null,
+        focusAreas: profile?.focusAreas || [],
+        subject: subjectName,
+        topic: topicName,
+      }),
     };
   }, [
     baseInsights,
@@ -247,8 +421,12 @@ export function useStudentLearning({
     lastCheckInResponse,
     profile,
     exampleLibrary,
+    learnerState,
+    adiResult,
+    pedagogyDecision,
     activeMisconceptionHits,
     reviewMode,
+    subjectName,
     reviewSkill,
     reviewSkillLabel,
     challengeMode,
@@ -256,6 +434,9 @@ export function useStudentLearning({
     challengeSkillLabel,
     challengeTarget,
     topicName,
+    student?.name,
+    lastSignals,
+    sessionSummary?.turnCount,
   ]);
 
   /** Epic C1 — graded outcomes during a Review spark session */
@@ -1256,6 +1437,7 @@ export function useStudentLearning({
       tutorText,
       wasHintRequest = false,
       multiStepOutcome = null,
+      assessmentOutcome = null,
     } = {}) => {
       const tracker = trackerRef.current;
       if (!tracker || !studentText) return null;
@@ -1298,6 +1480,29 @@ export function useStudentLearning({
             signals.correctness = "partial"; // micro-win on a step
             signals.gradeSource = "multistep_step";
           }
+        }
+      }
+
+      // Epic C6 — MCQ quick check item grade (deterministic, offline)
+      if (assessmentOutcome?.correctness) {
+        signals.assessment = {
+          questionId: assessmentOutcome.questionId || null,
+          skillSlug: assessmentOutcome.skillSlug || null,
+          concept: assessmentOutcome.concept || null,
+          correct: assessmentOutcome.correctness === "correct",
+        };
+        signals.correctness = assessmentOutcome.correctness;
+        signals.gradeSource = "assessment";
+        signals.confidence = Math.max(signals.confidence || 0, 0.85);
+        if (assessmentOutcome.expected) {
+          signals.verification = {
+            checked: true,
+            correctness: assessmentOutcome.correctness,
+            confidence: 1,
+            method: "assessment_mcq",
+            studentRaw: assessmentOutcome.studentText || studentText,
+            expectedRaw: assessmentOutcome.expected,
+          };
         }
       }
 
@@ -1417,13 +1622,119 @@ export function useStudentLearning({
 
       tracker.markPromptReady();
 
-      const nextProfile = applyExchangeToProfile(profileRef.current, {
+      let nextProfile = applyExchangeToProfile(profileRef.current, {
         subject: tracker.subject,
         topic: tracker.topic,
         signals,
       });
+      // Epic L3 — fold ADI into longitudinal behavior after each graded turn
+      {
+        const adiKey = `${tracker.subject || "General"}::${
+          tracker.topic || "General"
+        }`;
+        const turnAdi = computeAdiFromContext({
+          sessionSnapshot: tracker.snapshot,
+          intervention: interventionRef.current,
+          profile: nextProfile,
+          topicScore: nextProfile?.mastery?.[adiKey]?.score ?? null,
+          priorAdi: nextProfile?.behavior?.adi ?? null,
+        });
+        if (turnAdi?.reliable && turnAdi.value != null) {
+          nextProfile = {
+            ...nextProfile,
+            behavior: {
+              ...(nextProfile.behavior || {}),
+              adi: turnAdi.value,
+              adiBand: turnAdi.band,
+              adiTrend: turnAdi.trend,
+              adiUpdatedAt: turnAdi.updatedAt,
+              independencePct: turnAdi.independencePct,
+            },
+          };
+          // Emit learning.adi sparingly: every 3rd graded sample or band change
+          const gradedN =
+            (tracker.snapshot?.counters?.correct || 0) +
+            (tracker.snapshot?.counters?.partial || 0) +
+            (tracker.snapshot?.counters?.incorrect || 0);
+          const prevBand = profileRef.current?.behavior?.adiBand;
+          if (
+            gradedN >= 3 &&
+            (gradedN % 3 === 0 || prevBand !== turnAdi.band)
+          ) {
+            submitLearningEvents(
+              createLearningEvent(
+                LearningEventType.LEARNING_ADI,
+                {
+                  sessionId: tracker.id,
+                  subject: tracker.subject,
+                  topic: tracker.topic,
+                  ...serializeAdi(turnAdi),
+                  phase: "turn",
+                },
+                { studentId, sessionId: tracker.id }
+              )
+            );
+          }
+        }
+      }
       persistProfile(nextProfile);
       setLastSignals(signals);
+
+      // Epic L2 — log pedagogical decision for this turn (closed-loop control)
+      {
+        const turnDecision = decidePedagogy(
+          buildLearnerState({
+            profile: nextProfile,
+            studentId,
+            subject: tracker.subject,
+            topic: tracker.topic,
+            lastSignals: signals,
+            sessionSummary: {
+              turnCount: tracker.snapshot?.turns?.length || 0,
+              scaffoldingBias: tracker.scaffoldingBias,
+            },
+            intervention: interventionRef.current,
+            struggleSnapshot: tracker.getStruggleSnapshot?.() || null,
+            activeMisconceptions: activeMisconceptionHits,
+            sessionSnapshot: tracker.snapshot,
+            scaffoldingBias: tracker.scaffoldingBias,
+          }),
+          {
+            subject: tracker.subject,
+            topic: tracker.topic,
+            profile: nextProfile,
+            lastSignals: signals,
+            intervention: interventionRef.current,
+            struggleSnapshot: tracker.getStruggleSnapshot?.() || null,
+            reviewMode,
+            challengeMode,
+            reviewSkill,
+            reviewSkillLabel,
+            challengeSkill,
+            challengeSkillLabel,
+            consecutiveIncorrect: tracker.consecutiveIncorrect,
+            activeMisconceptions: activeMisconceptionHits,
+            lastCheckIn: lastCheckInResponse,
+            persistenceScore: tracker.persistenceScore,
+          }
+        );
+        submitLearningEvents(
+          createLearningEvent(
+            LearningEventType.PEDAGOGY_DECISION,
+            {
+              sessionId: tracker.id,
+              subject: tracker.subject,
+              topic: tracker.topic,
+              phase: "post_turn",
+              ...serializePedagogyDecision(turnDecision, {
+                correctness: signals?.correctness || null,
+                affect: signals?.affect || null,
+              }),
+            },
+            { studentId, sessionId: tracker.id }
+          )
+        );
+      }
 
       // Epic C1 — track graded turns in Review spark mode
       // (skip separate review auto-complete while G1 challenge owns the session)
@@ -1826,6 +2137,16 @@ export function useStudentLearning({
         cur.status === InterventionStatus.IDLE ||
         cur.status === InterventionStatus.ACTIVE
       ) {
+        const key = `${tracker.subject || subjectName || "General"}::${
+          tracker.topic || topicName || "General"
+        }`;
+        const liveAdi = computeAdiFromContext({
+          sessionSnapshot: tracker.snapshot,
+          intervention: cur,
+          profile: profileRef.current,
+          topicScore: profileRef.current?.mastery?.[key]?.score ?? null,
+          priorAdi: profileRef.current?.behavior?.adi ?? null,
+        });
         const decision = evaluateInterventionTrigger({
           consecutiveIncorrect: tracker.consecutiveIncorrect,
           currentStatus: cur.status,
@@ -1839,6 +2160,7 @@ export function useStudentLearning({
           highestLevelUsed: tracker.highestLevelUsed || 0,
           currentLevel: cur.level || cur.context?.level || 0,
           alreadyOfferedEscalate: Boolean(tracker.escalateOffered),
+          adi: liveAdi,
         });
 
         if (decision.shouldAutoEnter || decision.shouldOffer) {
@@ -2292,10 +2614,37 @@ export function useStudentLearning({
     if (lastSessionReflection && !lastSessionReflection.skipped) {
       summary.lastReflection = lastSessionReflection;
     }
+
+    // Epic L3 — final session ADI
+    const endAdiKey = `${summary.subject || subjectName || "General"}::${
+      summary.topic || topicName || "General"
+    }`;
+    const endAdi = computeAdiFromContext({
+      sessionSnapshot: tracker.snapshot,
+      intervention: interventionRef.current,
+      profile: ended,
+      topicScore: ended?.mastery?.[endAdiKey]?.score ?? null,
+      priorAdi: ended?.behavior?.adi ?? null,
+    });
+    if (endAdi?.reliable && endAdi.value != null) {
+      ended = {
+        ...ended,
+        behavior: {
+          ...(ended.behavior || {}),
+          adi: endAdi.value,
+          adiBand: endAdi.band,
+          adiTrend: endAdi.trend,
+          adiUpdatedAt: endAdi.updatedAt,
+          independencePct: endAdi.independencePct,
+        },
+      };
+      summary.adi = serializeAdi(endAdi);
+    }
+
     persistProfile(ended);
     setSessionSummary(summary);
 
-    await submitLearningEvents([
+    const endEvents = [
       createLearningEvent(
         LearningEventType.SESSION_END,
         summary,
@@ -2309,10 +2658,46 @@ export function useStudentLearning({
             subject: summary.subject,
             topic: summary.topic,
           }),
+          /** Epic L1 — structured slices for longitudinal mining / L5 */
+          learnerState: serializeLearnerState(
+            buildLearnerState({
+              profile: ended,
+              studentId,
+              subject: summary.subject || subjectName,
+              topic: summary.topic || topicName,
+              unit: lessonGoals?.unitName || "",
+              lastSignals: lastSignals,
+              sessionSummary: summary,
+              intervention: interventionRef.current,
+              struggleSnapshot,
+              activeMisconceptions: activeMisconceptionHits,
+              lessonGoals,
+              scaffoldingBias: summary?.scaffoldingBias || 0,
+              sessionSnapshot: tracker.snapshot,
+              adi: endAdi,
+            })
+          ),
+          learnerStateAdi: serializeAdi(endAdi),
         },
         { studentId, sessionId: summary.sessionId }
       ),
-    ]);
+    ];
+    if (endAdi?.reliable) {
+      endEvents.push(
+        createLearningEvent(
+          LearningEventType.LEARNING_ADI,
+          {
+            sessionId: summary.sessionId,
+            subject: summary.subject || subjectName,
+            topic: summary.topic || topicName,
+            ...serializeAdi(endAdi),
+            phase: "session_end",
+          },
+          { studentId, sessionId: summary.sessionId }
+        )
+      );
+    }
+    await submitLearningEvents(endEvents);
 
     await flushEventQueue();
     trackerRef.current = null;
@@ -2327,6 +2712,10 @@ export function useStudentLearning({
     challengeMode,
     subjectName,
     topicName,
+    lessonGoals,
+    lastSignals,
+    struggleSnapshot,
+    activeMisconceptionHits,
   ]);
 
   useEffect(() => {
@@ -2425,6 +2814,12 @@ export function useStudentLearning({
   return {
     profile,
     insights,
+    /** Epic L1 — multi-slice learner snapshot (pulse + policy) */
+    learnerState,
+    /** Epic L3 — Assistance Dependency Index */
+    adi: adiResult,
+    /** Epic L2 — pedagogical decision for current context */
+    pedagogyDecision,
     lastSignals,
     sessionSummary,
     intervention,

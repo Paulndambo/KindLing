@@ -17,6 +17,7 @@ class JobRegistryTests(TestCase):
         self.assertIn("weekly_digest", jobs)
         self.assertIn("mastery_recompute", jobs)
         self.assertIn("review_schedule", jobs)
+        self.assertIn("weekly_eval_sample", jobs)
 
     def test_schedule_from_settings(self):
         sched = effective_schedule("heartbeat")
@@ -38,6 +39,12 @@ class JobRunnerTests(TestCase):
         self.assertEqual(run.status, JobRun.Status.SUCCESS)
         self.assertTrue(run.result.get("dry_run"))
         self.assertEqual(run.result.get("emails_sent"), 0)
+
+    def test_weekly_eval_sample_dry_run(self):
+        run = run_job("weekly_eval_sample", dry_run=True, trigger="test")
+        self.assertEqual(run.status, JobRun.Status.SUCCESS)
+        self.assertTrue(run.result.get("dry_run"))
+        self.assertEqual(run.result.get("job"), "weekly_eval_sample")
 
     def test_unknown_job_raises(self):
         with self.assertRaises(ValueError):

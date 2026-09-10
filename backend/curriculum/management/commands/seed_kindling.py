@@ -11,13 +11,9 @@ from django.core.management.base import BaseCommand
 from curriculum.models import (
     Skill,
     SkillPrerequisite,
-    Subject,
-    Topic,
     TopicSkillLink,
 )
 from curriculum.pilot_graph import (
-    PILOT_COLOR,
-    PILOT_ICON,
     PILOT_SUBJECT,
     PILOT_TOPIC_ORDER,
     PREREQS,
@@ -32,36 +28,6 @@ User = get_user_model()
 
 DEMO_EMAIL = "student@kindling.edu"
 DEMO_PASSWORD = "kindling-demo"
-
-DEFAULT_SUBJECTS = [
-    {
-        "name": PILOT_SUBJECT,
-        "icon": PILOT_ICON,
-        "color": PILOT_COLOR,
-        "topics": PILOT_TOPIC_ORDER,
-    },
-    {
-        "name": "Software Development Level 1",
-        "icon": "code",
-        "color": "#E8F4F8",
-        "topics": [
-            "Introduction to programming",
-            "Data structures",
-            "Algorithms",
-        ],
-    },
-    {
-        "name": "Software Development Level 2",
-        "icon": "code",
-        "color": "#E8F4F8",
-        "topics": [
-            "Software development",
-            "Web development",
-            "Databases",
-        ],
-    },
-]
-
 
 class Command(BaseCommand):
     help = "Seed Kindling demo student, pilot skill graph, and default subjects."
@@ -87,17 +53,18 @@ class Command(BaseCommand):
             user=user,
             defaults={
                 "name": "Maya",
-                "grade": "5th Grade",
+                "grade": "High School (9–10)",
                 "avatar": "sparkles",
-                "country": "United States",
-                "country_flag": "🇺🇸",
-                "school_name": "Lincoln Elementary",
+                "country": "Kenya",
+                "country_flag": "🇰🇪",
+                "school_name": "Kindling Demo Academy",
                 "school_type": "Public / State School",
-                "curriculum": "US Common Core & State Standards",
-                "academic_target": "Honors / Advanced Placement",
-                "learning_style": "visual",
-                "interests": ["🚀 Space & Astronomy", "🎨 Art & Drawing"],
-                "goal": "Get ahead with extra challenge",
+                "curriculum": "Custom / Other Curriculum",
+                "academic_target": "Course pass / solid understanding",
+                "learning_style": "logic",
+                "interests": ["💻 Coding", "🎮 Games", "🚀 Space & Astronomy"],
+                "focus_subjects": [PILOT_SUBJECT],
+                "goal": "Learn computer science from the ground up",
                 "is_onboarded": True,
                 # Epic A5 — demo family digests on by default
                 "digest_opt_in": True,
@@ -131,14 +98,15 @@ class Command(BaseCommand):
             },
         )
         if p_created:
+            first_topic = PILOT_TOPIC_ORDER[0] if PILOT_TOPIC_ORDER else "Understanding technology"
             TopicMastery.objects.create(
                 profile=profile,
                 subject=PILOT_SUBJECT,
-                topic="Fraction sense",
-                topic_key=f"{PILOT_SUBJECT}::Fraction sense",
-                score=58,
-                attempts=4,
-                correct=2,
+                topic=first_topic,
+                topic_key=f"{PILOT_SUBJECT}::{first_topic}",
+                score=48,
+                attempts=3,
+                correct=1,
                 incorrect=1,
             )
             self.stdout.write(self.style.SUCCESS("Created learning profile"))
@@ -154,7 +122,8 @@ class Command(BaseCommand):
                 f"  email:    {DEMO_EMAIL}\n"
                 f"  password: {DEMO_PASSWORD}\n"
                 "  or POST /api/auth/demo/\n"
-                f"  Pilot subject: {PILOT_SUBJECT} (fractions → early algebra skill graph)\n"
+                f"  Pilot subject: {PILOT_SUBJECT} "
+                f"({len(PILOT_TOPIC_ORDER)} lessons in topic units · CS graph L0+)\n"
                 "  Family digests: opt-in on (Dashboard → Family digest)"
             )
         )
@@ -219,47 +188,21 @@ class Command(BaseCommand):
         )
 
     def _ensure_subjects(self, student):
-        existing_names = set(student.subjects.values_list("name", flat=True))
-        # Always ensure Math Foundations pilot subject exists
-        for i, subj in enumerate(DEFAULT_SUBJECTS):
-            if subj["name"] in existing_names:
-                # Ensure pilot topics present
-                if subj["name"] == PILOT_SUBJECT:
-                    subject = student.subjects.filter(name=PILOT_SUBJECT).first()
-                    if subject:
-                        have = set(subject.topics.values_list("name", flat=True))
-                        for j, topic_name in enumerate(subj["topics"]):
-                            if topic_name not in have:
-                                Topic.objects.create(
-                                    subject=subject,
-                                    name=topic_name,
-                                    sort_order=j,
-                                    familiarity=Topic.Familiarity.BEGINNER,
-                                    learning_goal=(
-                                        f"Build a clear foundation in {topic_name}."
-                                    ),
-                                )
-                continue
-            subject = Subject.objects.create(
-                student=student,
-                name=subj["name"],
-                icon=subj["icon"],
-                color=subj["color"],
-                sort_order=i,
-                learning_goal=subj.get(
-                    "learning_goal",
-                    f"Grow steadily in {subj['name']} with Kindling.",
-                ),
-            )
-            for j, topic_name in enumerate(subj["topics"]):
-                Topic.objects.create(
-                    subject=subject,
-                    name=topic_name,
-                    sort_order=j,
-                    familiarity=Topic.Familiarity.BEGINNER,
-                    learning_goal=f"Build a clear foundation in {topic_name}.",
+        from curriculum.cs_provision import ensure_computer_science_subject
+
+        ensure_computer_science_subject(student)
+        self.stdout.write(self.style.SUCCESS(f"Ensured subject {PILOT_SUBJECT}"))
+
+        # Multi-subject off: remove legacy demo subjects that are not CS
+        extras = student.subjects.exclude(name=PILOT_SUBJECT)
+        if extras.exists():
+            n = extras.count()
+            extras.delete()
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Removed {n} non-pilot subject(s); sole subject is {PILOT_SUBJECT}."
                 )
-            self.stdout.write(self.style.SUCCESS(f"Created subject {subj['name']}"))
+            )
 
         if not student.subjects.exists():
             self.stdout.write(self.style.WARNING("No subjects created."))
@@ -408,10 +351,11 @@ class Command(BaseCommand):
         now = timezone.now()
         seeds = {
             # slug: p, state, attempts, correct, incorrect, consecutive_incorrect, last_days_ago
-            "frac.parts_of_whole": (0.78, "mastered", 5, 4, 1, 0, 10),
-            "frac.numerator_denominator": (0.62, "learning", 4, 2, 1, 0, 5),
-            "frac.number_line": (0.35, "learning", 4, 1, 3, 2, 1),
-            "frac.equivalent": (0.28, "learning", 3, 0, 3, 2, 2),
+            "cs.l0.tech_basics": (0.82, "mastered", 5, 4, 1, 0, 12),
+            "cs.l0.what_is_computer": (0.7, "learning", 4, 3, 1, 0, 6),
+            "cs.l0.hardware": (0.42, "learning", 4, 1, 2, 1, 2),
+            "cs.l0.software": (0.38, "learning", 3, 1, 2, 1, 1),
+            "cs.l1.problem_solving": (0.3, "learning", 3, 1, 2, 2, 1),
         }
         for slug, (p, state, attempts, correct, incorrect, cinc, days_ago) in seeds.items():
             skill = Skill.objects.filter(slug=slug).first()

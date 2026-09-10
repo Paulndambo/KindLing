@@ -131,6 +131,17 @@ export {
   listLocalWorkedExamples,
 } from "./workedExamples";
 export {
+  LOCAL_PRACTICAL_GUIDES,
+  isPracticalSkillTopic,
+  findPracticalGuide,
+  listPracticalGuides,
+  formatPracticalGuideForPrompt,
+  buildPracticalHowToPromptBlock,
+  practicalHowToDirectives,
+  practicalHowToSuggestionPool,
+  buildPracticalOpeningAddendum,
+} from "./practicalGuides";
+export {
   loadMisconceptionCatalog,
   clearMisconceptionCache,
   detectMisconceptions as detectMisconceptionsCatalog,
@@ -162,6 +173,37 @@ export {
   getMultiStepProblem,
 } from "./multiStepProblems";
 export {
+  ASSESSMENT_QUESTIONS,
+  questionsForTopic as assessmentQuestionsForTopic,
+  getAssessmentQuestion,
+  skillSlugsForLessonTopic,
+} from "./assessmentBank";
+export {
+  ASSESSMENT_DEFAULT_COUNT,
+  AssessmentPhase,
+  createAssessmentSession,
+  currentQuestion as assessmentCurrentQuestion,
+  applyAssessmentAnswer,
+  advanceAssessment,
+  exitAssessment as exitAssessmentSession,
+  scoreAssessment,
+  assessmentToCorrectness,
+  assessmentProgressLabel,
+  assessmentCelebrationCopy,
+  buildAssessmentOfferCard,
+  shouldOfferAssessment,
+} from "./assessmentEngine";
+export {
+  SUGGEST_MIN,
+  SUGGEST_MAX,
+  stripSuggestTags,
+  extractTutorSuggestions,
+  buildFallbackSuggestions,
+  resolveTutorSuggestions,
+  buildSuggestPromptBlock,
+  buildRealWorldExamplePromptBlock,
+} from "./tutorSuggestions";
+export {
   submitLearningEvents,
   flushEventQueue,
   createLearningEvent,
@@ -169,6 +211,72 @@ export {
   subscribeLearningQueue,
   isLearningRemoteEnabled,
 } from "./analyticsApi";
+/** Epic L1 — structured learner snapshot for pulse / policy / events */
+export {
+  LEARNER_STATE_VERSION,
+  emptyLearnerState,
+  buildLearnerState,
+  buildLearnerStateSummary,
+  learnerStateDirectives,
+  serializeLearnerState,
+  calibrateConfidenceCompetence,
+  engagementLabelFromLevel,
+  assistanceLabelFromLevel,
+  affectDisplayLabel,
+  correctnessPulse,
+} from "./learnerState";
+/** Epic L3 — Assistance Dependency Index */
+export {
+  ADI_VERSION,
+  ADI_WINDOW,
+  ADI_MIN_SAMPLES,
+  assistanceWeightForTurn,
+  adiBand,
+  adiIndependenceCopy,
+  adiTrendFromWeights,
+  computeAdi,
+  computeAdiFromContext,
+  shouldPreferLighterHelp,
+  applyAdiLadderPreference,
+  turnsFromSessionSnapshot,
+  syntheticTurnsFromProfile,
+  serializeAdi,
+  adiDirectives,
+} from "./adi";
+/** Epic L2 — Pedagogical policy engine */
+export {
+  PEDAGOGY_POLICY_VERSION,
+  PedagogicalAction,
+  PEDAGOGICAL_ACTIONS,
+  ACTION_META,
+  decidePedagogy,
+  findWeakPrerequisite,
+  buildPedagogyPromptBlock,
+  pedagogyDirectives,
+  serializePedagogyDecision,
+  rankNextBestActions,
+  actionFromLadderLevel,
+  executionBriefForAction,
+  pedagogyActionFromStruggleReason,
+} from "./pedagogicalPolicy";
+/** Epic L4 — independence / transfer twins */
+export {
+  INDEPENDENCE_CHECK_VERSION,
+  HEAVY_HELP_MIN_LEVEL,
+  IndependencePhase,
+  shouldOfferIndependenceTwin,
+  buildIndependenceOfferCard,
+  pickIndependenceTwinQuestion,
+  createIndependenceSession,
+  applyIndependenceAnswer,
+  completeIndependenceAfterExplain,
+  declineIndependenceOffer,
+  skipIndependenceSession,
+  independenceCelebrationCopy,
+  independenceRate,
+  preferTransferForLadder,
+  getIndependenceQuestion,
+} from "./independenceCheck";
 export { createSessionTracker, newSessionId } from "./sessionTracker";
 export {
   evaluateInterventionTrigger,

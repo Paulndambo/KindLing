@@ -171,8 +171,8 @@ Items marked ✅ are **shipped in Wave 1** (see [`PLAN.md`](./PLAN.md) Phases 0.
 6. **Multi-step problem solving** ✅  
    Show-your-work mode with intermediate checks (A3 verifier), partial credit, and step-list UI (pilot: adding unlike fractions, one-step equations).
 
-7. **Assessment modes** ⬜ Wave 2 · **C6**  
-   Low-stakes quizzes, end-of-topic checks, and optional timed practice separate from open chat.
+7. **Assessment modes** ✅ (v1) Wave 2 · **C6**  
+   Low-stakes offline-first MCQ quick checks (one question at a time) with tutor explanation after every answer for revision; end-of-topic / readiness offer; results feed mastery. Optional timed flag reserved.
 
 8. **Teacher/tutor playbooks** ⬜ Wave 2 · **C7**  
    Domain packs (early math, algebra, writing, coding) with proven scaffolds Kindling follows consistently; second thin pack if sessions leave math.
@@ -256,8 +256,11 @@ Items marked ✅ are **shipped in Wave 1** (see [`PLAN.md`](./PLAN.md) Phases 0.
 4. **Privacy by design** ✅ baseline / ⬜ deepen  
    Export/delete + safety doc today; retention UX + regional hosting = Phase 5.
 
-5. **Eval harness** ⬜ Wave 2 · **C8**  
-   Automated tutoring quality scores (hint quality, socratic fidelity, intervention timing).
+5. **Eval harness** ✅ v1 Wave 2 · **C8**  
+   Manual rubric · offline auto scorer · weekly job — `docs/EVAL_RUBRIC_C8.md`.
+
+6. **Independence / transfer twins** ✅ · **L4**  
+   No-scaffold check after heavy ladder help; `transfer` bank items; `independence.*` events.
 
 ### 3.7 Product experience
 
@@ -359,4 +362,4 @@ Whatever is built next, these should stay non-negotiable:
 
 ---
 
-*Last updated: 2026-09-01 — single-seat commercial lock; Wave 1 vs Wave 2 aligned with monorepo + `PLAN.md` §15–16.*
+*Last updated: 2026-09-09 — single-seat commercial lock; Wave 1 vs Wave 2 aligned with monorepo + `PLAN.md` §15–16. Expert review gaps tracked in [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*

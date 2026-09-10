@@ -23,7 +23,12 @@ export {
   deleteSubject,
   createTopic,
   deleteTopic,
+  createSubtopic,
+  deleteSubtopic,
   normalizeSubject,
+  normalizeTopic,
+  normalizeSubtopic,
+  flattenSubjectLessons,
 } from "./subjects";
 export {
   getDashboard,

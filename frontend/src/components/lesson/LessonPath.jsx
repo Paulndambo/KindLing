@@ -1,4 +1,4 @@
-import { Check, PanelLeftClose, Sparkles, Lock } from "lucide-react";
+import { Check, PanelLeftClose, Sparkles, Lock, ChevronDown } from "lucide-react";
 import {
   buildLocalSkillPath,
   topicSkillScore,
@@ -11,7 +11,7 @@ import GoalsChip from "./GoalsChip";
 function SkillSparkBar({ skills = [] }) {
   if (!skills.length) return null;
   return (
-    <div className="skill-spark-row" aria-label="Skills for this topic">
+    <div className="skill-spark-row" aria-label="Skills for this lesson">
       {skills
         .filter((s) => s.isPrimary)
         .map((s) => {
@@ -39,31 +39,51 @@ function SkillSparkBar({ skills = [] }) {
   );
 }
 
-function topicNameOf(entry) {
+function nameOf(entry) {
   if (typeof entry === "string") return entry;
   return entry?.name || "";
 }
 
+/**
+ * Lesson path: Subject → Topic (unit) switcher + Subtopics of the active unit.
+ */
 export default function LessonPath({
   subjectName,
-  topics,
-  activeTopicIdx,
-  onSelectTopic,
+  /** Parent topics (units) with nested subtopics */
+  units = [],
+  activeUnitIdx = 0,
+  onSelectUnit,
+  /** Subtopics of the active unit (lesson leaves) */
+  subtopics = [],
+  activeSubtopicIdx = 0,
+  onSelectSubtopic,
   student,
   onCollapse,
   learningProfile = null,
   activeSkillPath = null,
   recommendedNext = null,
-  /** Epic C5 — resolved goals for the active topic */
   lessonGoals = null,
 }) {
   const studentName = student?.name?.trim() || "Student";
+  const activeUnit = units[activeUnitIdx] || null;
+  const unitName = nameOf(activeUnit) || "Topic";
+  const unitCount = units.length;
+
+  const lessonCount = subtopics.length;
+  const progressLabel =
+    lessonCount > 0
+      ? `Lesson ${Math.min(activeSubtopicIdx + 1, lessonCount)} of ${lessonCount}`
+      : null;
 
   return (
     <aside className="lesson-side" aria-label="Lesson path">
-      <div>
+      {/* Top: fixed chrome (does not scroll over lessons) */}
+      <div className="lesson-side-top">
         <div className="lesson-side-header">
-          <h4>Lesson path — {subjectName}</h4>
+          <div className="lesson-side-titles">
+            <p className="lesson-side-eyebrow">Lesson path</p>
+            <h4 title={subjectName}>{subjectName}</h4>
+          </div>
           {onCollapse && (
             <button
               type="button"
@@ -77,9 +97,43 @@ export default function LessonPath({
           )}
         </div>
 
+        {unitCount > 0 && (
+          <div className="lesson-unit-switcher">
+            <label className="lesson-unit-label" htmlFor="lesson-unit-select">
+              Topic
+              {unitCount > 1 ? (
+                <span className="lesson-unit-meta">
+                  {activeUnitIdx + 1} / {unitCount}
+                </span>
+              ) : null}
+            </label>
+            <div className="lesson-unit-select-wrap">
+              <select
+                id="lesson-unit-select"
+                className="lesson-unit-select"
+                value={String(activeUnitIdx)}
+                onChange={(e) => onSelectUnit?.(Number(e.target.value))}
+                aria-label="Switch topic unit"
+              >
+                {units.map((u, i) => (
+                  <option key={u.id || nameOf(u) || i} value={i}>
+                    {nameOf(u)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="lesson-unit-chevron" aria-hidden />
+            </div>
+            {activeUnit?.learningGoal ? (
+              <p className="lesson-unit-goal" title={activeUnit.learningGoal}>
+                {truncateGoal(activeUnit.learningGoal, 140)}
+              </p>
+            ) : null}
+          </div>
+        )}
+
         {lessonGoals && (lessonGoals.hasLessonGoal || lessonGoals.weekFocus) && (
           <div className="lesson-path-goals">
-            <GoalsChip goals={lessonGoals} compact />
+            <GoalsChip goals={lessonGoals} compact className="on-dark" />
           </div>
         )}
 
@@ -97,22 +151,33 @@ export default function LessonPath({
             <SkillSparkBar skills={activeSkillPath.skills} />
             {recommendedNext && (
               <p className="skill-path-next">
-                Next spark: <strong>{recommendedNext.shortLabel || recommendedNext.name}</strong>
+                Next spark:{" "}
+                <strong>
+                  {recommendedNext.shortLabel || recommendedNext.name}
+                </strong>
               </p>
             )}
           </div>
         )}
+      </div>
 
-        <div
-          style={{
-            marginTop: 14,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          {topics.map((entry, i) => {
-            const t = topicNameOf(entry);
+      {/* Middle: independently scrollable lesson list */}
+      <div className="lesson-subtopic-section">
+        <div className="lesson-subtopic-section-head">
+          <div className="lesson-subtopic-heading-row">
+            <p className="lesson-subtopic-heading">Lessons</p>
+            {progressLabel ? (
+              <span className="lesson-subtopic-progress">{progressLabel}</span>
+            ) : null}
+          </div>
+          <p className="lesson-subtopic-unit" title={unitName}>
+            in {unitName}
+          </p>
+        </div>
+
+        <div className="lesson-subtopic-list" role="list">
+          {subtopics.map((entry, i) => {
+            const t = nameOf(entry);
             const recGoal =
               typeof entry === "object"
                 ? entry?.learningGoal || entry?.learning_goal || ""
@@ -120,19 +185,21 @@ export default function LessonPath({
             const recFam =
               typeof entry === "object" ? entry?.familiarity || "" : "";
             const status =
-              i < activeTopicIdx
+              i < activeSubtopicIdx
                 ? "done-topic"
-                : i === activeTopicIdx
+                : i === activeSubtopicIdx
                   ? "active-topic"
                   : "todo-topic";
             const path = buildLocalSkillPath(learningProfile, subjectName, t);
             const score = topicSkillScore(learningProfile, t);
             const locked =
-              path.hasGraph && path.topicState === STATE.LOCKED && i !== activeTopicIdx;
+              path.hasGraph &&
+              path.topicState === STATE.LOCKED &&
+              i !== activeSubtopicIdx;
 
             const titleBits = [
-              i === activeTopicIdx
-                ? "Current topic"
+              i === activeSubtopicIdx
+                ? "Current lesson"
                 : locked
                   ? `Growing roots — warm up prereqs before ${t}`
                   : score != null
@@ -144,71 +211,77 @@ export default function LessonPath({
 
             return (
               <button
-                key={t || i}
-                disabled={i === activeTopicIdx}
+                key={entry?.id || t || i}
+                type="button"
+                role="listitem"
+                disabled={i === activeSubtopicIdx}
                 className={`topic-node-row ${status}${locked ? " topic-locked" : ""}`}
                 title={titleBits.join(" · ")}
-                onClick={() => onSelectTopic(i)}
+                onClick={() => onSelectSubtopic?.(i)}
               >
+                <span className="topic-node-index" aria-hidden>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    background:
-                      i < activeTopicIdx
-                        ? "var(--marigold)"
-                        : i === activeTopicIdx
-                          ? "var(--teal)"
-                          : "transparent",
-                    border:
-                      i >= activeTopicIdx
-                        ? i === activeTopicIdx
-                          ? "none"
-                          : "1.5px solid rgba(246,242,233,.35)"
-                        : "none",
-                    boxShadow:
-                      i === activeTopicIdx
-                        ? "0 0 0 4px rgba(62,138,143,.3)"
-                        : "none",
-                  }}
+                  className={`topic-node-dot${
+                    i < activeSubtopicIdx
+                      ? " is-done"
+                      : i === activeSubtopicIdx
+                        ? " is-active"
+                        : " is-todo"
+                  }`}
+                  aria-hidden
                 />
-                <span style={{ flex: 1, textAlign: "left" }}>
-                  {t}
+                <span className="topic-node-text">
+                  <span className="topic-node-name">{t}</span>
                   {score != null && (
                     <span className="topic-skill-pct">{score}%</span>
                   )}
                 </span>
-                {locked && <Lock size={11} opacity={0.7} />}
-                {i < activeTopicIdx && !locked && (
-                  <Check size={11} color="#E4A32A" />
+                {locked && (
+                  <Lock size={12} className="topic-node-status-icon" aria-hidden />
+                )}
+                {i < activeSubtopicIdx && !locked && (
+                  <Check
+                    size={13}
+                    className="topic-node-status-icon is-check"
+                    aria-hidden
+                  />
                 )}
               </button>
             );
           })}
+          {subtopics.length === 0 && (
+            <p className="lesson-subtopic-empty">
+              No lessons in this topic yet.
+            </p>
+          )}
         </div>
       </div>
 
+      {/* Bottom: pinned footer — never covers the scrollable list */}
       <details className="session-info-details">
         <summary>About this session</summary>
         <div className="session-info">
-          <b>Student</b>
-          {studentName}
-          {student?.grade ? ` (${student.grade})` : ""}
-          <br />
-          <span style={{ fontSize: 11, opacity: 0.8 }}>
-            {student?.countryFlag ? `${student.countryFlag} ` : ""}
-            {student?.schoolName || "—"}
-          </span>
-        </div>
-        <div className="session-info">
-          <b>Curriculum</b>
-          {student?.curriculum || "—"}
-        </div>
-        <div className="session-info">
-          <b>Tutor</b>
-          Kindling · adaptive
+          <div className="session-info-row">
+            <b>Student</b>
+            <span>
+              {studentName}
+              {student?.grade ? ` (${student.grade})` : ""}
+            </span>
+          </div>
+          <div className="session-info-row">
+            <b>Subject</b>
+            <span>{subjectName}</span>
+          </div>
+          <div className="session-info-row">
+            <b>Topic</b>
+            <span>{unitName}</span>
+          </div>
+          <div className="session-info-row">
+            <b>Lesson</b>
+            <span>{nameOf(subtopics[activeSubtopicIdx]) || "—"}</span>
+          </div>
         </div>
       </details>
     </aside>

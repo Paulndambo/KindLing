@@ -74,16 +74,64 @@ class Topic(models.Model):
         return f"{self.name} · {self.subject.name}"
 
 
+class Subtopic(models.Model):
+    """
+    A lesson unit within a topic (Subject → Topic → Subtopic).
+
+    The live lesson path lists subtopics of the active topic so learners
+    switch nearby lessons without scanning the whole subject.
+    """
+
+    topic = models.ForeignKey(
+        Topic,
+        on_delete=models.CASCADE,
+        related_name="subtopics",
+    )
+    name = models.CharField(max_length=200)
+    sort_order = models.PositiveIntegerField(default=0)
+    familiarity = models.CharField(
+        max_length=20,
+        choices=Topic.Familiarity.choices,
+        default=Topic.Familiarity.NEW,
+        blank=True,
+        db_index=True,
+    )
+    learning_goal = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        indexes = [
+            models.Index(fields=["topic", "sort_order"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} · {self.topic.name}"
+
+
 class Skill(models.Model):
     """
     Fine-grained knowledge component in the Kindling skill graph (Epic A1).
 
-    Global catalog (not per-student). Pilot domains: fractions, early_algebra.
+    Global catalog (not per-student). Pilot domains: computer science layers.
     """
 
     class Domain(models.TextChoices):
         FRACTIONS = "fractions", "Fractions"
         EARLY_ALGEBRA = "early_algebra", "Early algebra"
+        CS_LITERACY = "cs_literacy", "CS literacy"
+        COMP_THINKING = "comp_thinking", "Computational thinking"
+        CS_FOUNDATIONS = "cs_foundations", "CS foundations"
+        PROGRAMMING = "programming", "Programming"
+        ALGORITHMS = "algorithms", "Algorithms"
+        MATH_FOR_CS = "math_for_cs", "Math for CS"
+        SYSTEMS = "systems", "Systems"
+        SOFTWARE_ENG = "software_eng", "Software engineering"
+        DATA_SYSTEMS = "data_systems", "Data systems"
+        NETWORKS = "networks", "Networks"
+        WEB_CLOUD = "web_cloud", "Web & cloud"
+        AI_DS = "ai_ds", "AI & data science"
         GENERAL = "general", "General"
 
     slug = models.SlugField(max_length=80, unique=True)

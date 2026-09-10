@@ -1,17 +1,17 @@
 export const WEEK_STATS = {
   this: {
-    sessions: { value: "4", cap: "3 math · 1 reading" },
+    sessions: { value: "4", cap: "4 computer science" },
     time: { value: "1h 42m", cap: "Avg. 25 min per session" },
     streak: { value: "6 days", cap: "Best this month" },
-    focus: { value: "Fractions", cap: "Comparing · unlike denominators" },
+    focus: { value: "Hardware & software", cap: "What is a computer · components" },
     masteryDelta: "+12%",
     questions: "38",
   },
   last: {
-    sessions: { value: "3", cap: "2 math · 1 writing" },
+    sessions: { value: "3", cap: "3 computer science" },
     time: { value: "1h 10m", cap: "Avg. 23 min per session" },
     streak: { value: "4 days", cap: "Solid start" },
-    focus: { value: "Equal shares", cap: "Visual models · parts of a whole" },
+    focus: { value: "Tech basics", cap: "Digital literacy · everyday computers" },
     masteryDelta: "+8%",
     questions: "27",
   },
@@ -19,24 +19,24 @@ export const WEEK_STATS = {
 
 export const MASTERY_MAP = [
   {
-    subject: "Math",
-    skill: "Comparing fractions",
+    subject: "Computer Science",
+    skill: "What is a computer?",
     level: 62,
     segs: ["on", "on", "on", "now", "", ""],
     status: "In progress",
   },
   {
-    subject: "Reading",
-    skill: "Inference & theme",
-    level: 78,
-    segs: ["on", "on", "on", "on", "now", ""],
-    status: "Strong",
+    subject: "Computer Science",
+    skill: "Computer hardware",
+    level: 48,
+    segs: ["on", "on", "now", "", "", ""],
+    status: "Building",
   },
   {
-    subject: "Writing",
-    skill: "Paragraph structure",
-    level: 45,
-    segs: ["on", "on", "now", "", "", ""],
+    subject: "Computer Science",
+    skill: "Problem solving",
+    level: 35,
+    segs: ["on", "now", "", "", "", ""],
     status: "Building",
   },
 ];

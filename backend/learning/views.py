@@ -88,10 +88,25 @@ class LearningProfileView(APIView):
         profile = get_or_create_profile(student, client_id)
         subject = request.query_params.get("subject", "")
         topic = request.query_params.get("topic", "")
+        unit = request.query_params.get("unit", "")
+        profile_dict = profile_to_api_dict(profile)
+        # Epic L1 — structured multi-slice snapshot (mirrors FE buildLearnerState)
+        from learning.learner_state import build_learner_state_from_profile
+
+        learner_state = build_learner_state_from_profile(
+            profile_dict,
+            student_id=client_id
+            or profile_dict.get("studentId")
+            or "",
+            subject=subject,
+            topic=topic,
+            unit=unit,
+        )
         return Response(
             {
-                "profile": profile_to_api_dict(profile),
+                "profile": profile_dict,
                 "insights": build_personalization_insights(profile, subject, topic),
+                "learnerState": learner_state,
             }
         )
 

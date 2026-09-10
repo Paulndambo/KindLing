@@ -6,6 +6,7 @@ from .models import (
     LearningEvent,
     LearningProfile,
     LessonSession,
+    ManualSessionEval,
     Misconception,
     ParentDigest,
     SessionTurn,
@@ -51,6 +52,23 @@ class LessonSessionAdmin(admin.ModelAdmin):
     list_filter = ("subject",)
     search_fields = ("session_id", "subject", "topic")
     inlines = [SessionTurnInline]
+
+
+@admin.register(ManualSessionEval)
+class ManualSessionEvalAdmin(admin.ModelAdmin):
+    """Epic C8.3 — manual rubric scores (beta bridge)."""
+
+    list_display = (
+        "client_session_key",
+        "cohort",
+        "weighted_mean",
+        "completeness",
+        "scorer",
+        "scored_at",
+    )
+    list_filter = ("cohort", "rubric_version")
+    search_fields = ("client_session_key", "scorer", "overall_notes")
+    readonly_fields = ("created_at", "updated_at", "weighted_mean", "completeness")
 
 
 class TopicMasteryInline(admin.TabularInline):

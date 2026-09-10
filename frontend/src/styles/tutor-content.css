@@ -435,7 +435,7 @@
   background: transparent;
 }
 
-/* Message stack (bubble + read-aloud) — full chat width */
+/* Message stack (bubble + read-aloud + chips) — full chat width */
 .tutor-msg-stack {
   align-self: stretch;
   width: 100%;
@@ -444,6 +444,78 @@
   flex-direction: column;
   gap: 0;
   box-sizing: border-box;
+}
+
+/* Supportive one-tap follow-ups (3–5 chips) */
+.tutor-suggest-wrap {
+  margin: 8px 2px 4px;
+  padding: 0 2px;
+}
+
+.tutor-suggest-label {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #5a6b66);
+}
+
+.tutor-suggest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Same gold as nav "Start a lesson" (.cta-btn).
+   Beat `.kdl button { background: none }` with higher specificity + !important. */
+.kdl .tutor-suggest-chip,
+.tutor-suggest-chip {
+  appearance: none;
+  border: none;
+  background: #e4a32a !important;
+  color: #1f3a34 !important;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+  box-shadow: 0 2px 0 rgba(31, 58, 52, 0.15);
+}
+
+.kdl .tutor-suggest-chip:hover:not(:disabled),
+.tutor-suggest-chip:hover:not(:disabled) {
+  background: #f3c868 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 rgba(31, 58, 52, 0.12);
+}
+
+.kdl .tutor-suggest-chip:focus-visible,
+.tutor-suggest-chip:focus-visible {
+  outline: 2px solid rgba(228, 163, 42, 0.65);
+  outline-offset: 2px;
+}
+
+.kdl .tutor-suggest-chip:disabled,
+.tutor-suggest-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .tutor-suggest-chip {
+    font-size: 12px;
+    padding: 9px 12px;
+  }
 }
 
 /* Child messages stay plain; allow soft wrapping only */

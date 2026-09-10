@@ -2,6 +2,7 @@
 Canonical plan catalog shared by serializers and views.
 
 Mirrors frontend/src/constants/subscription.js — keep keys aligned.
+Commercial thesis: MONEY.md — algorithm rent + token envelope / BYOK.
 """
 
 from __future__ import annotations
@@ -14,15 +15,16 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
     PlanId.SPARK: {
         "id": PlanId.SPARK,
         "name": "Spark",
-        "tagline": "Start learning with Kindling's tutor",
+        "tagline": "30-day trial of Kindling's adaptive tutor",
         "priceMonthly": 0,
         "priceYearly": 0,
         "highlight": False,
+        "trialDays": 30,
         "features": [
-            "Live adaptive lessons",
+            "Full teaching system for 30 days",
+            "Live adaptive lessons (capped platform AI)",
             "Student dashboard & mastery pulse",
-            "Platform AI (Gemini) when configured",
-            "Optional personal API keys (BYOK)",
+            "Then choose Forge or Ember to continue",
         ],
         "entitlements": {
             "platformAi": True,
@@ -31,46 +33,44 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
             "advancedRouting": False,
             "familyDigest": False,
             "prioritySupport": False,
-            "dailyLessonSoftCap": 20,
-        },
-    },
-    PlanId.EMBER: {
-        "id": PlanId.EMBER,
-        "name": "Ember",
-        "tagline": "Daily tutoring for one learner",
-        "priceMonthly": 19,
-        "priceYearly": 190,
-        "highlight": True,
-        "features": [
-            "Everything in Spark",
-            "Generous daily lessons on platform AI",
-            "Homework photo help",
-            "Priority session continuity",
-            "Optional weekly progress note to a guardian email",
-        ],
-        "entitlements": {
-            "platformAi": True,
-            "byok": True,
-            "multiProvider": True,
-            "advancedRouting": False,
-            "familyDigest": True,
-            "prioritySupport": False,
-            "dailyLessonSoftCap": None,
+            "dailyLessonSoftCap": 4,
         },
     },
     PlanId.FORGE: {
         "id": PlanId.FORGE,
         "name": "Forge",
-        "tagline": "Builder mode — bring your own AI keys",
-        "priceMonthly": 9,
-        "priceYearly": 90,
+        "tagline": "Rent the algorithm — bring your own AI keys",
+        "priceMonthly": 30,
+        "priceYearly": 300,
         "highlight": False,
         "features": [
-            "Everything in Ember",
-            "Full multi-provider BYOK (Gemini, OpenAI, Anthropic, Groq, OpenRouter)",
-            "Per-task model routing (chat / vision / TTS)",
-            "Hot-switch providers without restarting lessons",
-            "Designed for power users & pilots",
+            "Kindling teaching system (algorithm rent)",
+            "You pay AI tokens via your own keys (BYOK)",
+            "Multi-provider routing (Gemini, OpenAI, Anthropic, Groq, OpenRouter)",
+            "Per-task model routing · homework photo · digests",
+        ],
+        "entitlements": {
+            "platformAi": False,
+            "byok": True,
+            "multiProvider": True,
+            "advancedRouting": True,
+            "familyDigest": True,
+            "prioritySupport": False,
+            "dailyLessonSoftCap": None,
+        },
+    },
+    PlanId.EMBER: {
+        "id": PlanId.EMBER,
+        "name": "Ember",
+        "tagline": "Nightly tutoring with platform AI included",
+        "priceMonthly": 99,
+        "priceYearly": 990,
+        "highlight": True,
+        "features": [
+            "Everything in the teaching system",
+            "Platform AI tokens included (monthly envelope)",
+            "Homework photo help · guardian digests",
+            "BYOK optional · priority support",
         ],
         "entitlements": {
             "platformAi": True,

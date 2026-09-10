@@ -9,9 +9,12 @@ import { useChatSession } from "../../hooks/useChatSession";
 import { useStudentLearning } from "../../hooks/useStudentLearning";
 import { useConnectivity } from "../../hooks/useConnectivity";
 import { useMultiStep } from "../../hooks/useMultiStep";
+import { useAssessment } from "../../hooks/useAssessment";
+import { useIndependenceCheck } from "../../hooks/useIndependenceCheck";
 import {
   buildLocalSkillPath,
 } from "../../services/learning/skillGraph";
+import { skillSlugsForLessonTopic } from "../../services/learning/assessmentBank";
 import {
   resolveLessonGoals,
   goalsToTopicContext,
@@ -42,10 +45,16 @@ import LessonTools from "./LessonTools";
 import ConversationJournal from "./ConversationJournal";
 import ManipulativePanel from "./manipulatives/ManipulativePanel";
 import MultiStepPanel from "./MultiStepPanel";
+import AssessmentPanel, {
+  AssessmentOfferCard,
+} from "./AssessmentPanel";
+import IndependencePanel, {
+  IndependenceOfferCard,
+} from "./IndependencePanel";
 import "../../styles/lesson.css";
 
 export default function Lesson({ activeLesson, student, subjects }) {
-  const subjectName = activeLesson?.subject || "Math";
+  const subjectName = activeLesson?.subject || "Computer Science";
   const studentName = student?.name?.trim() || "Student";
   const reviewMode = Boolean(activeLesson?.reviewMode && activeLesson?.reviewSkill);
   const reviewSkill = activeLesson?.reviewSkill || null;
@@ -68,39 +77,96 @@ export default function Lesson({ activeLesson, student, subjects }) {
     [subjects, subjectName]
   );
 
-  const subjectTopicRecords = useMemo(() => {
+  /** Parent topics (units) with nested subtopics (lessons). */
+  const unitRecords = useMemo(() => {
     if (subjectObj?.topics?.length) return subjectObj.topics;
     return DEFAULT_LESSON_TOPICS.map((name, i) => ({
-      id: `local-${i}`,
-      name,
+      id: `local-unit-${i}`,
+      name: "Lessons",
       familiarity: "new",
       learningGoal: "",
+      subtopics: [
+        {
+          id: `local-${i}`,
+          name,
+          familiarity: "new",
+          learningGoal: "",
+        },
+      ],
     }));
   }, [subjectObj]);
 
-  const subjectTopics = useMemo(
-    () => subjectTopicRecords.map((t) => t.name),
-    [subjectTopicRecords]
+  // Resolve initial unit + subtopic from activeLesson.topic (leaf name) or unit
+  const initialSelection = useMemo(() => {
+    const wantLeaf = activeLesson?.topic || activeLesson?.subtopic || "";
+    const wantUnit = activeLesson?.unit || activeLesson?.topicUnit || "";
+    let unitIdx = 0;
+    let subIdx = 0;
+    if (wantUnit) {
+      const ui = unitRecords.findIndex(
+        (u) => String(u.name).toLowerCase() === String(wantUnit).toLowerCase()
+      );
+      if (ui >= 0) unitIdx = ui;
+    }
+    if (wantLeaf) {
+      for (let ui = 0; ui < unitRecords.length; ui += 1) {
+        const subs = unitRecords[ui].subtopics || [];
+        const si = subs.findIndex(
+          (s) => String(s.name).toLowerCase() === String(wantLeaf).toLowerCase()
+        );
+        if (si >= 0) {
+          unitIdx = ui;
+          subIdx = si;
+          break;
+        }
+      }
+    }
+    return { unitIdx, subIdx };
+  }, [unitRecords, activeLesson?.topic, activeLesson?.subtopic, activeLesson?.unit, activeLesson?.topicUnit]);
+
+  const [activeUnitIdx, setActiveUnitIdx] = useState(initialSelection.unitIdx);
+  const [activeSubtopicIdx, setActiveSubtopicIdx] = useState(
+    initialSelection.subIdx
   );
 
-  const defaultIdx = Math.max(
-    0,
-    subjectTopics.indexOf(activeLesson?.topic || subjectTopics[0])
+  // Keep indices valid when subject data loads / changes
+  useEffect(() => {
+    setActiveUnitIdx((prev) =>
+      Math.min(Math.max(0, prev), Math.max(0, unitRecords.length - 1))
+    );
+  }, [unitRecords.length]);
+
+  const activeUnit = unitRecords[activeUnitIdx] || unitRecords[0] || null;
+  const subtopicRecords = useMemo(
+    () => activeUnit?.subtopics || [],
+    [activeUnit]
   );
-  const [activeTopicIdx, setActiveTopicIdx] = useState(defaultIdx);
-  const topicName = subjectTopics[activeTopicIdx];
-  const activeTopicRecord = subjectTopicRecords[activeTopicIdx] || null;
+
+  useEffect(() => {
+    setActiveSubtopicIdx((prev) =>
+      Math.min(Math.max(0, prev), Math.max(0, subtopicRecords.length - 1))
+    );
+  }, [activeUnitIdx, subtopicRecords.length]);
+
+  const activeSubtopicRecord = subtopicRecords[activeSubtopicIdx] || null;
+  /** Lesson leaf name — drives chat, skills, mastery (was flat "topic"). */
+  const topicName =
+    activeSubtopicRecord?.name ||
+    activeUnit?.name ||
+    DEFAULT_LESSON_TOPICS[0] ||
+    "Lesson";
+  const unitName = activeUnit?.name || "";
 
   const lessonGoals = useMemo(
     () =>
       resolveLessonGoals({
         topicName,
         subjectName,
-        topic: activeTopicRecord,
+        topic: activeSubtopicRecord || activeUnit,
         subject: subjectObj,
         student,
       }),
-    [topicName, subjectName, activeTopicRecord, subjectObj, student]
+    [topicName, subjectName, activeSubtopicRecord, activeUnit, subjectObj, student]
   );
 
   const topicContext = useMemo(
@@ -154,6 +220,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const {
     profile,
     insights,
+    learnerState,
     lastSignals,
     sessionSummary,
     intervention,
@@ -195,6 +262,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
     subjectName,
     topicName,
     tools,
+    lessonGoals,
     reviewMode,
     reviewSkill,
     reviewSkillLabel,
@@ -333,6 +401,59 @@ export default function Lesson({ activeLesson, student, subjects }) {
     getSessionId,
   });
 
+  // Epic C6 — correct-streak tracker for “ready for a check?” offer
+  const assessmentStreakRef = useRef({ correct: 0, gradedCorrect: 0, messages: 0 });
+  const assessmentApiRef = useRef(null);
+  const independenceApiRef = useRef(null);
+  const interventionStatusRef = useRef(intervention.status);
+
+  // Epic C6 — low-stakes MCQ quick check (offline-first revision)
+  const assessment = useAssessment({
+    studentId,
+    subjectName,
+    topicName,
+    getSessionId,
+    onGradedItem: (item) => {
+      void recordExchange({
+        studentText: item.studentText || "(quick check answer)",
+        tutorText: item.tutorText || "",
+        wasHintRequest: false,
+        assessmentOutcome: item,
+      });
+      if (item.correctness === "correct") {
+        assessmentStreakRef.current.correct += 1;
+        assessmentStreakRef.current.gradedCorrect += 1;
+      } else {
+        assessmentStreakRef.current.correct = 0;
+      }
+    },
+  });
+  assessmentApiRef.current = assessment;
+  interventionStatusRef.current = intervention.status;
+
+  // Epic L4 — no-scaffold independence twin after heavy ladder help
+  const independence = useIndependenceCheck({
+    studentId,
+    subjectName,
+    topicName,
+    getSessionId,
+    unitName,
+    skillSlugs: skillSlugsForLessonTopic(topicName),
+    onGradedItem: (item) => {
+      void recordExchange({
+        studentText: item.studentText || "(independence twin)",
+        tutorText: item.tutorText || "",
+        wasHintRequest: false,
+        assessmentOutcome: {
+          ...item,
+          independenceTwin: true,
+          noScaffold: true,
+        },
+      });
+    },
+  });
+  independenceApiRef.current = independence;
+
   const {
     messages,
     isStreaming,
@@ -381,6 +502,11 @@ export default function Lesson({ activeLesson, student, subjects }) {
     onSessionBegin: handleSessionBegin,
     onAwaitSessionStartEnergy: waitForSessionStartEnergy,
     onExchangeComplete: async ({ studentText, tutorText, wasHintRequest }) => {
+      const assess = assessmentApiRef.current;
+      const indep = independenceApiRef.current;
+      // Skip chat grading while a quick check or independence twin owns the focus
+      if (assess?.assessmentActive || indep?.independenceActive) return;
+
       // Epic B6 — grade current show-your-work step when mode is active
       const stepOutcome = multiStep.recordStepAnswer(studentText, {
         tutorText,
@@ -391,6 +517,37 @@ export default function Lesson({ activeLesson, student, subjects }) {
         wasHintRequest,
         multiStepOutcome: stepOutcome,
       });
+
+      // Epic L4 — remember scaffolded success while help ladder is active
+      const c = result?.signals?.correctness;
+      if (
+        interventionStatusRef.current === "active" &&
+        (c === "correct" || c === "partial")
+      ) {
+        indep?.noteScaffoldedSuccess?.();
+      }
+
+      // Epic C6 — after solid understanding, offer a tutor-style quick check
+      assessmentStreakRef.current.messages += 2;
+      if (c === "correct") {
+        assessmentStreakRef.current.correct += 1;
+        assessmentStreakRef.current.gradedCorrect += 1;
+      } else if (c === "incorrect") {
+        assessmentStreakRef.current.correct = 0;
+      }
+      // Detect student confirming understanding in chat (EN + common KE Swahili)
+      const understood =
+        /\b(i\s+(get|got|understand)\s+it|makes\s+sense|i\s+understand|nimeelewa|nifahamu|clear\s+now|i'?m\s+ready)\b/i.test(
+          studentText || ""
+        );
+      assess?.maybeOfferAssessment?.({
+        correctStreak: understood
+          ? Math.max(2, assessmentStreakRef.current.correct)
+          : assessmentStreakRef.current.correct,
+        gradedCorrect: assessmentStreakRef.current.gradedCorrect,
+        messageCount: assessmentStreakRef.current.messages,
+      });
+
       // Auto-enter only for *this* topic — attach topic so a later switch discards it
       if (result?.interventionAction?.action === "auto_enter") {
         pendingAutoInterventionRef.current = {
@@ -403,6 +560,11 @@ export default function Lesson({ activeLesson, student, subjects }) {
     onAwaitingStudent: markAwaitingStudent,
     onResumeSnapshot: applyResumeSnapshot,
   });
+
+  // Reset streak when topic changes
+  useEffect(() => {
+    assessmentStreakRef.current = { correct: 0, gradedCorrect: 0, messages: 0 };
+  }, [topicName, subjectName]);
 
   const handleStartMultiStep = useCallback(async () => {
     if (tools.voiceOutput) prepareAudio();
@@ -432,6 +594,69 @@ export default function Lesson({ activeLesson, student, subjects }) {
     noteInputModality("text");
     sendMessage(`Can you give me a hint for this step? (${step.label})`);
   }, [multiStep.multiStepCurrentStep, noteInputModality, sendMessage]);
+
+  const skillPath = useMemo(
+    () => buildLocalSkillPath(profile, subjectName, topicName),
+    [profile, subjectName, topicName]
+  );
+
+  // Epic C6 — quick check controls (questions target current subtopic / skills)
+  const handleStartAssessment = useCallback(
+    (opts = {}) => {
+      if (tools.voiceOutput) prepareAudio();
+      // Leave multi-step if open so panels don't stack
+      if (multiStep.multiStepActive) {
+        multiStep.exitMultiStep();
+      }
+      const pathSkills = (skillPath?.skills || [])
+        .slice()
+        .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary))
+        .map((s) => s.slug)
+        .filter(Boolean);
+      const skillSlugs = [
+        ...new Set(
+          [
+            opts.skillSlug,
+            reviewSkill,
+            ...(Array.isArray(opts.skillSlugs) ? opts.skillSlugs : []),
+            ...pathSkills,
+          ].filter(Boolean)
+        ),
+      ];
+      assessment.startAssessment({
+        source: opts.source || "manual",
+        skillSlug: skillSlugs[0] || "",
+        skillSlugs,
+        unit: unitName || opts.unit || "",
+        timed: Boolean(opts.timed),
+      });
+      setMobilePanel("chat");
+    },
+    [
+      assessment,
+      multiStep,
+      tools.voiceOutput,
+      prepareAudio,
+      reviewSkill,
+      skillPath,
+      unitName,
+    ]
+  );
+
+  const handleExitAssessment = useCallback(() => {
+    assessment.exitAssessment();
+  }, [assessment]);
+
+  const handleAssessmentAnswer = useCallback(
+    (selectedIndex) => {
+      assessment.answerAssessment(selectedIndex);
+    },
+    [assessment]
+  );
+
+  const handleAssessmentContinue = useCallback(() => {
+    assessment.continueAssessment();
+  }, [assessment]);
 
   // Persist resume snapshot when intervention/tools change (Epic A2)
   useEffect(() => {
@@ -502,30 +727,43 @@ export default function Lesson({ activeLesson, student, subjects }) {
     }
   }, [topicName, subjectName, recordTopicSwitch]);
 
-  const handleSend = useCallback(async () => {
-    const text = inputVal.trim();
-    if (!text) return;
-    if (connectivity.online === false) return;
-    if (tools.voiceOutput) prepareAudio();
+  const handleSend = useCallback(
+    async (overrideText) => {
+      const text =
+        typeof overrideText === "string" && overrideText.trim()
+          ? overrideText.trim()
+          : inputVal.trim();
+      if (!text) return;
+      if (connectivity.online === false) return;
+      if (tools.voiceOutput) prepareAudio();
 
-    if (lastInputWasVoiceRef.current) {
-      noteInputModality("voice");
-      lastInputWasVoiceRef.current = false;
-    } else {
-      noteInputModality("text");
-    }
+      // Chip taps are always text; free-typed may still be voice-dictated
+      if (
+        typeof overrideText === "string" &&
+        overrideText.trim()
+      ) {
+        noteInputModality("text");
+        lastInputWasVoiceRef.current = false;
+      } else if (lastInputWasVoiceRef.current) {
+        noteInputModality("voice");
+        lastInputWasVoiceRef.current = false;
+      } else {
+        noteInputModality("text");
+      }
 
-    setInputVal("");
-    await sendMessage(text);
-    inputRef.current?.focus();
-  }, [
-    inputVal,
-    sendMessage,
-    tools.voiceOutput,
-    prepareAudio,
-    noteInputModality,
-    connectivity.online,
-  ]);
+      setInputVal("");
+      await sendMessage(text);
+      inputRef.current?.focus();
+    },
+    [
+      inputVal,
+      sendMessage,
+      tools.voiceOutput,
+      prepareAudio,
+      noteInputModality,
+      connectivity.online,
+    ]
+  );
 
   const handleRetryChatError = useCallback(async () => {
     if (tools.voiceOutput) prepareAudio();
@@ -714,9 +952,17 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const handleExitIntervention = useCallback(async () => {
     if (tools.voiceOutput) prepareAudio();
     const topic = intervention.context?.topic || topicName;
-    const level = intervention.level || intervention.context?.level;
+    const level = intervention.level || intervention.context?.level || 0;
+    const levelId = intervention.context?.levelId || "";
     exitIntervention();
     await exitInterventionMode({ topic, level });
+    // Epic L4 — after heavy help, offer one no-scaffold twin
+    independence.maybeOfferAfterLadderExit?.({
+      ladderLevel: level,
+      ladderLevelId: levelId,
+      assessmentActive: assessment.assessmentActive,
+      multiStepActive: multiStep.multiStepActive,
+    });
   }, [
     exitIntervention,
     exitInterventionMode,
@@ -725,6 +971,9 @@ export default function Lesson({ activeLesson, student, subjects }) {
     topicName,
     tools.voiceOutput,
     prepareAudio,
+    independence,
+    assessment.assessmentActive,
+    multiStep.multiStepActive,
   ]);
 
   /** Manual request for full guide (legacy entry). */
@@ -831,11 +1080,6 @@ export default function Lesson({ activeLesson, student, subjects }) {
     Math.round(baseFromMastery * 0.55 + progressBump + accuracyBump)
   );
 
-  const skillPath = useMemo(
-    () => buildLocalSkillPath(profile, subjectName, topicName),
-    [profile, subjectName, topicName]
-  );
-
   const skillLabel = skillPath?.topicStateLabel;
 
   const diffLabel =
@@ -885,10 +1129,17 @@ export default function Lesson({ activeLesson, student, subjects }) {
       >
         <LessonPath
           subjectName={subjectName}
-          topics={subjectTopicRecords}
-          activeTopicIdx={activeTopicIdx}
-          onSelectTopic={(i) => {
-            setActiveTopicIdx(i);
+          units={unitRecords}
+          activeUnitIdx={activeUnitIdx}
+          onSelectUnit={(i) => {
+            setActiveUnitIdx(i);
+            setActiveSubtopicIdx(0);
+            setMobilePanel("chat");
+          }}
+          subtopics={subtopicRecords}
+          activeSubtopicIdx={activeSubtopicIdx}
+          onSelectSubtopic={(i) => {
+            setActiveSubtopicIdx(i);
             setMobilePanel("chat");
           }}
           student={student}
@@ -904,7 +1155,9 @@ export default function Lesson({ activeLesson, student, subjects }) {
         <ChatPanel
           topicName={topicName}
           subjectName={subjectName}
+          unitName={unitName}
           studentName={studentName}
+          student={student}
           curriculum={student?.curriculum}
           lessonGoals={lessonGoals}
           messages={messages}
@@ -983,7 +1236,84 @@ export default function Lesson({ activeLesson, student, subjects }) {
           homeworkBusy={homeworkBusy}
           homeworkError={homeworkError}
           onClearHomeworkError={() => setHomeworkError("")}
+          assessmentSession={assessment.assessmentSession}
+          assessmentSlot={
+            assessment.assessmentSession ? (
+              <AssessmentPanel
+                session={assessment.assessmentSession}
+                open
+                onAnswer={handleAssessmentAnswer}
+                onContinue={handleAssessmentContinue}
+                onExit={handleExitAssessment}
+                onDone={() => {
+                  assessment.clearAssessmentCompleted();
+                }}
+                disabled={isSummarizing}
+              />
+            ) : null
+          }
+          assessmentOfferSlot={
+            !assessment.assessmentSession &&
+            !independence.independenceSession &&
+            !independence.independenceOffer &&
+            assessment.assessmentOffer &&
+            !sessionReflection ? (
+              <AssessmentOfferCard
+                offer={assessment.assessmentOffer}
+                onStart={() =>
+                  handleStartAssessment({
+                    source: assessment.assessmentOffer?.reason || "ready",
+                  })
+                }
+                onDismiss={assessment.dismissAssessmentOffer}
+                disabled={isStreaming || isSummarizing}
+              />
+            ) : null
+          }
+          independenceOfferSlot={
+            !assessment.assessmentSession &&
+            !independence.independenceSession &&
+            independence.independenceOffer &&
+            !sessionReflection ? (
+              <IndependenceOfferCard
+                offer={independence.independenceOffer}
+                onAccept={() => {
+                  independence.startIndependenceTwin();
+                  setMobilePanel("chat");
+                }}
+                onDecline={independence.declineIndependenceOffer}
+                disabled={isStreaming || isSummarizing}
+              />
+            ) : null
+          }
+          independenceSlot={
+            independence.independenceSession &&
+            independence.independenceSession.status !== "completed" &&
+            independence.independenceSession.status !== "skipped" ? (
+              <IndependencePanel
+                session={independence.independenceSession}
+                open
+                onAnswer={(i) => independence.answerIndependenceTwin(i)}
+                onContinue={() => {
+                  independence.continueIndependenceExplain();
+                }}
+                onExit={() => independence.exitIndependenceTwin()}
+                disabled={isSummarizing}
+              />
+            ) : independence.independenceSession?.status === "completed" ? (
+              <IndependencePanel
+                session={independence.independenceSession}
+                open
+                onAnswer={() => {}}
+                onContinue={() => independence.exitIndependenceTwin()}
+                onExit={() => independence.exitIndependenceTwin()}
+                disabled={isSummarizing}
+              />
+            ) : null
+          }
           multiStepSlot={
+            !assessment.assessmentSession &&
+            !independence.independenceSession &&
             multiStep.multiStepSession ? (
               <MultiStepPanel
                 session={multiStep.multiStepSession}
@@ -1072,6 +1402,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
           isArchiveView={isArchiveView || Boolean(viewingArchiveId)}
           archiveCount={conversationMeta?.archived?.length || 0}
           lastSignals={lastSignals}
+          learnerState={learnerState}
           sessionSummary={sessionSummary}
           learningInsights={insights}
           intervention={intervention}
@@ -1089,6 +1420,13 @@ export default function Lesson({ activeLesson, student, subjects }) {
           multiStepPercent={multiStep.multiStepPartialCredit?.percent}
           onStartMultiStep={handleStartMultiStep}
           onExitMultiStep={handleExitMultiStep}
+          assessmentAvailable={assessment.assessmentAvailable}
+          assessmentActive={
+            assessment.assessmentActive || assessment.assessmentCompleted
+          }
+          assessmentScore={assessment.assessmentScore}
+          onStartAssessment={() => handleStartAssessment({ source: "manual" })}
+          onExitAssessment={handleExitAssessment}
           onExitIntervention={handleExitIntervention}
           onAcceptIntervention={handleAcceptIntervention}
           onDeclineIntervention={handleDeclineIntervention}

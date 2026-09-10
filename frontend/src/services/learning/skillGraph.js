@@ -1,14 +1,18 @@
 /**
- * Kindling skill graph — pilot Fractions → Early Algebra (Epic A1).
+ * Kindling skill graph — pilot Computer Science knowledge graph (Epic A1).
+ * Source architecture: Computer Science.MD (L0 literacy → advanced entry).
  *
  * Client-side BKT-lite mirrors backend/learning/mastery_engine.py so mastery
  * updates even in local-mock mode. When the API is available, server remains
  * source of truth after event ingest.
+ *
+ * Graph payload kept in cs_pilot_data.json (generated from curriculum.pilot_graph).
  */
 
 import { Correctness } from "./types";
+import csPilot from "./cs_pilot_data.json";
 
-export const PILOT_SUBJECT = "Math Foundations";
+export const PILOT_SUBJECT = csPilot.PILOT_SUBJECT || "Computer Science";
 
 export const STATE = {
   LOCKED: "locked",
@@ -26,184 +30,16 @@ export const STATE_LABELS = {
   rusty: "Needs a warm-up",
 };
 
+/** @type {Array<object>} */
+export const PILOT_SKILLS = Array.isArray(csPilot.skills) ? csPilot.skills : [];
+
+/** topic name → skill links */
+export const TOPIC_SKILL_MAP =
+  csPilot.topics && typeof csPilot.topics === "object" ? csPilot.topics : {};
+
 const READY_PREREQ_P = 0.55;
 const MASTERED_P = 0.85;
 const MASTERED_STREAK = 2;
-
-/** @type {Array<object>} */
-export const PILOT_SKILLS = [
-  {
-    slug: "frac.parts_of_whole",
-    name: "Parts of a whole",
-    shortLabel: "Equal parts",
-    domain: "fractions",
-    description: "Equal parts of a whole; unit fractions.",
-    pInit: 0.25,
-    pTransit: 0.14,
-    pSlip: 0.08,
-    pGuess: 0.2,
-    prereqs: [],
-  },
-  {
-    slug: "frac.numerator_denominator",
-    name: "Numerator & denominator",
-    shortLabel: "Num / den",
-    domain: "fractions",
-    description: "Read fractions; know num/den roles.",
-    pInit: 0.22,
-    pTransit: 0.13,
-    pSlip: 0.08,
-    pGuess: 0.18,
-    prereqs: [{ slug: "frac.parts_of_whole", strength: "required" }],
-  },
-  {
-    slug: "frac.number_line",
-    name: "Fractions on a number line",
-    shortLabel: "Number line",
-    domain: "fractions",
-    description: "Place fractions on a number line.",
-    pInit: 0.18,
-    pTransit: 0.11,
-    pSlip: 0.1,
-    pGuess: 0.18,
-    prereqs: [
-      { slug: "frac.parts_of_whole", strength: "required" },
-      { slug: "frac.numerator_denominator", strength: "recommended" },
-    ],
-  },
-  {
-    slug: "frac.equivalent",
-    name: "Equivalent fractions",
-    shortLabel: "Equivalence",
-    domain: "fractions",
-    description: "Generate equivalent fractions with models.",
-    pInit: 0.15,
-    pTransit: 0.1,
-    pSlip: 0.1,
-    pGuess: 0.15,
-    prereqs: [
-      { slug: "frac.numerator_denominator", strength: "required" },
-      { slug: "frac.parts_of_whole", strength: "required" },
-    ],
-  },
-  {
-    slug: "frac.compare",
-    name: "Comparing fractions",
-    shortLabel: "Compare",
-    domain: "fractions",
-    description: "Compare fractions with reasoning or models.",
-    pInit: 0.12,
-    pTransit: 0.1,
-    pSlip: 0.1,
-    pGuess: 0.15,
-    prereqs: [
-      { slug: "frac.equivalent", strength: "required" },
-      { slug: "frac.number_line", strength: "recommended" },
-    ],
-  },
-  {
-    slug: "frac.add_like",
-    name: "Adding like denominators",
-    shortLabel: "Add like",
-    domain: "fractions",
-    description: "Add fractions with the same denominator.",
-    pInit: 0.12,
-    pTransit: 0.12,
-    pSlip: 0.08,
-    pGuess: 0.15,
-    prereqs: [
-      { slug: "frac.numerator_denominator", strength: "required" },
-      { slug: "frac.parts_of_whole", strength: "required" },
-    ],
-  },
-  {
-    slug: "frac.add_unlike",
-    name: "Adding unlike denominators",
-    shortLabel: "Add unlike",
-    domain: "fractions",
-    description: "Add unlike denominators via common denominator.",
-    pInit: 0.1,
-    pTransit: 0.09,
-    pSlip: 0.12,
-    pGuess: 0.12,
-    prereqs: [
-      { slug: "frac.add_like", strength: "required" },
-      { slug: "frac.equivalent", strength: "required" },
-    ],
-  },
-  {
-    slug: "alg.variable_as_unknown",
-    name: "Variables as unknowns",
-    shortLabel: "Variables",
-    domain: "early_algebra",
-    description: "A letter can stand for an unknown.",
-    pInit: 0.15,
-    pTransit: 0.12,
-    pSlip: 0.08,
-    pGuess: 0.18,
-    prereqs: [{ slug: "frac.parts_of_whole", strength: "recommended" }],
-  },
-  {
-    slug: "alg.balance_idea",
-    name: "Balance / equality idea",
-    shortLabel: "Balance",
-    domain: "early_algebra",
-    description: "Both sides of an equation stay equal.",
-    pInit: 0.14,
-    pTransit: 0.11,
-    pSlip: 0.08,
-    pGuess: 0.16,
-    prereqs: [{ slug: "alg.variable_as_unknown", strength: "required" }],
-  },
-  {
-    slug: "alg.one_step_equation",
-    name: "One-step equations",
-    shortLabel: "Solve x",
-    domain: "early_algebra",
-    description: "Solve one-step equations with whole numbers.",
-    pInit: 0.1,
-    pTransit: 0.1,
-    pSlip: 0.1,
-    pGuess: 0.14,
-    prereqs: [
-      { slug: "alg.balance_idea", strength: "required" },
-      { slug: "alg.variable_as_unknown", strength: "required" },
-    ],
-  },
-];
-
-/** topic name → skill links */
-export const TOPIC_SKILL_MAP = {
-  "Fraction sense": [
-    { slug: "frac.parts_of_whole", weight: 1, isPrimary: true },
-    { slug: "frac.numerator_denominator", weight: 0.85, isPrimary: true },
-  ],
-  "Fractions on a number line": [
-    { slug: "frac.number_line", weight: 1, isPrimary: true },
-    { slug: "frac.numerator_denominator", weight: 0.5, isPrimary: false },
-  ],
-  "Equivalent fractions": [
-    { slug: "frac.equivalent", weight: 1, isPrimary: true },
-    { slug: "frac.parts_of_whole", weight: 0.4, isPrimary: false },
-  ],
-  "Comparing fractions": [
-    { slug: "frac.compare", weight: 1, isPrimary: true },
-    { slug: "frac.equivalent", weight: 0.55, isPrimary: false },
-  ],
-  "Adding fractions": [
-    { slug: "frac.add_like", weight: 0.7, isPrimary: true },
-    { slug: "frac.add_unlike", weight: 0.7, isPrimary: true },
-  ],
-  "Variables & unknowns": [
-    { slug: "alg.variable_as_unknown", weight: 1, isPrimary: true },
-    { slug: "alg.balance_idea", weight: 0.6, isPrimary: false },
-  ],
-  "Simple equations": [
-    { slug: "alg.one_step_equation", weight: 1, isPrimary: true },
-    { slug: "alg.balance_idea", weight: 0.7, isPrimary: false },
-    { slug: "alg.variable_as_unknown", weight: 0.5, isPrimary: false },
-  ],
-};
 
 const skillBySlug = Object.fromEntries(PILOT_SKILLS.map((s) => [s.slug, s]));
 

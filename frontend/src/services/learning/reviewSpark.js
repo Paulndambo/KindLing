@@ -88,7 +88,7 @@ export function pickReviewCtaFromDue(dueList = [], { subject, topic } = {}) {
   return {
     kind: "review_spark",
     label: `Review spark: ${match.shortLabel || match.skillName || match.topic}`,
-    subject: match.subject || subject || "Math Foundations",
+    subject: match.subject || subject || "Computer Science",
     topic: match.topic || topic || "",
     skillSlug: match.skillSlug,
     reviewId: match.id,
