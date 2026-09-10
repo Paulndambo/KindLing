@@ -118,7 +118,7 @@ Explicitly **out** unless a design partner blocks without it:
 
 ### P3 — Explicitly after beta decision
 
-Multi-child / household / classroom products (**never**). Also after beta: C4 single-student standards export, C6 assessment modes, full C8 harness, Phase 4 multimodal/voice, Phase 5 gateway failover & optional per-seat school SSO, VR/collab/credential portfolios.
+Multi-child / household / classroom products (**never**). Also after beta: C4 single-student standards export, C6 assessment **depth** (v1 + C8 harness already ship), C1+ review depth, C7 playbooks, Phase 4 multimodal/voice, Phase 5 gateway failover & optional per-seat school SSO, VR/collab/credential portfolios.
 
 ---
 
@@ -211,7 +211,7 @@ Do **not** skip P0.2/P0.3/P0.8 or P1.2 if you care about paid retention. Prefer 
 | AI gateway failover chains | Phase 5 · Wave 2 Track S | Caps + one reliable platform path first |
 | VR / collab / credential badges | PLAN §16, Phase 5 | **Out of beta** — see scope fences |
 
-**After beta decision:** use PLAN **§15 Wave 2**. Default next bets if retention is green: **C1+** review depth, **C6** assessment, Phase 4 diagrams/a11y, digest polish—not household or classroom software.
+**After beta decision:** use PLAN **§15 Wave 2**. Default next bets if retention is green: **C1+** review depth, **C6/C7** assessment & playbook depth, Phase 4 diagrams/a11y, digest polish—not household or classroom software. L1–L4 intelligence and C6/C8 v1 already ship in-repo.
 
 ---
 

@@ -45,19 +45,22 @@ Kindling already has a coherent spine. New work should **extend** these layers:
 
 **Commercial model (permanent):** **one account = one learner = one subscription.** Parents or schools who support multiple children buy **separate seats** (same as any multi-learner institution). There is **no** multi-child household product, parent portal hierarchy, or classroom/roster product. Adults may only receive **optional email digests** when the student configures an address on their own profile (A5).
 
-**Still open for production / Wave 2:** Postgres + hostable deploy (0.1), AI failover/cost controls, assessment modes, domain playbook expansion, eval harness, student-facing standards export, diagram rendering, a11y pack, duplex voice, PWA/i18n, full goals planner (single-learner), portfolios, digest polish.
+**Shipped early Wave 2 (in-repo, not a deploy gate):** CS pilot curriculum (unit→subtopic), L1 LearnerState, L2 pedagogical policy, L3 ADI, L4 independence twins, C6 assessment v1, C8 eval harness, practical how-to teaching, suggestion chips / real-world example rule.
+
+**Still open for production / Wave 2:** Postgres + hostable deploy (0.1 / Track D), AI failover/cost controls, C1+ review depth, C7 domain playbooks, C6 depth (timed/pre-post), student-facing standards export (C4), diagram rendering, a11y pack, duplex voice, PWA/i18n, full goals planner (single-learner), portfolios, digest polish.
 
 ---
 
 ## 3. Guiding principles for all PRs
 
 1. **Respect the learner** — normalize struggle; never shame in student-facing copy.  
-2. **Guide before giving** — Socratic by default; intervention explicit and exit-able.  
-3. **Presentation is pedagogy** — math/code/diagrams stay readable while streaming.  
-4. **Adapt quietly** — scores and models stay internal; tutor speech stays human.  
-5. **Parents and students see progress differently** — student: encouragement; family: clarity.  
-6. **Safety and privacy scale with trust** — especially for children.  
-7. **Ship vertical slices** — prefer end-to-end value on 1–2 pilot subjects over incomplete platform-wide abstractions.
+2. **Guide before giving** — Socratic by default on reasoning; intervention explicit and exit-able.  
+3. **Show how for practical skills** — numbered device how-tos + try-it; never theory-only for literacy procedures.  
+4. **Presentation is pedagogy** — math/code/diagrams stay readable while streaming.  
+5. **Adapt quietly** — scores and models stay internal; tutor speech stays human.  
+6. **Parents and students see progress differently** — student: encouragement; family: clarity.  
+7. **Safety and privacy scale with trust** — especially for children.  
+8. **Ship vertical slices** — prefer end-to-end value on the CS pilot (and math packs) over incomplete platform-wide abstractions.
 
 ---
 
@@ -90,7 +93,9 @@ Every feature maps to one or more streams:
 
 **Wave 1 (complete for product pedagogy):** Phases **0.2–0.5**, **1 (A1–A6)**, **2 (B1–B6)**, and **2.5 (B7, B8, C1 v1, C5 lite, G1)** are implemented in-repo.
 
-**Wave 2 (active backlog):** Everything still open in CAPABILITIES §3 that is not checked off above — and that fits the **single-learner seat** model — organized in [§15 Wave 2](#15-wave-2--second-development-cycle-post-phase-25) and Phases **3–5**. **Never** schedule multi-child households, parent multi-profile accounts, or classroom/roster products (see §16). Bulk buyers (parents with several kids, schools) = **N separate student subscriptions**. **Phase 0.1 deploy/Postgres** may run in parallel with early Wave 2 product work — it remains a hard gate for *external* beta.
+**Wave 2 intelligence slice (shipped in-repo):** Track L **L1–L4**, **C6** assessment v1, **C8** eval harness, **Computer Science** pilot path, **practical how-to** teaching + suggestion chips. See §15.1a.
+
+**Wave 2 (active backlog):** Hostable deploy (Track D), C1+/C7/C4/C5+/C9/C10, Phase 4 multimodal/a11y, Phase 5 scale — organized in [§15 Wave 2](#15-wave-2--second-development-cycle-post-phase-25). **Never** schedule multi-child households, parent multi-profile accounts, or classroom/roster products (see §16). Bulk buyers = **N separate student subscriptions**. **Phase 0.1 deploy/Postgres** remains a hard gate for *external* beta.
 
 Platform and trust work runs **in parallel** with product features, not after them.
 
@@ -99,7 +104,8 @@ Platform and trust work runs **in parallel** with product features, not after th
 | Wave | Scope | Status |
 |------|--------|--------|
 | **Wave 1** | Adaptive tutor spine + intervention depth + session rhythm (Phases 0.2–2.5 product epics) | ✅ Shipped in monorepo |
-| **Wave 2** | Hostable production closeout + relationships/assessment + multimodal polish + scale (0.1 + Phases 3–5) | ⬜ Active plan — see §15 |
+| **Wave 2 intelligence** | L1–L4, C6 v1, C8, CS pilot, practical how-to, chips | ✅ Shipped in monorepo (2026-09) |
+| **Wave 2 remaining** | Hostable deploy (Track D) + C1+/C7/C4 + multimodal/a11y + scale | ⬜ Active plan — see §15 |
 
 ---
 
@@ -185,7 +191,8 @@ Platform and trust work runs **in parallel** with product features, not after th
 
 **CAPABILITIES:** §3.1.1 True mastery model, §3.1.2 Curriculum graph (pilot scope)
 
-**Pilot:** `Math Foundations` — fractions → early algebra skill graph (“Skill sparks”).
+**Pilot (historical A1):** `Math Foundations` skill/example packs (fractions → early algebra).  
+**Live seeded subject (2026-09):** `Computer Science` unit → subtopic path + CS skills (“Skill sparks”). Math packs remain for verifier/manipulatives/examples.
 
 | Step | Work | Status |
 |------|------|--------|
@@ -507,7 +514,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 | **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⬜ | Lite ✅ Phase 2.5; no guardian contract product |
 | **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ✅ v1 / ⬜ depth | v1 MCQ+explanations ✅; independence/transfer/timed = depth — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
 | **C7** | §3.1.8 Domain playbooks | Second thin domain pack + scaffold consistency beyond math pilot | ⬜ | Beta P2.2 if sessions leave math |
-| **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ⬜ | Manual rubric = beta P2.3 |
+| **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ✅ C8.1–C8.3 | Manual rubric + offline scorer + weekly job; calibrate on human labels next |
 | **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ⬜ | Beta P2.8 lite; **not** a parent app |
 | **C10** | §3.2.4 Optional email alerts | Extra “stuck N sessions” email to the **same** student-configured digest address | ⬜ | Extends A5 only; student controls opt-in |
 
@@ -677,7 +684,9 @@ Apply to every phase:
 | 3.1 | Retrieval / spaced review | Phase 2.5 · **C1 v1** ✅; deepen **Wave 2 · C1+** |
 | 3.1 | Misconception engine | Phase 2 · B5 ✅ |
 | 3.1 | Multi-step problem solving | Phase 2 · B6 ✅ |
-| 3.1 | Assessment modes | **Wave 2 · Phase 3 · C6** ✅ v1 / ⬜ depth |
+| 3.1 | Assessment modes | **C6** ✅ v1 / ⬜ depth |
+| 3.1 | Practical how-to teaching | ✅ (CS literacy guides + prompt contract) |
+| 3.1 | Learning intelligence L1–L4 | ✅ LearnerState, policy, ADI, independence |
 | 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⬜ |
 | 3.2 Intervention | Richer struggle signals | Phase 2 · B1 ✅ |
 | 3.2 | Graduated interventions | Phase 2 · B2 ✅ |
@@ -700,7 +709,7 @@ Apply to every phase:
 | 3.6 | Answer correctness | Phase 1 · A3 ✅ |
 | 3.6 | Human-in-the-loop | **Wave 2 · Phase 3 · C9** ⬜ |
 | 3.6 | Privacy by design | Phase 0 baseline ✅; deepen Phase 5 ⬜ |
-| 3.6 | Eval harness | **Wave 2 · Phase 3 · C8** ⬜ |
+| 3.6 | Eval harness | **C8** ✅ C8.1–C8.3 · calibrate human labels next ⬜ |
 | 3.7 Experience | Offline / flaky network | Phase 0 · 0.3 ✅; offline packs Phase 4 ⬜ |
 | 3.7 | Session history & resume | Phase 1 · A2 ✅ |
 | 3.7 | Attachments | Phase 1 · A4 ✅; generalize Phase 4 ⬜ |
@@ -729,6 +738,22 @@ Apply to every phase:
 | Session rhythm | B7, B8, C1 v1, C5 lite, G1 | ✅ |
 | UX usability pass | Nav, home, lesson chrome, skeletons | ✅ (2026-09) |
 
+### 15.1a Wave 2 intelligence slice (shipped — do not restart)
+
+| Area | Epics | Status |
+|------|-------|--------|
+| Computer Science pilot path | Unit → subtopic hierarchy; `cs_provision` + `pilot_graph` | ✅ |
+| LearnerState | **L1** FE + BE mirror; learner pulse | ✅ |
+| Pedagogical policy | **L2** `decidePedagogy` + prompt execution contract + events | ✅ |
+| Assistance Dependency Index | **L3** ADI + ladder fade + thin digest line | ✅ |
+| Independence / transfer | **L4** post-ladder twins + transfer bank flag | ✅ |
+| Assessment quick check | **C6** v1 MCQ panel + explanations | ✅ |
+| Eval harness | **C8.3** manual · **C8.1** auto scorer · **C8.2** weekly job | ✅ |
+| Supportive tutor polish | Real-world example rule + suggestion chips | ✅ |
+| Practical how-to teaching | Curated CS literacy guides + practical philosophy + policy briefs | ✅ |
+
+Primary code: `frontend/src/services/learning/{learnerState,pedagogicalPolicy,adi,independenceCheck,practicalGuides,tutorSuggestions,assessment*}.js`, mirrors under `backend/learning/`, lesson panels for assessment/independence.
+
 ### 15.2 Wave 2 tracks (priority order)
 
 Execute **Track D** in parallel with product tracks. **Never** add multi-child households or classroom/roster products—schools and multi-child parents buy **separate seats** only.
@@ -756,10 +781,11 @@ Maps to: CAPABILITIES §3.1.4 depth, §3.1.7–3.1.8, §3.6.5
 | ID | Work | PLAN epic | Status |
 |----|------|-----------|--------|
 | P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⬜ |
-| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ✅ v1 / ⬜ depth |
-| P.3 | Domain playbook #2 (science or writing thin pack) | **C7** | ⬜ |
-| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ |
-| P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⬜ |
+| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ✅ v1 / ⬜ depth (timed, broader banks, pre/post) |
+| P.3 | Domain playbook #2 + how-to pack expansion | **C7** | ⬜ (CS how-to v1 ships outside C7) |
+| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ✅ C8.1–C8.3 · calibrate labels next |
+| P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⚡ CS pilot live; multi-domain still open |
+| P.6 | Practical how-to library depth (more skills/OS paths) | how-to | ✅ v1 CS literacy · expand ⬜ |
 
 #### Track R — Shareable progress (single learner only)
 
@@ -816,14 +842,10 @@ Wave 2a — Hostable beta (Track D)
   D.1–D.7 until staging dogfood is boring
   Keep product changes limited to beta blockers
 
-Wave 2b — Learning intelligence + retention (Track L proposed + Track P)
-  See [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) for expert-review gaps → epic map.
-  L1 LearnerState contract ✅ → L3 Assistance Dependency Index ✅ → L2 pedagogical policy v1 ✅
-  L4 Independence/transfer twins ✅
-  P.4 C8 eval harness ✅ (C8.3 manual · C8.1 auto · C8.2 weekly job)
-  P.1 C1+ review depth
-  P.2 C6 assessment depth (v1 ✅; L4 twins cover independence/transfer thin)
-  P.3 C7 second domain only if sessions leave math
+Wave 2b — Learning intelligence + retention (Track L + Track P)  [intelligence mostly shipped]
+  See [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) + §15.1a.
+  L1–L4 ✅ · C6 v1 ✅ · C8 ✅ · practical how-to v1 ✅ · CS pilot ✅
+  Remaining product: P.1 C1+ review depth · P.2 C6 depth · P.3 C7 playbooks · P.6 how-to expand
 
 Wave 2c — Teach medium (Track X P0–P1)
   X.1 diagrams + X.2 a11y + X.3 focus mode
@@ -853,8 +875,8 @@ Wave 2e — Scale (Tracks V + S) — post PMF signals
 ### 15.5 Immediate next actions (start here)
 
 1. **Track D** — follow [`BETA_LAUNCH.md`](./BETA_LAUNCH.md) P0 (Postgres, host, email, cron, billing, caps).  
-2. **Do not re-implement** Wave 1 epics (A1–A6, B1–B8, C1 v1, C5 lite, G1).  
-3. After D is green, pull **P.1 / P.2** from Track P; Track R = digest polish + single-learner export only.  
+2. **Do not re-implement** Wave 1 or §15.1a (L1–L4, C6 v1, C8, CS pilot, practical how-to).  
+3. After D is green (or in parallel if product-critical): **P.1 C1+**, **C7** playbooks / how-to expand, Track R digest polish + single-learner export.  
 4. Optional digests: student configures recipient email—**not** a parent account product. Multi-child families buy multiple seats.  
 
 ### Historical bootstrap checklist (Wave 1 — completed)
@@ -928,13 +950,14 @@ Track as features land:
 |-------|--------|
 | Based on | `CAPABILITIES.md` §3, §4, §5; feasible slice of `SUGGESTIONS.md` |
 | Codebase | `frontend/` + `backend/` monorepo |
-| Status | Active execution plan — **Wave 2** backlog live; Wave 1 shipped |
-| Last updated | 2026-09-01 |
+| Status | Active execution plan — Wave 1 + Wave 2 intelligence shipped; Track D + remaining Wave 2 open |
+| Last updated | 2026-09-10 |
 
 ### Changelog
 
 | Date | Note |
 |------|------|
+| 2026-09-10 | **Wave 2 intelligence slice documented:** L1–L4, C6 v1, C8.1–C8.3, CS pilot (unit→subtopic), practical how-to teaching, suggestion chips. New §15.1a. Design principle: show how for practical skills. Immediate next remains Track D deploy. |
 | 2026-09-01 | **Strategy lock:** Kindling is permanently **one student = one seat**. C2 multi-child and C3 classroom marked ❌ never; digests stay student-configured email (A5). Schools/multi-child parents buy separate seats. Wave 2 Track R reframed to shareable single-learner progress only. |
 | 2026-09-01 | **Wave 2** defined: compared CAPABILITIES §3 pending items vs shipped Phase 0–2.5; expanded Phase 3 epic sketches (C1+, C4–C10), Phase 4/5 status table; new §15 Wave 2 tracks (D deploy, P pedagogy, R shareable progress, X experience, V voice, S scale). Marked C5 lite + G1 complete in Phase 2.5. |
 | 2026-08-31 | Phase 2.5 Epic **G1** light spark challenge: Dashboard card, 3 solid turns, celebration chips, `challenge.*` events. |

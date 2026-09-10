@@ -30,16 +30,18 @@ Kindling/
 
 ## Why Kindling
 
-- **Adaptive tutor** — Socratic by default; graduated help when stuck (micro-hint → worked example → full guide → break / easier path)
+- **Adaptive tutor** — Socratic by default on reasoning; graduated help when stuck (micro-hint → worked example → full guide → break / easier path)
+- **Hands-on how-to** — Practical skills (e.g. files & folders) get numbered device steps and try-it checklists, not theory-only lectures
 - **Knows the student** — Grade, curriculum, country, interests, and learning style shape every lesson
-- **Learns from every turn** — Correctness, affect, confidence, engagement, misconceptions, and persistence feed a living learner model
-- **Pilot pedagogy depth** — Skill graph + BKT-lite mastery, math verification, worked-example library, misconception playbooks, multi-step “show your work”
+- **Closed learning loop** — Signals → LearnerState (L1) → pedagogical decision (L2) → ADI (L3) → independence twins (L4); tutor executes the decided move
+- **Pilot pedagogy depth** — Computer Science path + skill graph/BKT-lite, worked examples, misconceptions, multi-step work, C6 quick checks, C8 eval tooling
+- **Low-friction replies** — Real-world examples + 3–5 one-tap suggestion chips every teaching turn
 - **Presentation matters** — Math, lists, code, tables, and diagrams render cleanly while streaming
 - **Voice-ready** — Optional speak-aloud (TTS) and speech-to-text answers
 - **Progress the learner can trust** — Subjects, resume, skill sparks, Review spark, goals/week focus, learner pulse; optional guardian digests
 - **Session rhythm** — Start energy check-in, end reflection, light spark challenge (no badge economy)
 - **Flexible AI** — Platform Gemini and/or bring-your-own-key (Gemini, OpenAI-compatible, Anthropic, Groq, OpenRouter)
-- **Production floor** — Health probes, telemetry, failure UX, safety escalation, background jobs skeleton (Postgres/host deploy = Wave 2)
+- **Production floor** — Health probes, telemetry, failure UX, safety escalation, background jobs skeleton (Postgres/host deploy = Wave 2 Track D)
 
 ---
 
@@ -118,7 +120,7 @@ API base: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 | Email    | `student@kindling.edu` |
 | Password | `kindling-demo`        |
 
-`seed_kindling` loads the demo student, **Math Foundations** pilot skill graph, worked examples, misconception catalog, multi-step problems, sample mastery sparks, and a preview parent digest.
+`seed_kindling` loads the demo student, the **Computer Science** pilot path (units → subtopics + skills), worked-example / misconception catalogs, multi-step packs, sample mastery sparks, and a preview parent digest. Math Foundations pedagogy packs remain available in-repo for fraction tools and examples.
 
 More detail: [backend/README.md](./backend/README.md).
 
@@ -149,7 +151,7 @@ npm run dev
 
 Open the URL Vite prints (usually [http://localhost:5173](http://localhost:5173)).
 
-Log in with the demo account (or register), complete onboarding if prompted, open **My Subjects → Math Foundations**, and start a lesson.
+Log in with the demo account (or register), complete onboarding if prompted, open **My Subjects → Computer Science**, pick a lesson (e.g. **Files & folders**), and start tutoring.
 
 More detail: [frontend/README.md](./frontend/README.md).
 
@@ -161,36 +163,42 @@ More detail: [frontend/README.md](./frontend/README.md).
 |------|----------------|
 | **Overview** | Product home / marketing entry |
 | **Auth & onboarding** | Register, login, demo; rich student profile (grade, curriculum, interests, learning style, …) |
-| **My Subjects** | Create subjects & topics; continue cards; transcript search |
-| **Live lesson** | Streaming tutor, lesson path + skill sparks, tools sidebar, learner pulse |
+| **My Subjects** | Computer Science pilot path; continue cards; transcript search |
+| **Live lesson** | Streaming tutor, unit/lesson path + skill sparks, tools sidebar, learner pulse |
+| **Practical how-to** | Numbered device steps + try-it for literacy skills (files, apps, browser, safety) |
+| **Suggestion chips** | 3–5 one-tap follow-ups after tutor turns |
 | **Help ladder** | Soft idle nudge → offer → micro-hint → worked example → full guide → break/easier path; escalate / exit anytime |
+| **Quick check (C6)** | Low-stakes MCQ assessment with tutor explanations |
+| **Independence twin (L4)** | No-scaffold / transfer check after heavy help |
 | **Show library example** | Curated worked examples from the pilot catalog (preferred over free generation) |
-| **Show your work** | Multi-step problems with intermediate checks and partial credit (pilot topics) |
-| **Manipulatives** | Interactive fraction tools on matching pilot topics |
+| **Show your work** | Multi-step problems with intermediate checks and partial credit (pilot packs) |
+| **Manipulatives** | Interactive fraction tools on matching math pilot topics |
 | **Homework photo** | Upload notebook/homework image → vision analysis + guided help path |
-| **Dashboard** | Mastery, skill readiness, confidence-oriented views, family digest panel |
+| **Dashboard** | Mastery, skill readiness, next-best step, confidence views, family digest panel |
 | **Settings** | AI providers / BYOK routing, plan entitlements (Spark / Ember / Forge pilot) |
 
 ---
 
-## What’s implemented (through Phase 2)
+## What’s implemented (current monorepo)
 
-High-signal features already in the monorepo (see CAPABILITIES / PLAN for full tables):
+High-signal features already shipped (see CAPABILITIES / PLAN for full tables):
 
-### Learning science (pilot: Math Foundations)
+### Learning science & intelligence
 
-- Skill graph + **BKT-lite** mastery (“Skill sparks”: Growing roots → Ready to spark → Catching fire → Glowing)
-- Math **correctness verifier** (hidden `⟦check …⟧` tags; server prefers checker over linguistic yes/no for mastery)
-- **Worked-example library** (DB + API; grade bands; tutor prefers library over free generation)
-- **Misconception engine** (catalog + remediation playbooks; detect/remediate events; success boosts skill mastery)
-- **Multi-step show-your-work** (step panel, A3-aligned intermediate checks, partial credit)
+- **Computer Science** pilot curriculum (units → subtopics) + skill graph / **BKT-lite** mastery
+- **LearnerState (L1)** → **pedagogical policy (L2)** → **ADI (L3)** → **independence twins (L4)**
+- **Practical how-to guides** for hands-on literacy skills (not theory-only)
+- Math **correctness verifier** (hidden `⟦check …⟧` tags; server prefers checker when applicable)
+- **Worked-example library**, **misconception engine**, **multi-step show-your-work**
+- **C6** low-stakes quick checks; **C8** eval rubric + auto scorer + weekly sample job
+- **Review spark** (C1 v1) + light **spark challenge** (G1)
 
-### Intervention & affect
+### Intervention, affect & session rhythm
 
-- Rich struggle signals (idle, short answers, thrashing, rapid guessing, off-topic, incorrect/hint streaks)
-- Soft idle nudge (~45s) before a full help offer
-- Graduated intervention ladder with level-aware CTA, escalate, and exit
-- Affective check-ins + persistence celebration (student UI + parent digest “Effort & heart”)
+- Rich struggle signals + graduated help ladder (exit anytime)
+- Affective check-ins, session-start energy, end-of-session reflection
+- Persistence celebration (student UI + parent digest “Effort & heart”)
+- Real-world example rule + suggestion chips (including how-to chips)
 
 ### Continuity & family
 
@@ -204,16 +212,18 @@ High-signal features already in the monorepo (see CAPABILITIES / PLAN for full t
 - AI/API failure UX (retry, offline event queue, chat history kept)
 - Age-aware safety policy + distress escalation path (pause tutor + scrubbed `SafetyEvent`)
 - Account export / delete (`GET /api/auth/export/`, `DELETE /api/auth/account/`)
-- Background job runner (`heartbeat`, `weekly_digest`, placeholders for mastery/review)
+- Background job runner (`heartbeat`, `weekly_digest`, `review_schedule`, `weekly_eval_sample`, …)
 - Pilot plans & AI routing prefs under `/api/platform/`
+
+**Still Wave 2:** hostable Postgres deploy (Track D), C1+ review depth, C7 playbooks, standards export, diagrams/a11y, PWA/scale.
 
 ---
 
 ## Key technical capabilities
 
 - Multi-provider AI gateway (`frontend/src/services/ai/`): platform Gemini + BYOK for Gemini, OpenAI-compatible, Anthropic, Groq, OpenRouter; per-task routing (chat / vision / TTS) on higher plans
-- Streaming tutoring with profile-, safety-, and signal-aware system prompts
-- Learning pipeline: signal extraction → session tracker → local profile → API events
+- Streaming tutoring with profile-, safety-, pedagogy-, and how-to-aware system prompts
+- Learning pipeline: signals → LearnerState → policy decision → profile/events → next prompt
 - Rich tutor rendering (Markdown, GFM tables, KaTeX, code blocks, diagrams)
 - Gemini TTS + browser speech recognition
 - Django apps: `accounts`, `students`, `curriculum`, `learning`, `core`, `kindling_platform`
@@ -333,9 +343,9 @@ backend/
 
 ## Roadmap snapshot
 
-**Done (see PLAN.md Phases 0–2):** production floor (observability, resilience UX, safety, jobs), Horizon A core slice (mastery graph, resume, math check, homework photo, digests, manipulatives), intervention depth (richer struggle signals, graduated ladder, affective check-ins, worked examples, misconception engine, multi-step work), multi-provider AI + pilot plans.
+**Done (see PLAN.md):** production floor (minus Postgres host), Horizon A, intervention depth, session rhythm, **Wave 2 intelligence** (L1–L4, C6 v1, C8, CS pilot, practical how-to, suggestion chips), multi-provider AI + pilot plans.
 
-**Next (Wave 2 — PLAN §15):** Postgres/hostable deploy, review depth, assessment modes, domain playbooks, eval harness, single-learner standards export, diagrams/a11y, digest polish. **Not planned:** multi-child households or classroom software (multi-learner = multi-seat).
+**Next (Wave 2 remaining — PLAN §15):** Postgres/hostable deploy (Track D), C1+ review depth, C7 domain playbooks / how-to expand, single-learner standards export, diagrams/a11y, digest polish. **Not planned:** multi-child households or classroom software (multi-learner = multi-seat).
 
 **Paid beta path (~25 students, individual seats):** **[BETA_LAUNCH.md](./BETA_LAUNCH.md)** — hosting, per-student billing; optional student-configured digest email.
 
@@ -346,16 +356,16 @@ Full detail: **[PLAN.md](./PLAN.md)** and **[CAPABILITIES.md](./CAPABILITIES.md)
 ## Try the pilot pedagogy (after seed)
 
 1. Log in as the demo student (`student@kindling.edu` / `kindling-demo`).  
-2. Open **My Subjects → Math Foundations** (fractions → early algebra).  
-3. Start a lesson. In **Tools**, try:
+2. Open **My Subjects → Computer Science → Digital & computer literacy → Files & folders**.  
+3. Start the lesson. Expect a warm orientation **and** a path into numbered how-to steps (create a folder, try-it checklist). Tap chips like **Show me how step by step**.  
+4. In **Tools**, also try:
    - **Help ladder** (or wait idle / struggle to see soft nudge → offer)
-   - **Show library example**
-   - **Show your work** (e.g. on *Adding fractions*)
-   - Fraction **manipulatives** where the topic supports them  
-4. Optionally upload a **homework photo** for guided help.  
-5. Leave mid-lesson and return via **Continue** on My Subjects / Dashboard.  
-6. Dashboard → family digest preview (opt-in + generate).  
-7. **Settings** → AI providers / plan routing if you want BYOK instead of the platform Gemini key.
+   - **Quick check** (C6 low-stakes MCQ)
+   - **Show library example** / **Show your work** on topics that support them  
+5. Optionally upload a **homework photo** for guided help.  
+6. Leave mid-lesson and return via **Continue** on My Subjects / Dashboard.  
+7. Dashboard → family digest preview (opt-in + generate); note suggested next step / skill sparks.  
+8. **Settings** → AI providers / plan routing if you want BYOK instead of the platform Gemini key.
 
 ---
 

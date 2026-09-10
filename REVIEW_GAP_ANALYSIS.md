@@ -1,7 +1,7 @@
 # Kindling — Expert Review Gap Analysis
 
 **Source review:** [`REVIEW_FEEDBACK.md`](./REVIEW_FEEDBACK.md)  
-**Compared against:** shipped Wave 1 + recent product (C6 quick check, real-world examples, suggestion chips) as of 2026-09  
+**Compared against:** shipped Wave 1 + Wave 2 intelligence slice (L1–L4, C6, C8, CS pilot, practical how-to, suggestion chips) as of 2026-09-10  
 **Plan home:** [`PLAN.md`](./PLAN.md) · capability inventory: [`CAPABILITIES.md`](./CAPABILITIES.md)
 
 This document turns the educational/technical review into a **tracked gap matrix**, maps each gap to **PLAN epics**, and proposes an **implementation order** that strengthens Kindling as a *learning intelligence platform* without abandoning the warm tutor product.
@@ -16,7 +16,7 @@ This document turns the educational/technical review into a **tracked gap matrix
 | **System skeleton** | Observe → estimate state → decide → teach → update | **Built in pieces** (signals, ladder, mastery, misconceptions, review, assess) |
 | **Scientific platform** | Learning gain, independence, policy eval, longitudinal pedagogy data | **Early** — events exist; science layer does not |
 
-**One line:** Kindling has the **bones** of what the experts recommend. It has not yet made the **brain** fully explicit — a formal pedagogical decision engine, independence/transfer metrics, assistance dependency, and a learning-gain eval framework.
+**One line:** Kindling now has the **brain** of the expert model in-repo (L1 state, L2 policy, L3 ADI, L4 independence, C8 eval) plus practical how-to teaching — remaining gaps are **depth, calibration, deploy, and multi-domain coverage**, not missing core loops.
 
 **Strategic frame (from the review, adopted here):**
 
@@ -38,7 +38,7 @@ Keep and document these as non-negotiable foundations.
 | Graduated help ladder | Micro-hint → example → full guide → break/easier | **B2** ✅ |
 | Model the learner | Profile + skills BKT-lite + affect/engagement/confidence + behavior rates | **A1**, learning profile, session tracker |
 | Struggle signals | Idle, short answers, thrashing, rapid guessing, off-topic | **B1** ✅ |
-| Curriculum / skill graph | Pilot Math Foundations prereqs + recommended next | **A1** ✅ (pilot) |
+| Curriculum / skill graph | CS pilot path + skills; math packs retained | **A1** ✅ (CS live; math packs) |
 | Misconceptions | Catalog + playbooks + detect/remediate events | **B5** ✅ (pilot) |
 | Worked examples as data | Library linked to skills | **B4** ✅ |
 | Multi-step / show work | Intermediate checks + partial credit | **B6** ✅ |
@@ -87,7 +87,7 @@ Status legend:
 | G10 | §7 | Full skill graph + backward prereq move | **Partial** → **Done** thin (L2.3) | Policy rule fires REMEDIATE_PREREQUISITE on stuck + blocking prereq | Multi-domain graph still A1/C7 | **L2.3** ✅ · **A1 expand** | P1 |
 | G11 | §8 | Misconception confidence + multi-session evidence + fixed remediation protocol | **Partial** | Catalog, counts, playbooks | Weak confidence model; protocol not enforced | **B5+** (extend B5) | P1 |
 | G12 | §9 | Adaptive ladder amount per learner over time | **Partial** → **Done** (L3.2 thin) | `selectInterventionLevel` + `applyAdiLadderPreference` fade when ADI prefers lighter help | Full L2 policy still owns micro-moves | **L3.2** ✅ | P1 |
-| G13 | §9–10 | Assistance Dependency Index | **Done** (L3) | `adi.js` / `adi.py`; `learning.adi` events; pulse independence line; digest line | L4 independence twins still next | **L3** ✅ | P0 |
+| G13 | §9–10 | Assistance Dependency Index | **Done** (L3) | `adi.js` / `adi.py`; `learning.adi` events; pulse independence line; digest line | Lifetime ADI trends / research export later | **L3** ✅ | P0 |
 
 ### 3.4 Measurement beyond immediate correctness
 
@@ -296,21 +296,21 @@ From CAPABILITIES §5 + review spirit:
 |-----|------|
 | [`REVIEW_FEEDBACK.md`](./REVIEW_FEEDBACK.md) | Expert source narrative (§1–18) |
 | **This file** | Gap IDs, status, PLAN map, order |
-| [`PLAN.md`](./PLAN.md) | Execution epics & Wave 2 tracks — add **Track L** when scheduling |
-| [`CAPABILITIES.md`](./CAPABILITIES.md) | ✅/⬜ inventory — flip flags as L*/C* ship |
-| [`docs/ENGINEERING.md`](./docs/ENGINEERING.md) | Document L1/L2 contracts when implemented |
+| [`PLAN.md`](./PLAN.md) | Execution epics & Wave 2 tracks — **§15.1a** lists shipped L1–L4 / C6 / C8 |
+| [`CAPABILITIES.md`](./CAPABILITIES.md) | ✅/⬜ inventory — L*/C6/C8/how-to flipped shipped |
+| [`docs/ENGINEERING.md`](./docs/ENGINEERING.md) | Closed-loop architecture including L1/L2/ADI/how-to |
 
 ---
 
 ## 10. Summary for stakeholders
 
-**Already true:** Kindling is not a thin chatbot wrapper. It has struggle detection, a help ladder, pilot mastery and misconceptions, review sparks, assessment checks, and a living profile.
+**Already true:** Kindling is not a thin chatbot wrapper. It has struggle detection, a help ladder, pilot mastery and misconceptions, review sparks, assessment checks, a living profile, a **formal LearnerState + pedagogical policy loop (L1–L2)**, **ADI (L3)**, **independence twins (L4)**, **C8 eval tooling**, a **Computer Science** pilot path, and **practical how-to** teaching for hands-on skills.
 
-**Not yet true:** Kindling does not yet *formally* decide “the best next pedagogical action” from a complete learner state, measure *independence* and *learning gain*, or prove policy components with an eval harness.
+**Still open (science / product depth):** multi-subject review depth (**C1+**), broader domain playbooks (**C7**), decision-compliance scoring at scale, thin pre/post learning-gain pilots, L5 trajectory export, and hostable deploy (Track D) so beta cohorts can generate longitudinal data.
 
-**Do next:** **L1 → L3 → L2 → C8 bridge → C1+/C6 depth → L4 → C7/C4 as needed.**  
-That path converts the review from inspiration into a moat: **longitudinal pedagogical intelligence**, not prettier chat.
+**Do next:** **Track D (deploy)** in parallel with **C1+ / C7 / C4** as demand requires — not a second build of L1–L4.  
+The moat is **longitudinal pedagogical intelligence**, not prettier chat.
 
 ---
 
-*Created: 2026-09-09 · Source: educational expert review vs monorepo Wave 1 + C6/supportive-tutor polish.*
+*Created: 2026-09-09 · Updated: 2026-09-10 — L1–L4/C6/C8/how-to marked shipped; summary aligned with monorepo.*

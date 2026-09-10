@@ -22,9 +22,10 @@ Django + Django REST Framework API for the Kindling adaptive tutoring platform.
 |-----|----------------|
 | `accounts` | Register, login, demo login, JWT refresh, `/me` |
 | `students` | Student profile for the logged-in user (1:1) |
-| `curriculum` | Subjects & topics owned by a student |
-| `learning` | Event ingest, sessions, longitudinal profile, dashboard |
-| `core` | Health probes, request logging, client error + product metrics telemetry |
+| `curriculum` | Subjects, topics, **subtopics**, skills, worked examples, misconceptions; CS pilot provision |
+| `learning` | Events, sessions, mastery, conversations, digests, homework, L1–L4 mirrors, C6/C8, dashboard |
+| `kindling_platform` | Plans / entitlements / AI routing prefs (no raw secrets) |
+| `core` | Health probes, safety, jobs, request logging, client error + product metrics telemetry |
 
 ## Observability (Phase 0.2)
 
@@ -94,20 +95,24 @@ python manage.py run_scheduled_jobs
 
 Configure in `settings.KINDLING_JOBS`. Ops snapshot: `GET /api/jobs/status/`.
 
-## Skill graph mastery (Epic A1)
+## Curriculum pilot & skill graph (Epic A1 + CS path)
 
-Pilot domain: **Math Foundations** (fractions → early algebra).
+**Live seeded subject:** **Computer Science** — units (topics) → lessons (subtopics) via `curriculum.cs_provision` / `pilot_graph.PILOT_UNITS`.  
+Math Foundations skill/example packs remain in the catalog for fraction pedagogy and manipulatives.
 
 | Endpoint | Purpose |
 |----------|---------|
+| `GET /api/curriculum/subjects/` | Student subjects (CS auto-provisioned for demo/new learners as configured) |
 | `GET /api/learning/skills/` | Pilot skill catalog + prerequisites |
 | `GET /api/learning/skills/path/?subject=&topic=` | Skills for a lesson topic + readiness |
 | `GET /api/learning/skills/next/` | Recommended next skill for the learner |
 
 Graded `turn.exchange` events update **BKT-lite** `SkillMastery` rows and blend into topic mastery. Warm states: Growing roots → Ready to spark → Catching fire → Glowing.
 
+Learning intelligence mirrors (FE source of truth for rules; BE for tests/API): `learner_state.py`, `pedagogical_policy.py`, `adi.py`, `independence.py`, eval scorer modules.
+
 ```bash
-python manage.py seed_kindling   # seeds graph + demo mastery sparks
+python manage.py seed_kindling   # demo student + CS path + skills + sparks
 ```
 
 ## Session eval harness (Epic C8)

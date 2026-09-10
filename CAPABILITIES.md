@@ -8,11 +8,12 @@
 
 Kindling aims to deliver **warm, adaptive 1-on-1 tutoring** to every learner by combining:
 
-- Conversational tutoring (Socratic by default, guided when stuck)
-- Continuous learning signals (correctness, affect, confidence, engagement)
+- Conversational tutoring (Socratic by default; graduated help when stuck; **hands-on how-to** for practical skills)
+- Continuous learning signals (correctness, affect, confidence, engagement, assistance dependency)
+- A formal pedagogical decision loop (LearnerState → policy action → LLM executes that move)
 - Curriculum and profile alignment (grade, country, curriculum, interests, learning style)
-- Family-visible progress (dashboard, mastery signals, session history)
-- Accessible interaction (voice in/out, rich visual presentation of explanations)
+- Family-visible progress (dashboard, mastery signals, session history, optional digests)
+- Accessible interaction (voice in/out, suggestion chips, rich visual presentation of explanations)
 
 ---
 
@@ -32,28 +33,36 @@ Kindling aims to deliver **warm, adaptive 1-on-1 tutoring** to every learner by 
 
 | Capability | Status | Notes |
 |------------|--------|--------|
-| Custom subjects | ✅ | Student-owned subjects (Math, Science, coding, languages, etc.) |
-| Topic paths per subject | ✅ | Topics form a lesson path; switch mid-session |
+| Pilot subject (Computer Science) | ✅ | Sole seeded pilot: unit → subtopic path from digital literacy through systems (see `Computer Science.MD` / `pilot_graph.py`) |
+| Subject → topic → subtopic hierarchy | ✅ | Units (topics) contain lessons (subtopics); path UI + provision via `cs_provision` |
+| Custom subjects | ✅ | Student-owned subjects remain supported by the API/UI |
+| Topic paths per subject | ✅ | Lessons form a path; switch mid-session |
 | Topic familiarity + learning goals | ✅ | Captured on subject/topic create; drives first-session pacing |
 | Week focus line (lite) | ✅ | C5: student-editable “this week I’m working on…” on profile / Dashboard |
-| Seed data | ✅ | Backend `seed_kindling` management command |
-| Live lesson path UI | ✅ | Left sidebar with done / active / upcoming topics; collapsible on desktop |
+| Seed data | ✅ | Backend `seed_kindling` + CS graph ensure for demo student |
+| Live lesson path UI | ✅ | Left sidebar with done / active / upcoming lessons; collapsible on desktop |
 | Goals surface in lesson | ✅ | C5 lite: goal + familiarity chips on path, tools “Your focus”, chat header; tutor prompt injection |
+| Skill graph on pilot | ✅ | CS literacy + foundations skills linked to lessons; BKT-lite mastery + sparks |
 
 ### 2.3 Live tutoring session
 
 | Capability | Status | Notes |
 |------------|--------|--------|
-| Streaming AI chat | ✅ | Google Gemini (`@google/genai`), token-streamed replies |
-| Socratic tutoring default | ✅ | Guides discovery; avoids giving answers away in normal mode |
+| Streaming AI chat | ✅ | Multi-provider gateway; platform default Gemini (`@google/genai`), token-streamed replies |
+| Socratic tutoring default | ✅ | Guides discovery on reasoning practice; does **not** withhold how-to steps for practical skills |
+| Practical how-to teaching | ✅ | Hands-on skill topics (e.g. Files & folders): numbered device steps, try-it checklists, curated guides (`practicalGuides.js`) |
 | Profile-aware system prompts | ✅ | Grade, curriculum, country spelling/standards, interests, learning style |
-| Longitudinal personalization | ✅ | Live learner model directives injected into the tutor prompt |
+| Longitudinal personalization | ✅ | Live learner model + L1 state + L2 pedagogy decision injected into the tutor prompt |
+| Real-world example rule | ✅ | Teaching turns expected to ground ideas in everyday life |
+| Suggestion chips | ✅ | 3–5 one-tap follow-ups (`⟦suggests: …⟧`); practical topics include “Show me how step by step” |
 | Hints on demand | ✅ | Visible “Get a hint” control in the tools panel |
 | Lesson restart | ✅ | Restart topic / chat session |
 | Live difficulty indicator | ✅ | Progress bar + labels from mastery + session accuracy |
 | Collapsible lesson path | ✅ | More room for chat when path is hidden |
-| Wider tools sidebar | ✅ | Room for learner pulse and controls without heavy wrapping |
+| Wider tools sidebar | ✅ | Room for learner pulse, assessment, independence, and controls |
 | Mobile panel tabs | ✅ | Path / Chat / Tools on small screens |
+| Low-stakes quick check (C6) | ✅ | Offline-first MCQ assessment panel; tutor explanation after each item |
+| Independence twin (L4) | ✅ | Post-ladder no-scaffold / transfer check offer |
 
 ### 2.4 Intervention mode (step-by-step guide)
 
@@ -92,13 +101,19 @@ Kindling maintains a **live pulse** on the learner without breaking tutor charac
 | Exchange analysis | ✅ | Correctness (correct / partial / incorrect / exploring), affect, confidence, engagement |
 | Linguistic heuristics | ✅ | Infer correctness from tutor language; affect from student language |
 | Response timing | ✅ | Think-time between prompt and answer |
-| Misconception cues | ✅ | Small built-in set (e.g. fractions-related) |
+| Misconception cues | ✅ | Catalog + pilot playbooks (B5); CS + math coverage growing |
 | Delivery preferences | ✅ | Visual / story / step-by-step signals |
 | Session tracker | ✅ | Turns, counters, tools, intervention state |
 | Local learning profile | ✅ | Mastery, strengths, focus areas, rolling histories |
 | Personalization directives | ✅ | Fed back into the next tutor behavior |
+| **LearnerState (L1)** | ✅ | Structured snapshot: knowledge, misconceptions, behaviour, engagement, confidence, assistance, objective, interaction |
+| **Pedagogical policy (L2)** | ✅ | `decidePedagogy` → closed action catalog; LLM executes only that move; `pedagogy.decision` events |
+| **Assistance Dependency Index (L3)** | ✅ | ADI from help + graded turns; ladder prefers lighter help as independence rises |
+| **Independence / transfer (L4)** | ✅ | No-scaffold twin after heavy help; transfer bank items |
+| Next-best-action ranking | ✅ | Thin dashboard “Suggested next step” from policy + due review |
 | Event pipeline | ✅ | Queue + POST to learning API (or local mock) |
 | Server-side profile recompute | ✅ | Django learning app mirrors frontend profile logic |
+| Eval harness (C8) | ✅ | Manual rubric + offline auto scorer + weekly sample job (`docs/EVAL_RUBRIC_C8.md`) |
 
 ### 2.6 Presentation quality (tutor → learner)
 
@@ -143,13 +158,13 @@ Presentation is treated as part of the product, not a polish step.
 | AI | Multi-provider gateway + BYOK; platform default Gemini chat + TTS |
 | Data | Student profile, curriculum graph, learning events/sessions, mastery, digests, homework |
 | Ops floor | Health probes, telemetry, safety events, jobs skeleton (`run_scheduled_jobs`) |
-| Seed | Demo student + Math Foundations pilot pack |
+| Seed | Demo student + **Computer Science** pilot graph (units → subtopics + skills) |
 
 ---
 
 ## 3. What “excellent go-to tutor” requires next
 
-Items marked ✅ are **shipped in Wave 1** (see [`PLAN.md`](./PLAN.md) Phases 0.2–2.5). Unchecked items are the **Wave 2 backlog** (PLAN §15 + Phases 3–5).
+Items marked ✅ are **shipped** (Wave 1 + early Wave 2 intelligence slice — see [`PLAN.md`](./PLAN.md)). Unchecked items remain the **active Wave 2 backlog** (PLAN §15 + Phases 3–5).
 
 ### 3.1 Pedagogy & cognition (highest product leverage)
 
@@ -157,7 +172,7 @@ Items marked ✅ are **shipped in Wave 1** (see [`PLAN.md`](./PLAN.md) Phases 0.
    BKT-lite per pilot skill + standard codes; expand coverage in Wave 2 as domains grow.
 
 2. **Curriculum graph** ✅ (pilot)  
-   Prerequisites, recommended next skill, lock/ready routing on Math Foundations; multi-domain expand = Wave 2.
+   Prerequisites, recommended next skill, lock/ready routing on the **Computer Science** pilot (literacy → foundations → programming path). Math Foundations skill/example packs remain in-repo for fraction pedagogy. Multi-domain expand = Wave 2.
 
 3. **Worked-example library** ✅  
    Curated, age-appropriate examples and counterexamples per pilot skill (DB + API; tutor prefers library over free generation).
@@ -169,13 +184,19 @@ Items marked ✅ are **shipped in Wave 1** (see [`PLAN.md`](./PLAN.md) Phases 0.
    Stored catalog per domain + remediation playbooks; detect → tutor directives; remediation feeds skill mastery.
 
 6. **Multi-step problem solving** ✅  
-   Show-your-work mode with intermediate checks (A3 verifier), partial credit, and step-list UI (pilot: adding unlike fractions, one-step equations).
+   Show-your-work mode with intermediate checks (A3 verifier), partial credit, and step-list UI (pilot packs).
 
-7. **Assessment modes** ✅ (v1) Wave 2 · **C6**  
-   Low-stakes offline-first MCQ quick checks (one question at a time) with tutor explanation after every answer for revision; end-of-topic / readiness offer; results feed mastery. Optional timed flag reserved.
+7. **Assessment modes** ✅ (v1) · **C6**  
+   Low-stakes offline-first MCQ quick checks (one question at a time) with tutor explanation after every answer; end-of-topic / readiness offer; results feed mastery. **Remaining:** timed UI, broader banks, thin pre/post gain.
 
-8. **Teacher/tutor playbooks** ⬜ Wave 2 · **C7**  
-   Domain packs (early math, algebra, writing, coding) with proven scaffolds Kindling follows consistently; second thin pack if sessions leave math.
+8. **Practical how-to teaching** ✅  
+   Hands-on skill topics get numbered device procedures + try-it checklists (not theory-only). Curated CS literacy guides; Socratic carve-out so procedures are not withheld. **Wave 2:** expand guide library / domain packs (**C7**).
+
+9. **Teacher/tutor playbooks** ⬜ Wave 2 · **C7**  
+   Domain packs (CS literacy how-tos, early math, algebra, writing) with proven scaffolds Kindling follows consistently.
+
+10. **Learning intelligence loop (L1–L4)** ✅  
+    LearnerState → pedagogical policy → ADI → independence twins. **Remaining:** L5 trajectory export, decision-compliance scoring depth, lifelong cross-subject model.
 
 ### 3.2 Intervention & emotional support
 
@@ -308,12 +329,12 @@ Execution order lives in [`PLAN.md`](./PLAN.md). Mapping:
 | Horizon | Intent | Wave | Status |
 |---------|--------|------|--------|
 | **A** | High impact on existing code | **Wave 1** | ✅ Shipped (A1–A6 + platform floor minus Postgres host) |
-| **B** | Differentiation | **Wave 2** | ⬜ Phase 3 (C1+ … C10) + session-rhythm already pulled into Wave 1 |
+| **B** | Differentiation | **Wave 1.5–2** | ⚡ Partial — L1–L4, C6 v1, C8, practical how-to, CS pilot shipped; C1+/C7/C4/deploy still open |
 | **C** | Category leadership | **Wave 2 scale** | ⬜ Phase 5 (+ deferred VR/collab/credentials) |
 
 ### Horizon A — Shipped product slice (Wave 1)
 
-- Stronger mastery + skill graph for pilot subjects (fractions, early algebra)  
+- Stronger mastery + skill graph (pilot skills; CS path is the live seeded subject)  
 - Image homework upload + guided remediation  
 - Session history / resume  
 - Parent digest from existing learning events (student-linked)  
@@ -321,13 +342,23 @@ Execution order lives in [`PLAN.md`](./PLAN.md). Mapping:
 - Interactive visual models for top struggle topics  
 - Intervention depth (B1–B6) + session rhythm (B7, B8, C1 v1, C5 lite, G1)
 
-### Horizon B — Differentiation (Wave 2 product)
+### Horizon B — Differentiation (in progress)
 
-- Spaced review **depth** (beyond v1)  
-- Assessment modes + second domain playbook + eval harness  
-- Single-learner standards export; full student-owned goals/plans  
-- Digest polish + optional stuck emails on the same channel  
-- Ops review flags; diagram rendering + accessibility pack (Phase 4 P0)  
+**Shipped early Wave 2 intelligence / pedagogy**
+
+- LearnerState (L1), pedagogical policy (L2), ADI (L3), independence twins (L4)  
+- Assessment quick checks (C6 v1) + eval harness (C8.1–C8.3)  
+- Computer Science pilot curriculum (units → subtopics)  
+- Practical how-to teaching + suggestion chips + real-world example rule  
+
+**Still open**
+
+- Spaced review **depth** (beyond v1) · **C1+**  
+- Domain playbook packs · **C7**  
+- Single-learner standards export; full student-owned goals/plans · **C4 / C5+**  
+- Digest polish + optional stuck emails · **C10**  
+- Ops review flags · **C9**; diagram rendering + accessibility pack (Phase 4 P0)  
+- Hostable deploy / Postgres · Track D  
 - **Not in scope:** multi-child households, classroom/roster products  
 
 ### Horizon C — Category leadership (Wave 2 scale / later)
@@ -346,20 +377,21 @@ Execution order lives in [`PLAN.md`](./PLAN.md). Mapping:
 Whatever is built next, these should stay non-negotiable:
 
 1. **Respect the learner** — normalize struggle; never shame.  
-2. **Guide before giving** — Socratic by default; intervention is explicit and exit-able.  
-3. **Presentation is pedagogy** — clear structure, readable math/code/diagrams.  
-4. **Adapt quietly** — use scores and tracking internally; speak as a caring tutor.  
-5. **Parents and students see progress differently** — student: encouragement; family: clarity.  
-6. **Safety and privacy scale with trust** — especially for children.
+2. **Guide before giving** — Socratic by default on reasoning; intervention is explicit and exit-able.  
+3. **Show how for practical skills** — procedures get numbered, replicable how-tos + try-it checks (theory alone is a failure mode).  
+4. **Presentation is pedagogy** — clear structure, readable math/code/diagrams.  
+5. **Adapt quietly** — use scores and tracking internally; speak as a caring tutor.  
+6. **Parents and students see progress differently** — student: encouragement; family: clarity.  
+7. **Safety and privacy scale with trust** — especially for children.
 
 ---
 
 ## 6. Summary
 
-**Today (Wave 1)**, Kindling is a coherent adaptive tutor: live multi-provider lessons, profile- and signal-aware teaching, graduated intervention, session start/end rituals, Review spark + light challenge, skill mastery on a pilot graph, homework photos, manipulatives, rich rendering, voice I/O, resume/search, optional guardian digests, and a Django learning API with telemetry and a safety floor.
+**Today**, Kindling is a coherent adaptive tutor with a closed learning loop: live multi-provider lessons, L1 learner state + L2 pedagogical decisions, graduated intervention + ADI (L3), independence twins (L4), practical how-to teaching for skill topics, suggestion chips, Review spark + light challenge + C6 quick checks, skill mastery on the **Computer Science** pilot graph, homework photos, manipulatives, rich rendering, voice I/O, resume/search, optional guardian digests, C8 eval tooling, and a Django learning API with telemetry and a safety floor.
 
-**Wave 2** (see [`PLAN.md`](./PLAN.md) §15) should make Kindling **hostable and billable**, then deepen *assessment and review*, *single-learner shareable progress* (digest email, export), *multimodal polish* (diagrams, a11y), and *scale* (PWA, failover, i18n)—while keeping **one student per subscription** and the warm, patient teaching voice.
+**Still ahead (Wave 2)** (see [`PLAN.md`](./PLAN.md) §15): make Kindling **hostable and billable** (Track D), then deepen *review/assessment coverage*, *domain playbooks*, *single-learner shareable progress* (digest polish, standards export), *multimodal polish* (diagrams, a11y), and *scale* (PWA, failover, i18n)—while keeping **one student per subscription** and the warm, patient teaching voice.
 
 ---
 
-*Last updated: 2026-09-09 — single-seat commercial lock; Wave 1 vs Wave 2 aligned with monorepo + `PLAN.md` §15–16. Expert review gaps tracked in [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*
+*Last updated: 2026-09-10 — CS pilot, L1–L4, C6/C8, practical how-to, suggestion chips reflected; Wave 2 Track D still the external-beta gate. Expert review gaps: [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*

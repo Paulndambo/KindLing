@@ -1,8 +1,8 @@
 ﻿# Kindling — Engineering Handbook
 
 **Audience:** engineers joining or extending Kindling  
-**Status:** Living document — aligned with Phases 0–2 shipped (foundation + Horizon A + intervention depth)  
-**Companion docs:** [CAPABILITIES.md](../CAPABILITIES.md) (product *what*), [PLAN.md](../PLAN.md) (execution *order*), [README.md](../README.md) (setup), [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md) (trust floor)
+**Status:** Living document — aligned with Phases 0–2.5 + Wave 2 intelligence slice (L1–L4, C6, C8, CS pilot, practical how-to)  
+**Companion docs:** [CAPABILITIES.md](../CAPABILITIES.md) (product *what*), [PLAN.md](../PLAN.md) (execution *order*), [README.md](../README.md) (setup), [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md) (trust floor), [EVAL_RUBRIC_C8.md](./EVAL_RUBRIC_C8.md) (eval harness)
 
 This handbook explains **how Kindling is built**, the **concepts** that structure the code, **architecture**, and the **design decisions / trade-offs** the team should preserve when changing it.
 
@@ -25,9 +25,10 @@ Everything in the monorepo either serves that loop or the platform floor that ke
 | Rule | Engineering implication |
 |------|-------------------------|
 | Respect the learner | No shaming strings in student UI; struggle is normalized |
-| Guide before giving | Default prompt is Socratic; help is explicit ladder levels, always exit-able |
+| Guide before giving | Default prompt is Socratic on reasoning; help is explicit ladder levels, always exit-able |
+| Show how for practical skills | Procedural topics inject how-to guides + numbered steps; do not withhold procedures |
 | Presentation is pedagogy | Streaming-safe Markdown / KaTeX / tables; tags stripped for speech |
-| Adapt quietly | Mastery, BKT, heuristics stay internal; tutor speaks human |
+| Adapt quietly | Mastery, BKT, L1/L2/ADI stay internal; tutor speaks human |
 | Split family vs student views | Digests / dashboard ≠ learner pulse copy |
 | Safety scales with trust | Age policy in prompts; distress can **block** the model call |
 
@@ -52,22 +53,22 @@ Do not invent parallel roadmaps in code comments. Link the epic id (`A3`, `B5`, 
 ### 2.2 Phased delivery (what “done” means)
 
 ```text
-Phase 0  Production floor     observability, resilience UX, safety, jobs skeleton
-Phase 1  Horizon A            mastery graph, resume, math check, homework, digests, manipulatives
-Phase 2  Intervention depth   struggle signals, ladder, affect, examples, misconceptions, multistep  ✅
-Phase 2.5 Session rhythm      B7 start energy, B8 reflection, C1 review v1, C5 goals lite, G1 challenge  ✅
-Phase 3+ Wave 2               deploy/Postgres; C1+ / C6–C10; Phase 4 diagrams/a11y; Phase 5 scale  ⬜
-         assessment / scale
+Phase 0    Production floor      observability, resilience UX, safety, jobs skeleton
+Phase 1    Horizon A             mastery graph, resume, math check, homework, digests, manipulatives  ✅
+Phase 2    Intervention depth    struggle signals, ladder, affect, examples, misconceptions, multistep  ✅
+Phase 2.5  Session rhythm        B7 start energy, B8 reflection, C1 review v1, C5 goals lite, G1 challenge  ✅
+Wave 2 int Learning intelligence L1 state, L2 policy, L3 ADI, L4 independence, C6 assess, C8 eval,
+                                 CS pilot path, practical how-to, suggestion chips  ✅
+Phase 3+   Wave 2 remaining      deploy/Postgres (Track D); C1+/C7/C4; Phase 4 diagrams/a11y; Phase 5  ⬜
 ```
 
-**Vertical slices over platform abstractions.** Prefer one pilot domain (**Math Foundations**: fractions → early algebra) end-to-end before generalizing to every subject. Seed data must demo every new pedagogy feature (`python manage.py seed_kindling`).
-
+**Vertical slices over platform abstractions.** Live pilot subject is **Computer Science** (unit → subtopic path from digital literacy upward). Math Foundations skill/example/manipulative packs remain for fraction pedagogy. Seed data must demo the CS path (`python manage.py seed_kindling`).
 ### 2.3 Workstreams (for ownership, not silos)
 
 | ID | Stream | Typical code |
 |----|--------|----------------|
-| **P** | Pedagogy | `skillGraph`, mastery engine, worked examples, misconceptions, multistep |
-| **I** | Intervention & affect | `interventionDetector`, ladder, affect check-in |
+| **P** | Pedagogy | `skillGraph`, mastery, worked examples, misconceptions, multistep, `practicalGuides`, assessment, L1–L4 |
+| **I** | Intervention & affect | `interventionDetector`, ladder, affect check-in, ADI ladder fade |
 | **M** | Multimodal | homework upload, manipulatives, future diagrams |
 | **R** | Relationships | student-configured digests only (no multi-child / classroom products) |
 | **T** | Trust | safety/, math verifier, privacy export |
@@ -176,7 +177,7 @@ When you add roles later, **extend** JWT claims / permissions; do not break the 
 
 UI language is warm (**Skill sparks**: Growing roots → Ready to spark → Catching fire → Glowing). Internal state enums stay machine-stable.
 
-**Pilot scope:** deep pedagogy (examples, misconceptions, multistep, verifier) is concentrated on **Math Foundations**. Other subjects still get Socratic chat + generic signals; do not pretend full graph coverage everywhere.
+**Pilot scope:** the live seeded subject is **Computer Science** (unit → subtopic path + skills). Deep math pedagogy packs (examples, misconceptions, multistep, verifier, manipulatives) remain for fraction/algebra topics. Other subjects still get Socratic chat + generic signals + practical how-to when the topic matches; do not pretend full graph coverage everywhere.
 
 ### 4.3 Learning events (the analytics spine)
 
@@ -207,7 +208,7 @@ Student text + tutor text
         │
         ├─► mathVerifier (if pilot / check tags)  ── overrides linguistic grade
         ├─► misconceptionEngine
-        ├─► interventionDetector + ladder
+        ├─► interventionDetector + ladder (+ ADI fade)
         ├─► affectCheckIn thresholds
         └─► sessionTracker counters
                 │
@@ -215,13 +216,18 @@ Student text + tutor text
         profileStore (local) + POST events
                 │
                 ▼
-        buildPersonalizationInsights / server personalization
+        buildLearnerState (L1) ──► computeAdi (L3) ──► decidePedagogy (L2)
                 │
                 ▼
-        system prompt directives  (never raw p_know in student chat)
+        buildPersonalizationInsights + pedagogy/how-to/library prompt blocks
+                │
+                ▼
+        system prompt  (execute policy move; never dump raw scores into student chat)
 ```
 
 Linguistic heuristics are **good enough for UX** and a fallback; they are **not** trusted alone for pilot math mastery once a check tag or verifier context exists (Epic A3).
+
+**Practical how-to:** `practicalGuides.js` detects hands-on topics (e.g. Files & folders), injects curated numbered procedures into the system prompt, and shifts philosophy so Socratic “don’t give answers” does **not** withhold device steps. Policy marks `practicalHowTo` on EXPLAIN / FULL_GUIDE / default turns for those topics.
 
 ### 4.5 Intervention ladder (not binary “guide mode”)
 
@@ -264,8 +270,9 @@ The model may emit machine-readable directives that the UI strips before display
 |-------------|---------|
 | `⟦check expected="…" alts="…" result="…"⟧` | Graded-turn contract for math verifier |
 | `⟦visual type=… num=… den=…⟧` | Drive fraction manipulative |
+| `⟦suggests: a \| b \| c⟧` | One-tap follow-up chips (`tutorSuggestions.js`) |
 
-**Rule:** Tags are a **contract**, not a display feature. Parsers must be tolerant; strippers must run on every student-visible and spoken path. Disagreements between tutor `result=` and checker log `math.grade_disagreement` rather than failing silently.
+**Rule:** Tags are a **contract**, not a display feature. Parsers must be tolerant; strippers must run on every student-visible and spoken path. Disagreements between tutor `result=` and checker log `math.grade_disagreement` rather than failing silently. Suggestion chips fall back to topic-aware defaults (including how-to chips on practical lessons) when the model omits tags.
 
 ### 4.8 Conversations & resume
 
@@ -307,7 +314,9 @@ Prefer putting new pedagogy logic in **`services/learning/*`** with unit/smoke c
 | Hook | Role |
 |------|------|
 | `useChatSession` | Stream lifecycle, history, errors, homework attach path |
-| `useStudentLearning` | Profile, events, interventions, skills, affect, misconceptions |
+| `useStudentLearning` | Profile, events, interventions, skills, L1–L4, affect, misconceptions |
+| `useAssessment` | C6 quick-check panel session |
+| `useIndependenceCheck` | L4 twin offer / active check |
 | `useMultiStep` | B6 show-your-work panel state |
 | `useSpeech` | TTS / STT toggles |
 | `usePlatformSettings` | Plans + AI routing |
@@ -425,7 +434,7 @@ These are the decisions most likely to be “helpfully refactored” by newcomer
 
 ### 8.3 Pilot-shaped depth vs generic tutor
 
-**Choice:** Deep graph/examples/MC/multistep on Math Foundations first.  
+**Choice:** Live CS pilot path first; keep math packs deep where fraction pedagogy needs them.  
 **Why:** Vertical quality beats thin horizontal coverage for learning outcomes and demos.  
 **Cost:** Other subjects feel “chat-only.”  
 **Mitigation:** Keep generic signal + ladder paths domain-agnostic; add domain packs as data (curriculum rows), not hardcoded one-offs in JSX when extending.
@@ -496,10 +505,10 @@ Details: [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md).
 
 | Layer | What | Where |
 |-------|------|--------|
-| Backend unit | Mastery, math verify, digests, B1–B6 services | `learning/tests_*.py`, `core/tests_*.py` |
-| Seed path | Demo pedagogy always boots | `seed_kindling` |
-| FE smokes | Pure engines B1–B6 | `frontend/scripts/smoke-*.mjs` |
-| Manual / browser | Resume, ladder UX, homework, Settings BYOK | lesson flows in README |
+| Backend unit | Mastery, math verify, digests, B1–B6, L1–L4, C6/C8 | `learning/tests_*.py`, `core/tests_*.py` |
+| Seed path | Demo CS path + pedagogy always boots | `seed_kindling` |
+| FE smokes | Pure engines (B*, L*, C6, how-to, chips, …) | `frontend/scripts/smoke-*.mjs` (+ esbuild bundle when importing gateway) |
+| Manual / browser | Resume, ladder, CS how-to, assessment, Settings BYOK | `frontend/scripts/verify-*.mjs` + lesson flows in README |
 
 **Expectation for pedagogy PRs:** at least one backend test or FE smoke that fails before the change and passes after. Threshold tweaks need explicit expected values in tests so “feel” does not regress silently.
 
@@ -553,8 +562,9 @@ Details: [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md).
 ## 12. What “good” looks like in review
 
 - **Epic-linked** — reviewer can find A#/B# or Phase rationale.  
-- **Pilot-first** — depth on Math Foundations before abstract frameworks.  
+- **Pilot-first** — depth on the CS path (and math packs where needed) before abstract frameworks.  
 - **Exit-able help** — no trapped intervention states.  
+- **Practical how-to** — literacy skills teach *doing*, not definitions only.  
 - **Streaming-safe UI** — no layout jump disasters; math readable mid-stream.  
 - **Failure-aware** — AI/API down paths tested mentally or manually.  
 - **Seeded** — `seed_kindling` demos it.  
@@ -570,16 +580,17 @@ Honest backlog for engineers (not a product pitch):
 
 | Area | Today | Direction |
 |------|-------|-----------|
-| DB | SQLite default | Env `DATABASE_URL` Postgres for staging/prod |
+| DB | SQLite default | Env `DATABASE_URL` Postgres for staging/prod (Track D) |
 | Platform AI keys | Vite-exposed demo pattern | Server-side proxy, quotas, spend caps |
 | Parent / adult progress notes | Email on student (A5) | Stay email-only; never multi-child accounts |
-| Spaced review | Job placeholder | Scheduler from weak/rusty skills |
-| Eval | Manual + unit | Harness for Socratic fidelity / intervention timing |
-| FE/BE drift | Mirrored logic | Consolidate pure math/verify into shared fixtures or generated JSON tests |
+| Spaced review | C1 v1 job + sparks | C1+ multi-subject schedule UX |
+| Eval | C8.1–C8.3 harness | Calibrate on human labels; decision-compliance scoring depth |
+| How-to library | CS literacy v1 guides | Expand skills/OS paths; fold into C7 playbooks |
+| FE/BE drift | Mirrored L1/L2/ADI logic | Shared fixtures or generated JSON golden tests |
 | i18n / duplex voice | Partial TTS/STT | Phase 4+ |
 | Feature flags | Informal | Explicit flags for risky pedagogy rolls |
 
-Phase gates: do not open large Horizon B surface area until Phase 0 deploy gaps you care about are accepted or closed (PLAN §4.3).
+Phase gates: external beta still needs Track D deploy closeout (PLAN §15). Product intelligence L1–L4 is already in-repo.
 
 ---
 
@@ -590,11 +601,17 @@ Phase gates: do not open large Horizon B surface area until Phase 0 deploy gaps 
 | **Skill spark** | UI label for skill mastery warmth state |
 | **BKT-lite** | Simplified Bayesian Knowledge Tracing update on skills |
 | **Ladder** | Graduated intervention levels 1–4 |
+| **LearnerState (L1)** | Structured multi-slice learner snapshot |
+| **Pedagogical decision (L2)** | Closed-action policy output the LLM must execute |
+| **ADI (L3)** | Assistance Dependency Index — help weight vs independence |
+| **Independence twin (L4)** | No-scaffold (or transfer) check after heavy help |
+| **Practical how-to** | Numbered device procedure + try-it for skill topics |
 | **Directive** | Prompt injection derived from learner model (internal) |
 | **Check tag** | Hidden `⟦check …⟧` graded-turn contract |
+| **Suggests tag** | Hidden `⟦suggests: …⟧` one-tap chip contract |
 | **BYOK** | Bring your own key — browser vault |
 | **Shelf** | Per subject×topic conversation collection |
-| **Pilot** | Math Foundations vertical slice |
+| **Pilot** | Computer Science live path (+ math pedagogy packs) |
 | **Envelope** | Batched learning-events POST body |
 | **Playbook** | Structured remediation guidance for a misconception |
 
@@ -605,9 +622,9 @@ Phase gates: do not open large Horizon B surface area until Phase 0 deploy gaps 
 **Day-one path:**
 
 1. Read README quick start; run backend `seed_kindling` + frontend with `VITE_API_URL`.  
-2. Log in as demo student; teach one Math Foundations topic.  
-3. Trigger idle nudge, help ladder, library example, show-your-work.  
-4. Skim `services/learning/types.js` and `learning/mastery_engine.py`.  
+2. Log in as demo student; open **Computer Science → Files & folders** (or another literacy lesson).  
+3. Confirm practical how-to steps + suggestion chips; try Help ladder and Quick check.  
+4. Skim `services/learning/{types,learnerState,pedagogicalPolicy,practicalGuides}.js` and `learning/mastery_engine.py`.  
 5. Hit `GET /api/telemetry/summary/` and `GET /api/learning/dashboard/` with a token.  
 6. Read this handbook §8 before proposing structural rewrites.
 
@@ -615,4 +632,4 @@ Phase gates: do not open large Horizon B surface area until Phase 0 deploy gaps 
 
 ---
 
-*Last updated: 2026-09-01 — Wave 1 through Phase 2.5; single-seat commercial lock; Wave 2 in PLAN.md §15–16.*
+*Last updated: 2026-09-10 — Wave 1 + Wave 2 intelligence (L1–L4, C6, C8, CS pilot, practical how-to); Track D deploy still open (PLAN §15).*

@@ -1,6 +1,6 @@
 # Day-in-the-life vision vs Kindling today
 
-Aspirational “day in the life” sketch of a personalized AI tutor, mapped against what Kindling has actually shipped (Phases 0–2 / Horizon A + intervention depth). Status is relative to **product intent**, not a promise to build VR labs or employer-recognized badges.
+Aspirational “day in the life” sketch of a personalized AI tutor, mapped against what Kindling has actually shipped (Wave 1 + Wave 2 intelligence: L1–L4, C6, C8, CS pilot, practical how-to). Status is relative to **product intent**, not a promise to build VR labs or employer-recognized badges.
 
 **Legend**
 
@@ -11,7 +11,7 @@ Aspirational “day in the life” sketch of a personalized AI tutor, mapped aga
 | **Not started** | No meaningful product surface yet |
 | **Out of beta scope** | Explicitly deferred (see `BETA_LAUNCH.md` / PLAN Phase 3+) |
 
-**Overall:** Kindling already delivers the *spine* of this story—an adaptive 1:1 tutor that checks how the learner feels, adjusts help and content from signals, and reflects progress—especially on **Math Foundations**. The sci-fi edges (VR cities, global peer quests, university skill portfolios, wearables) are still future / category-leadership territory. Closest gap for the “continuous adventure” feel is **spaced review + daily rhythm**, not more lesson chrome.
+**Overall:** Kindling already delivers the *spine* of this story—an adaptive 1:1 tutor that checks how the learner feels, decides the next pedagogical move, adjusts help from signals/ADI, teaches practical skills with how-tos, and reflects progress—on the **Computer Science** pilot path (math packs still support fraction pedagogy). The sci-fi edges (VR cities, global peer quests, university skill portfolios, wearables) are still future / category-leadership territory. Closest gaps for the “continuous adventure” feel are **C1+ spaced-review depth**, **hostable deploy**, and broader domain playbooks—not more lesson chrome.
 
 ---
 

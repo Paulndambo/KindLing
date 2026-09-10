@@ -1,9 +1,9 @@
 # Kindling — Session eval rubric (Epic C8.3)
 
-**Status:** Beta bridge until automated offline scoring (**C8.1**).  
-**Goal:** Score **10 recorded sessions** once, store means as a baseline, then automate.
+**Status:** C8.3 manual rubric **shipped**; C8.1 offline auto scorer **shipped**; C8.2 weekly sample job **shipped**. Remaining work = human-label calibration and decision-compliance depth, not building the harness from scratch.  
+**Goal:** Score **10 recorded sessions** with humans, store means as a baseline, compare to auto scores.
 
-Related: L2 `pedagogy.decision` events · L3 ADI · L1 learner state.
+Related: L2 `pedagogy.decision` events · L3 ADI · L1 learner state · L4 independence · practical how-to / real-world dimensions.
 
 ---
 

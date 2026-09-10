@@ -11,7 +11,7 @@ For monorepo setup, demo login, pedagogy features, and roadmap, start at the **[
 - **React 19** + **Vite**
 - **Lucide** icons, vanilla CSS design system
 - **AI gateway** (`src/services/ai/`) — platform Gemini and/or BYOK (Gemini, OpenAI-compatible, Anthropic, Groq, OpenRouter)
-- Learning analytics, intervention ladder, and pilot pedagogy engines under `src/services/learning/`
+- Learning analytics, intervention ladder, L1–L4 intelligence, practical how-to guides, and pilot pedagogy engines under `src/services/learning/`
 
 ---
 
@@ -54,19 +54,31 @@ Open the URL Vite prints (usually http://localhost:5173). Run the Django API in 
 frontend/
 ├── src/
 │   ├── components/     # Lesson, dashboard, auth, subjects, settings, overview
-│   ├── hooks/          # Auth, chat, learning, multi-step, speech, profile
+│   ├── hooks/          # Auth, chat, learning, assessment, independence, multi-step, speech
 │   ├── services/
 │   │   ├── ai/         # Multi-provider gateway + key vault
 │   │   ├── api/        # REST client
-│   │   ├── learning/   # Signals, struggle, ladder, misconceptions, multistep, …
+│   │   ├── learning/   # Signals, L1–L4, policy, how-to guides, assessment, …
 │   │   └── safety/     # Age policy + distress client
 │   ├── styles/         # Lesson + tutor content CSS
 │   ├── App.jsx
 │   └── main.jsx
-├── scripts/            # Pedagogy unit smokes (B1–B6)
+├── scripts/            # Pedagogy smokes + Playwright verifies (L1–L4, C6, how-to, …)
 ├── package.json
 └── vite.config.js
 ```
+
+### Learning engines (high signal)
+
+| Module | Role |
+|--------|------|
+| `learnerState.js` | L1 structured snapshot |
+| `pedagogicalPolicy.js` | L2 `decidePedagogy` + prompt execution brief |
+| `adi.js` | L3 assistance dependency |
+| `independenceCheck.js` | L4 no-scaffold / transfer twins |
+| `practicalGuides.js` | Hands-on how-to library + prompt blocks |
+| `tutorSuggestions.js` | Suggestion chips + real-world prompt rule |
+| `assessmentEngine.js` / banks | C6 quick checks |
 
 ---
 
