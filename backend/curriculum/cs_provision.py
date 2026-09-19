@@ -12,6 +12,8 @@ from curriculum.pilot_graph import (
     PILOT_ICON,
     PILOT_SUBJECT,
     PILOT_UNITS,
+    subtopic_learning_goal,
+    subtopic_name,
 )
 
 
@@ -19,8 +21,16 @@ def ensure_computer_science_subject(student) -> Subject:
     """
     Ensure the student has Computer Science with unit → subtopic path.
     Rebuilds CS structure to match PILOT_UNITS (idempotent upsert).
+
+    Each L0–L5 layer is a Topic (unit); every Lx.y section is a Subtopic
+    lesson with a learning_goal that lists the source-doc concepts.
     """
     subject = student.subjects.filter(name=PILOT_SUBJECT).first()
+    subject_goal = (
+        "Build computer science from first principles — "
+        "digital literacy through computational thinking, foundations, "
+        "programming, algorithms, and mathematics for CS (L0–L5)."
+    )
     if not subject:
         subject = Subject.objects.create(
             student=student,
@@ -28,10 +38,7 @@ def ensure_computer_science_subject(student) -> Subject:
             icon=PILOT_ICON,
             color=PILOT_COLOR,
             sort_order=0,
-            learning_goal=(
-                "Build computer science from first principles — "
-                "literacy through programming, systems, and beyond."
-            ),
+            learning_goal=subject_goal,
         )
     else:
         updates = []
@@ -41,6 +48,9 @@ def ensure_computer_science_subject(student) -> Subject:
         if subject.color != PILOT_COLOR:
             subject.color = PILOT_COLOR
             updates.append("color")
+        if (subject.learning_goal or "").strip() != subject_goal:
+            subject.learning_goal = subject_goal
+            updates.append("learning_goal")
         if updates:
             subject.save(update_fields=updates)
 
@@ -59,16 +69,20 @@ def ensure_computer_science_subject(student) -> Subject:
                 or f"Grow in {unit['name']}.",
             },
         )
-        sub_names = list(unit.get("subtopics") or [])
+        raw_subs = list(unit.get("subtopics") or [])
+        sub_names = [subtopic_name(s) for s in raw_subs if subtopic_name(s)]
         topic.subtopics.exclude(name__in=sub_names).delete()
-        for j, sub_name in enumerate(sub_names):
+        for j, sub in enumerate(raw_subs):
+            name = subtopic_name(sub)
+            if not name:
+                continue
             Subtopic.objects.update_or_create(
                 topic=topic,
-                name=sub_name,
+                name=name,
                 defaults={
                     "sort_order": j,
                     "familiarity": Topic.Familiarity.BEGINNER,
-                    "learning_goal": f"Build a clear foundation in {sub_name}.",
+                    "learning_goal": subtopic_learning_goal(sub),
                 },
             )
 

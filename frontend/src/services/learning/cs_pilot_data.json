@@ -6,7 +6,7 @@
       "name": "Understanding technology",
       "shortLabel": "Tech basics",
       "domain": "cs_literacy",
-      "description": "What technology, information, and data are; digital vs analog; computers in everyday life.",
+      "description": "What is technology?; What is information?; What is data?; What is a digital device?; Analog vs digital; Digital information; Digital representation; Computers in everyday life; Examples of computers; Why computers exist; +2 more",
       "pInit": 0.35,
       "pTransit": 0.16,
       "pSlip": 0.08,
@@ -18,7 +18,7 @@
       "name": "What is a computer?",
       "shortLabel": "Computer model",
       "domain": "cs_literacy",
-      "description": "Input \u2192 processing \u2192 output with storage; hardware, software, and users.",
+      "description": "Definition of a computer; Input; Processing; Output; Storage; Communication; Hardware; Software; Users; Computer systems",
       "pInit": 0.3,
       "pTransit": 0.15,
       "pSlip": 0.08,
@@ -35,7 +35,7 @@
       "name": "Types of computers",
       "shortLabel": "Device types",
       "domain": "cs_literacy",
-      "description": "Desktops, laptops, phones, servers, embedded and IoT devices.",
+      "description": "Desktop computers; Laptops; Tablets; Smartphones; Servers; Mainframes; Supercomputers; Embedded computers; Microcontrollers; Game consoles; +4 more",
       "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
@@ -52,7 +52,7 @@
       "name": "Computer hardware",
       "shortLabel": "Hardware",
       "domain": "cs_literacy",
-      "description": "CPU, RAM, storage, motherboard, GPU, I/O devices and how they interact.",
+      "description": "CPU; RAM; Storage; Motherboard; GPU; Power supply; Network interface; Cooling; Display; Keyboard; +10 more",
       "pInit": 0.22,
       "pTransit": 0.13,
       "pSlip": 0.09,
@@ -69,7 +69,7 @@
       "name": "Computer software",
       "shortLabel": "Software",
       "domain": "cs_literacy",
-      "description": "OS, apps, drivers, firmware; system vs application software; programs and processes.",
+      "description": "Operating systems; Applications; Drivers; Utilities; Firmware; System software; Application software; Files; Processes; Programs",
       "pInit": 0.22,
       "pTransit": 0.13,
       "pSlip": 0.09,
@@ -90,8 +90,8 @@
       "name": "Files & folders",
       "shortLabel": "Files",
       "domain": "cs_literacy",
-      "description": "Files, paths, extensions, copy/move/rename, compression and backups.",
-      "pInit": 0.25,
+      "description": "Files; File names; File extensions; Directories; Paths; File types; File permissions; Copying; Moving; Renaming; +4 more",
+      "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
       "pGuess": 0.2,
@@ -107,8 +107,8 @@
       "name": "Operating a computer",
       "shortLabel": "Using a PC",
       "domain": "cs_literacy",
-      "description": "Desktop environments, apps, settings, install/update/uninstall, basic troubleshooting.",
-      "pInit": 0.24,
+      "description": "Desktop environments; Windows/Linux/macOS concepts; Applications; Windows; Menus; Settings; Installing software; Updating software; Uninstalling software; Basic troubleshooting",
+      "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
       "pGuess": 0.2,
@@ -128,8 +128,8 @@
       "name": "Internet literacy",
       "shortLabel": "Internet",
       "domain": "cs_literacy",
-      "description": "Internet vs web, browsers, search, accounts, and everyday online services.",
-      "pInit": 0.26,
+      "description": "Internet; Web; Browser; Search engine; Website; URL; Domain; Web page; Hyperlink; Download; +4 more",
+      "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
       "pGuess": 0.2,
@@ -149,7 +149,7 @@
       "name": "Digital safety",
       "shortLabel": "Safety",
       "domain": "cs_literacy",
-      "description": "Passwords, phishing, privacy, safe sharing, and basic cyber hygiene.",
+      "description": "Passwords; MFA; Phishing; Malware; Scams; Privacy; Personal data; Digital identity; Safe browsing; Social engineering; +1 more",
       "pInit": 0.24,
       "pTransit": 0.13,
       "pSlip": 0.08,
@@ -166,11 +166,11 @@
       "name": "Problem solving",
       "shortLabel": "Solve problems",
       "domain": "comp_thinking",
-      "description": "Break problems into steps; define inputs, outputs, and success criteria.",
-      "pInit": 0.2,
+      "description": "What is a problem?; Problem decomposition; Identifying constraints; Inputs; Outputs; Desired state; Breaking large problems into smaller problems",
+      "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.18,
+      "pGuess": 0.16,
       "prereqs": [
         {
           "slug": "cs.l0.tech_basics",
@@ -183,7 +183,7 @@
       "name": "Algorithms (thinking)",
       "shortLabel": "Algorithms",
       "domain": "comp_thinking",
-      "description": "Sequences of steps that solve a problem; clear, finite, unambiguous.",
+      "description": "What is an algorithm?; Step-by-step instructions; Algorithms in everyday life; Precision; Determinism; Termination; Correctness",
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -200,9 +200,9 @@
       "name": "Abstraction",
       "shortLabel": "Abstraction",
       "domain": "comp_thinking",
-      "description": "Hide detail; focus on what matters for the current problem.",
-      "pInit": 0.16,
-      "pTransit": 0.11,
+      "description": "What is abstraction?; Ignoring irrelevant detail; Models; Interfaces; Layers; Encapsulation; Generalization",
+      "pInit": 0.18,
+      "pTransit": 0.12,
       "pSlip": 0.1,
       "pGuess": 0.16,
       "prereqs": [
@@ -217,7 +217,7 @@
       "name": "Pattern recognition",
       "shortLabel": "Patterns",
       "domain": "comp_thinking",
-      "description": "Spot repeated structure to reuse solutions.",
+      "description": "Identifying patterns; Repetition; Sequences; Similarity; Generalization",
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -234,7 +234,7 @@
       "name": "Logical thinking",
       "shortLabel": "Logic",
       "domain": "comp_thinking",
-      "description": "If/then reasoning, true/false conditions, and careful conclusions.",
+      "description": "Statements; Conditions; AND; OR; NOT; Truth; Logical implication; Contradiction; Equivalence",
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -251,11 +251,11 @@
       "name": "Computational representation",
       "shortLabel": "Represent",
       "domain": "comp_thinking",
-      "description": "Represent real things as data structures and processes computers can use.",
-      "pInit": 0.15,
-      "pTransit": 0.11,
+      "description": "Symbols; Numbers; Text; Images; Sound; Instructions; State",
+      "pInit": 0.18,
+      "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.15,
+      "pGuess": 0.16,
       "prereqs": [
         {
           "slug": "cs.l1.abstraction",
@@ -272,7 +272,7 @@
       "name": "History of computing",
       "shortLabel": "History",
       "domain": "cs_foundations",
-      "description": "How computing evolved and why modern machines look the way they do.",
+      "description": "Counting systems; Abacus; Mechanical calculators; Analytical Engine; Early computers; Turing; Von Neumann; Transistors; Integrated circuits; Personal computers; +4 more",
       "pInit": 0.22,
       "pTransit": 0.12,
       "pSlip": 0.08,
@@ -289,7 +289,7 @@
       "name": "Number systems",
       "shortLabel": "Binary & bases",
       "domain": "cs_foundations",
-      "description": "Binary, decimal, hex; why computers use binary.",
+      "description": "Decimal; Binary; Octal; Hexadecimal; Base conversion; Binary arithmetic; Signed numbers; Two's complement",
       "pInit": 0.14,
       "pTransit": 0.11,
       "pSlip": 0.1,
@@ -310,7 +310,7 @@
       "name": "Data representation",
       "shortLabel": "Data bits",
       "domain": "cs_foundations",
-      "description": "Bits/bytes; text, images, and sound as encoded data.",
+      "description": "Bits; Bytes; Words; Integers; Floating point; Characters; ASCII; Unicode; Strings; Boolean values; +3 more",
       "pInit": 0.14,
       "pTransit": 0.11,
       "pSlip": 0.1,
@@ -327,7 +327,7 @@
       "name": "Boolean algebra",
       "shortLabel": "Boolean",
       "domain": "cs_foundations",
-      "description": "AND, OR, NOT and simple truth tables.",
+      "description": "Boolean variables; AND; OR; NOT; XOR; NAND; NOR; Truth tables; Boolean expressions; Boolean simplification",
       "pInit": 0.14,
       "pTransit": 0.11,
       "pSlip": 0.1,
@@ -344,7 +344,7 @@
       "name": "Digital logic",
       "shortLabel": "Logic gates",
       "domain": "cs_foundations",
-      "description": "Gates and how they build simple circuits.",
+      "description": "Logic gates; Combinational circuits; Adders; Multiplexers; Decoders; Comparators; Sequential circuits; Flip-flops; Registers; Counters",
       "pInit": 0.12,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -365,7 +365,7 @@
       "name": "How a computer actually works",
       "shortLabel": "Inside the machine",
       "domain": "cs_foundations",
-      "description": "Fetch-decode-execute; memory hierarchy at a conceptual level.",
+      "description": "Machine instructions; CPU; Registers; ALU; Control unit; Program counter; Instruction cycle; Fetch; Decode; Execute; +2 more",
       "pInit": 0.12,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -390,11 +390,11 @@
       "name": "Programming concepts",
       "shortLabel": "What is code?",
       "domain": "programming",
-      "description": "Programs as instructions; source, run, and the idea of a language.",
-      "pInit": 0.16,
+      "description": "What is a program?; Source code; Compiler; Interpreter; Runtime; Syntax; Semantics; Errors; Debugging",
+      "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.16,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l1.algorithms",
@@ -411,11 +411,11 @@
       "name": "Variables",
       "shortLabel": "Variables",
       "domain": "programming",
-      "description": "Names that hold values; assignment and state over time.",
-      "pInit": 0.15,
+      "description": "Variables; Values; Assignment; Naming; Types; Constants; Scope",
+      "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.16,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l3.prog_concepts",
@@ -428,11 +428,11 @@
       "name": "Primitive types",
       "shortLabel": "Types",
       "domain": "programming",
-      "description": "Numbers, text, booleans; why types matter.",
-      "pInit": 0.15,
+      "description": "Integers; Floating point; Boolean; Strings; Characters; None/null concepts",
+      "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.16,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l3.variables",
@@ -445,11 +445,11 @@
       "name": "Operators",
       "shortLabel": "Operators",
       "domain": "programming",
-      "description": "Arithmetic, comparison, and logical operators.",
-      "pInit": 0.15,
+      "description": "Arithmetic; Comparison; Logical; Assignment; Bitwise; Membership; Identity",
+      "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.16,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l3.types",
@@ -462,7 +462,7 @@
       "name": "Control flow",
       "shortLabel": "If & loops",
       "domain": "programming",
-      "description": "Branching and repetition; tracing simple programs.",
+      "description": "Sequential execution; Conditions; if; elif; else; loops; while; for; break; continue",
       "pInit": 0.12,
       "pTransit": 0.11,
       "pSlip": 0.11,
@@ -483,7 +483,7 @@
       "name": "Functions",
       "shortLabel": "Functions",
       "domain": "programming",
-      "description": "Reusable blocks with inputs and outputs.",
+      "description": "Function definition; Parameters; Arguments; Return values; Local variables; Scope; Pure functions; Side effects; Recursion",
       "pInit": 0.12,
       "pTransit": 0.11,
       "pSlip": 0.11,
@@ -497,10 +497,10 @@
     },
     {
       "slug": "cs.l3.data_structures_intro",
-      "name": "Intro data structures",
+      "name": "Data structures (intro)",
       "shortLabel": "Lists & maps",
       "domain": "programming",
-      "description": "Lists/arrays and key-value maps at a beginner level.",
+      "description": "Arrays/lists; Tuples; Sets; Dictionaries/maps; Strings; Stacks; Queues",
       "pInit": 0.12,
       "pTransit": 0.11,
       "pSlip": 0.11,
@@ -521,11 +521,11 @@
       "name": "Errors & debugging",
       "shortLabel": "Debug",
       "domain": "programming",
-      "description": "Read error messages; isolate bugs; fix and re-test.",
+      "description": "Syntax errors; Runtime errors; Logic errors; Exceptions; Stack traces; Debuggers; Logging; Assertions; Defensive programming",
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.16,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l3.control_flow",
@@ -538,11 +538,11 @@
       "name": "Program files & I/O",
       "shortLabel": "File I/O",
       "domain": "programming",
-      "description": "Reading and writing simple files from a program.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
+      "description": "Reading files; Writing files; CSV; JSON; Serialization; Deserialization",
+      "pInit": 0.14,
+      "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.14,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l3.functions",
@@ -559,11 +559,11 @@
       "name": "Modules & packages",
       "shortLabel": "Modules",
       "domain": "programming",
-      "description": "Organizing code; importing libraries.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
+      "description": "Modules; Packages; Imports; Dependencies; Package managers; Virtual environments",
+      "pInit": 0.14,
+      "pTransit": 0.12,
       "pSlip": 0.1,
-      "pGuess": 0.14,
+      "pGuess": 0.15,
       "prereqs": [
         {
           "slug": "cs.l3.functions",
@@ -576,11 +576,11 @@
       "name": "Algorithm analysis",
       "shortLabel": "Big-O intro",
       "domain": "algorithms",
-      "description": "Compare algorithms by growth; time/space at an intuitive level.",
-      "pInit": 0.1,
+      "description": "Correctness; Efficiency; Time complexity; Space complexity; Big O; Big Ω; Big Θ; Best case; Worst case; Average case; +1 more",
+      "pInit": 0.11,
       "pTransit": 0.1,
-      "pSlip": 0.12,
-      "pGuess": 0.12,
+      "pSlip": 0.11,
+      "pGuess": 0.13,
       "prereqs": [
         {
           "slug": "cs.l3.control_flow",
@@ -597,11 +597,11 @@
       "name": "Searching",
       "shortLabel": "Search",
       "domain": "algorithms",
-      "description": "Linear and binary search; when each applies.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
+      "description": "Linear search; Binary search; Hash-based lookup; Search trees",
+      "pInit": 0.11,
+      "pTransit": 0.1,
       "pSlip": 0.11,
-      "pGuess": 0.14,
+      "pGuess": 0.13,
       "prereqs": [
         {
           "slug": "cs.l3.data_structures_intro",
@@ -618,11 +618,11 @@
       "name": "Sorting",
       "shortLabel": "Sort",
       "domain": "algorithms",
-      "description": "Simple sorts and why sorting unlocks faster search.",
+      "description": "Bubble sort; Selection sort; Insertion sort; Merge sort; Quick sort; Heap sort; Counting sort; Radix sort",
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
-      "pGuess": 0.14,
+      "pGuess": 0.13,
       "prereqs": [
         {
           "slug": "cs.l4.searching",
@@ -637,13 +637,13 @@
     {
       "slug": "cs.l4.fundamental_ds",
       "name": "Fundamental data structures",
-      "shortLabel": "Stacks & queues",
+      "shortLabel": "Core structures",
       "domain": "algorithms",
-      "description": "Stacks, queues, and when to use each.",
+      "description": "Arrays; Linked lists; Stacks; Queues; Deques; Hash tables; Trees; Heaps; Graphs",
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
-      "pGuess": 0.14,
+      "pGuess": 0.13,
       "prereqs": [
         {
           "slug": "cs.l3.data_structures_intro",
@@ -656,11 +656,11 @@
       "name": "Trees",
       "shortLabel": "Trees",
       "domain": "algorithms",
-      "description": "Tree structure, roots/leaves, basic traversal ideas.",
-      "pInit": 0.1,
+      "description": "Binary trees; Binary search trees; AVL trees; Red-black trees; B-trees; Tries; Segment trees; Fenwick trees",
+      "pInit": 0.11,
       "pTransit": 0.1,
-      "pSlip": 0.12,
-      "pGuess": 0.12,
+      "pSlip": 0.11,
+      "pGuess": 0.13,
       "prereqs": [
         {
           "slug": "cs.l4.fundamental_ds",
@@ -673,11 +673,11 @@
       "name": "Graphs",
       "shortLabel": "Graphs",
       "domain": "algorithms",
-      "description": "Nodes and edges; real-world graph examples.",
-      "pInit": 0.1,
+      "description": "Directed graphs; Undirected graphs; Weighted graphs; Adjacency matrices; Adjacency lists; BFS; DFS; Shortest path; Dijkstra; Bellman-Ford; +5 more",
+      "pInit": 0.11,
       "pTransit": 0.1,
-      "pSlip": 0.12,
-      "pGuess": 0.12,
+      "pSlip": 0.11,
+      "pGuess": 0.13,
       "prereqs": [
         {
           "slug": "cs.l4.fundamental_ds",
@@ -686,11 +686,70 @@
       ]
     },
     {
-      "slug": "cs.l5.discrete_math_intro",
-      "name": "Discrete math foundations",
-      "shortLabel": "Discrete intro",
+      "slug": "cs.l4.algorithmic_paradigms",
+      "name": "Algorithmic paradigms",
+      "shortLabel": "Paradigms",
+      "domain": "algorithms",
+      "description": "Brute force; Divide and conquer; Greedy algorithms; Dynamic programming; Backtracking; Branch and bound; Randomized algorithms",
+      "pInit": 0.11,
+      "pTransit": 0.1,
+      "pSlip": 0.11,
+      "pGuess": 0.13,
+      "prereqs": [
+        {
+          "slug": "cs.l4.algorithm_analysis",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l3.functions",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l4.advanced_algorithms",
+      "name": "Advanced algorithms",
+      "shortLabel": "Advanced algos",
+      "domain": "algorithms",
+      "description": "String algorithms; Computational geometry; Network flow; Matching; Approximation algorithms; Online algorithms; Streaming algorithms; External-memory algorithms; Parallel algorithms",
+      "pInit": 0.11,
+      "pTransit": 0.1,
+      "pSlip": 0.11,
+      "pGuess": 0.13,
+      "prereqs": [
+        {
+          "slug": "cs.l4.algorithmic_paradigms",
+          "strength": "required"
+        },
+        {
+          "slug": "cs.l4.graphs",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l5.math_foundations",
+      "name": "Mathematics foundations",
+      "shortLabel": "Math foundations",
       "domain": "math_for_cs",
-      "description": "Sets, logic links, and discrete ideas that support algorithms.",
+      "description": "Arithmetic; Fractions; Ratios; Percentages; Algebra; Equations; Functions; Graphs",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
+      "prereqs": [
+        {
+          "slug": "cs.l1.logical_thinking",
+          "strength": "recommended"
+        }
+      ]
+    },
+    {
+      "slug": "cs.l5.discrete_math",
+      "name": "Discrete mathematics",
+      "shortLabel": "Discrete math",
+      "domain": "math_for_cs",
+      "description": "Propositions; Predicates; Quantifiers; Proofs; Inference; Sets; Subsets; Union; Intersection; Difference; +7 more",
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -703,144 +762,119 @@
         {
           "slug": "cs.l1.logical_thinking",
           "strength": "required"
+        },
+        {
+          "slug": "cs.l5.math_foundations",
+          "strength": "recommended"
         }
       ]
     },
     {
-      "slug": "cs.l6.os_intro",
-      "name": "Operating systems intro",
-      "shortLabel": "OS intro",
-      "domain": "systems",
-      "description": "What an OS does: processes, memory, and files at a systems level.",
+      "slug": "cs.l5.proof_techniques",
+      "name": "Proof techniques",
+      "shortLabel": "Proofs",
+      "domain": "math_for_cs",
+      "description": "Direct proof; Contradiction; Contrapositive; Mathematical induction; Strong induction; Structural induction",
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
       "pGuess": 0.12,
       "prereqs": [
         {
-          "slug": "cs.l2.how_computers_work",
-          "strength": "required"
-        },
-        {
-          "slug": "cs.l0.software",
+          "slug": "cs.l5.discrete_math",
           "strength": "required"
         }
       ]
     },
     {
-      "slug": "cs.l7.version_control",
-      "name": "Version control",
-      "shortLabel": "Git basics",
-      "domain": "software_eng",
-      "description": "Why version control; commit, branch, and collaborate safely.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
-      "pSlip": 0.1,
-      "pGuess": 0.14,
+      "slug": "cs.l5.combinatorics",
+      "name": "Combinatorics",
+      "shortLabel": "Counting",
+      "domain": "math_for_cs",
+      "description": "Counting; Permutations; Combinations; Pigeonhole principle; Recurrences; Generating functions",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
       "prereqs": [
         {
-          "slug": "cs.l3.prog_concepts",
-          "strength": "required"
-        }
-      ]
-    },
-    {
-      "slug": "cs.l7.testing",
-      "name": "Software testing",
-      "shortLabel": "Testing",
-      "domain": "software_eng",
-      "description": "Why tests matter; simple unit-test thinking.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
-      "pSlip": 0.1,
-      "pGuess": 0.14,
-      "prereqs": [
-        {
-          "slug": "cs.l3.functions",
+          "slug": "cs.l5.math_foundations",
           "strength": "required"
         },
         {
-          "slug": "cs.l3.debugging",
+          "slug": "cs.l5.discrete_math",
           "strength": "recommended"
         }
       ]
     },
     {
-      "slug": "cs.l8.db_foundations",
-      "name": "Database foundations",
-      "shortLabel": "Databases",
-      "domain": "data_systems",
-      "description": "What databases store and why apps use them.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
-      "pSlip": 0.1,
-      "pGuess": 0.14,
+      "slug": "cs.l5.probability",
+      "name": "Probability",
+      "shortLabel": "Probability",
+      "domain": "math_for_cs",
+      "description": "Probability; Conditional probability; Bayes' theorem; Random variables; Expected value; Variance; Distributions",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
       "prereqs": [
         {
-          "slug": "cs.l3.data_structures_intro",
+          "slug": "cs.l5.math_foundations",
           "strength": "required"
         }
       ]
     },
     {
-      "slug": "cs.l9.net_foundations",
-      "name": "Networking foundations",
-      "shortLabel": "Networks",
-      "domain": "networks",
-      "description": "How devices talk; clients, servers, and packets at a conceptual level.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
-      "pSlip": 0.1,
-      "pGuess": 0.14,
+      "slug": "cs.l5.statistics",
+      "name": "Statistics",
+      "shortLabel": "Statistics",
+      "domain": "math_for_cs",
+      "description": "Descriptive statistics; Sampling; Estimation; Hypothesis testing; Regression; Correlation",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
       "prereqs": [
         {
-          "slug": "cs.l0.internet_literacy",
+          "slug": "cs.l5.probability",
           "strength": "required"
-        },
-        {
-          "slug": "cs.l2.data_representation",
-          "strength": "recommended"
         }
       ]
     },
     {
-      "slug": "cs.l11.web_intro",
-      "name": "Web & internet computing intro",
-      "shortLabel": "Web intro",
-      "domain": "web_cloud",
-      "description": "Browsers, HTTP ideas, front/back of the web.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
-      "pSlip": 0.1,
-      "pGuess": 0.14,
+      "slug": "cs.l5.linear_algebra",
+      "name": "Linear algebra",
+      "shortLabel": "Linear algebra",
+      "domain": "math_for_cs",
+      "description": "Vectors; Matrices; Linear transformations; Eigenvalues; Eigenvectors; Matrix decomposition; Vector spaces",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
       "prereqs": [
         {
-          "slug": "cs.l9.net_foundations",
+          "slug": "cs.l5.math_foundations",
           "strength": "required"
-        },
-        {
-          "slug": "cs.l3.prog_concepts",
-          "strength": "recommended"
         }
       ]
     },
     {
-      "slug": "cs.l13.ai_intro",
-      "name": "AI & data science intro",
-      "shortLabel": "AI intro",
-      "domain": "ai_ds",
-      "description": "What AI/ML try to do; data, models, and careful claims.",
-      "pInit": 0.12,
-      "pTransit": 0.11,
-      "pSlip": 0.1,
-      "pGuess": 0.14,
+      "slug": "cs.l5.calculus",
+      "name": "Calculus",
+      "shortLabel": "Calculus",
+      "domain": "math_for_cs",
+      "description": "Limits; Derivatives; Integrals; Multivariable calculus; Gradients; Optimization",
+      "pInit": 0.1,
+      "pTransit": 0.1,
+      "pSlip": 0.12,
+      "pGuess": 0.12,
       "prereqs": [
         {
-          "slug": "cs.l1.representation",
+          "slug": "cs.l5.math_foundations",
           "strength": "required"
         },
         {
-          "slug": "cs.l3.prog_concepts",
+          "slug": "cs.l5.linear_algebra",
           "strength": "recommended"
         }
       ]
@@ -851,349 +885,1233 @@
       {
         "slug": "cs.l0.tech_basics",
         "weight": 1.0,
-        "isPrimary": true
+        "primary": true
       }
     ],
     "What is a computer?": [
       {
         "slug": "cs.l0.what_is_computer",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.tech_basics",
-        "weight": 0.4,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Types of computers": [
       {
         "slug": "cs.l0.computer_types",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.what_is_computer",
-        "weight": 0.5,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Computer hardware": [
       {
         "slug": "cs.l0.hardware",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.what_is_computer",
-        "weight": 0.45,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Computer software": [
       {
         "slug": "cs.l0.software",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.hardware",
-        "weight": 0.4,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Files & folders": [
       {
         "slug": "cs.l0.files_folders",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.software",
-        "weight": 0.4,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Operating a computer": [
       {
         "slug": "cs.l0.operate_computer",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.files_folders",
-        "weight": 0.45,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Internet literacy": [
       {
         "slug": "cs.l0.internet_literacy",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.operate_computer",
-        "weight": 0.35,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Digital safety": [
       {
         "slug": "cs.l0.digital_safety",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.internet_literacy",
-        "weight": 0.55,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Problem solving": [
       {
         "slug": "cs.l1.problem_solving",
         "weight": 1.0,
-        "isPrimary": true
+        "primary": true
       }
     ],
     "Algorithms (thinking)": [
       {
         "slug": "cs.l1.algorithms",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l1.problem_solving",
-        "weight": 0.5,
-        "isPrimary": false
+        "primary": true
       }
     ],
-    "Abstraction & patterns": [
+    "Abstraction": [
       {
         "slug": "cs.l1.abstraction",
-        "weight": 0.85,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Pattern recognition": [
       {
         "slug": "cs.l1.pattern_recognition",
-        "weight": 0.85,
-        "isPrimary": true
+        "weight": 1.0,
+        "primary": true
       }
     ],
     "Logical thinking": [
       {
         "slug": "cs.l1.logical_thinking",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l1.problem_solving",
-        "weight": 0.4,
-        "isPrimary": false
+        "primary": true
       }
     ],
-    "Number systems & data": [
+    "Computational representation": [
+      {
+        "slug": "cs.l1.representation",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "History of computing": [
+      {
+        "slug": "cs.l2.history",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Number systems": [
       {
         "slug": "cs.l2.number_systems",
-        "weight": 0.9,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Data representation": [
       {
         "slug": "cs.l2.data_representation",
-        "weight": 0.9,
-        "isPrimary": true
+        "weight": 1.0,
+        "primary": true
       }
     ],
-    "Boolean logic & gates": [
+    "Boolean algebra": [
       {
         "slug": "cs.l2.boolean",
-        "weight": 0.9,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l2.digital_logic",
-        "weight": 0.85,
-        "isPrimary": true
+        "weight": 1.0,
+        "primary": true
       }
     ],
-    "How computers work": [
+    "Digital logic": [
+      {
+        "slug": "cs.l2.digital_logic",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "How a computer actually works": [
       {
         "slug": "cs.l2.how_computers_work",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l0.hardware",
-        "weight": 0.4,
-        "isPrimary": false
+        "primary": true
       }
     ],
     "Programming concepts": [
       {
         "slug": "cs.l3.prog_concepts",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l1.algorithms",
-        "weight": 0.45,
-        "isPrimary": false
+        "primary": true
       }
     ],
-    "Variables, types & operators": [
+    "Variables": [
       {
         "slug": "cs.l3.variables",
-        "weight": 0.85,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Primitive types": [
       {
         "slug": "cs.l3.types",
-        "weight": 0.85,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Operators": [
       {
         "slug": "cs.l3.operators",
-        "weight": 0.8,
-        "isPrimary": true
+        "weight": 1.0,
+        "primary": true
       }
     ],
-    "Control flow & functions": [
+    "Control flow": [
       {
         "slug": "cs.l3.control_flow",
-        "weight": 0.9,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Functions": [
       {
         "slug": "cs.l3.functions",
-        "weight": 0.9,
-        "isPrimary": true
+        "weight": 1.0,
+        "primary": true
       }
     ],
-    "Debugging & modules": [
-      {
-        "slug": "cs.l3.debugging",
-        "weight": 0.85,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l3.modules",
-        "weight": 0.75,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l3.files_io",
-        "weight": 0.6,
-        "isPrimary": false
-      }
-    ],
-    "Lists, maps & structures": [
+    "Data structures (intro)": [
       {
         "slug": "cs.l3.data_structures_intro",
         "weight": 1.0,
-        "isPrimary": true
+        "primary": true
       }
     ],
-    "Searching & sorting": [
+    "Errors & debugging": [
       {
-        "slug": "cs.l4.searching",
-        "weight": 0.9,
-        "isPrimary": true
-      },
+        "slug": "cs.l3.debugging",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Program files & I/O": [
       {
-        "slug": "cs.l4.sorting",
-        "weight": 0.9,
-        "isPrimary": true
-      },
+        "slug": "cs.l3.files_io",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Modules & packages": [
+      {
+        "slug": "cs.l3.modules",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Algorithm analysis": [
       {
         "slug": "cs.l4.algorithm_analysis",
-        "weight": 0.55,
-        "isPrimary": false
+        "weight": 1.0,
+        "primary": true
       }
     ],
-    "Stacks, queues, trees & graphs": [
+    "Searching": [
+      {
+        "slug": "cs.l4.searching",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Sorting": [
+      {
+        "slug": "cs.l4.sorting",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Fundamental data structures": [
       {
         "slug": "cs.l4.fundamental_ds",
-        "weight": 0.85,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Trees": [
       {
         "slug": "cs.l4.trees",
-        "weight": 0.75,
-        "isPrimary": true
-      },
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Graphs": [
       {
         "slug": "cs.l4.graphs",
-        "weight": 0.75,
-        "isPrimary": true
-      }
-    ],
-    "Version control & testing": [
-      {
-        "slug": "cs.l7.version_control",
-        "weight": 0.9,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l7.testing",
-        "weight": 0.9,
-        "isPrimary": true
-      }
-    ],
-    "Databases intro": [
-      {
-        "slug": "cs.l8.db_foundations",
         "weight": 1.0,
-        "isPrimary": true
+        "primary": true
       }
     ],
-    "Networks & the web": [
+    "Algorithmic paradigms": [
       {
-        "slug": "cs.l9.net_foundations",
-        "weight": 0.9,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l11.web_intro",
-        "weight": 0.85,
-        "isPrimary": true
-      }
-    ],
-    "AI & data science intro": [
-      {
-        "slug": "cs.l13.ai_intro",
+        "slug": "cs.l4.algorithmic_paradigms",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l1.representation",
-        "weight": 0.4,
-        "isPrimary": false
+        "primary": true
       }
     ],
-    "Operating systems intro": [
+    "Advanced algorithms": [
       {
-        "slug": "cs.l6.os_intro",
+        "slug": "cs.l4.advanced_algorithms",
         "weight": 1.0,
-        "isPrimary": true
-      },
-      {
-        "slug": "cs.l2.how_computers_work",
-        "weight": 0.45,
-        "isPrimary": false
+        "primary": true
       }
     ],
-    "Discrete math for CS": [
+    "Mathematics foundations": [
       {
-        "slug": "cs.l5.discrete_math_intro",
+        "slug": "cs.l5.math_foundations",
         "weight": 1.0,
-        "isPrimary": true
-      },
+        "primary": true
+      }
+    ],
+    "Discrete mathematics": [
       {
-        "slug": "cs.l2.boolean",
-        "weight": 0.45,
-        "isPrimary": false
+        "slug": "cs.l5.discrete_math",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Proof techniques": [
+      {
+        "slug": "cs.l5.proof_techniques",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Combinatorics": [
+      {
+        "slug": "cs.l5.combinatorics",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Probability": [
+      {
+        "slug": "cs.l5.probability",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Statistics": [
+      {
+        "slug": "cs.l5.statistics",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Linear algebra": [
+      {
+        "slug": "cs.l5.linear_algebra",
+        "weight": 1.0,
+        "primary": true
+      }
+    ],
+    "Calculus": [
+      {
+        "slug": "cs.l5.calculus",
+        "weight": 1.0,
+        "primary": true
       }
     ]
-  }
+  },
+  "units": [
+    {
+      "name": "Digital & computer literacy",
+      "layer": "L0",
+      "learningGoal": "Use computers confidently with no prior technical background — from what technology is through files, the internet, and digital safety.",
+      "subtopics": [
+        {
+          "name": "Understanding technology",
+          "code": "L0.1",
+          "skill": "cs.l0.tech_basics",
+          "learningGoal": "Build a clear foundation in Understanding technology.\n\nCover these ideas:\n• What is technology?\n• What is information?\n• What is data?\n• What is a digital device?\n• Analog vs digital\n• Digital information\n• Digital representation\n• Computers in everyday life\n• Examples of computers\n• Why computers exist\n• What computers are good at\n• What computers cannot inherently do",
+          "concepts": [
+            "What is technology?",
+            "What is information?",
+            "What is data?",
+            "What is a digital device?",
+            "Analog vs digital",
+            "Digital information",
+            "Digital representation",
+            "Computers in everyday life",
+            "Examples of computers",
+            "Why computers exist",
+            "What computers are good at",
+            "What computers cannot inherently do"
+          ]
+        },
+        {
+          "name": "What is a computer?",
+          "code": "L0.2",
+          "skill": "cs.l0.what_is_computer",
+          "learningGoal": "Build a clear foundation in What is a computer?.\n\nCover these ideas:\n• Definition of a computer\n• Input\n• Processing\n• Output\n• Storage\n• Communication\n• Hardware\n• Software\n• Users\n• Computer systems",
+          "concepts": [
+            "Definition of a computer",
+            "Input",
+            "Processing",
+            "Output",
+            "Storage",
+            "Communication",
+            "Hardware",
+            "Software",
+            "Users",
+            "Computer systems"
+          ]
+        },
+        {
+          "name": "Types of computers",
+          "code": "L0.3",
+          "skill": "cs.l0.computer_types",
+          "learningGoal": "Build a clear foundation in Types of computers.\n\nCover these ideas:\n• Desktop computers\n• Laptops\n• Tablets\n• Smartphones\n• Servers\n• Mainframes\n• Supercomputers\n• Embedded computers\n• Microcontrollers\n• Game consoles\n• IoT devices\n• Wearables\n• Automotive computers\n• Industrial computers",
+          "concepts": [
+            "Desktop computers",
+            "Laptops",
+            "Tablets",
+            "Smartphones",
+            "Servers",
+            "Mainframes",
+            "Supercomputers",
+            "Embedded computers",
+            "Microcontrollers",
+            "Game consoles",
+            "IoT devices",
+            "Wearables",
+            "Automotive computers",
+            "Industrial computers"
+          ]
+        },
+        {
+          "name": "Computer hardware",
+          "code": "L0.4",
+          "skill": "cs.l0.hardware",
+          "learningGoal": "Build a clear foundation in Computer hardware.\n\nCover these ideas:\n• CPU\n• RAM\n• Storage\n• Motherboard\n• GPU\n• Power supply\n• Network interface\n• Cooling\n• Display\n• Keyboard\n• Mouse\n• Touchscreen\n• Speakers\n• Microphone\n• Camera\n• What each component does\n• How components interact\n• Temporary vs persistent storage\n• Processing vs storage\n• CPU vs GPU",
+          "concepts": [
+            "CPU",
+            "RAM",
+            "Storage",
+            "Motherboard",
+            "GPU",
+            "Power supply",
+            "Network interface",
+            "Cooling",
+            "Display",
+            "Keyboard",
+            "Mouse",
+            "Touchscreen",
+            "Speakers",
+            "Microphone",
+            "Camera",
+            "What each component does",
+            "How components interact",
+            "Temporary vs persistent storage",
+            "Processing vs storage",
+            "CPU vs GPU"
+          ]
+        },
+        {
+          "name": "Computer software",
+          "code": "L0.5",
+          "skill": "cs.l0.software",
+          "learningGoal": "Build a clear foundation in Computer software.\n\nCover these ideas:\n• Operating systems\n• Applications\n• Drivers\n• Utilities\n• Firmware\n• System software\n• Application software\n• Files\n• Processes\n• Programs",
+          "concepts": [
+            "Operating systems",
+            "Applications",
+            "Drivers",
+            "Utilities",
+            "Firmware",
+            "System software",
+            "Application software",
+            "Files",
+            "Processes",
+            "Programs"
+          ]
+        },
+        {
+          "name": "Files & folders",
+          "code": "L0.6",
+          "skill": "cs.l0.files_folders",
+          "learningGoal": "Build a clear foundation in Files & folders.\n\nCover these ideas:\n• Files\n• File names\n• File extensions\n• Directories\n• Paths\n• File types\n• File permissions\n• Copying\n• Moving\n• Renaming\n• Deleting\n• Compression\n• Archives\n• Backups",
+          "concepts": [
+            "Files",
+            "File names",
+            "File extensions",
+            "Directories",
+            "Paths",
+            "File types",
+            "File permissions",
+            "Copying",
+            "Moving",
+            "Renaming",
+            "Deleting",
+            "Compression",
+            "Archives",
+            "Backups"
+          ]
+        },
+        {
+          "name": "Operating a computer",
+          "code": "L0.7",
+          "skill": "cs.l0.operate_computer",
+          "learningGoal": "Build a clear foundation in Operating a computer.\n\nCover these ideas:\n• Desktop environments\n• Windows/Linux/macOS concepts\n• Applications\n• Windows\n• Menus\n• Settings\n• Installing software\n• Updating software\n• Uninstalling software\n• Basic troubleshooting",
+          "concepts": [
+            "Desktop environments",
+            "Windows/Linux/macOS concepts",
+            "Applications",
+            "Windows",
+            "Menus",
+            "Settings",
+            "Installing software",
+            "Updating software",
+            "Uninstalling software",
+            "Basic troubleshooting"
+          ]
+        },
+        {
+          "name": "Internet literacy",
+          "code": "L0.8",
+          "skill": "cs.l0.internet_literacy",
+          "learningGoal": "Build a clear foundation in Internet literacy.\n\nCover these ideas:\n• Internet\n• Web\n• Browser\n• Search engine\n• Website\n• URL\n• Domain\n• Web page\n• Hyperlink\n• Download\n• Upload\n• Cloud services\n• Email\n• Messaging",
+          "concepts": [
+            "Internet",
+            "Web",
+            "Browser",
+            "Search engine",
+            "Website",
+            "URL",
+            "Domain",
+            "Web page",
+            "Hyperlink",
+            "Download",
+            "Upload",
+            "Cloud services",
+            "Email",
+            "Messaging"
+          ]
+        },
+        {
+          "name": "Digital safety",
+          "code": "L0.9",
+          "skill": "cs.l0.digital_safety",
+          "learningGoal": "Build a clear foundation in Digital safety.\n\nCover these ideas:\n• Passwords\n• MFA\n• Phishing\n• Malware\n• Scams\n• Privacy\n• Personal data\n• Digital identity\n• Safe browsing\n• Social engineering\n• Backups",
+          "concepts": [
+            "Passwords",
+            "MFA",
+            "Phishing",
+            "Malware",
+            "Scams",
+            "Privacy",
+            "Personal data",
+            "Digital identity",
+            "Safe browsing",
+            "Social engineering",
+            "Backups"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Computational thinking",
+      "layer": "L1",
+      "learningGoal": "Bridge from using computers to thinking like a computer scientist: problems, algorithms, abstraction, patterns, logic, and representation.",
+      "subtopics": [
+        {
+          "name": "Problem solving",
+          "code": "L1.1",
+          "skill": "cs.l1.problem_solving",
+          "learningGoal": "Build a clear foundation in Problem solving.\n\nCover these ideas:\n• What is a problem?\n• Problem decomposition\n• Identifying constraints\n• Inputs\n• Outputs\n• Desired state\n• Breaking large problems into smaller problems",
+          "concepts": [
+            "What is a problem?",
+            "Problem decomposition",
+            "Identifying constraints",
+            "Inputs",
+            "Outputs",
+            "Desired state",
+            "Breaking large problems into smaller problems"
+          ]
+        },
+        {
+          "name": "Algorithms (thinking)",
+          "code": "L1.2",
+          "skill": "cs.l1.algorithms",
+          "learningGoal": "Build a clear foundation in Algorithms (thinking).\n\nCover these ideas:\n• What is an algorithm?\n• Step-by-step instructions\n• Algorithms in everyday life\n• Precision\n• Determinism\n• Termination\n• Correctness",
+          "concepts": [
+            "What is an algorithm?",
+            "Step-by-step instructions",
+            "Algorithms in everyday life",
+            "Precision",
+            "Determinism",
+            "Termination",
+            "Correctness"
+          ]
+        },
+        {
+          "name": "Abstraction",
+          "code": "L1.3",
+          "skill": "cs.l1.abstraction",
+          "learningGoal": "Build a clear foundation in Abstraction.\n\nCover these ideas:\n• What is abstraction?\n• Ignoring irrelevant detail\n• Models\n• Interfaces\n• Layers\n• Encapsulation\n• Generalization",
+          "concepts": [
+            "What is abstraction?",
+            "Ignoring irrelevant detail",
+            "Models",
+            "Interfaces",
+            "Layers",
+            "Encapsulation",
+            "Generalization"
+          ]
+        },
+        {
+          "name": "Pattern recognition",
+          "code": "L1.4",
+          "skill": "cs.l1.pattern_recognition",
+          "learningGoal": "Build a clear foundation in Pattern recognition.\n\nCover these ideas:\n• Identifying patterns\n• Repetition\n• Sequences\n• Similarity\n• Generalization",
+          "concepts": [
+            "Identifying patterns",
+            "Repetition",
+            "Sequences",
+            "Similarity",
+            "Generalization"
+          ]
+        },
+        {
+          "name": "Logical thinking",
+          "code": "L1.5",
+          "skill": "cs.l1.logical_thinking",
+          "learningGoal": "Build a clear foundation in Logical thinking.\n\nCover these ideas:\n• Statements\n• Conditions\n• AND\n• OR\n• NOT\n• Truth\n• Logical implication\n• Contradiction\n• Equivalence",
+          "concepts": [
+            "Statements",
+            "Conditions",
+            "AND",
+            "OR",
+            "NOT",
+            "Truth",
+            "Logical implication",
+            "Contradiction",
+            "Equivalence"
+          ]
+        },
+        {
+          "name": "Computational representation",
+          "code": "L1.6",
+          "skill": "cs.l1.representation",
+          "learningGoal": "Build a clear foundation in Computational representation.\n\nCover these ideas:\n• Symbols\n• Numbers\n• Text\n• Images\n• Sound\n• Instructions\n• State",
+          "concepts": [
+            "Symbols",
+            "Numbers",
+            "Text",
+            "Images",
+            "Sound",
+            "Instructions",
+            "State"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Computer science foundations",
+      "layer": "L2",
+      "learningGoal": "Study the science of computing: history, number systems, data representation, Boolean algebra, digital logic, and how a computer actually works.",
+      "subtopics": [
+        {
+          "name": "History of computing",
+          "code": "L2.1",
+          "skill": "cs.l2.history",
+          "learningGoal": "Build a clear foundation in History of computing.\n\nCover these ideas:\n• Counting systems\n• Abacus\n• Mechanical calculators\n• Analytical Engine\n• Early computers\n• Turing\n• Von Neumann\n• Transistors\n• Integrated circuits\n• Personal computers\n• Internet\n• Mobile computing\n• Cloud computing\n• AI era",
+          "concepts": [
+            "Counting systems",
+            "Abacus",
+            "Mechanical calculators",
+            "Analytical Engine",
+            "Early computers",
+            "Turing",
+            "Von Neumann",
+            "Transistors",
+            "Integrated circuits",
+            "Personal computers",
+            "Internet",
+            "Mobile computing",
+            "Cloud computing",
+            "AI era"
+          ]
+        },
+        {
+          "name": "Number systems",
+          "code": "L2.2",
+          "skill": "cs.l2.number_systems",
+          "learningGoal": "Build a clear foundation in Number systems.\n\nCover these ideas:\n• Decimal\n• Binary\n• Octal\n• Hexadecimal\n• Base conversion\n• Binary arithmetic\n• Signed numbers\n• Two's complement",
+          "concepts": [
+            "Decimal",
+            "Binary",
+            "Octal",
+            "Hexadecimal",
+            "Base conversion",
+            "Binary arithmetic",
+            "Signed numbers",
+            "Two's complement"
+          ]
+        },
+        {
+          "name": "Data representation",
+          "code": "L2.3",
+          "skill": "cs.l2.data_representation",
+          "learningGoal": "Build a clear foundation in Data representation.\n\nCover these ideas:\n• Bits\n• Bytes\n• Words\n• Integers\n• Floating point\n• Characters\n• ASCII\n• Unicode\n• Strings\n• Boolean values\n• Images\n• Audio\n• Video",
+          "concepts": [
+            "Bits",
+            "Bytes",
+            "Words",
+            "Integers",
+            "Floating point",
+            "Characters",
+            "ASCII",
+            "Unicode",
+            "Strings",
+            "Boolean values",
+            "Images",
+            "Audio",
+            "Video"
+          ]
+        },
+        {
+          "name": "Boolean algebra",
+          "code": "L2.4",
+          "skill": "cs.l2.boolean",
+          "learningGoal": "Build a clear foundation in Boolean algebra.\n\nCover these ideas:\n• Boolean variables\n• AND\n• OR\n• NOT\n• XOR\n• NAND\n• NOR\n• Truth tables\n• Boolean expressions\n• Boolean simplification",
+          "concepts": [
+            "Boolean variables",
+            "AND",
+            "OR",
+            "NOT",
+            "XOR",
+            "NAND",
+            "NOR",
+            "Truth tables",
+            "Boolean expressions",
+            "Boolean simplification"
+          ]
+        },
+        {
+          "name": "Digital logic",
+          "code": "L2.5",
+          "skill": "cs.l2.digital_logic",
+          "learningGoal": "Build a clear foundation in Digital logic.\n\nCover these ideas:\n• Logic gates\n• Combinational circuits\n• Adders\n• Multiplexers\n• Decoders\n• Comparators\n• Sequential circuits\n• Flip-flops\n• Registers\n• Counters",
+          "concepts": [
+            "Logic gates",
+            "Combinational circuits",
+            "Adders",
+            "Multiplexers",
+            "Decoders",
+            "Comparators",
+            "Sequential circuits",
+            "Flip-flops",
+            "Registers",
+            "Counters"
+          ]
+        },
+        {
+          "name": "How a computer actually works",
+          "code": "L2.6",
+          "skill": "cs.l2.how_computers_work",
+          "learningGoal": "Build a clear foundation in How a computer actually works.\n\nCover these ideas:\n• Machine instructions\n• CPU\n• Registers\n• ALU\n• Control unit\n• Program counter\n• Instruction cycle\n• Fetch\n• Decode\n• Execute\n• Memory access\n• Interrupts",
+          "concepts": [
+            "Machine instructions",
+            "CPU",
+            "Registers",
+            "ALU",
+            "Control unit",
+            "Program counter",
+            "Instruction cycle",
+            "Fetch",
+            "Decode",
+            "Execute",
+            "Memory access",
+            "Interrupts"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Programming foundations",
+      "layer": "L3",
+      "learningGoal": "Create software with language-independent concepts (Python-first): programs, variables, types, operators, control flow, functions, data structures, debugging, files, and modules.",
+      "subtopics": [
+        {
+          "name": "Programming concepts",
+          "code": "L3.1",
+          "skill": "cs.l3.prog_concepts",
+          "learningGoal": "Build a clear foundation in Programming concepts.\n\nCover these ideas:\n• What is a program?\n• Source code\n• Compiler\n• Interpreter\n• Runtime\n• Syntax\n• Semantics\n• Errors\n• Debugging",
+          "concepts": [
+            "What is a program?",
+            "Source code",
+            "Compiler",
+            "Interpreter",
+            "Runtime",
+            "Syntax",
+            "Semantics",
+            "Errors",
+            "Debugging"
+          ]
+        },
+        {
+          "name": "Variables",
+          "code": "L3.2",
+          "skill": "cs.l3.variables",
+          "learningGoal": "Build a clear foundation in Variables.\n\nCover these ideas:\n• Variables\n• Values\n• Assignment\n• Naming\n• Types\n• Constants\n• Scope",
+          "concepts": [
+            "Variables",
+            "Values",
+            "Assignment",
+            "Naming",
+            "Types",
+            "Constants",
+            "Scope"
+          ]
+        },
+        {
+          "name": "Primitive types",
+          "code": "L3.3",
+          "skill": "cs.l3.types",
+          "learningGoal": "Build a clear foundation in Primitive types.\n\nCover these ideas:\n• Integers\n• Floating point\n• Boolean\n• Strings\n• Characters\n• None/null concepts",
+          "concepts": [
+            "Integers",
+            "Floating point",
+            "Boolean",
+            "Strings",
+            "Characters",
+            "None/null concepts"
+          ]
+        },
+        {
+          "name": "Operators",
+          "code": "L3.4",
+          "skill": "cs.l3.operators",
+          "learningGoal": "Build a clear foundation in Operators.\n\nCover these ideas:\n• Arithmetic\n• Comparison\n• Logical\n• Assignment\n• Bitwise\n• Membership\n• Identity",
+          "concepts": [
+            "Arithmetic",
+            "Comparison",
+            "Logical",
+            "Assignment",
+            "Bitwise",
+            "Membership",
+            "Identity"
+          ]
+        },
+        {
+          "name": "Control flow",
+          "code": "L3.5",
+          "skill": "cs.l3.control_flow",
+          "learningGoal": "Build a clear foundation in Control flow.\n\nCover these ideas:\n• Sequential execution\n• Conditions\n• if\n• elif\n• else\n• loops\n• while\n• for\n• break\n• continue",
+          "concepts": [
+            "Sequential execution",
+            "Conditions",
+            "if",
+            "elif",
+            "else",
+            "loops",
+            "while",
+            "for",
+            "break",
+            "continue"
+          ]
+        },
+        {
+          "name": "Functions",
+          "code": "L3.6",
+          "skill": "cs.l3.functions",
+          "learningGoal": "Build a clear foundation in Functions.\n\nCover these ideas:\n• Function definition\n• Parameters\n• Arguments\n• Return values\n• Local variables\n• Scope\n• Pure functions\n• Side effects\n• Recursion",
+          "concepts": [
+            "Function definition",
+            "Parameters",
+            "Arguments",
+            "Return values",
+            "Local variables",
+            "Scope",
+            "Pure functions",
+            "Side effects",
+            "Recursion"
+          ]
+        },
+        {
+          "name": "Data structures (intro)",
+          "code": "L3.7",
+          "skill": "cs.l3.data_structures_intro",
+          "learningGoal": "Build a clear foundation in Data structures (intro).\n\nCover these ideas:\n• Arrays/lists\n• Tuples\n• Sets\n• Dictionaries/maps\n• Strings\n• Stacks\n• Queues",
+          "concepts": [
+            "Arrays/lists",
+            "Tuples",
+            "Sets",
+            "Dictionaries/maps",
+            "Strings",
+            "Stacks",
+            "Queues"
+          ]
+        },
+        {
+          "name": "Errors & debugging",
+          "code": "L3.8",
+          "skill": "cs.l3.debugging",
+          "learningGoal": "Build a clear foundation in Errors & debugging.\n\nCover these ideas:\n• Syntax errors\n• Runtime errors\n• Logic errors\n• Exceptions\n• Stack traces\n• Debuggers\n• Logging\n• Assertions\n• Defensive programming",
+          "concepts": [
+            "Syntax errors",
+            "Runtime errors",
+            "Logic errors",
+            "Exceptions",
+            "Stack traces",
+            "Debuggers",
+            "Logging",
+            "Assertions",
+            "Defensive programming"
+          ]
+        },
+        {
+          "name": "Program files & I/O",
+          "code": "L3.9",
+          "skill": "cs.l3.files_io",
+          "learningGoal": "Build a clear foundation in Program files & I/O.\n\nCover these ideas:\n• Reading files\n• Writing files\n• CSV\n• JSON\n• Serialization\n• Deserialization",
+          "concepts": [
+            "Reading files",
+            "Writing files",
+            "CSV",
+            "JSON",
+            "Serialization",
+            "Deserialization"
+          ]
+        },
+        {
+          "name": "Modules & packages",
+          "code": "L3.10",
+          "skill": "cs.l3.modules",
+          "learningGoal": "Build a clear foundation in Modules & packages.\n\nCover these ideas:\n• Modules\n• Packages\n• Imports\n• Dependencies\n• Package managers\n• Virtual environments",
+          "concepts": [
+            "Modules",
+            "Packages",
+            "Imports",
+            "Dependencies",
+            "Package managers",
+            "Virtual environments"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Algorithms & data structures",
+      "layer": "L4",
+      "learningGoal": "Analyze, search, sort, and structure data — trees, graphs, paradigms, and advanced algorithm families that form a central hub of CS.",
+      "subtopics": [
+        {
+          "name": "Algorithm analysis",
+          "code": "L4.1",
+          "skill": "cs.l4.algorithm_analysis",
+          "learningGoal": "Build a clear foundation in Algorithm analysis.\n\nCover these ideas:\n• Correctness\n• Efficiency\n• Time complexity\n• Space complexity\n• Big O\n• Big Ω\n• Big Θ\n• Best case\n• Worst case\n• Average case\n• Amortized analysis",
+          "concepts": [
+            "Correctness",
+            "Efficiency",
+            "Time complexity",
+            "Space complexity",
+            "Big O",
+            "Big Ω",
+            "Big Θ",
+            "Best case",
+            "Worst case",
+            "Average case",
+            "Amortized analysis"
+          ]
+        },
+        {
+          "name": "Searching",
+          "code": "L4.2",
+          "skill": "cs.l4.searching",
+          "learningGoal": "Build a clear foundation in Searching.\n\nCover these ideas:\n• Linear search\n• Binary search\n• Hash-based lookup\n• Search trees",
+          "concepts": [
+            "Linear search",
+            "Binary search",
+            "Hash-based lookup",
+            "Search trees"
+          ]
+        },
+        {
+          "name": "Sorting",
+          "code": "L4.3",
+          "skill": "cs.l4.sorting",
+          "learningGoal": "Build a clear foundation in Sorting.\n\nCover these ideas:\n• Bubble sort\n• Selection sort\n• Insertion sort\n• Merge sort\n• Quick sort\n• Heap sort\n• Counting sort\n• Radix sort",
+          "concepts": [
+            "Bubble sort",
+            "Selection sort",
+            "Insertion sort",
+            "Merge sort",
+            "Quick sort",
+            "Heap sort",
+            "Counting sort",
+            "Radix sort"
+          ]
+        },
+        {
+          "name": "Fundamental data structures",
+          "code": "L4.4",
+          "skill": "cs.l4.fundamental_ds",
+          "learningGoal": "Build a clear foundation in Fundamental data structures.\n\nCover these ideas:\n• Arrays\n• Linked lists\n• Stacks\n• Queues\n• Deques\n• Hash tables\n• Trees\n• Heaps\n• Graphs",
+          "concepts": [
+            "Arrays",
+            "Linked lists",
+            "Stacks",
+            "Queues",
+            "Deques",
+            "Hash tables",
+            "Trees",
+            "Heaps",
+            "Graphs"
+          ]
+        },
+        {
+          "name": "Trees",
+          "code": "L4.5",
+          "skill": "cs.l4.trees",
+          "learningGoal": "Build a clear foundation in Trees.\n\nCover these ideas:\n• Binary trees\n• Binary search trees\n• AVL trees\n• Red-black trees\n• B-trees\n• Tries\n• Segment trees\n• Fenwick trees",
+          "concepts": [
+            "Binary trees",
+            "Binary search trees",
+            "AVL trees",
+            "Red-black trees",
+            "B-trees",
+            "Tries",
+            "Segment trees",
+            "Fenwick trees"
+          ]
+        },
+        {
+          "name": "Graphs",
+          "code": "L4.6",
+          "skill": "cs.l4.graphs",
+          "learningGoal": "Build a clear foundation in Graphs.\n\nCover these ideas:\n• Directed graphs\n• Undirected graphs\n• Weighted graphs\n• Adjacency matrices\n• Adjacency lists\n• BFS\n• DFS\n• Shortest path\n• Dijkstra\n• Bellman-Ford\n• Floyd-Warshall\n• Minimum spanning trees\n• Prim\n• Kruskal\n• Topological sorting",
+          "concepts": [
+            "Directed graphs",
+            "Undirected graphs",
+            "Weighted graphs",
+            "Adjacency matrices",
+            "Adjacency lists",
+            "BFS",
+            "DFS",
+            "Shortest path",
+            "Dijkstra",
+            "Bellman-Ford",
+            "Floyd-Warshall",
+            "Minimum spanning trees",
+            "Prim",
+            "Kruskal",
+            "Topological sorting"
+          ]
+        },
+        {
+          "name": "Algorithmic paradigms",
+          "code": "L4.7",
+          "skill": "cs.l4.algorithmic_paradigms",
+          "learningGoal": "Build a clear foundation in Algorithmic paradigms.\n\nCover these ideas:\n• Brute force\n• Divide and conquer\n• Greedy algorithms\n• Dynamic programming\n• Backtracking\n• Branch and bound\n• Randomized algorithms",
+          "concepts": [
+            "Brute force",
+            "Divide and conquer",
+            "Greedy algorithms",
+            "Dynamic programming",
+            "Backtracking",
+            "Branch and bound",
+            "Randomized algorithms"
+          ]
+        },
+        {
+          "name": "Advanced algorithms",
+          "code": "L4.8",
+          "skill": "cs.l4.advanced_algorithms",
+          "learningGoal": "Build a clear foundation in Advanced algorithms.\n\nCover these ideas:\n• String algorithms\n• Computational geometry\n• Network flow\n• Matching\n• Approximation algorithms\n• Online algorithms\n• Streaming algorithms\n• External-memory algorithms\n• Parallel algorithms",
+          "concepts": [
+            "String algorithms",
+            "Computational geometry",
+            "Network flow",
+            "Matching",
+            "Approximation algorithms",
+            "Online algorithms",
+            "Streaming algorithms",
+            "External-memory algorithms",
+            "Parallel algorithms"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mathematics for computer science",
+      "layer": "L5",
+      "learningGoal": "Connect math to the CS concepts that need it: foundations, discrete math, proofs, combinatorics, probability, statistics, linear algebra, and calculus.",
+      "subtopics": [
+        {
+          "name": "Mathematics foundations",
+          "code": "L5.1",
+          "skill": "cs.l5.math_foundations",
+          "learningGoal": "Build a clear foundation in Mathematics foundations.\n\nCover these ideas:\n• Arithmetic\n• Fractions\n• Ratios\n• Percentages\n• Algebra\n• Equations\n• Functions\n• Graphs",
+          "concepts": [
+            "Arithmetic",
+            "Fractions",
+            "Ratios",
+            "Percentages",
+            "Algebra",
+            "Equations",
+            "Functions",
+            "Graphs"
+          ]
+        },
+        {
+          "name": "Discrete mathematics",
+          "code": "L5.2",
+          "skill": "cs.l5.discrete_math",
+          "learningGoal": "Build a clear foundation in Discrete mathematics.\n\nCover these ideas:\n• Propositions\n• Predicates\n• Quantifiers\n• Proofs\n• Inference\n• Sets\n• Subsets\n• Union\n• Intersection\n• Difference\n• Cartesian products\n• Relations\n• Equivalence relations\n• Partial orders\n• Injective\n• Surjective\n• Bijective",
+          "concepts": [
+            "Propositions",
+            "Predicates",
+            "Quantifiers",
+            "Proofs",
+            "Inference",
+            "Sets",
+            "Subsets",
+            "Union",
+            "Intersection",
+            "Difference",
+            "Cartesian products",
+            "Relations",
+            "Equivalence relations",
+            "Partial orders",
+            "Injective",
+            "Surjective",
+            "Bijective"
+          ]
+        },
+        {
+          "name": "Proof techniques",
+          "code": "L5.3",
+          "skill": "cs.l5.proof_techniques",
+          "learningGoal": "Build a clear foundation in Proof techniques.\n\nCover these ideas:\n• Direct proof\n• Contradiction\n• Contrapositive\n• Mathematical induction\n• Strong induction\n• Structural induction",
+          "concepts": [
+            "Direct proof",
+            "Contradiction",
+            "Contrapositive",
+            "Mathematical induction",
+            "Strong induction",
+            "Structural induction"
+          ]
+        },
+        {
+          "name": "Combinatorics",
+          "code": "L5.4",
+          "skill": "cs.l5.combinatorics",
+          "learningGoal": "Build a clear foundation in Combinatorics.\n\nCover these ideas:\n• Counting\n• Permutations\n• Combinations\n• Pigeonhole principle\n• Recurrences\n• Generating functions",
+          "concepts": [
+            "Counting",
+            "Permutations",
+            "Combinations",
+            "Pigeonhole principle",
+            "Recurrences",
+            "Generating functions"
+          ]
+        },
+        {
+          "name": "Probability",
+          "code": "L5.5",
+          "skill": "cs.l5.probability",
+          "learningGoal": "Build a clear foundation in Probability.\n\nCover these ideas:\n• Probability\n• Conditional probability\n• Bayes' theorem\n• Random variables\n• Expected value\n• Variance\n• Distributions",
+          "concepts": [
+            "Probability",
+            "Conditional probability",
+            "Bayes' theorem",
+            "Random variables",
+            "Expected value",
+            "Variance",
+            "Distributions"
+          ]
+        },
+        {
+          "name": "Statistics",
+          "code": "L5.6",
+          "skill": "cs.l5.statistics",
+          "learningGoal": "Build a clear foundation in Statistics.\n\nCover these ideas:\n• Descriptive statistics\n• Sampling\n• Estimation\n• Hypothesis testing\n• Regression\n• Correlation",
+          "concepts": [
+            "Descriptive statistics",
+            "Sampling",
+            "Estimation",
+            "Hypothesis testing",
+            "Regression",
+            "Correlation"
+          ]
+        },
+        {
+          "name": "Linear algebra",
+          "code": "L5.7",
+          "skill": "cs.l5.linear_algebra",
+          "learningGoal": "Build a clear foundation in Linear algebra.\n\nCover these ideas:\n• Vectors\n• Matrices\n• Linear transformations\n• Eigenvalues\n• Eigenvectors\n• Matrix decomposition\n• Vector spaces",
+          "concepts": [
+            "Vectors",
+            "Matrices",
+            "Linear transformations",
+            "Eigenvalues",
+            "Eigenvectors",
+            "Matrix decomposition",
+            "Vector spaces"
+          ]
+        },
+        {
+          "name": "Calculus",
+          "code": "L5.8",
+          "skill": "cs.l5.calculus",
+          "learningGoal": "Build a clear foundation in Calculus.\n\nCover these ideas:\n• Limits\n• Derivatives\n• Integrals\n• Multivariable calculus\n• Gradients\n• Optimization",
+          "concepts": [
+            "Limits",
+            "Derivatives",
+            "Integrals",
+            "Multivariable calculus",
+            "Gradients",
+            "Optimization"
+          ]
+        }
+      ]
+    }
+  ],
+  "topicOrder": [
+    "Understanding technology",
+    "What is a computer?",
+    "Types of computers",
+    "Computer hardware",
+    "Computer software",
+    "Files & folders",
+    "Operating a computer",
+    "Internet literacy",
+    "Digital safety",
+    "Problem solving",
+    "Algorithms (thinking)",
+    "Abstraction",
+    "Pattern recognition",
+    "Logical thinking",
+    "Computational representation",
+    "History of computing",
+    "Number systems",
+    "Data representation",
+    "Boolean algebra",
+    "Digital logic",
+    "How a computer actually works",
+    "Programming concepts",
+    "Variables",
+    "Primitive types",
+    "Operators",
+    "Control flow",
+    "Functions",
+    "Data structures (intro)",
+    "Errors & debugging",
+    "Program files & I/O",
+    "Modules & packages",
+    "Algorithm analysis",
+    "Searching",
+    "Sorting",
+    "Fundamental data structures",
+    "Trees",
+    "Graphs",
+    "Algorithmic paradigms",
+    "Advanced algorithms",
+    "Mathematics foundations",
+    "Discrete mathematics",
+    "Proof techniques",
+    "Combinatorics",
+    "Probability",
+    "Statistics",
+    "Linear algebra",
+    "Calculus"
+  ]
 }

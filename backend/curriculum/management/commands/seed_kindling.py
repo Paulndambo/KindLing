@@ -165,11 +165,13 @@ class Command(BaseCommand):
                 prereq_created += 1
 
         links = 0
+        keep_pairs = set()
         for topic_name, skill_rows in TOPIC_SKILLS.items():
             for slug, weight, is_primary in skill_rows:
                 skill = Skill.objects.filter(slug=slug).first()
                 if not skill:
                     continue
+                keep_pairs.add((topic_name, skill.id))
                 _, was = TopicSkillLink.objects.update_or_create(
                     subject_name=PILOT_SUBJECT,
                     topic_name=topic_name,
@@ -179,11 +181,31 @@ class Command(BaseCommand):
                 if was:
                     links += 1
 
+        # Drop stale pilot links (old merged lesson names or extra skill rows)
+        stale_qs = TopicSkillLink.objects.filter(subject_name=PILOT_SUBJECT)
+        stale_ids = [
+            row.id
+            for row in stale_qs.only("id", "topic_name", "skill_id")
+            if (row.topic_name, row.skill_id) not in keep_pairs
+        ]
+        stale_n = len(stale_ids)
+        if stale_ids:
+            TopicSkillLink.objects.filter(id__in=stale_ids).delete()
+
+        # Drop obsolete higher-layer pilot skills no longer in L0–L5 graph
+        keep_slugs = {d["slug"] for d in skill_dicts()}
+        obsolete = Skill.objects.filter(is_pilot=True).exclude(slug__in=keep_slugs)
+        obsolete_n = obsolete.count()
+        if obsolete_n:
+            obsolete.delete()
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Skill graph: {Skill.objects.count()} skills "
                 f"(+{created_skills} new), {SkillPrerequisite.objects.count()} prereqs, "
                 f"{TopicSkillLink.objects.count()} topic links"
+                + (f", removed {stale_n} stale links" if stale_n else "")
+                + (f", removed {obsolete_n} obsolete skills" if obsolete_n else "")
             )
         )
 

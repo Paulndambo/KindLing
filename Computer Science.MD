@@ -1,6 +1,6 @@
 # Computer Science
 
-> **Implementation note (2026-09):** The live Kindling pilot seeds this graph as **Subject → Topic (unit) → Subtopic (lesson)** via `backend/curriculum/pilot_graph.py` + `cs_provision.py`. L0 digital-literacy lessons (including **Files & folders**) are taught with **practical how-to** steps in the tutor (`frontend/src/services/learning/practicalGuides.js`), not theory-only chat. Layers below describe the full intended knowledge graph; not every L1–L14 node is provisioned yet.
+> **Implementation note (2026-09):** The live Kindling pilot seeds **L0–L5** as **Subject → Topic (unit / layer) → Subtopic (lesson = every Lx.y section)** via `backend/curriculum/pilot_graph.py` + `cs_provision.py`. Each lesson’s `learning_goal` lists the source bullet concepts so tutors cover full depth — not merged “highlight” lessons. L0 digital-literacy lessons (including **Files & folders**) also use **practical how-to** steps (`frontend/src/services/learning/practicalGuides.js`). Layers **L6+** below remain the intended full knowledge graph and are not provisioned in the pilot yet.
 
 I would design it as a **knowledge graph + prerequisite graph**, where a learner can enter at literally any point, but the system can recursively determine what they need to know before progressing.
 
