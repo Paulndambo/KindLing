@@ -1574,6 +1574,95 @@ body {
   min-width: 0;
 }
 
+.review-spark-upcoming {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(31, 58, 52, 0.1);
+}
+
+.review-spark-upcoming-title {
+  margin: 0 0 8px;
+  color: var(--pine);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.review-spark-row.upcoming {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.review-spark-upcoming-tag {
+  flex-shrink: 0;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.review-snooze {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.review-snooze summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid rgba(31, 58, 52, 0.14);
+  border-radius: 9px;
+  padding: 7px 9px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.review-snooze summary::-webkit-details-marker {
+  display: none;
+}
+
+.review-snooze-options {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 5px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 112px;
+  padding: 6px;
+  border: 1px solid rgba(31, 58, 52, 0.14);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(31, 58, 52, 0.12);
+}
+
+.review-snooze-options button {
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 8px;
+  background: transparent;
+  color: var(--pine);
+  text-align: left;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.review-snooze-options button:hover:not(:disabled) {
+  background: rgba(45, 106, 98, 0.08);
+}
+
+.review-snooze-options button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.review-snooze-message {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
 .review-spark-card--panel .review-spark-row {
   background: var(--parchment);
 }

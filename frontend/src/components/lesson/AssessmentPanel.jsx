@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ClipboardCheck,
   Check,
@@ -22,16 +22,46 @@ export default function AssessmentPanel({
   session,
   open = true,
   onAnswer,
+  onTimeout,
   onContinue,
   onExit,
   onDone,
   disabled = false,
 }) {
   const [picked, setPicked] = useState(null);
+  const [secondsLeft, setSecondsLeft] = useState(null);
+  const timeoutRef = useRef("");
+  const onTimeoutRef = useRef(onTimeout);
+
+  useEffect(() => {
+    onTimeoutRef.current = onTimeout;
+  }, [onTimeout]);
 
   useEffect(() => {
     setPicked(null);
   }, [session?.currentIndex, session?.id, session?.phase]);
+
+  useEffect(() => {
+    if (!open || !session?.timed || session.phase !== AssessmentPhase.ACTIVE) {
+      setSecondsLeft(null);
+      return undefined;
+    }
+    const questionKey = `${session.id}:${session.currentIndex}`;
+    const deadline =
+      (session.questionStartedAt || Date.now()) +
+      (session.secondsPerQuestion || 45) * 1000;
+    const update = () => {
+      const remaining = Math.max(0, deadline - Date.now());
+      setSecondsLeft(Math.ceil(remaining / 1000));
+      if (remaining <= 0 && timeoutRef.current !== questionKey) {
+        timeoutRef.current = questionKey;
+        onTimeoutRef.current?.();
+      }
+    };
+    update();
+    const interval = window.setInterval(update, 250);
+    return () => window.clearInterval(interval);
+  }, [open, session?.id, session?.currentIndex, session?.phase, session?.timed, session?.questionStartedAt, session?.secondsPerQuestion]);
 
   if (!open || !session?.questions?.length) return null;
 
@@ -101,9 +131,22 @@ export default function AssessmentPanel({
       </div>
       <p className="assessment-credit">
         {done
-          ? `${score.correct}/${score.total} correct · ${score.percent}%`
+          ? `${score.correct}/${score.total} correct · ${score.percent}%${
+              score.unanswered ? ` · ${score.unanswered} timed out` : ""
+            }`
           : progress}
       </p>
+      {session.timed && !done && (
+        <p
+          className={`assessment-timer${secondsLeft != null && secondsLeft <= 10 ? " is-low" : ""}`}
+          role="timer"
+          aria-label={`${secondsLeft ?? session.secondsPerQuestion} seconds remaining`}
+        >
+          {explaining
+            ? "Timer paused while you review"
+            : `${secondsLeft ?? session.secondsPerQuestion}s for this question`}
+        </p>
+      )}
 
       {done ? (
         <div className="assessment-done">
@@ -125,6 +168,7 @@ export default function AssessmentPanel({
                 <span>
                   Q{i + 1}
                   {a.concept ? ` · ${a.concept}` : ""}
+                  {a.timedOut ? " · time ran out" : ""}
                 </span>
               </li>
             ))}
@@ -212,7 +256,11 @@ export default function AssessmentPanel({
                   <Lightbulb size={15} aria-hidden />
                 )}
                 <strong>
-                  {result.correct ? "You got it" : "Let's revise"}
+                  {result.timedOut
+                    ? "Time for that one"
+                    : result.correct
+                      ? "You got it"
+                      : "Let's revise"}
                 </strong>
               </div>
               <p className="assessment-explain-body">{result.explanation}</p>
@@ -253,6 +301,7 @@ export default function AssessmentPanel({
 export function AssessmentOfferCard({
   offer,
   onStart,
+  onStartTimed,
   onDismiss,
   disabled = false,
 }) {
@@ -308,6 +357,16 @@ export function AssessmentOfferCard({
           >
             {offer.cta || "Start quick check"}
           </button>
+          {onStartTimed && (
+            <button
+              type="button"
+              className="journal-secondary-btn assessment-timed-start"
+              onClick={onStartTimed}
+              disabled={disabled}
+            >
+              Try timed practice · 45s per question
+            </button>
+          )}
         </div>
       </div>
     </div>

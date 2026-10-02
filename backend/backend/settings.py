@@ -3,8 +3,11 @@ Django settings for Kindling backend API.
 """
 
 from datetime import timedelta
+import os
 from pathlib import Path
 from typing import List, Dict, Any
+
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,13 +16,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY: str = "django-insecure-5zf*id)loy=#-bhu^y(sujwszc4rvv%ne68%q&f_wa-nae^bhh"
+def env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    return default if value is None else value.strip().lower() in {"1", "true", "yes", "on"}
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG: bool = True
 
-ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "[::1]"]
+def env_list(name: str, default: List[str] | None = None) -> List[str]:
+    value = os.environ.get(name)
+    if value is None:
+        return default or []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
+DEBUG: bool = env_bool("DEBUG", APP_ENV != "production")
+SECRET_KEY: str = os.environ.get("SECRET_KEY", "").strip()
+if not SECRET_KEY:
+    if not DEBUG:
+        raise RuntimeError("SECRET_KEY must be set when DEBUG is disabled.")
+    SECRET_KEY = "django-insecure-local-development-only"
+ALLOWED_HOSTS: List[str] = env_list("ALLOWED_HOSTS", ["localhost", "127.0.0.1", "[::1]"])
+if not DEBUG and not ALLOWED_HOSTS:
+    raise RuntimeError("ALLOWED_HOSTS must be set when DEBUG is disabled.")
 
 
 # Application definition
@@ -48,6 +66,7 @@ INSTALLED_APPS: List[str] = [
 
 MIDDLEWARE: List[str] = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -83,12 +102,17 @@ WSGI_APPLICATION: str = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES: Dict[str, Dict[str, Any]] = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+if DATABASE_URL:
+    DATABASES: Dict[str, Dict[str, Any]] = {"default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+        ssl_require=not DEBUG,
+    )}
+else:
+    if not DEBUG:
+        raise RuntimeError("DATABASE_URL must be set when DEBUG is disabled.")
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 
 
 # Password validation
@@ -126,6 +150,11 @@ USE_TZ: bool = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL: str = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 # User uploads (homework photos — Epic A4). Local filesystem for dev.
 MEDIA_URL: str = "/media/"
@@ -142,8 +171,33 @@ ALLOW_CUSTOM_SUBJECTS: bool = False
 # ---------------------------------------------------------------------------
 # Email — parent digests (Epic A5). Console backend for local/dev.
 # ---------------------------------------------------------------------------
-EMAIL_BACKEND: str = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL: str = "Kindling <noreply@kindling.local>"
+if os.environ.get("EMAIL_HOST"):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ["EMAIL_HOST"]
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+    EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    if not DEBUG:
+        raise RuntimeError("Configure EMAIL_HOST for non-debug deployments.")
+DEFAULT_FROM_EMAIL: str = os.environ.get("DEFAULT_FROM_EMAIL", "Kindling <noreply@kindling.local>")
+
+CORS_ALLOWED_ORIGINS: List[str] = env_list("CORS_ALLOWED_ORIGINS", [
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:4173", "http://127.0.0.1:4173",
+    "http://localhost:3000", "http://127.0.0.1:3000",
+])
+CSRF_TRUSTED_ORIGINS: List[str] = env_list("CSRF_TRUSTED_ORIGINS")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "3600"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -185,15 +239,6 @@ SIMPLE_JWT: Dict[str, Any] = {
 # ---------------------------------------------------------------------------
 # CORS — allow the Vite frontend during development
 # ---------------------------------------------------------------------------
-
-CORS_ALLOWED_ORIGINS: List[str] = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:4173",
-    "http://127.0.0.1:4173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
 
 CORS_ALLOW_HEADERS: List[str] = [
     "accept",

@@ -104,7 +104,7 @@ Status legend:
 
 | ID | Review § | Ask | Status | Evidence today | Gap | PLAN map | Priority |
 |----|----------|-----|--------|----------------|-----|----------|----------|
-| G20 | §12 | Systematic spaced engine | **Partial** | C1 SM-2-lite | Multi-subject, stronger curve, schedule UX | **C1+** | P1 |
+| G20 | §12 | Systematic spaced engine | **Partial** | C1 SM-2-lite | Stronger interval progression and study-grade retention windows | **C1+** | P1 |
 | G21 | §12 | “What should I review today?” default | **Partial** | Dashboard Review spark card | Not always primary home surface | **C1+**.2 | P1 |
 | G22 | §18 | Learning recommendation engine (highest-value next action) | **Partial** → **Done** thin | `rankNextBestActions` + dashboard “Suggested next step” | Deeper lifelong NBA = S.5 | **L2.4** ✅ thin | P2 |
 | G23 | §18 | Teach-back / change representation / video as actions | **Partial / Missing** | Manipulatives = representation; no teach-back mode; no video | Modes + policy hooks | Phase 4 X.1 · teach-back = **L4** optional | P3 |
@@ -171,7 +171,7 @@ Wave 2b — Learning intelligence core       [NEW — review P0]
 
 Wave 2c — Retention & assessment depth     [Track P, refined]
   C1+ Spaced review depth
-  C6 depth: independence twin after guide; optional timed; pre/post thin pilot
+  C6 depth: broader banks and pre/post thin pilot (timed UI shipped; L4 independence twin shipped)
   L4  Independence/transfer checks wired to C6 + post-ladder
   C7  Playbook #2 only if sessions leave math
   A1 expand / P.5 as needed for C4/C6/C1+
@@ -236,8 +236,8 @@ Wave 2f — Scale & data moat                [Tracks V + S + L5]
 | Epic | Status | Review-driven next step |
 |------|--------|-------------------------|
 | **C1** Review v1 | ✅ | — |
-| **C1+** | ⬜ | Multi-subject + schedule UX + stronger intervals (G20–G21, G17) |
-| **C6** Assessment | ✅ v1 | Independence/transfer/pre-post depth; timed UI optional |
+| **C1+** | ⚡ Partial | Multi-subject selection/balancing ✅; upcoming/reason + 1/3/7-day snooze ✅; bounded recall intervals ✅; week-focus tie-in and study-grade retention windows remain (G20–G21, G17) |
+| **C6** Assessment | ✅ v1 + timed | Broader banks + pre/post depth; L4 covers independence/transfer |
 | **C7** Playbooks | ⬜ | Codify math pack as data; second domain if needed (G10) |
 | **C8** Eval | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ | Manual + auto scorer + weekly job; calibrate on human labels next (G24–G26) |
 | **B5** Misconceptions | ✅ pilot | B5+: confidence + enforced remediation check (G11) |
@@ -250,8 +250,8 @@ Wave 2f — Scale & data moat                [Tracks V + S + L5]
 
 | ID | PLAN work | Update |
 |----|-----------|--------|
-| P.1 | C1+ | Still ⬜ — high priority after L1–L3 |
-| P.2 | C6 assessment | **v1 ✅** — remaining = depth (independence/transfer/timed) |
+| P.1 | C1+ | Partial — cross-subject selection, schedule controls, snooze, and bounded interval progression shipped; week-focus tie-in/retention windows remain |
+| P.2 | C6 assessment | **v1 + timed practice ✅** — remaining = broader banks and pre/post measurement; independence/transfer are covered by L4 |
 | P.3 | C7 | ⬜ demand-gated |
 | P.4 | C8 | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ |
 | P.5 | A1 expand | ⬜ as needed |

@@ -2517,6 +2517,27 @@
   color: var(--pine);
 }
 
+.assessment-timer {
+  display: inline-flex;
+  margin: -3px 0 9px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(90, 70, 140, 0.1);
+  color: #5a468c;
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.assessment-timer.is-low {
+  background: #fff0e5;
+  color: #8a4f25;
+}
+
+.assessment-timed-start {
+  white-space: nowrap;
+}
+
 .assessment-q-meta {
   margin: 0 0 6px;
   font-size: 11px;

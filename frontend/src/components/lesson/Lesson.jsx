@@ -648,8 +648,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
   }, [assessment]);
 
   const handleAssessmentAnswer = useCallback(
-    (selectedIndex) => {
-      assessment.answerAssessment(selectedIndex);
+    (selectedIndex, options) => {
+      assessment.answerAssessment(selectedIndex, options);
     },
     [assessment]
   );
@@ -1243,6 +1243,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
                 session={assessment.assessmentSession}
                 open
                 onAnswer={handleAssessmentAnswer}
+                onTimeout={() => handleAssessmentAnswer(null, { timedOut: true })}
                 onContinue={handleAssessmentContinue}
                 onExit={handleExitAssessment}
                 onDone={() => {
@@ -1263,6 +1264,12 @@ export default function Lesson({ activeLesson, student, subjects }) {
                 onStart={() =>
                   handleStartAssessment({
                     source: assessment.assessmentOffer?.reason || "ready",
+                  })
+                }
+                onStartTimed={() =>
+                  handleStartAssessment({
+                    source: assessment.assessmentOffer?.reason || "ready",
+                    timed: true,
                   })
                 }
                 onDismiss={assessment.dismissAssessmentOffer}

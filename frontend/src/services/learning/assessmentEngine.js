@@ -73,6 +73,7 @@ export function createAssessmentSession({
     secondsPerQuestion: Math.max(15, Number(secondsPerQuestion) || 45),
     questions,
     currentIndex: 0,
+    questionStartedAt: Date.now(),
     /** @type {Array<{ questionId: string, selectedIndex: number, correct: boolean, explanation: string, at: number }>} */
     answers: [],
     startedAt: Date.now(),
@@ -92,7 +93,7 @@ export function currentQuestion(session) {
  * Grade a selected option index for the current question.
  * Moves phase to EXPLAINING and stores lastResult.
  */
-export function applyAssessmentAnswer(session, selectedIndex) {
+export function applyAssessmentAnswer(session, selectedIndex, { timedOut = false } = {}) {
   if (!session || session.status !== AssessmentPhase.ACTIVE) {
     return { session, advanced: false };
   }
@@ -103,16 +104,32 @@ export function applyAssessmentAnswer(session, selectedIndex) {
   const q = currentQuestion(session);
   if (!q) return { session, advanced: false };
 
-  const idx = Number(selectedIndex);
-  if (!Number.isFinite(idx) || idx < 0 || idx >= (q.options?.length || 0)) {
+  timedOut = Boolean(
+    timedOut ||
+      (session.timed &&
+        Date.now() >=
+          (session.questionStartedAt || Date.now()) +
+            (session.secondsPerQuestion || 45) * 1000)
+  );
+
+  const idx = timedOut ? null : Number(selectedIndex);
+  if (
+    !timedOut &&
+    (selectedIndex == null ||
+      !Number.isFinite(idx) ||
+      idx < 0 ||
+      idx >= (q.options?.length || 0))
+  ) {
     return { session, advanced: false };
   }
 
-  const correct = idx === q.correctIndex;
+  const correct = !timedOut && idx === q.correctIndex;
   const explanation = correct
     ? q.explanationCorrect || "Solid — that idea is locked in."
-    : q.explanationIncorrect ||
-      "Not this time — revisit the idea, then try the next one.";
+    : timedOut
+      ? "That one ran out of time. Take a look at the idea, then keep going at your own pace."
+      : q.explanationIncorrect ||
+        "Not this time — revisit the idea, then try the next one.";
 
   const result = {
     questionId: q.id,
@@ -120,12 +137,13 @@ export function applyAssessmentAnswer(session, selectedIndex) {
     selectedIndex: idx,
     correctIndex: q.correctIndex,
     correct,
-    correctness: correct ? "correct" : "incorrect",
+    correctness: timedOut ? "unanswered" : correct ? "correct" : "incorrect",
+    timedOut: Boolean(timedOut),
     explanation,
     concept: q.concept || "",
     skillSlug: q.skillSlug || "",
     prompt: q.prompt,
-    selectedText: q.options[idx]?.text || "",
+    selectedText: idx == null ? "" : q.options[idx]?.text || "",
     correctText: q.options[q.correctIndex]?.text || "",
     at: Date.now(),
   };
@@ -171,6 +189,7 @@ export function advanceAssessment(session) {
       ...session,
       phase: AssessmentPhase.ACTIVE,
       currentIndex: nextIndex,
+      questionStartedAt: Date.now(),
       lastResult: null,
     },
     completed: false,
@@ -195,11 +214,13 @@ export function scoreAssessment(session) {
   const answers = session?.answers || [];
   const total = session?.questions?.length || answers.length || 0;
   const correct = answers.filter((a) => a.correct).length;
-  const incorrect = answers.filter((a) => a && a.correct === false).length;
-  const answered = answers.length;
+  const incorrect = answers.filter((a) => a && a.correct === false && !a.timedOut).length;
+  const unanswered = answers.filter((a) => a?.timedOut).length;
+  const answered = answers.length - unanswered;
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
   const skillCounts = {};
   for (const a of answers) {
+    if (a.timedOut) continue;
     const slug = a.skillSlug || "unknown";
     if (!skillCounts[slug]) skillCounts[slug] = { correct: 0, incorrect: 0 };
     if (a.correct) skillCounts[slug].correct += 1;
@@ -209,6 +230,7 @@ export function scoreAssessment(session) {
     correct,
     incorrect,
     answered,
+    unanswered,
     total,
     percent,
     skillCounts,

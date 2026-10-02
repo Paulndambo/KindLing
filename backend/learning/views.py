@@ -33,6 +33,7 @@ from .review_service import (
     complete_review,
     schedule_reviews_for_profile,
 )
+from .review_actions import snooze_review
 from .services import (
     build_dashboard,
     build_personalization_insights,
@@ -278,6 +279,28 @@ class ReviewCompleteView(APIView):
             outcome=request.data.get("outcome") or "success",
         )
         code = status.HTTP_200_OK if result.get("ok") else status.HTTP_404_NOT_FOUND
+        return Response(result, status=code)
+
+
+class ReviewSnoozeView(APIView):
+    """POST /api/learning/reviews/snooze/ — postpone a due spark 1, 3, or 7 days."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        student = get_student_profile(request.user)
+        profile = get_or_create_profile(student, request.data.get("studentId") or "")
+        if not profile:
+            return Response({"ok": False, "error": "no_profile"}, status=400)
+        result = snooze_review(
+            profile,
+            review_id=request.data.get("reviewId") or request.data.get("review_id"),
+            skill_slug=request.data.get("skillSlug") or request.data.get("skill_slug") or "",
+            days=request.data.get("days", 1),
+        )
+        code = status.HTTP_200_OK if result.get("ok") else status.HTTP_400_BAD_REQUEST
+        if result.get("error") == "review_not_found":
+            code = status.HTTP_404_NOT_FOUND
         return Response(result, status=code)
 
 

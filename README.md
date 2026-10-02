@@ -20,6 +20,7 @@ Kindling/
 | [REVIEW_GAP_ANALYSIS.md](./REVIEW_GAP_ANALYSIS.md) | Expert review (`REVIEW_FEEDBACK.md`) vs shipped product — gaps, PLAN map, build order |
 | [docs/ENGINEERING.md](./docs/ENGINEERING.md) | Architecture, concepts, design decisions & trade-offs (eng team) |
 | [docs/SAFETY_AND_PRIVACY.md](./docs/SAFETY_AND_PRIVACY.md) | Child-safety & privacy baseline |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Production container, configuration, jobs, and backup/restore runbook |
 | [PITCH_DECK.md](./PITCH_DECK.md) | YC pitch materials + application answer bank |
 | [BETA_LAUNCH.md](./BETA_LAUNCH.md) | Paid student beta checklist (individual seats; must-ship, 4–6 week order) |
 | [Kindling_YC_Pitch.pptx](./Kindling_YC_Pitch.pptx) | 10-slide YC partner deck |

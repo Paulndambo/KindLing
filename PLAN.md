@@ -47,7 +47,7 @@ Kindling already has a coherent spine. New work should **extend** these layers:
 
 **Shipped early Wave 2 (in-repo, not a deploy gate):** CS pilot curriculum (unit→subtopic), L1 LearnerState, L2 pedagogical policy, L3 ADI, L4 independence twins, C6 assessment v1, C8 eval harness, practical how-to teaching, suggestion chips / real-world example rule.
 
-**Still open for production / Wave 2:** Postgres + hostable deploy (0.1 / Track D), AI failover/cost controls, C1+ review depth, C7 domain playbooks, C6 depth (timed/pre-post), student-facing standards export (C4), diagram rendering, a11y pack, duplex voice, PWA/i18n, full goals planner (single-learner), portfolios, digest polish.
+**Still open for production / Wave 2:** Postgres + hostable deploy (0.1 / Track D), AI failover/cost controls, C1+ review depth, C7 domain playbooks, C6 depth (broader assessment banks/pre-post), student-facing standards export (C4), diagram rendering, a11y pack, duplex voice, PWA/i18n, full goals planner (single-learner), portfolios, digest polish.
 
 ---
 
@@ -507,12 +507,12 @@ Escalation: “More help” while active; session escalates after lighter levels
 
 | Epic | Capability | Deliverable | Status | Notes |
 |------|------------|-------------|--------|-------|
-| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, stronger schedule UX, richer forgetting curve | ⬜ | v1 ✅ in Phase 2.5 |
+| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, clearer schedule UX, richer forgetting curve | ⚡ Partial | Cross-subject selection/balancing ✅; upcoming/reason display ✅; snooze ✅; week-focus tie-in and longer-term retention remain |
 | **C2** | §3.5.1 Parent accounts | — | ❌ | **Out of product forever** — student-configured digest email only (A5) |
 | **C3** | §3.5.2 Classroom mode | — | ❌ | **Out of product forever** — institutions buy per-seat; no roster product |
 | **C4** | §3.5.3 Standards reports | Export progress vs framework codes for **this student** | ⬜ | Single-learner export only |
 | **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⬜ | Lite ✅ Phase 2.5; no guardian contract product |
-| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ✅ v1 / ⬜ depth | v1 MCQ+explanations ✅; independence/transfer/timed = depth — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
+| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ✅ v1 / ⬜ depth | v1 MCQ+explanations ✅; timed practice ✅; broader banks/pre-post remain — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
 | **C7** | §3.1.8 Domain playbooks | Second thin domain pack + scaffold consistency beyond math pilot | ⬜ | Beta P2.2 if sessions leave math |
 | **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ✅ C8.1–C8.3 | Manual rubric + offline scorer + weekly job; calibrate on human labels next |
 | **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ⬜ | Beta P2.8 lite; **not** a parent app |
@@ -523,9 +523,9 @@ Escalation: “More help” while active; session escalates after lighter levels
 #### C1+ — Spaced review depth
 | Step | Work | Status |
 |------|------|--------|
-| C1+.1 | Multi-subject / multi-domain due selection (not only pilot math) | ⬜ |
-| C1+.2 | Student schedule UX (upcoming vs due, snooze, “why this skill”) | ⬜ |
-| C1+.3 | Stronger interval model (forgetting curve params per skill family) | ⬜ |
+| C1+.1 | Multi-subject / multi-domain due selection (not only pilot math) | ✅ Cross-subject candidates and balanced due list |
+| C1+.2 | Student schedule UX (upcoming vs due, snooze, “why this skill”) | ✅ Upcoming/due split, plain-language reason, and 1/3/7-day snooze |
+| C1+.3 | Stronger bounded interval progression | ✅ Success ladder (1/3/7/14/30/60 days), partial recall shortens interval, 180-day cap |
 | C1+.4 | Tie B8 next-step + week focus (C5) into review ranking | ⬜ |
 
 #### C2 / C3 — Explicitly not planned
@@ -554,7 +554,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 |------|------|--------|
 | C6.1 | End-of-topic check (short graded set, not open chat) | ✅ Offline MCQ bank + AssessmentPanel (one-at-a-time) |
 | C6.2 | Low-stakes quiz mode with A3 verification where applicable | ✅ Deterministic MCQ grade + tutor explanation per item (revision) |
-| C6.3 | Optional timed practice flag | ⬜ Session flag exists; UI timer deferred |
+| C6.3 | Optional timed practice | ✅ Optional 45-second timer per question; timeout is recorded as unanswered |
 | C6.4 | Results feed mastery + optional Review spark seeds | ✅ Per-item grades → recordExchange / events; Review seeds thin |
 
 #### C7 — Domain playbooks
@@ -780,8 +780,8 @@ Maps to: CAPABILITIES §3.1.4 depth, §3.1.7–3.1.8, §3.6.5
 
 | ID | Work | PLAN epic | Status |
 |----|------|-----------|--------|
-| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⬜ |
-| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ✅ v1 / ⬜ depth (timed, broader banks, pre/post) |
+| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⚡ Partial — cross-subject list, reasons, snooze, and bounded intervals shipped; week-focus ranking/retention measurement remain |
+| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ✅ v1 + timed / ⬜ depth (broader banks, pre/post) |
 | P.3 | Domain playbook #2 + how-to pack expansion | **C7** | ⬜ (CS how-to v1 ships outside C7) |
 | P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ✅ C8.1–C8.3 · calibrate labels next |
 | P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⚡ CS pilot live; multi-domain still open |

@@ -390,6 +390,7 @@ class SkillReviewItem(models.Model):
         db_index=True,
     )
     due_at = models.DateTimeField(db_index=True)
+    snoozed_until = models.DateTimeField(null=True, blank=True, db_index=True)
     # Selection reasons: weak, rusty, streak, recent_struggle
     reason = models.CharField(max_length=40, blank=True, default="")
     priority = models.FloatField(

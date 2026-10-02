@@ -15,7 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { LEARNING_STYLE_OPTIONS, AVATAR_OPTIONS } from "../../constants/onboarding";
-import { getDashboard, ApiError } from "../../services/api";
+import { getDashboard, ApiError, snoozeReviewSpark } from "../../services/api";
 import ConfidenceChart from "../charts/ConfidenceChart";
 import ContinueStrip from "../subjects/ContinueStrip";
 import FamilyDigestCard from "./FamilyDigestCard";
@@ -264,6 +264,12 @@ export default function Dashboard({
     [onStartLesson]
   );
 
+  const handleSnoozeReview = useCallback(async (item, days) => {
+    const result = await snoozeReviewSpark({ reviewId: item?.id, days });
+    refreshDashboard({ silent: true });
+    return result;
+  }, [refreshDashboard]);
+
   /** Epic G1 — optional 3-solid-turn spark challenge */
   const sparkChallenge = useMemo(
     () =>
@@ -411,6 +417,7 @@ export default function Dashboard({
           items={reviewItems}
           loading={refreshing}
           onStartReview={handleStartReview}
+          onSnooze={handleSnoozeReview}
           onRefresh={() => refreshDashboard({ silent: true })}
         />
 

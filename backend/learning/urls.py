@@ -24,6 +24,7 @@ from .views import (
     SkillRecommendView,
     ReviewListView,
     ReviewCompleteView,
+    ReviewSnoozeView,
     WorkedExampleListView,
     MisconceptionCatalogView,
     MultiStepProblemListView,
@@ -53,6 +54,11 @@ urlpatterns = [
         "reviews/complete/",
         ReviewCompleteView.as_view(),
         name="learning-reviews-complete",
+    ),
+    path(
+        "reviews/snooze/",
+        ReviewSnoozeView.as_view(),
+        name="learning-reviews-snooze",
     ),
     path(
         "worked-examples/",

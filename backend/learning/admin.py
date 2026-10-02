@@ -107,6 +107,7 @@ class SkillReviewItemAdmin(admin.ModelAdmin):
         "skill",
         "status",
         "due_at",
+        "snoozed_until",
         "reason",
         "priority",
         "interval_days",

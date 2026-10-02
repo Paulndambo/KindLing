@@ -168,11 +168,12 @@ export function useAssessment({
   );
 
   const answerQuestion = useCallback(
-    (selectedIndex) => {
+    (selectedIndex, { timedOut = false } = {}) => {
       if (!session) return null;
       const { session: next, result } = applyAssessmentAnswer(
         session,
-        selectedIndex
+        selectedIndex,
+        { timedOut }
       );
       if (!result) return null;
       setSession(next);
@@ -184,6 +185,7 @@ export function useAssessment({
         selectedIndex: result.selectedIndex,
         correct: result.correct,
         correctness: result.correctness,
+        timedOut: result.timedOut,
         skillSlug: result.skillSlug,
         concept: result.concept,
       });
@@ -197,7 +199,7 @@ export function useAssessment({
       });
 
       // Feed mastery / learner pulse per item
-      if (typeof onGradedItem === "function") {
+      if (!result.timedOut && typeof onGradedItem === "function") {
         try {
           onGradedItem({
             correctness: result.correctness,

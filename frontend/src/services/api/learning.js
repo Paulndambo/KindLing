@@ -184,3 +184,16 @@ export async function completeReviewSpark(body = {}) {
     },
   });
 }
+
+/** Postpone a due Review spark by 1, 3, or 7 days. */
+export async function snoozeReviewSpark(body = {}) {
+  return apiRequest("/api/learning/reviews/snooze/", {
+    method: "POST",
+    auth: true,
+    json: {
+      reviewId: body.reviewId || body.review_id || null,
+      skillSlug: body.skillSlug || body.skill_slug || "",
+      days: body.days || 1,
+    },
+  });
+}

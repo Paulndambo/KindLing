@@ -7,7 +7,7 @@ Django + Django REST Framework API for the Kindling adaptive tutoring platform.
 - **Django 5.1** / **DRF 3.15**
 - **SimpleJWT** for student authentication
 - **django-cors-headers** for the Vite frontend
-- **SQLite** by default (swap `DATABASES` for Postgres in production)
+- **SQLite** in development; production uses `DATABASE_URL` with PostgreSQL
 
 ## Domain model
 
@@ -175,6 +175,10 @@ Opt-in weekly family summaries from learning events (sessions, exchanges, master
 | Profile | `digestOptIn`, `familyEmail` on `PATCH /api/students/me/` |
 
 Delivery: in-app always; email via Django mail (console backend in local dev). Weekly job: `run_job weekly_digest`.
+
+## Production deployment
+
+See [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md) for environment variables, the API container, scheduled jobs, durable homework storage, and database backup/restore procedures.
 
 ## Quick start
 

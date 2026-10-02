@@ -45,6 +45,7 @@ export {
   getReviewSparks,
   refreshReviewSchedule,
   completeReviewSpark,
+  snoozeReviewSpark,
 } from "./learning";
 export {
   fetchConversationShelf,

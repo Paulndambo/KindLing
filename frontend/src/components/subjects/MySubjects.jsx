@@ -29,6 +29,7 @@ import TopicIntentFields from "./TopicIntentFields";
 import ContinueStrip from "./ContinueStrip";
 import TranscriptSearch from "./TranscriptSearch";
 import ReviewSparkCard from "../dashboard/ReviewSparkCard";
+import { snoozeReviewSpark } from "../../services/api";
 
 function countLessons(topics = []) {
   return topics.reduce(
@@ -126,13 +127,19 @@ export default function MySubjects({
     setReviewLoading(true);
     try {
       const pack = await loadReviewSparks({ refresh: true });
-      setReviewItems(pack.dueNow?.length ? pack.dueNow : pack.due || []);
+      setReviewItems(pack.due || pack.dueNow || []);
     } catch {
       setReviewItems([]);
     } finally {
       setReviewLoading(false);
     }
   }, [isLoggedIn, hasProfile]);
+
+  const handleSnoozeReview = useCallback(async (item, days) => {
+    const result = await snoozeReviewSpark({ reviewId: item?.id, days });
+    await refreshReviews();
+    return result;
+  }, [refreshReviews]);
 
   useEffect(() => {
     if (!isLoggedIn || !hasProfile) {
@@ -431,6 +438,7 @@ export default function MySubjects({
             items={reviewItems}
             loading={reviewLoading}
             onRefresh={refreshReviews}
+            onSnooze={handleSnoozeReview}
             onStartReview={(item) => {
               onStartLesson?.(
                 item.subject || SOLE_SUBJECT_NAME,
