@@ -236,9 +236,7 @@ export default function ChatPanel({
             {showGoalsOrientation &&
               pathCollapsed &&
               lessonGoals &&
-              (lessonGoals.hasLessonGoal ||
-                lessonGoals.weekFocus ||
-                lessonGoals.familiarity) &&
+              (lessonGoals.hasLessonGoal || lessonGoals.familiarity) &&
               !isArchiveView &&
               !conversationEnded && (
                 <div className="lesson-header-goals">

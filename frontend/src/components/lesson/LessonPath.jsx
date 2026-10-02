@@ -131,7 +131,7 @@ export default function LessonPath({
           </div>
         )}
 
-        {lessonGoals && (lessonGoals.hasLessonGoal || lessonGoals.weekFocus) && (
+        {lessonGoals && lessonGoals.hasLessonGoal && (
           <div className="lesson-path-goals">
             <GoalsChip goals={lessonGoals} compact className="on-dark" />
           </div>

@@ -25,6 +25,7 @@ function ScreenFallback() {
 export default function App() {
   const [screen, setScreen] = useState("overview");
   const [activeLesson, setActiveLesson] = useState(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Scroll to top + close mobile nav when the primary screen changes
@@ -87,6 +88,7 @@ export default function App() {
     error: subjectsError,
     createSubject,
     addTopic,
+    addSubtopic,
     deleteSubject,
     deleteTopic,
   } = useSubjects({
@@ -236,6 +238,9 @@ export default function App() {
               error={subjectsError}
               onCreateSubject={createSubject}
               onAddTopic={addTopic}
+              onAddSubtopic={addSubtopic}
+              selectedSubjectId={selectedSubjectId}
+              onSelectSubject={setSelectedSubjectId}
               onDeleteSubject={deleteSubject}
               onDeleteTopic={deleteTopic}
               onStartLesson={startLesson}

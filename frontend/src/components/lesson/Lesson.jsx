@@ -1390,14 +1390,13 @@ export default function Lesson({ activeLesson, student, subjects }) {
           onRestart={startNewConversation}
           onEndConversation={async () => {
             // Epic B8 — optional wrap-up reflection before archive (never on empty/error)
-            // Epic C5 — echo topic goal / week focus on the reflection card
+            // Keep the reflection focused on the active lesson goal.
             const msgCount = (messages || []).filter(
               (m) => m.role === "child" || m.role === "tutor"
             ).length;
             await requestSessionReflection({
               messageCount: msgCount,
               learningGoal: lessonGoals?.effectiveGoal || "",
-              weekFocus: lessonGoals?.weekFocus || "",
             });
             await endConversation();
             await endSession?.();

@@ -764,7 +764,7 @@ Maps to: CAPABILITIES §3.8.1–3.8.3 remaining · [`BETA_LAUNCH.md`](./BETA_LAU
 
 | ID | Work | PLAN | Status |
 |----|------|------|--------|
-| D.1 | Postgres + migrations on staging/prod | Phase 0 · 0.1 | ⬜ |
+| D.1 | Postgres + migrations on staging/prod | Phase 0 · 0.1 | ⚡ PostgreSQL CI migration/seed check added; staging/prod validation still pending |
 | D.2 | Host + HTTPS + `ALLOWED_HOSTS` / CORS / `DEBUG=0` | Beta P0 | ⬜ |
 | D.3 | Secrets out of repo; platform AI key server-side or capped proxy | Beta P0 | ⬜ |
 | D.4 | Real email (ESP) for digests + transactional | Beta P0 | ⬜ |
@@ -958,6 +958,7 @@ Track as features land:
 | Date | Note |
 |------|------|
 | 2026-09-10 | **Wave 2 intelligence slice documented:** L1–L4, C6 v1, C8.1–C8.3, CS pilot (unit→subtopic), practical how-to teaching, suggestion chips. New §15.1a. Design principle: show how for practical skills. Immediate next remains Track D deploy. |
+| 2026-10-02 | **D.1 PostgreSQL migration discipline:** added CI against PostgreSQL 16 for model/migration drift, fresh-database migration, and seed verification. Staging/prod provisioning and validation remain an external deployment step. |
 | 2026-09-01 | **Strategy lock:** Kindling is permanently **one student = one seat**. C2 multi-child and C3 classroom marked ❌ never; digests stay student-configured email (A5). Schools/multi-child parents buy separate seats. Wave 2 Track R reframed to shareable single-learner progress only. |
 | 2026-09-01 | **Wave 2** defined: compared CAPABILITIES §3 pending items vs shipped Phase 0–2.5; expanded Phase 3 epic sketches (C1+, C4–C10), Phase 4/5 status table; new §15 Wave 2 tracks (D deploy, P pedagogy, R shareable progress, X experience, V voice, S scale). Marked C5 lite + G1 complete in Phase 2.5. |
 | 2026-08-31 | Phase 2.5 Epic **G1** light spark challenge: Dashboard card, 3 solid turns, celebration chips, `challenge.*` events. |

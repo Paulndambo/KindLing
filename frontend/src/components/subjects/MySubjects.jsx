@@ -28,6 +28,7 @@ import NewSubjectModal from "./NewSubjectModal";
 import TopicIntentFields from "./TopicIntentFields";
 import ContinueStrip from "./ContinueStrip";
 import TranscriptSearch from "./TranscriptSearch";
+import SubjectDetail from "./SubjectDetail";
 import ReviewSparkCard from "../dashboard/ReviewSparkCard";
 import { snoozeReviewSpark } from "../../services/api";
 
@@ -80,6 +81,9 @@ export default function MySubjects({
   error = "",
   onCreateSubject,
   onAddTopic,
+  onAddSubtopic,
+  selectedSubjectId,
+  onSelectSubject,
   onDeleteSubject,
   onDeleteTopic,
   onStartLesson,
@@ -379,6 +383,14 @@ export default function MySubjects({
     </div>
   );
 
+  const selectedSubject = subjects.find((subject) => String(subject.id) === String(selectedSubjectId));
+  if (selectedSubject) {
+    return <section id="subjects" className="subjects-page"><div className="subj-wrap">
+      <header className="subj-head"><div className="subj-head-copy"><p className="eyebrow">Your path</p><h2>{selectedSubject.name}</h2><p>Plan, organize and continue learning in this subject.</p></div>{headerAction}</header>
+      <div className="subj-stack"><SubjectDetail key={selectedSubject.id} subject={selectedSubject} onBack={() => onSelectSubject(null)} onAddTopic={onAddTopic} onAddSubtopic={onAddSubtopic} onStartLesson={onStartLesson}/></div>
+    </div>{ALLOW_CUSTOM_SUBJECTS && modalOpen && <NewSubjectModal onClose={() => !busy && setModalOpen(false)} onCreate={handleCreate} saving={busy}/>}</section>;
+  }
+
   return (
     <section id="subjects" className="subjects-page">
       <div className="subj-wrap">
@@ -546,6 +558,11 @@ export default function MySubjects({
                           subjects.length === 1 ? " featured" : ""
                         }`}
                         key={s.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Open ${s.name} subject`}
+                        onClick={() => onSelectSubject(s.id)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectSubject(s.id); } }}
                       >
                         <div className="my-subject-top">
                           <div className="my-subject-id">
@@ -601,266 +618,7 @@ export default function MySubjects({
                           </div>
                         </div>
 
-                        <div className="topic-list unit-list">
-                          {topics.length === 0 && (
-                            <p className="topic-empty">
-                              No topics yet
-                              {ALLOW_CUSTOM_SUBJECTS
-                                ? " — add one below."
-                                : "."}
-                            </p>
-                          )}
-                          {topics.map((t, unitIdx) => {
-                            const leaves = unitLeaves(t);
-                            const unitKey = String(t.id || t.name);
-                            const open = isUnitOpen(s.id, unitKey);
-                            const firstLeaf = leaves[0];
-                            const resumeLeaves = leaves.filter((leaf) =>
-                              canContinue(s.name, leaf.name)
-                            );
-                            const resumeUnit = resumeLeaves.length > 0;
-                            const startLeaf = resumeLeaves[0] || firstLeaf;
-
-                            return (
-                              <div
-                                className={`unit-block${open ? " is-open" : ""}${
-                                  resumeUnit ? " has-resume" : ""
-                                }`}
-                                key={unitKey}
-                              >
-                                <div className="unit-block-head">
-                                  <button
-                                    type="button"
-                                    className="unit-block-toggle"
-                                    aria-expanded={open}
-                                    onClick={() => toggleUnit(s.id, unitKey)}
-                                  >
-                                    <span className="unit-index" aria-hidden>
-                                      {String(unitIdx + 1).padStart(2, "0")}
-                                    </span>
-                                    <span className="unit-block-copy">
-                                      <span className="tname unit-name">
-                                        {t.name}
-                                      </span>
-                                      <span className="unit-meta-line">
-                                        <span className="unit-lesson-count">
-                                          {leaves.length} lesson
-                                          {leaves.length === 1 ? "" : "s"}
-                                        </span>
-                                        {resumeUnit ? (
-                                          <span className="unit-resume-hint">
-                                            · {resumeLeaves.length} to continue
-                                          </span>
-                                        ) : null}
-                                      </span>
-                                      {t.learningGoal ? (
-                                        <span
-                                          className="topic-goal-preview"
-                                          title={t.learningGoal}
-                                        >
-                                          {t.learningGoal}
-                                        </span>
-                                      ) : null}
-                                    </span>
-                                    <ChevronDown
-                                      size={18}
-                                      className="unit-chevron"
-                                      aria-hidden
-                                    />
-                                  </button>
-                                  <div className="topic-actions unit-head-actions">
-                                    {startLeaf && (
-                                      <button
-                                        type="button"
-                                        className={`start-chip-btn${
-                                          resumeUnit ? " continue" : ""
-                                        }`}
-                                        onClick={() =>
-                                          onStartLesson(
-                                            s.name,
-                                            startLeaf.name,
-                                            { unit: t.name }
-                                          )
-                                        }
-                                      >
-                                        {resumeUnit ? (
-                                          <>
-                                            <Play size={12} aria-hidden />{" "}
-                                            Continue
-                                          </>
-                                        ) : (
-                                          <>
-                                            Start
-                                            <ArrowRight size={12} aria-hidden />
-                                          </>
-                                        )}
-                                      </button>
-                                    )}
-                                    {ALLOW_CUSTOM_SUBJECTS ? (
-                                      <button
-                                        type="button"
-                                        className="icon-x"
-                                        aria-label={`Remove ${t.name}`}
-                                        disabled={busy}
-                                        onClick={() =>
-                                          handleDeleteTopic(s.id, t.id)
-                                        }
-                                      >
-                                        <X size={13} aria-hidden />
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                </div>
-
-                                {open ? (
-                                  <ul className="subtopic-chip-list">
-                                    {leaves.map((leaf, leafIdx) => {
-                                      const resume = canContinue(
-                                        s.name,
-                                        leaf.name
-                                      );
-                                      const fam =
-                                        leaf.familiarity || DEFAULT_FAMILIARITY;
-                                      return (
-                                        <li
-                                          className={`topic-chip subtopic-chip${
-                                            resume ? " is-resume" : ""
-                                          }`}
-                                          key={leaf.id || leaf.name}
-                                        >
-                                          <span
-                                            className="subtopic-idx"
-                                            aria-hidden
-                                          >
-                                            {leafIdx + 1}
-                                          </span>
-                                          <div className="topic-chip-main">
-                                            <span className="tname">
-                                              {leaf.name}
-                                            </span>
-                                            <div className="topic-meta-row">
-                                              <span
-                                                className="topic-fam-badge"
-                                                title={familiarityLabel(fam)}
-                                              >
-                                                {familiarityLabel(fam)}
-                                              </span>
-                                              {resume ? (
-                                                <span className="topic-resume-badge">
-                                                  Resume
-                                                </span>
-                                              ) : null}
-                                            </div>
-                                          </div>
-                                          <div className="topic-actions">
-                                            <button
-                                              type="button"
-                                              className={`start-chip-btn${
-                                                resume ? " continue" : ""
-                                              }`}
-                                              onClick={() =>
-                                                onStartLesson(s.name, leaf.name, {
-                                                  unit: t.name,
-                                                })
-                                              }
-                                            >
-                                              {resume ? "Continue" : "Open"}
-                                              <ArrowRight
-                                                size={12}
-                                                aria-hidden
-                                              />
-                                            </button>
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                ) : null}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {ALLOW_CUSTOM_SUBJECTS ? (
-                          <div
-                            className={`add-topic-block${
-                              expanded ? " expanded" : ""
-                            }`}
-                          >
-                            <div className="add-topic-head">
-                              <span className="add-topic-kicker">New topic</span>
-                              {expanded ? (
-                                <button
-                                  type="button"
-                                  className="add-topic-collapse"
-                                  disabled={busy}
-                                  onClick={() =>
-                                    setDrafts((d) => {
-                                      const next = { ...d };
-                                      delete next[s.id];
-                                      return next;
-                                    })
-                                  }
-                                >
-                                  Cancel
-                                </button>
-                              ) : null}
-                            </div>
-                            <div className="add-topic-row">
-                              <input
-                                placeholder="Name a topic to learn next…"
-                                value={draft.name || ""}
-                                disabled={busy}
-                                aria-label={`New topic in ${s.name}`}
-                                onChange={(e) =>
-                                  patchDraft(s.id, {
-                                    name: e.target.value,
-                                    expanded: true,
-                                  })
-                                }
-                                onFocus={() =>
-                                  patchDraft(s.id, { expanded: true })
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    submitTopic(s.id);
-                                  }
-                                }}
-                              />
-                            </div>
-                            {expanded ? (
-                              <div className="add-topic-intent">
-                                <TopicIntentFields
-                                  compact
-                                  disabled={busy}
-                                  familiarity={
-                                    draft.familiarity || DEFAULT_FAMILIARITY
-                                  }
-                                  onFamiliarityChange={(id) =>
-                                    patchDraft(s.id, { familiarity: id })
-                                  }
-                                  learningGoal={draft.learningGoal || ""}
-                                  onLearningGoalChange={(v) =>
-                                    patchDraft(s.id, { learningGoal: v })
-                                  }
-                                  goalPlaceholder="What should Kindling focus on in this topic?"
-                                />
-                                <div className="add-topic-actions">
-                                  <button
-                                    type="button"
-                                    className="btn-primary add-topic-submit"
-                                    disabled={!canAdd}
-                                    onClick={() => submitTopic(s.id)}
-                                  >
-                                    <Plus size={15} aria-hidden />
-                                    Add topic
-                                  </button>
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
+                        <button type="button" className="subject-card-open" onClick={() => onSelectSubject(s.id)}>Open subject <ArrowRight size={15}/></button>
                       </article>
                     );
                   })}

@@ -1,0 +1,56 @@
+name: Backend PostgreSQL migrations
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-postgres.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-postgres.yml"
+
+jobs:
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: kindling
+          POSTGRES_USER: kindling
+          POSTGRES_PASSWORD: kindling
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kindling -d kindling"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      APP_ENV: production
+      DEBUG: "false"
+      SECRET_KEY: ci-only-not-a-production-secret
+      DATABASE_URL: postgres://kindling:kindling@127.0.0.1:5432/kindling
+      ALLOWED_HOSTS: localhost
+      EMAIL_HOST: localhost
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Check model migration state
+        run: python manage.py makemigrations --check --dry-run
+      - name: Apply migrations to empty PostgreSQL database
+        run: python manage.py migrate --noinput
+      - name: Verify migrations are current
+        run: python manage.py migrate --check
+      - name: Provision the empty database seed
+        run: python manage.py seed_kindling

@@ -20,7 +20,6 @@ import {
   buildMultiStepEnterMessage,
   buildMultiStepExitMessage,
 } from "./learning/multiStepEngine";
-import { buildWeekFocusPromptLines } from "./learning/goalsSurface";
 import {
   buildRealWorldExamplePromptBlock,
   buildSuggestPromptBlock,
@@ -87,10 +86,6 @@ export function buildTopicIntentPromptBlock(topicName, topicContext = null) {
   const subjectLine = ctx.subjectGoal
     ? `- Subject-level hope: "${ctx.subjectGoal}"`
     : "";
-  const weekLines = buildWeekFocusPromptLines(ctx);
-  const weekBlock = weekLines.length
-    ? weekLines.map((l) => `- ${l}`).join("\n")
-    : "";
 
   let pacingRules = "";
   if (pacing === "gentle_intro" || ctx.isFirstSession) {
@@ -100,7 +95,7 @@ export function buildTopicIntentPromptBlock(topicName, topicContext = null) {
 - Check readiness with a soft question ("Does that match what you expected?" / "Want me to show a tiny everyday example next?") before any practice.
 - Only after they show comfort, move to one tiny guided example — still scaffolded.
 - Keep early messages friendly and structured; a slightly longer orientation message is OK for the opening turn only.
-- If they have a stated goal or week focus, name it once warmly in the open so they feel heard.`;
+- If they have a stated topic goal, name it once warmly in the open so they feel heard.`;
   } else if (pacing === "refresh_then_build") {
     pacingRules = `Basics-level pacing:
 - Briefly refresh core ideas, then confirm what they already know before stretching.
@@ -118,7 +113,6 @@ export function buildTopicIntentPromptBlock(topicName, topicContext = null) {
 - Self-reported familiarity: ${meta?.label || "Brand new"} (${ctx.familiarity}).
 ${goalLine}
 ${subjectLine}
-${weekBlock}
 ${pacingRules}
 - Never shame gaps. Treat "new" as an invitation to teach well, not a deficit.
 - Stay aligned with their stated goals throughout the lesson; circle back to them.`;
@@ -145,9 +139,6 @@ export function buildLessonOpeningPrompt({
   const subjectBit = ctx.subjectGoal
     ? `Subject hope: "${ctx.subjectGoal}".`
     : "";
-  const weekBit = ctx.weekFocus
-    ? `This week they're working on: "${ctx.weekFocus}".`
-    : "";
 
   const needsFullIntro =
     ctx.isFirstSession ||
@@ -163,12 +154,12 @@ export function buildLessonOpeningPrompt({
   if (needsFullIntro) {
     return (
       `Open the FIRST live lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
-      `Familiarity: ${meta?.label || "Brand new"}. ${goalBit} ${subjectBit} ${weekBit} ` +
+      `Familiarity: ${meta?.label || "Brand new"}. ${goalBit} ${subjectBit} ` +
       `This is a comprehensive orientation, not a steep cold start. ` +
       `In one warm message: (1) greet them by name, (2) introduce what "${topicName}" is in plain, grade-right language, ` +
       `(3) why it matters with a simple real-world hook (use their interests if natural; everyday life at home/school/community), ` +
       `(4) outline the 2–4 big ideas they will grow into — without dumping jargon, ` +
-      `(5) briefly acknowledge their familiarity/goal/week focus so they feel heard, ` +
+      `(5) briefly acknowledge their familiarity and topic goal so they feel heard, ` +
       (practical
         ? `(6) offer a hands-on next step — invite them to learn by doing (e.g. create a folder, open an app) with a clear "I can show you step by step" path, ` +
           `(7) end with ONE soft check-in that prefers doing over quizzing — NOT a hard definition quiz. `
@@ -185,7 +176,7 @@ export function buildLessonOpeningPrompt({
 
   return (
     `Start the lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
-    `Familiarity: ${meta?.label || "some experience"}. ${goalBit} ${subjectBit} ${weekBit} ` +
+    `Familiarity: ${meta?.label || "some experience"}. ${goalBit} ${subjectBit} ` +
     `Open warmly: short framing of the topic with one everyday example, confirm their goal, ` +
     (practical
       ? `then offer a hands-on how-to or a try-it on their device — not only a theory question. `
@@ -263,9 +254,6 @@ export function buildSystemPrompt(
     ? focusSubjects.join(", ")
     : "";
   const goalStr = student?.goal ? String(student.goal).trim() : "";
-  const weekFocusStr = String(
-    student?.weekFocus || student?.week_focus || ""
-  ).trim();
 
   const interventionActive = Boolean(options.interventionActive);
   const ctx = options.interventionContext || {};
@@ -485,8 +473,6 @@ Extensive Student Profile & Academic Alignment:
 - Passions & Hobbies: ${interestsStr}.
 ${focusStr ? `- Subjects they especially want help with: ${focusStr}.` : ""}
 ${goalStr ? `- Primary learning goal: ${goalStr}.` : ""}
-${weekFocusStr ? `- This week I'm working on: "${weekFocusStr}".` : ""}
-
 ${topicIntentBlock}
 
 Regional & Curriculum Adaptation Instructions:

@@ -146,13 +146,7 @@ export default function LessonTools({
                 No topic goal yet — set one when you add topics under Subjects.
               </p>
             )}
-            {lessonGoals.weekFocus ? (
-              <p className="goals-tools-goal week" title={lessonGoals.weekFocus}>
-                <span className="goals-tools-label">This week</span>
-                {truncateGoal(lessonGoals.weekFocus, 120)}
-              </p>
-            ) : null}
-            {!lessonGoals.weekFocus && lessonGoals.profileGoal ? (
+            {lessonGoals.profileGoal ? (
               <p className="goals-tools-goal profile" title={lessonGoals.profileGoal}>
                 <span className="goals-tools-label">Longer-term</span>
                 {truncateGoal(lessonGoals.profileGoal, 100)}

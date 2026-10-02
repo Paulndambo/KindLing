@@ -2,6 +2,8 @@
 
 The API runs as a container from `backend/Dockerfile`. Use any container host that provides managed PostgreSQL, HTTPS termination, persistent or object storage for uploaded homework, and scheduled commands. The repository does not provision cloud resources or configure a provider account.
 
+The `Backend PostgreSQL migrations` GitHub Actions workflow validates model migration state, applies migrations to an empty PostgreSQL 16 database, checks that no migrations remain unapplied, and runs `seed_kindling` against that empty database. Keep the host's release command pointed at `python manage.py migrate --noinput`; CI does not replace validation against the actual staging/prod database.
+
 ## Required API environment
 
 Set these values in the host's secret/environment manager; do not commit real values:

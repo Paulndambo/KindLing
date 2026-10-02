@@ -8,7 +8,7 @@ export default function GoalsChip({
   goals,
   compact = false,
   className = "",
-  showWeekFocus = true,
+  showWeekFocus = false,
 }) {
   if (!goals) return null;
   const { effectiveGoal, familiarityShort, weekFocus, hasAnyGoal } = goals;

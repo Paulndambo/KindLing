@@ -6,6 +6,7 @@ import {
   createTopic as apiCreateTopic,
   deleteTopic as apiDeleteTopic,
 } from "../services/api/subjects";
+import { createSubtopic as apiCreateSubtopic } from "../services/api/subjects";
 import { ApiError } from "../services/api/client";
 import {
   ALLOW_CUSTOM_SUBJECTS,
@@ -190,6 +191,36 @@ export function useSubjects({
     }
   }, []);
 
+  const addSubtopic = useCallback(async (subjId, topicId, input) => {
+    const payload = typeof input === "string" ? { name: input } : input || {};
+    const name = String(payload.name || "").trim();
+    if (!name) return null;
+    setMutating(true);
+    setError("");
+    try {
+      const subject = subjects.find((s) => s.id === subjId);
+      const topic = subject?.topics?.find((t) => t.id === topicId);
+      const created = await apiCreateSubtopic(topicId, {
+        ...payload,
+        name,
+        sortOrder: topic?.subtopics?.length || 0,
+      });
+      setSubjects((prev) => prev.map((s) => s.id !== subjId ? s : {
+        ...s,
+        topics: s.topics.map((t) => t.id !== topicId ? t : {
+          ...t,
+          subtopics: [...(t.subtopics || []).filter((sub) => sub.id !== t.id), created],
+        }),
+      }));
+      return created;
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not add subtopic.");
+      throw err;
+    } finally {
+      setMutating(false);
+    }
+  }, [subjects]);
+
   return {
     subjects,
     loading,
@@ -199,6 +230,7 @@ export function useSubjects({
     refreshSubjects: loadSubjects,
     createSubject,
     addTopic,
+    addSubtopic,
     deleteSubject,
     deleteTopic,
   };
