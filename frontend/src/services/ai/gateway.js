@@ -39,7 +39,7 @@ export function createChatSession(systemInstruction, history = [], options = {})
   const { provider, model, apiKey, baseUrl } = route;
 
   if (provider === "gemini") {
-    const client = createGeminiClient({ apiKey });
+    const client = createGeminiClient({ apiKey, platformProxy: route.platformProxy });
     return createGeminiChat(client, model, systemInstruction, history);
   }
 
@@ -87,7 +87,7 @@ export async function generateText(prompt, options = {}) {
   const system = options.system || "";
 
   if (provider === "gemini") {
-    const client = createGeminiClient({ apiKey });
+    const client = createGeminiClient({ apiKey, platformProxy: route.platformProxy });
     const contents = system
       ? `${system}\n\n${prompt}`
       : prompt;
@@ -135,7 +135,7 @@ export async function generateVision({ prompt, mimeType, base64 }) {
   const { provider, model, apiKey, baseUrl } = route;
 
   if (provider === "gemini") {
-    const client = createGeminiClient({ apiKey });
+    const client = createGeminiClient({ apiKey, platformProxy: route.platformProxy });
     const response = await geminiGenerateContent(client, model, [
       {
         role: "user",
@@ -196,7 +196,7 @@ export async function generateVision({ prompt, mimeType, base64 }) {
 export function getGeminiClientForTts() {
   const route = resolveRoute("tts");
   if (!route || route.provider !== "gemini") return null;
-  return createGeminiClient({ apiKey: route.apiKey });
+  return createGeminiClient({ apiKey: route.apiKey, platformProxy: route.platformProxy });
 }
 
 /**
@@ -205,12 +205,12 @@ export function getGeminiClientForTts() {
 export function getActiveGeminiClient() {
   const route = resolveRoute("chat");
   if (route?.provider === "gemini") {
-    return createGeminiClient({ apiKey: route.apiKey });
+    return createGeminiClient({ apiKey: route.apiKey, platformProxy: route.platformProxy });
   }
   // Platform gemini for TTS/helpers even if chat is another provider
   const tts = resolveRoute("tts");
   if (tts?.provider === "gemini") {
-    return createGeminiClient({ apiKey: tts.apiKey });
+    return createGeminiClient({ apiKey: tts.apiKey, platformProxy: tts.platformProxy });
   }
   return null;
 }

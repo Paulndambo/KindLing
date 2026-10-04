@@ -443,6 +443,11 @@ def summarize_cohort(evals: List[Dict[str, Any]]) -> Dict[str, Any]:
     Each eval: { scores: {dim: int|null}, sessionId, weightedMean, ... }
     """
     n = len(evals)
+    playbook_audits = [
+        ev.get("playbookAudit") or {}
+        for ev in evals
+        if (ev.get("playbookAudit") or {}).get("applicable")
+    ]
     per_dim: Dict[str, List[int]] = {d: [] for d in DIMENSION_IDS}
     means = []
     for ev in evals:
@@ -497,6 +502,37 @@ def summarize_cohort(evals: List[Dict[str, Any]]) -> Dict[str, Any]:
         key=lambda kv: -kv[1]["mean"],
     )[:3]
 
+    def summarize_playbook_audit(domain):
+        audits = [
+            a
+            for a in playbook_audits
+            if a.get("domain") == domain
+            or (domain == "math" and not a.get("domain"))
+        ]
+        if not audits:
+            return None
+        signal_names = (audits[0].get("signals") or {}).keys()
+        return {
+            "applicableSessions": len(audits),
+            "sampleSessions": n,
+            "meanCueCoverage": round(
+                sum(float(a.get("coverage") or 0) for a in audits) / len(audits),
+                3,
+            ),
+            "signalRates": {
+                name: round(
+                    sum(bool((a.get("signals") or {}).get(name)) for a in audits)
+                    / len(audits),
+                    3,
+                )
+                for name in signal_names
+            },
+            "interpretation": "Heuristic surface cues only; do not treat as a teaching-quality score.",
+        }
+
+    math_playbook_audit = summarize_playbook_audit("math")
+    science_playbook_audit = summarize_playbook_audit("science")
+
     return {
         "rubricVersion": RUBRIC_VERSION,
         "targetSampleSize": TARGET_SAMPLE_SIZE,
@@ -504,6 +540,8 @@ def summarize_cohort(evals: List[Dict[str, Any]]) -> Dict[str, Any]:
         "sampleComplete": n >= TARGET_SAMPLE_SIZE,
         "overallMean": round(sum(means) / len(means), 3) if means else None,
         "dimensions": dim_stats,
+        "mathPlaybookAudit": math_playbook_audit,
+        "sciencePlaybookAudit": science_playbook_audit,
         "weakest": [
             {"id": k, "label": v["label"], "mean": v["mean"]} for k, v in weakest
         ],
@@ -551,5 +589,25 @@ def render_report_markdown(summary: Dict[str, Any], *, title: str = "C8.3 eval r
         lines += ["", "## Strongest", ""]
         for w in summary["strongest"]:
             lines.append(f"- **{w['label']}**: mean {w['mean']}")
+    for domain in ("math", "science"):
+        audit = summary.get(f"{domain}PlaybookAudit")
+        if not audit:
+            continue
+        lines += [
+            "",
+            f"## C7 {domain} playbook surface cues (heuristic, not a score)",
+            "",
+            f"Eligible {domain} sessions: **{audit['applicableSessions']}** / {audit['sampleSessions']} · "
+            f"mean cue coverage: **{audit['meanCueCoverage']}**",
+            "",
+            "| Cue | Sessions with cue |",
+            "|-----|------------------|",
+        ]
+        for cue, rate in (audit.get("signalRates") or {}).items():
+            sessions_with_cue = round(rate * audit["applicableSessions"])
+            lines.append(
+                f"| {cue.replace('_', ' ').title()} | {sessions_with_cue} / {audit['applicableSessions']} |"
+            )
+        lines += ["", audit["interpretation"]]
     lines += ["", f"**Next:** {summary.get('nextStep')}", ""]
     return "\n".join(lines)

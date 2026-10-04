@@ -35,14 +35,19 @@ export function useAssessment({
   const [session, setSession] = useState(null);
   const [offer, setOffer] = useState(null);
   const [offeredThisTopic, setOfferedThisTopic] = useState(false);
+  const [prePostBaseline, setPrePostBaseline] = useState(null);
   const [availableCount, setAvailableCount] = useState(() =>
     questionsForTopic(subjectName, topicName, { limit: 10 }).length
+  );
+  const prePostAvailable = ["A", "B"].every((form) =>
+    questionsForTopic(subjectName, topicName, { form, limit: 10 }).length >= 2
   );
 
   useEffect(() => {
     setSession(null);
     setOffer(null);
     setOfferedThisTopic(false);
+    setPrePostBaseline(null);
     setAvailableCount(
       questionsForTopic(subjectName, topicName, { limit: 10 }).length
     );
@@ -128,6 +133,9 @@ export function useAssessment({
       skillSlugs = [],
       unit = "",
       source = "manual",
+      form = "",
+      purpose = "practice",
+      baseline = null,
     } = {}) => {
       const ses = createAssessmentSession({
         subject: subjectName,
@@ -138,6 +146,9 @@ export function useAssessment({
         count,
         timed,
         source,
+        form,
+        purpose,
+        baseline,
       });
       if (!ses) return null;
       setOffer(null);
@@ -152,6 +163,8 @@ export function useAssessment({
         topic: topicName,
         timed: ses.timed,
         source: ses.source,
+        purpose: ses.purpose,
+        form: ses.form,
       });
       trackMetric("assessment.started", {
         sessionId: getSessionId?.(),
@@ -223,11 +236,35 @@ export function useAssessment({
   const continueAfterExplanation = useCallback(() => {
     if (!session) return null;
     const { session: next, completed: done } = advanceAssessment(session);
-    setSession(next);
-
     if (done && next) {
       const sc = scoreAssessment(next);
       const celeb = assessmentCelebrationCopy(next);
+      let completedSession = next;
+      let learningGain = null;
+      if (next.purpose === "pre") {
+        setPrePostBaseline({
+          assessmentId: next.id,
+          correct: sc.correct,
+          total: sc.total,
+          percent: sc.percent,
+          skillSlug: next.skillSlug,
+          skillSlugs: next.skillSlugs || [],
+          form: next.form || "A",
+        });
+      } else if (next.purpose === "post" && next.baseline) {
+        learningGain = {
+          baselineAssessmentId: next.baseline.assessmentId,
+          baselineCorrect: next.baseline.correct,
+          baselineTotal: next.baseline.total,
+          baselinePercent: next.baseline.percent,
+          postCorrect: sc.correct,
+          postTotal: sc.total,
+          postPercent: sc.percent,
+          deltaPoints: sc.percent - Number(next.baseline.percent || 0),
+        };
+        completedSession = { ...next, learningGain };
+      }
+      setSession(completedSession);
       emit(LearningEventType.ASSESSMENT_COMPLETED, {
         assessmentId: next.id,
         correct: sc.correct,
@@ -238,6 +275,14 @@ export function useAssessment({
         skillCounts: sc.skillCounts,
         skillSlug: next.skillSlug,
         source: next.source,
+        purpose: next.purpose,
+        form: next.form,
+        ...(learningGain ? {
+          baselineAssessmentId: learningGain.baselineAssessmentId,
+          baselinePercent: learningGain.baselinePercent,
+          postPercent: learningGain.postPercent,
+          gainPoints: learningGain.deltaPoints,
+        } : {}),
       });
       trackMetric("assessment.completed", {
         sessionId: getSessionId?.(),
@@ -247,10 +292,21 @@ export function useAssessment({
           total: String(sc.total),
         },
       });
-      return { session: next, completed: true, score: sc, celebration: celeb };
+      return { session: completedSession, completed: true, score: sc, celebration: celeb };
     }
+    setSession(next);
     return { session: next, completed: false };
   }, [session, emit, getSessionId]);
+
+  const startPrePostBaseline = useCallback((options = {}) => startAssessment({ ...options, source: "pre_post_baseline", form: "A", purpose: "pre" }), [startAssessment]);
+  const startPrePostFollowUp = useCallback(() => {
+    if (!prePostBaseline) return null;
+    return startAssessment({
+      source: "pre_post_followup", form: "B", purpose: "post", baseline: prePostBaseline,
+      skillSlug: prePostBaseline.skillSlug, skillSlugs: prePostBaseline.skillSlugs,
+      count: prePostBaseline.total,
+    });
+  }, [prePostBaseline, startAssessment]);
 
   const exit = useCallback(() => {
     setSession((prev) => {
@@ -284,6 +340,8 @@ export function useAssessment({
     assessmentCompleted: completed,
     assessmentOffer: offer,
     assessmentAvailable: availableCount > 0,
+    prePostAvailable,
+    prePostBaseline,
     assessmentScore: score,
     assessmentCurrent: session
       ? session.questions?.[session.currentIndex] || null
@@ -295,6 +353,8 @@ export function useAssessment({
       : null,
     assessmentGradedCorrectness: assessmentToCorrectness(score),
     startAssessment,
+    startPrePostBaseline,
+    startPrePostFollowUp,
     answerAssessment: answerQuestion,
     continueAssessment: continueAfterExplanation,
     exitAssessment: exit,

@@ -104,11 +104,19 @@ python manage.py eval_auto_score --limit 10 --save --cohort auto-c8.1
 # Report
 python manage.py eval_report --cohort auto-c8.1 --out eval_samples/auto_report.md
 
-# Calibrate against human C8.3 labels (MAE)
+# Compare against human C8.3 labels (per-dimension MAE, bias, agreement, and sample readiness)
 python manage.py eval_auto_score --limit 20 --compare-cohort beta-c8.3
 ```
 
-**Notes:** Scores are pilot heuristics (questions vs dumps, shame/warm lexicon, decision-action text cues, ADI/intervention events). Spot-check with human C8.3 labels; improve weak dimensions first.
+The comparison uses only non-automated score rows from the named cohort and only sessions shared by the automated run and human labels. The report includes per-dimension MAE, signed bias (positive means the heuristic scores higher), exact agreement, within-one-point agreement, and whether at least 10 matched human-scored sessions are available. Fewer than 10 matches are diagnostic only and do not count as calibration.
+
+**Notes:** Scores are pilot heuristics (questions vs dumps, shame/warm lexicon, decision-action text cues, ADI/intervention events). Use the per-dimension summary to choose what to inspect, then spot-check transcripts and improve weak dimensions. A sufficient sample is a readiness threshold, not evidence by itself that the scorer is valid.
+
+### C7 playbook spot-check cues
+
+C8.1 session results, C8.2 weekly reports, and C8.3 manual score-sheet exports include a supplemental `playbookAudit` for math/algebra and science sessions. Math cues cover representation, sequenced steps, understanding checks, and fade/transfer invitations. Science cues cover scientific representations, evidence/reasoning, investigation sequence, understanding checks, and prediction/transfer.
+
+These cues are **not rubric dimensions or quality scores**. Their absence does not prove a playbook was ignored: a session may not need a visible model or a transfer prompt. Surface phrase matches also cannot establish scientific accuracy. Review the transcript and judge whether the selected scaffold fit the topic, learner, and moment.
 
 ## C8.2 — Weekly eval sample job
 
@@ -138,7 +146,7 @@ python manage.py run_scheduled_jobs
 
 | Next | Work |
 |------|------|
-| **C8.1+** | Calibrate heuristics on ≥10 human C8.3 labels (`--compare-cohort`) |
+| **C8.1+** | Collect ≥10 matched human C8.3 labels and review the per-dimension calibration report (`--compare-cohort`) |
 | **L4** | Independence twins — separate product metric |
 | **C1+** | Spaced review depth |
 

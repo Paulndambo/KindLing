@@ -1,0 +1,74 @@
+[
+  {
+    "id": "science-particle-model",
+    "topics": ["matter", "states of matter", "particle model", "solids liquids and gases", "changes of state"],
+    "concept": "Materials are made of particles; their spacing and movement help explain properties and changes of state.",
+    "representation": "Use a simple particle sketch with a fixed number of dots and show spacing and movement with arrows.",
+    "steps": ["Name the material and state.", "Compare particle spacing and movement.", "Connect the particle model to an observable property or change."],
+    "check": "During melting, what changes about the particles and what stays the same?",
+    "fade": "Ask the learner to use the particle model to explain a new example without prompts."
+  },
+  {
+    "id": "science-chemical-reactions",
+    "topics": ["chemical reactions", "chemical change", "reactants and products", "conservation of mass"],
+    "concept": "A chemical reaction rearranges atoms into new substances; atoms are conserved.",
+    "representation": "Use a word equation or particle diagram and track each type of atom before and after.",
+    "steps": ["Identify the starting substances (reactants).", "Identify evidence of new substances (products).", "Account for the same atoms on both sides."],
+    "check": "In a reaction, do atoms disappear, or are they rearranged into new substances?",
+    "fade": "Have the learner describe a second reaction using reactant, product, and atom-count language."
+  },
+  {
+    "id": "science-forces-motion",
+    "topics": ["forces", "motion", "speed and velocity", "balanced and unbalanced forces"],
+    "concept": "A force is a push or pull; an unbalanced net force changes motion.",
+    "representation": "Draw an arrow for each force and compare direction and size; use a simple motion timeline when useful.",
+    "steps": ["Name the object and the forces acting on it.", "Compare forces to decide whether they balance.", "Describe how the object's motion changes (or stays steady)."],
+    "check": "If forces on a moving object balance, must it stop, or can it keep moving steadily?",
+    "fade": "Invite the learner to draw and explain the forces in a new everyday situation."
+  },
+  {
+    "id": "science-energy-transfer",
+    "topics": ["energy", "energy transfer", "energy stores", "heat transfer"],
+    "concept": "Energy moves between stores or objects and is transferred by identifiable pathways.",
+    "representation": "Use a before-and-after energy flow diagram with labeled arrows.",
+    "steps": ["Identify the starting energy store.", "Name the transfer pathway.", "Identify where energy ends up and what observable change follows."],
+    "check": "When a warm mug heats your hands, which way is thermal energy transferred?",
+    "fade": "Ask the learner to trace an energy transfer in a different device or event."
+  },
+  {
+    "id": "science-ecosystems",
+    "topics": ["ecosystems", "food chains", "food webs", "ecosystem relationships"],
+    "concept": "Organisms depend on one another and their environment; arrows in a food chain show energy transfer.",
+    "representation": "Build a small food web with labeled organisms and arrows pointing from food to consumer.",
+    "steps": ["Identify producers and consumers.", "Trace one energy path using arrow direction.", "Predict one effect of a population change and support it with the web."],
+    "check": "If a producer becomes less common, which organism in this web might be affected first, and why?",
+    "fade": "Have the learner predict a different change in the web and explain the link."
+  },
+  {
+    "id": "science-cells",
+    "topics": ["cells", "cell structure", "organelles", "plant and animal cells"],
+    "concept": "Cell structures have roles that help the cell function; structure and function are connected.",
+    "representation": "Use a labeled cell sketch or structure-to-job table; compare plant and animal cells only where relevant.",
+    "steps": ["Name the structure being studied.", "State its job in plain language.", "Connect that job to what the cell needs to do."],
+    "check": "How does the cell membrane help a cell manage what enters and leaves?",
+    "fade": "Ask the learner to explain another structure by linking its shape or location to its job."
+  },
+  {
+    "id": "science-investigation",
+    "topics": ["scientific investigation", "fair tests", "variables", "experiments", "data and graphs"],
+    "concept": "A fair investigation changes one independent variable, measures an outcome, and controls other relevant factors.",
+    "representation": "Use an independent/dependent/controlled variables table and a labeled data table or graph.",
+    "steps": ["Turn the question into a testable prediction.", "Identify what changes, what is measured, and what stays controlled.", "Use repeated observations and data to support a cautious conclusion."],
+    "check": "In this test, what will you change and what result will you measure?",
+    "fade": "Let the learner plan the variables for a new test and explain how it stays fair."
+  },
+  {
+    "id": "science-earth-cycles",
+    "topics": ["water cycle", "weather and climate", "rock cycle", "earth systems"],
+    "concept": "Earth systems change through connected processes that move matter or energy over time.",
+    "representation": "Sketch a labeled cycle with arrows; distinguish a process from the material moving through it.",
+    "steps": ["Name the starting location or state.", "Trace one process at a time with directional arrows.", "Return to the cycle and explain how the parts connect."],
+    "check": "In the water cycle, what process moves liquid water into the air as vapor?",
+    "fade": "Ask the learner to trace a different path through the cycle in their own words."
+  }
+]

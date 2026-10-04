@@ -1,12 +1,18 @@
+import json
+import re
 from datetime import timedelta
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
+from django.conf import settings
+from django.http import StreamingHttpResponse
 from django.utils import timezone
-from rest_framework import permissions, status
+from rest_framework import permissions, throttling
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import SubscriptionStatus
-from .plans import PLAN_CATALOG, serialize_plan
+from .plans import PLAN_CATALOG, plan_entitlements, serialize_plan
 from .serializers import (
     AiRoutingPreferenceSerializer,
     PlatformSubscriptionSerializer,
@@ -90,3 +96,100 @@ class AiRoutingView(APIView):
 
     def put(self, request):
         return self.patch(request)
+
+
+class PlatformGeminiView(APIView):
+    """Authenticated, bounded proxy for Kindling's server-held Gemini key."""
+
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [throttling.ScopedRateThrottle]
+    throttle_scope = "platform_ai"
+    max_body_bytes = 8 * 1024 * 1024
+    max_output_tokens = 2048
+
+    def post(self, request):
+        api_key = settings.PLATFORM_GEMINI_API_KEY
+        if not api_key:
+            return Response({"detail": "Platform AI is not configured."}, status=503)
+
+        sub = getattr(request.user, "platform_subscription", None)
+        if not sub or sub.status not in (SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING):
+            return Response({"detail": "An active plan is required for platform AI."}, status=403)
+        if not plan_entitlements(sub.plan, sub.entitlements_override or {}).get("platformAi"):
+            return Response({"detail": "This plan does not include platform AI."}, status=403)
+
+        try:
+            content_length = int(request.META.get("CONTENT_LENGTH") or 0)
+        except (TypeError, ValueError):
+            content_length = 0
+        if content_length > self.max_body_bytes:
+            return Response({"detail": "AI request is too large."}, status=413)
+
+        data = request.data
+        if not isinstance(data, dict):
+            return Response({"detail": "Invalid AI request."}, status=400)
+        model = str(data.get("model") or "")
+        if not re.fullmatch(r"gemini-[A-Za-z0-9._-]{1,100}", model):
+            return Response({"detail": "Unsupported Gemini model."}, status=400)
+        contents = data.get("contents")
+        if not isinstance(contents, (str, list, dict)):
+            return Response({"detail": "Invalid Gemini contents."}, status=400)
+        config = data.get("config") or {}
+        if not isinstance(config, dict):
+            return Response({"detail": "Invalid Gemini config."}, status=400)
+        config = dict(config)
+        requested_tokens = config.get("maxOutputTokens", self.max_output_tokens)
+        try:
+            config["maxOutputTokens"] = min(max(1, int(requested_tokens)), self.max_output_tokens)
+        except (TypeError, ValueError):
+            config["maxOutputTokens"] = self.max_output_tokens
+
+        system_instruction = config.pop("systemInstruction", None)
+        payload = {"contents": contents, "generationConfig": config}
+        # SDK-style system instruction is translated to Gemini REST's field.
+        if system_instruction:
+            payload["systemInstruction"] = system_instruction
+        streaming = bool(data.get("stream"))
+        method = "streamGenerateContent" if streaming else "generateContent"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:{method}?key={api_key}"
+        if streaming:
+            url += "&alt=sse"
+        upstream_request = Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream" if streaming else "application/json",
+            },
+            method="POST",
+        )
+        try:
+            upstream = urlopen(upstream_request, timeout=90)
+        except HTTPError as exc:
+            detail = exc.read(4096).decode("utf-8", "replace")
+            return Response({"detail": "Gemini request failed.", "provider_detail": detail}, status=502)
+        except (URLError, TimeoutError):
+            return Response({"detail": "Gemini service is temporarily unavailable."}, status=502)
+
+        if streaming:
+            def relay():
+                try:
+                    while True:
+                        chunk = upstream.read(4096)
+                        if not chunk:
+                            break
+                        yield chunk
+                finally:
+                    upstream.close()
+            response = StreamingHttpResponse(relay(), content_type="text/event-stream")
+            response["Cache-Control"] = "no-cache, no-transform"
+            response["X-Accel-Buffering"] = "no"
+            return response
+
+        try:
+            result = json.loads(upstream.read(self.max_body_bytes + 1))
+        finally:
+            upstream.close()
+        if len(json.dumps(result).encode("utf-8")) > self.max_body_bytes:
+            return Response({"detail": "Gemini response is too large."}, status=502)
+        return Response(result)

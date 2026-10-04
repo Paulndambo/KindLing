@@ -395,6 +395,11 @@ def _refresh_related_states(profile: LearningProfile, skill_ids: Iterable[int]) 
 
 def skill_mastery_to_dict(sm: SkillMastery) -> Dict[str, Any]:
     ready, blocking = prereq_readiness(sm.profile, sm.skill)
+    standard_framework = None
+    if sm.skill.slug.startswith("cs."):
+        from curriculum.pilot_graph import PILOT_STANDARD_FRAMEWORK
+
+        standard_framework = PILOT_STANDARD_FRAMEWORK
     return {
         "slug": sm.skill.slug,
         "name": sm.skill.name,
@@ -402,6 +407,7 @@ def skill_mastery_to_dict(sm: SkillMastery) -> Dict[str, Any]:
         "domain": sm.skill.domain,
         "description": sm.skill.description,
         "standardCodes": sm.skill.standard_codes or [],
+        "standardFramework": standard_framework,
         "pKnow": round(sm.p_know, 4),
         "score": round(sm.score, 1),
         "attempts": sm.attempts,
@@ -448,6 +454,11 @@ def build_topic_skill_path(
             sm = get_or_init_skill_mastery(profile, skill)
             d = skill_mastery_to_dict(sm)
         else:
+            standard_framework = None
+            if skill.slug.startswith("cs."):
+                from curriculum.pilot_graph import PILOT_STANDARD_FRAMEWORK
+
+                standard_framework = PILOT_STANDARD_FRAMEWORK
             d = {
                 "slug": skill.slug,
                 "name": skill.name,
@@ -455,6 +466,7 @@ def build_topic_skill_path(
                 "domain": skill.domain,
                 "description": skill.description,
                 "standardCodes": skill.standard_codes or [],
+                "standardFramework": standard_framework,
                 "pKnow": skill.p_init,
                 "score": round(skill.p_init * 100, 1),
                 "attempts": 0,

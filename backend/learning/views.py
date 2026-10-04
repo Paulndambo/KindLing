@@ -1,3 +1,7 @@
+import csv
+
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -311,6 +315,7 @@ class SkillCatalogView(APIView):
 
     def get(self, request):
         from curriculum.models import Skill, SkillPrerequisite
+        from curriculum.pilot_graph import PILOT_STANDARD_FRAMEWORK
 
         skills = []
         for s in Skill.objects.filter(is_pilot=True).order_by("sort_order"):
@@ -327,6 +332,11 @@ class SkillCatalogView(APIView):
                     "domain": s.domain,
                     "description": s.description,
                     "standardCodes": s.standard_codes or [],
+                    "standardFramework": (
+                        PILOT_STANDARD_FRAMEWORK
+                        if s.slug.startswith("cs.")
+                        else None
+                    ),
                     "sortOrder": s.sort_order,
                     "prerequisites": [
                         {"slug": slug, "strength": strength}
@@ -334,7 +344,212 @@ class SkillCatalogView(APIView):
                     ],
                 }
             )
-        return Response({"skills": skills, "pilot": True})
+        return Response(
+            {
+                "skills": skills,
+                "pilot": True,
+                "standardFrameworks": [PILOT_STANDARD_FRAMEWORK],
+            }
+        )
+
+
+class StandardsReportView(APIView):
+    """Download the authenticated learner's single-student standards CSV."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from curriculum.models import Skill
+        from curriculum.pilot_graph import PILOT_STANDARD_FRAMEWORK
+        from learning.models import SkillMastery
+        from learning.mastery_engine import derive_state
+
+        student = get_student_profile(request.user)
+        if not student:
+            return Response(
+                {"detail": "Complete your student profile before exporting progress."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        profile = get_or_create_profile(student)
+        mastery_by_skill = {
+            row.skill_id: row
+            for row in SkillMastery.objects.filter(profile=profile).select_related(
+                "skill"
+            )
+        }
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = (
+            'attachment; filename="kindling-standards-progress.csv"'
+        )
+        response["Cache-Control"] = "private, no-store"
+        response.write("\ufeff")
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "framework",
+                "framework_id",
+                "framework_version",
+                "alignment_status",
+                "framework_alignment_note",
+                "framework_scope",
+                "framework_source",
+                "learner",
+                "generated_on",
+                "skill_slug",
+                "domain",
+                "skill",
+                "standard_codes",
+                "progress_status",
+                "mastery_estimate_percent",
+                "attempts",
+                "correct",
+                "partial",
+                "incorrect",
+                "last_evidence_at",
+            ]
+        )
+
+        def safe_text(value):
+            text = str(value or "")
+            return f"'{text}" if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+        skills = [
+            skill
+            for skill in Skill.objects.filter(is_pilot=True).order_by(
+                "sort_order", "slug"
+            )
+            if skill.standard_codes
+        ]
+        if request.query_params.get("format") == "narrative":
+            mastered = []
+            active = []
+            warm_up = []
+            practiced = 0
+            for skill in skills:
+                mastery = mastery_by_skill.get(skill.id)
+                if not mastery or not mastery.attempts:
+                    continue
+                practiced += 1
+                current_state = derive_state(
+                    mastery.p_know,
+                    locked=mastery.state == SkillMastery.State.LOCKED,
+                    consecutive_correct=mastery.consecutive_correct,
+                    attempts=mastery.attempts,
+                    last_evidence_at=mastery.last_evidence_at,
+                )
+                if current_state == SkillMastery.State.MASTERED:
+                    mastered.append(skill.name)
+                elif current_state == SkillMastery.State.RUSTY:
+                    warm_up.append(skill.name)
+                else:
+                    active.append(skill.name)
+
+            not_started = max(0, len(skills) - practiced)
+            report_date = timezone.localdate()
+            date_label = f"{report_date.strftime('%B')} {report_date.day}, {report_date.year}"
+            name = " ".join(student.name.split()) or "the learner"
+            lines = [
+                f"Progress update for {name}",
+                f"Generated {date_label}",
+                "",
+                (
+                    f"This snapshot covers {name}'s account and {len(skills)} coded skills "
+                    f"in the Kindling Computer Science Pilot (v{PILOT_STANDARD_FRAMEWORK['version']})."
+                ),
+                (
+                    "The codes are Kindling's internal learning references. They are not "
+                    "independently reviewed external standards. Mastery estimates are "
+                    "learning signals, not grades or formal assessment results."
+                ),
+                "",
+            ]
+            if practiced:
+                lines.append(
+                    f"Practice evidence is recorded for {practiced} of {len(skills)} skills. "
+                    f"{len(mastered)} currently meet Kindling's mastery criteria, "
+                    f"{len(active)} are in active practice, and {len(warm_up)} may benefit "
+                    "from a warm-up."
+                )
+                if mastered:
+                    lines.extend(
+                        ["", "Skills currently meeting mastery criteria:"]
+                        + [f"• {item}" for item in mastered[:5]]
+                    )
+                if warm_up:
+                    lines.extend(
+                        ["", "A short, supportive review could help with:"]
+                        + [f"• {item}" for item in warm_up[:5]]
+                    )
+            else:
+                lines.append(
+                    "No practice evidence is recorded for these coded skills yet. "
+                    "Initial estimates for untouched skills do not show demonstrated mastery."
+                )
+            if not_started and practiced:
+                lines.extend(
+                    [
+                        "",
+                        f"{not_started} coded skills have no recorded practice yet; no mastery "
+                        "conclusion can be drawn for them.",
+                    ]
+                )
+            lines.extend(
+                [
+                    "",
+                    "I hope this is a useful starting point for talking about what to practice next.",
+                    "",
+                    "Kindling",
+                ]
+            )
+            response = HttpResponse(
+                "\n".join(lines) + "\n", content_type="text/plain; charset=utf-8"
+            )
+            response["Content-Disposition"] = (
+                'attachment; filename="kindling-progress-summary.txt"'
+            )
+            response["Cache-Control"] = "private, no-store"
+            return response
+
+        for skill in skills:
+            codes = skill.standard_codes or []
+            mastery = mastery_by_skill.get(skill.id)
+            attempts = mastery.attempts if mastery else 0
+            writer.writerow(
+                [
+                    safe_text(PILOT_STANDARD_FRAMEWORK["name"]),
+                    safe_text(PILOT_STANDARD_FRAMEWORK["id"]),
+                    safe_text(PILOT_STANDARD_FRAMEWORK["version"]),
+                    safe_text(PILOT_STANDARD_FRAMEWORK["alignmentStatus"]),
+                    safe_text(PILOT_STANDARD_FRAMEWORK["description"]),
+                    safe_text(PILOT_STANDARD_FRAMEWORK["scope"]),
+                    safe_text(PILOT_STANDARD_FRAMEWORK["source"]),
+                    safe_text(student.name),
+                    timezone.localdate().isoformat(),
+                    safe_text(skill.slug),
+                    safe_text(skill.get_domain_display()),
+                    safe_text(skill.name),
+                    safe_text("; ".join(str(code) for code in codes)),
+                    safe_text(
+                        mastery.get_state_display()
+                        if mastery and attempts
+                        else "Not started"
+                    ),
+                    round(mastery.score, 1)
+                    if mastery
+                    else round(skill.p_init * 100, 1),
+                    attempts,
+                    mastery.correct if mastery else 0,
+                    mastery.partial if mastery else 0,
+                    mastery.incorrect if mastery else 0,
+                    (
+                        mastery.last_evidence_at.isoformat()
+                        if mastery and mastery.last_evidence_at
+                        else ""
+                    ),
+                ]
+            )
+        return response
 
 
 class MultiStepProblemListView(APIView):

@@ -328,10 +328,7 @@ export const HIGHER_ED_GOAL_OPTIONS = [
 
 export const GOAL_OPTIONS = K12_GOAL_OPTIONS;
 
-/** Subjects learners often want help with.
- *  While multi-subject is off, Computer Science is the sole live path —
- *  other options stay listed for preference signaling / later activation.
- */
+/** Subjects learners often want help with during onboarding. */
 export const FOCUS_SUBJECT_OPTIONS = [
   "Computer Science",
   "Coding / Computer science",

@@ -21,6 +21,7 @@ from learning.eval_rubric import (
     extract_session_evidence,
     render_score_sheet_markdown,
 )
+from learning.eval_scorer import audit_math_playbook_signals, audit_science_playbook_signals
 from learning.models import LessonSession, ManualSessionEval
 
 
@@ -101,6 +102,31 @@ class Command(BaseCommand):
 
         for session in sessions:
             evidence = extract_session_evidence(session)
+            tutor_texts = [
+                str(turn.get("tutor") or "")
+                for turn in evidence.get("turnsPreview") or []
+            ]
+            playbook_audit = audit_science_playbook_signals(
+                subject=session.subject,
+                topic=session.topic,
+                tutor_texts=tutor_texts,
+            )
+            if not playbook_audit.get("applicable"):
+                playbook_audit = audit_math_playbook_signals(
+                    subject=session.subject,
+                    topic=session.topic,
+                    tutor_texts=tutor_texts,
+                )
+            if playbook_audit.get("applicable"):
+                evidence["playbookAudit"] = playbook_audit
+                evidence.setdefault("scorerHints", []).append(
+                    f"C7 {playbook_audit.get('domain')} playbook surface cues (not a score): "
+                    + ", ".join(
+                        f"{name}={'seen' if seen else 'not seen'}"
+                        for name, seen in playbook_audit["signals"].items()
+                    )
+                    + ". Review fit, accuracy, and pacing manually."
+                )
             sheet = empty_score_sheet()
             meta = {
                 "sessionId": session.session_id,

@@ -76,6 +76,19 @@ def job_weekly_digest(**kwargs) -> Dict[str, Any]:
 
 
 @register_job(
+    "stuck_learning_alert",
+    description="Optional support email after repeated difficulty across learning sessions (Epic C10)",
+    interval_seconds=24 * 3600,
+    enabled=True,
+)
+def job_stuck_learning_alert(**kwargs) -> Dict[str, Any]:
+    """Send a gentle alert through the student's existing digest opt-in/channel."""
+    from learning.digest_service import run_stuck_learning_alerts
+
+    return run_stuck_learning_alerts(dry_run=bool(kwargs.get("dry_run", False)))
+
+
+@register_job(
     "mastery_recompute",
     description="Placeholder: recompute longitudinal mastery aggregates",
     interval_seconds=24 * 3600,

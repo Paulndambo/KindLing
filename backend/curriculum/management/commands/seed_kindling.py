@@ -215,16 +215,19 @@ class Command(BaseCommand):
         ensure_computer_science_subject(student)
         self.stdout.write(self.style.SUCCESS(f"Ensured subject {PILOT_SUBJECT}"))
 
-        # Multi-subject off: remove legacy demo subjects that are not CS
-        extras = student.subjects.exclude(name=PILOT_SUBJECT)
-        if extras.exists():
-            n = extras.count()
-            extras.delete()
-            self.stdout.write(
-                self.style.WARNING(
-                    f"Removed {n} non-pilot subject(s); sole subject is {PILOT_SUBJECT}."
+        from django.conf import settings
+
+        # Preserve student-created subjects when multi-subject is enabled.
+        if not getattr(settings, "ALLOW_CUSTOM_SUBJECTS", False):
+            extras = student.subjects.exclude(name=PILOT_SUBJECT)
+            if extras.exists():
+                n = extras.count()
+                extras.delete()
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Removed {n} non-pilot subject(s); sole subject is {PILOT_SUBJECT}."
+                    )
                 )
-            )
 
         if not student.subjects.exists():
             self.stdout.write(self.style.WARNING("No subjects created."))

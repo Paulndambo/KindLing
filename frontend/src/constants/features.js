@@ -1,10 +1,9 @@
 /**
  * Product feature flags.
- * Flip these when re-enabling multi-subject Kindling.
  */
 
-/** When false, learners only use the seeded pilot subject (Computer Science). */
-export const ALLOW_CUSTOM_SUBJECTS = false;
+/** Students can create and manage subjects across learning areas. */
+export const ALLOW_CUSTOM_SUBJECTS = true;
 
-/** Canonical sole subject while multi-subject is off. */
+/** Original pilot subject, used as a fallback for legacy learning data. */
 export const SOLE_SUBJECT_NAME = "Computer Science";

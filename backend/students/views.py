@@ -55,7 +55,7 @@ class StudentMeView(APIView):
             )
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
-        # Sole pilot subject while multi-subject is gated off
+        # Provision the pilot subject only during single-subject rollouts.
         try:
             from django.conf import settings
             from curriculum.cs_provision import ensure_computer_science_subject

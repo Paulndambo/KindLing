@@ -47,7 +47,7 @@ Kindling already has a coherent spine. New work should **extend** these layers:
 
 **Shipped early Wave 2 (in-repo, not a deploy gate):** CS pilot curriculum (unit→subtopic), L1 LearnerState, L2 pedagogical policy, L3 ADI, L4 independence twins, C6 assessment v1, C8 eval harness, practical how-to teaching, suggestion chips / real-world example rule.
 
-**Still open for production / Wave 2:** Postgres + hostable deploy (0.1 / Track D), AI failover/cost controls, C1+ review depth, C7 domain playbooks, C6 depth (broader assessment banks/pre-post), student-facing standards export (C4), diagram rendering, a11y pack, duplex voice, PWA/i18n, full goals planner (single-learner), portfolios, digest polish.
+**Still open for production / Wave 2:** Postgres + hostable deploy (0.1 / Track D), AI failover/cost controls, validating sustained C1+ recall lift, C7 expansion beyond the math/algebra and science packs, C6 wider science assessment coverage and cohort calibration, C4 external standards alignment, diagram rendering, a11y pack, duplex voice, PWA/i18n, portfolios, and production email delivery (Track D).
 
 ---
 
@@ -95,7 +95,7 @@ Every feature maps to one or more streams:
 
 **Wave 2 intelligence slice (shipped in-repo):** Track L **L1–L4**, **C6** assessment v1, **C8** eval harness, **Computer Science** pilot path, **practical how-to** teaching + suggestion chips. See §15.1a.
 
-**Wave 2 (active backlog):** Hostable deploy (Track D), C1+/C7/C4/C5+/C9/C10, Phase 4 multimodal/a11y, Phase 5 scale — organized in [§15 Wave 2](#15-wave-2--second-development-cycle-post-phase-25). **Never** schedule multi-child households, parent multi-profile accounts, or classroom/roster products (see §16). Bulk buyers = **N separate student subscriptions**. **Phase 0.1 deploy/Postgres** remains a hard gate for *external* beta.
+**Wave 2 (active backlog):** Hostable deploy (Track D), C1+/C7/C4/C5+, Phase 4 multimodal/a11y, Phase 5 scale — organized in [§15 Wave 2](#15-wave-2--second-development-cycle-post-phase-25). **Never** schedule multi-child households, parent multi-profile accounts, or classroom/roster products (see §16). Bulk buyers = **N separate student subscriptions**. **Phase 0.1 deploy/Postgres** remains a hard gate for *external* beta.
 
 Platform and trust work runs **in parallel** with product features, not after them.
 
@@ -466,7 +466,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 | C5.1 | Surface existing topic `learning_goal` + familiarity on lesson path / tools / first-session orientation | ✅ path chip, tools “Your focus”, chat header |
 | C5.2 | Optional one-line “this week I’m working on…” from profile or subject (student-editable) | ✅ `week_focus` / `weekFocus` + Dashboard editor |
 | C5.3 | Inject goal into tutor system prompt when present; reflection (B8) may echo goal language | ✅ gemini topic intent + week focus; B8 body echo |
-| C5.4 | **Defer:** exam timelines, homework windows, guardian-set contracts | — |
+| C5.4 | **Defer:** full exam timelines and guardian-set contracts; focused homework windows added later in C5+.2 | — |
 
 **Done when:** Student can see and lightly set a goal that shapes the first turns of a lesson without a planning product.  
 **How:** Set goal on subject/topic → open lesson → tutor references it; path or tools shows the goal chip.  
@@ -507,16 +507,16 @@ Escalation: “More help” while active; session escalates after lighter levels
 
 | Epic | Capability | Deliverable | Status | Notes |
 |------|------------|-------------|--------|-------|
-| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, clearer schedule UX, richer forgetting curve | ⚡ Partial | Cross-subject selection/balancing ✅; upcoming/reason display ✅; snooze ✅; week-focus tie-in and longer-term retention remain |
+| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, clearer schedule UX, richer forgetting curve | ⚡ Partial | Cross-subject selection/balancing ✅; upcoming/reason display ✅; snooze ✅; week-focus tie-in ✅; rolling 30-day recall outcomes by planned interval now captured and surfaced; sustained lift validation remains |
 | **C2** | §3.5.1 Parent accounts | — | ❌ | **Out of product forever** — student-configured digest email only (A5) |
 | **C3** | §3.5.2 Classroom mode | — | ❌ | **Out of product forever** — institutions buy per-seat; no roster product |
-| **C4** | §3.5.3 Standards reports | Export progress vs framework codes for **this student** | ⬜ | Single-learner export only |
-| **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⬜ | Lite ✅ Phase 2.5; no guardian contract product |
-| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ✅ v1 / ⬜ depth | v1 MCQ+explanations ✅; timed practice ✅; broader banks/pre-post remain — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
-| **C7** | §3.1.8 Domain playbooks | Second thin domain pack + scaffold consistency beyond math pilot | ⬜ | Beta P2.2 if sessions leave math |
-| **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ✅ C8.1–C8.3 | Manual rubric + offline scorer + weekly job; calibrate on human labels next |
-| **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ⬜ | Beta P2.8 lite; **not** a parent app |
-| **C10** | §3.2.4 Optional email alerts | Extra “stuck N sessions” email to the **same** student-configured digest address | ⬜ | Extends A5 only; student controls opt-in |
+| **C4** | §3.5.3 Standards reports | Export progress vs framework codes for **this student** | ⚡ Partial | Authenticated CSV + email-ready narrative for the internal CS pilot; external standards alignment remains |
+| **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⚡ Partial | Student-owned target date + countdown ✅; week-focus lite ✅; focused homework windows ✅; full planner remains |
+| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ⚡ Partial | Offline MCQ + timed practice ✅; Math Foundations has 3 items per core skill, each of 8 science scaffold areas has 5 explained items including an applied transfer item, and optional alternate-form pre/post checks are available for both pilot domains; wider coverage and cohort calibration remain — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
+| **C7** | §3.1.8 Domain playbooks | Early-math/algebra scaffold pack + second thin domain pack | ⚡ Partial | C7.1 math/algebra ✅; C7.2 science ✅; C8 samples now include non-scoring science playbook cues alongside math; further domain breadth remains |
+| **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ⚡ C8.1–C8.4 | Manual rubric + offline scorer + weekly job + per-dimension human-label calibration summary; calibration still requires ≥10 matched human-scored sessions |
+| **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ✅ C9.1 flag generation + C9.2 internal admin review list; **not** a parent app |
+| **C10** | §3.2.4 Optional email alerts | Extra “stuck N sessions” email to the **same** student-configured digest address | ✅ C10.1–C10.2 | Daily threshold rule uses the A5 digest opt-in and recipient; gentle copy, seven-day cooldown |
 
 ### Phase 3 epic sketches (Wave 2 backlog detail)
 
@@ -526,7 +526,8 @@ Escalation: “More help” while active; session escalates after lighter levels
 | C1+.1 | Multi-subject / multi-domain due selection (not only pilot math) | ✅ Cross-subject candidates and balanced due list |
 | C1+.2 | Student schedule UX (upcoming vs due, snooze, “why this skill”) | ✅ Upcoming/due split, plain-language reason, and 1/3/7-day snooze |
 | C1+.3 | Stronger bounded interval progression | ✅ Success ladder (1/3/7/14/30/60 days), partial recall shortens interval, 180-day cap |
-| C1+.4 | Tie B8 next-step + week focus (C5) into review ranking | ⬜ |
+| C1+.4 | Tie B8 next-step + week focus (C5) into review ranking | ✅ Explicit “practice again soon” reflections raise matching topic priority and bring it due; matching student focus modestly raises priority |
+| C1+.5 | Measure recall outcomes over spaced intervals | ✅ Persist each review outcome with planned interval and due-time delta; expose rolling 30-day recall rate after 3 attempts |
 
 #### C2 / C3 — Explicitly not planned
 | Epic | Stance |
@@ -537,16 +538,16 @@ Escalation: “More help” while active; session escalates after lighter levels
 #### C4 — Standards alignment reports (single learner)
 | Step | Work | Status |
 |------|------|--------|
-| C4.1 | Map pilot skills → standard codes (expand A1 `standard_codes`) | ⬜ |
-| C4.2 | Export PDF/CSV progress for **this student** (student or payer downloads) | ⬜ |
-| C4.3 | Plain-language narrative suitable to forward by email | ⬜ |
+| C4.1 | Map pilot skills → standard codes (expand A1 `standard_codes`) | ⚡ Complete for the internal Kindling CS pilot reference framework (47/47); external standards selection/alignment review remains |
+| C4.2 | Export PDF/CSV progress for **this student** (student or payer downloads) | ✅ Authenticated dashboard CSV export; PDF optional |
+| C4.3 | Plain-language narrative suitable to forward by email | ✅ Authenticated email-ready text summary; internal reference caveat included |
 
 #### C5+ — Goals & plans (full, single learner)
 | Step | Work | Status |
 |------|------|--------|
-| C5+.1 | Exam / target date + countdown orientation | ⬜ |
-| C5+.2 | Homework help windows (time-boxed tutor modes) | ⬜ |
-| C5+.3 | Weekly focus the **student** sets (no guardian contract UI) | ⬜ |
+| C5+.1 | Exam / target date + countdown orientation | ✅ Optional student-owned target label/date and live countdown on dashboard |
+| C5+.2 | Homework help windows (time-boxed tutor modes) | ✅ Optional 15/25/40-minute dashboard launch, in-lesson timer and tutor focus guidance; expiry offers wrap-up or continued work |
+| C5+.3 | Weekly focus the **student** sets (no guardian contract UI) | ✅ C5 lite dashboard editor |
 | C5+.4 | **Keep lite surface** as default; fuller planner opt-in | — |
 
 #### C6 — Assessment modes
@@ -556,13 +557,20 @@ Escalation: “More help” while active; session escalates after lighter levels
 | C6.2 | Low-stakes quiz mode with A3 verification where applicable | ✅ Deterministic MCQ grade + tutor explanation per item (revision) |
 | C6.3 | Optional timed practice | ✅ Optional 45-second timer per question; timeout is recorded as unanswered |
 | C6.4 | Results feed mastery + optional Review spark seeds | ✅ Per-item grades → recordExchange / events; Review seeds thin |
+| C6.5 | Broaden the pilot bank across difficulty and transfer contexts | ✅ Added a third item for each of 8 core Math Foundations skills; existing per-item explanations and offline grading apply |
+| C6.6 | Add a thin offline assessment set for the second domain pack | ✅ Added one topic-matched, explained question for each of the 8 C7.2 science scaffold areas |
+| C6.7 | Pilot a thin pre/post learning-gain check on one skill pack | ✅ Optional Math Foundations before/after checks use distinct question forms and report percentage-point change as an informal signal |
+| C6.8 | Deepen science checks across the eight C7.2 scaffold areas | ✅ Added two explained questions per area, bringing each science pilot area to three offline items; broader coverage and cohort calibration remain |
+| C6.9 | Extend the optional alternate-form learning-gain check to science | ✅ Added distinct A/B science question forms and enabled the before/after flow where the current science topic has at least two questions in each form; results remain an informal within-learner signal |
+| C6.10 | Add an applied transfer item to every science pilot area | ✅ Each C7.2 science area now has a fifth, scenario-based transfer item; wider subject coverage and cohort calibration remain |
 
 #### C7 — Domain playbooks
 | Step | Work | Status |
 |------|------|--------|
-| C7.1 | Codify early-math / algebra scaffold pack as data (not only prompts) | ⬜ |
-| C7.2 | Second thin pack (science or writing) if >40% sessions leave math | ⬜ |
-| C7.3 | Consistency checks via C8 samples | ⬜ |
+| C7.1 | Codify early-math / algebra scaffold pack as data (not only prompts) | ✅ JSON scaffold catalog selected by lesson topic and included in tutor guidance |
+| C7.2 | Second thin pack (science or writing) if >40% sessions leave math | ✅ Added a data-backed science pack after the local 53-session sample showed 39 sessions outside Math/Math Foundations; science selected because Chemistry appeared in the sample |
+| C7.3 | Consistency checks via C8 samples | ✅ C8.1/weekly reports surface representation, step sequence, understanding-check, and fade/transfer cues for math sessions; C8.3 exports include the same reviewer hints |
+| C7.4 | Add science playbook spot-check cues to C8 samples | ✅ C8.1, weekly reports, and C8.3 exports now surface non-scoring cues for scientific representation, evidence/reasoning, investigation sequence, understanding checks, and prediction/transfer |
 
 #### C8 — Eval harness
 | Step | Work | Status |
@@ -570,21 +578,22 @@ Escalation: “More help” while active; session escalates after lighter levels
 | C8.1 | Offline scorer on recorded transcripts (hint quality, Socratic fidelity, intervention timing) | ✅ heuristic scorer + `eval_auto_score` CLI · calibrate via `--compare-cohort` |
 | C8.2 | Dashboard or CLI report for weekly sample | ✅ `weekly_eval_sample` job + `eval_weekly_sample` CLI · reports under `MEDIA/eval_reports` |
 | C8.3 | Beta bridge: manual 10-session rubric (BETA P2.3) until automated | ✅ rubric + export/score/report CLI · see `docs/EVAL_RUBRIC_C8.md` |
+| C8.4 | Make automated-vs-human calibration actionable | ✅ Comparison excludes auto-scorer rows, reports per-dimension MAE/bias/agreement, and marks whether 10 matched human-labeled sessions are available; heuristic validity still needs real labels |
 
 #### C9 / C10 — Ops flags & digest-channel alerts (still single seat)
 | Step | Work | Status |
 |------|------|--------|
-| C9.1 | Flag model: distress (reuse safety), repeated fail — for **ops/support** | ⬜ |
-| C9.2 | Simple ops review list (admin), not a parent app | ⬜ |
-| C10.1 | Optional rule: email digest recipient when stuck N sessions (student opt-in) | ⬜ |
-| C10.2 | Same email channel as A5; never shame copy in student chat | ⬜ |
+| C9.1 | Flag model: distress (reuse safety), repeated fail — for **ops/support** | ✅ Scrubbed flag model; high-severity distress and 3+ incorrect graded turns among the latest 5 trigger flags |
+| C9.2 | Simple ops review list (admin), not a parent app | ✅ Filterable metadata-only queue with reviewed/resolved actions |
+| C10.1 | Optional rule: email digest recipient when stuck N sessions (student opt-in) | ✅ 3+ repeated-fail sessions in 14 days; daily job sends once per 7-day cooldown to opted-in students |
+| C10.2 | Same email channel as A5; never shame copy in student chat | ✅ Reuses A5 digest recipient/preferences and sends supportive, non-shaming email copy |
 
 **Phase 3 exit criteria (Horizon B / Wave 2 product)**
 
 - [x] Spaced review v1 appears for weak pilot skills — Phase 2.5 / beta P1.2 (**C1 done**)  
-- [ ] Spaced review depth beyond v1 (multi-subject, stronger schedule UX) (**C1+**)  
+- [x] Spaced review retention measurement beyond v1 (**C1+**) — rolling 30-day recall outcomes by planned interval; sustained lift validation remains open
 - [x] **No** multi-child or classroom product (strategy lock)  
-- [ ] Exportable standards-aligned report for **one** student (**C4**)  
+- [ ] External standards-aligned report for **one** student (**C4.1 external review remains; internal pilot CSV + narrative ship**)
 - [x] At least one assessment mode distinct from open chat (**C6**) — quick check MCQ + explanations
 - [x] Offline or weekly eval path produces quality scores on recorded sessions (**C8** ✅ · C8.3/C8.1/C8.2)  
 - [ ] Digest remains student-configured email only (A5; optional C10 on same channel)  
@@ -687,11 +696,11 @@ Apply to every phase:
 | 3.1 | Assessment modes | **C6** ✅ v1 / ⬜ depth |
 | 3.1 | Practical how-to teaching | ✅ (CS literacy guides + prompt contract) |
 | 3.1 | Learning intelligence L1–L4 | ✅ LearnerState, policy, ADI, independence |
-| 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⬜ |
+| 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⚡ Partial (C7.1 math/algebra + C7.2 science packs and C7.3/C7.4 sample cues shipped; expansion remains) |
 | 3.2 Intervention | Richer struggle signals | Phase 2 · B1 ✅ |
 | 3.2 | Graduated interventions | Phase 2 · B2 ✅ |
 | 3.2 | Affective check-ins | Phase 2 · B3 ✅; session-start Phase 2.5 · B7 ✅ |
-| 3.2 | Parent/teacher alerts | A5 digest email ✅; optional stuck email on same channel **C10** ⬜ |
+| 3.2 | Parent/teacher alerts | A5 digest email ✅; optional stuck email on same channel **C10** ✅ |
 | 3.3 Multimodal | Interactive visuals | Phase 1 · A6 ✅ |
 | 3.3 | Rendered diagrams | **Wave 2 · Phase 4 P0** ⬜ |
 | 3.3 | Image input | Phase 1 · A4 ✅ |
@@ -701,15 +710,15 @@ Apply to every phase:
 | 3.4 Voice & language | Duplex / i18n / personas | **Wave 2 · Phase 4–5** ⬜ |
 | 3.5 Progress & institutions | Parent multi-child accounts | ❌ **Never** — digest email only (A5) |
 | 3.5 | Teacher/classroom product | ❌ **Never** — institutions = per-seat subscriptions only |
-| 3.5 | Standards reports | **Wave 2 · Phase 3 · C4** (single student export) ⬜ |
-| 3.5 | Goals & plans | Phase 2.5 · **C5 lite** ✅; full **Wave 2 · C5+** (student-owned) ⬜ |
+| 3.5 | Standards reports | **Wave 2 · Phase 3 · C4** (internal CS CSV + narrative ✅; external alignment ⬜) |
+| 3.5 | Goals & plans | Phase 2.5 · **C5 lite** ✅; C5+.1 target countdown ✅; C5+.2 focused homework windows ✅ |
 | 3.5 | Portfolios / credentials | Phase 5 stretch ⬜; light challenge = G1 ✅ |
 | 3.5 | End-of-session reflection | Phase 2.5 · **B8** ✅ |
 | 3.6 Trust | Child-safe policies | Phase 0 · 0.4 ✅ |
 | 3.6 | Answer correctness | Phase 1 · A3 ✅ |
-| 3.6 | Human-in-the-loop | **Wave 2 · Phase 3 · C9** ⬜ |
+| 3.6 | Human-in-the-loop | **Wave 2 · Phase 3 · C9** ✅ Scrubbed flag generation + staff admin review queue |
 | 3.6 | Privacy by design | Phase 0 baseline ✅; deepen Phase 5 ⬜ |
-| 3.6 | Eval harness | **C8** ✅ C8.1–C8.3 · calibrate human labels next ⬜ |
+| 3.6 | Eval harness | **C8** ⚡ C8.1–C8.4 tooling shipped · human-label calibration on ≥10 matched sessions remains ⬜ |
 | 3.7 Experience | Offline / flaky network | Phase 0 · 0.3 ✅; offline packs Phase 4 ⬜ |
 | 3.7 | Session history & resume | Phase 1 · A2 ✅ |
 | 3.7 | Attachments | Phase 1 · A4 ✅; generalize Phase 4 ⬜ |
@@ -765,8 +774,8 @@ Maps to: CAPABILITIES §3.8.1–3.8.3 remaining · [`BETA_LAUNCH.md`](./BETA_LAU
 | ID | Work | PLAN | Status |
 |----|------|------|--------|
 | D.1 | Postgres + migrations on staging/prod | Phase 0 · 0.1 | ⚡ PostgreSQL CI migration/seed check added; staging/prod validation still pending |
-| D.2 | Host + HTTPS + `ALLOWED_HOSTS` / CORS / `DEBUG=0` | Beta P0 | ⬜ |
-| D.3 | Secrets out of repo; platform AI key server-side or capped proxy | Beta P0 | ⬜ |
+| D.2 | Host + HTTPS + `ALLOWED_HOSTS` / CORS / `DEBUG=0` | Beta P0 | ⚡ Self-hosted Compose/Caddy path and health check added; public host/DNS/TLS validation remains |
+| D.3 | Secrets out of repo; platform AI key server-side or capped proxy | Beta P0 | ⚡ Server-side Gemini proxy, entitlement gate, 30 requests/user/hour, 2048-token output cap; production key provisioning and shared production throttle storage remain |
 | D.4 | Real email (ESP) for digests + transactional | Beta P0 | ⬜ |
 | D.5 | Cron: `run_scheduled_jobs` (digest, review_schedule, heartbeat) | 0.5 + C1 | ⬜ |
 | D.6 | Per-student billing (Checkout or invoice) + daily AI caps | Beta P0 | ⬜ |
@@ -780,12 +789,12 @@ Maps to: CAPABILITIES §3.1.4 depth, §3.1.7–3.1.8, §3.6.5
 
 | ID | Work | PLAN epic | Status |
 |----|------|-----------|--------|
-| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⚡ Partial — cross-subject list, reasons, snooze, and bounded intervals shipped; week-focus ranking/retention measurement remain |
-| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ✅ v1 + timed / ⬜ depth (broader banks, pre/post) |
-| P.3 | Domain playbook #2 + how-to pack expansion | **C7** | ⬜ (CS how-to v1 ships outside C7) |
-| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ✅ C8.1–C8.3 · calibrate labels next |
+| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⚡ Partial — cross-subject list, reasons, snooze, bounded intervals, B8/week-focus ranking, and rolling 30-day recall measurement shipped; sustained lift validation remains |
+| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ⚡ Offline timed v1 + Math Foundations and 8 science-area banks with applied transfer items + optional alternate-form pre/post checks in both domains; wider coverage and cohort calibration remain |
+| P.3 | Domain playbook #2 + how-to pack expansion | **C7** | ⚡ Math/algebra and science packs plus C7.3/C7.4 C8 sample audits shipped; further domain and how-to expansion remains |
+| P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ⚡ C8.1–C8.4 calibration tooling shipped; heuristic validation on ≥10 matched human labels remains |
 | P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⚡ CS pilot live; multi-domain still open |
-| P.6 | Practical how-to library depth (more skills/OS paths) | how-to | ✅ v1 CS literacy · expand ⬜ |
+| P.6 | Practical how-to library depth (more skills/OS paths) | how-to | ⚡ P.6.1 adds a cross-device download-and-find procedure; more skills and OS-specific paths remain |
 
 #### Track R — Shareable progress (single learner only)
 
@@ -793,11 +802,11 @@ Maps to: CAPABILITIES §3.5.3–3.5.4, §3.2.4 · **A5 digests remain the only a
 
 | ID | Work | PLAN epic | Status |
 |----|------|-----------|--------|
-| R.1 | A5 digest polish (preview send, clearer copy, student configures recipient email) | A5 polish · Beta P2.1 | ⬜ |
-| R.2 | Optional stuck-session email on the **same** digest address (student opt-in) | **C10** | ⬜ |
-| R.3 | Standards-aligned export for **this** student | **C4** | ⬜ |
-| R.4 | Full goals/plans (exam timelines) — student-owned | **C5+** | ⬜ |
-| R.5 | Ops support flags (distress / repeated fail) — admin only | **C9** | ⬜ |
+| R.1 | A5 digest polish (preview, clearer copy, student configures recipient email) | A5 polish · Beta P2.1 | ✅ Dashboard preview is explicitly unsent; student-configured recipient and opt-in copy clarified |
+| R.2 | Optional stuck-session email on the **same** digest address (student opt-in) | **C10** | ✅ 3-session / 14-day threshold, daily job, 7-day cooldown |
+| R.3 | Standards-aligned export for **this** student | **C4** | ⚡ Internal CS pilot CSV + email-ready narrative shipped; external framework alignment remains |
+| R.4 | Full goals/plans (exam timelines) — student-owned | **C5+** | ⚡ Student target date/countdown and focused homework windows shipped; full planner remains |
+| R.5 | Ops support flags (distress / repeated fail) — admin only | **C9** | ✅ Scrubbed flag generation + staff admin review queue |
 | — | Multi-child parent accounts / classroom rosters | **C2 / C3** | ❌ never |
 
 #### Track X — Experience & multimodal polish
@@ -852,10 +861,10 @@ Wave 2c — Teach medium (Track X P0–P1)
   X.5 attachments if homework PDF demand appears
 
 Wave 2d — Shareable progress (Track R) — still one seat per learner
-  R.1 digest polish first (cheap; student configures email)
-  R.2 optional stuck email on same channel
-  R.3 single-student standards export (forwardable by email)
-  R.4 full goals planner last (lite already ships)
+  R.1 digest preview and student-owned recipient UX shipped; R.3 external standards alignment remains review-gated
+  R.2 optional stuck email on same channel ✅
+  R.3 external standards alignment (internal CS CSV + narrative ship)
+  R.4 full goals planner last (target countdown, homework windows + lite already ship)
   Never: parent multi-profile login, household SKUs, classroom dashboards
 
 Wave 2e — Scale (Tracks V + S) — post PMF signals
@@ -876,7 +885,7 @@ Wave 2e — Scale (Tracks V + S) — post PMF signals
 
 1. **Track D** — follow [`BETA_LAUNCH.md`](./BETA_LAUNCH.md) P0 (Postgres, host, email, cron, billing, caps).  
 2. **Do not re-implement** Wave 1 or §15.1a (L1–L4, C6 v1, C8, CS pilot, practical how-to).  
-3. After D is green (or in parallel if product-critical): **P.1 C1+**, **C7** playbooks / how-to expand, Track R digest polish + single-learner export.  
+3. After D is green (or in parallel if product-critical): **P.1 C1+**, **C7** playbooks / how-to expand, and Track R single-learner export.
 4. Optional digests: student configures recipient email—**not** a parent account product. Multi-child families buy multiple seats.  
 
 ### Historical bootstrap checklist (Wave 1 — completed)
@@ -959,6 +968,31 @@ Track as features land:
 |------|------|
 | 2026-09-10 | **Wave 2 intelligence slice documented:** L1–L4, C6 v1, C8.1–C8.3, CS pilot (unit→subtopic), practical how-to teaching, suggestion chips. New §15.1a. Design principle: show how for practical skills. Immediate next remains Track D deploy. |
 | 2026-10-02 | **D.1 PostgreSQL migration discipline:** added CI against PostgreSQL 16 for model/migration drift, fresh-database migration, and seed verification. Staging/prod provisioning and validation remain an external deployment step. |
+| 2026-10-02 | **D.2 hosting foundation:** added a self-managed Docker Compose API + Caddy HTTPS reverse-proxy option, API liveness health check, and host/DNS/origin setup instructions. Public deployment validation remains pending. |
+| 2026-10-03 | **D.3 platform AI key custody:** moved platform Gemini chat, text, vision, and TTS through an authenticated server proxy; gated by plan entitlement, limited to 30 requests/user/hour and 2048 output tokens. Set `PLATFORM_GEMINI_API_KEY` in the host secret manager; configure shared cache-backed throttling before scaling API workers. |
+| 2026-10-02 | **C1+.4 review ranking:** recent B8 “practice again soon” reflections bring the matching subject/topic review forward; matching the student's current focus gives its review a small priority lift. The focus text is used only as a ranking signal. Retention measurement remains open. |
+| 2026-10-02 | **C4.1 pilot crosswalk:** formalized all 47 internal CS pilot codes, attached framework provenance to API/mastery and generated frontend graph payloads, and documented that they are not external standards. External mapping awaits framework/license selection and required review. |
+| 2026-10-03 | **C4.2 single-learner export:** added an authenticated dashboard CSV download of the signed-in student's CS pilot skill progress, mastery estimate, evidence counts, and framework provenance. CSV identifies these as internal references; external alignment review remains open. |
+| 2026-10-03 | **C4.3 shareable narrative:** added an authenticated plain-text progress summary download alongside the CSV. The summary uses single-learner evidence, warm language, and an explicit internal-framework caveat; it does not send email. External standards selection and review remain open. |
+| 2026-10-03 | **C5+.1 target date:** added optional student-owned target label/date fields, API persistence, a migration, and a dashboard countdown for dates in the past, today, or future. It stays a lightweight orientation cue and does not create a guardian planner or automatically alter lessons. |
+| 2026-10-03 | **C5+.2 homework windows:** added student-selected 15/25/40-minute focused lesson launches, an in-lesson countdown, time-aware tutor guidance, and a learner-controlled wrap-up/continue choice at expiry. The window does not end the lesson or discard work. |
+| 2026-10-03 | **C7.1 math/algebra scaffolds:** added a structured topic-based scaffold catalog (fractions, place value/decimals, operations, ratios, variables, and equations) that provides a core idea, representation, suggested sequence, check question, and fade-out guidance to the tutor. |
+| 2026-10-03 | **C7.3 sample consistency cues:** extended C8 session and weekly reports with non-scoring math playbook surface cues (representation, sequence, understanding check, and fade/transfer) and added the cues to C8.3 reviewer hints. They guide human spot-checks and are explicitly not a teaching-quality grade. |
+| 2026-10-03 | **C7.2 science scaffolds:** added a second topic-based data pack for matter, reactions, forces, energy, ecosystems, cells, investigations, and Earth systems. The local 53-session mix had 39 sessions outside Math/Math Foundations and included Chemistry, meeting the C7.2 trigger and informing the pack choice. |
+| 2026-10-03 | **C6.5 assessment bank breadth:** added one medium/hard or transfer item for each of the 8 Math Foundations pilot skills, taking each skill from two items to three while retaining deterministic grading and offline explanations. Broader subject coverage and pre/post gain measurement remain open. |
+| 2026-10-03 | **C6.6 science checks:** added an initial offline question for each C7.2 science scaffold area, with topic matching and an explanation after every answer. Deeper science item banks and pre/post gain measurement remain open. |
+| 2026-10-03 | **C6.7 thin learning-gain pilot:** optional Math Foundations baseline and follow-up checks use parallel question forms and show the percentage-point change with an informal-signal note; cohort calibration remains open. |
+| 2026-10-04 | **C6.8 science assessment depth:** added two explained offline questions in each of the eight C7.2 science scaffold areas, bringing each pilot area to three questions; broader science coverage and cohort calibration remain open. |
+| 2026-10-04 | **C6.9 science learning-gain pilot:** added parallel science question forms and enabled optional before/after checks for science topics with at least two items per form; gain is still an informal within-learner signal requiring cohort calibration. |
+| 2026-10-04 | **C6.10 science transfer checks:** added one scenario-based transfer question to each of the eight science pilot areas; broader subject coverage and cohort calibration remain open. |
+| 2026-10-04 | **R.1 digest polish:** clarified that students choose the recipient and control the shared digest/stuck-note opt-in; the dashboard now generates an explicitly unsent preview instead of marking it delivered. Live email remains part of Track D. |
+| 2026-10-04 | **P.6 practical how-to depth:** added a cross-device guide for downloading a trusted file, finding it in Downloads, checking the source/type, and organizing or removing it safely; broader skill and OS coverage remains open. |
+| 2026-10-04 | **C8.4 calibration diagnostics:** auto-vs-human reports now exclude automated rows from the human-label cohort and summarize per-dimension MAE, score bias, agreement, and the 10-session readiness threshold; validation still requires matched human labels. |
+| 2026-10-04 | **C7.4 science sample cues:** C8.1, weekly summaries, and C8.3 manual exports now surface non-scoring science playbook cues for scientific representations, evidence/reasoning, investigation sequence, understanding checks, and prediction/transfer. Cue presence is not a quality score. |
+| 2026-10-03 | **C9.1 support flag model:** high-severity safety distress and repeated learning difficulty (3+ incorrect graded turns among the latest five) now create scrubbed ops flags; flags contain no student utterance text. Admin review list remains C9.2. |
+| 2026-10-03 | **C9.2 internal review queue:** added a staff-only Django admin list with status/category/severity filters and bulk reviewed/resolved actions. Flag details remain metadata-only and immutable in the queue. |
+| 2026-10-03 | **C10.1–C10.2 stuck-session email:** added a daily job that sends a gentle support note to the existing A5 digest recipient after repeated-fail flags span at least 3 sessions in 14 days, only when digest opt-in is enabled. Delivery is capped to one email per seven days, and the dashboard discloses that the opt-in includes these notes. |
+| 2026-10-03 | **C1+.5 spaced-recall measurement:** review completion now stores outcome, scheduled interval, and due-time delta. The review API and dashboard surface the rolling 30-day recall rate after at least three attempts, with interval-band summaries available for calibration; sustained learning lift remains unvalidated. |
 | 2026-09-01 | **Strategy lock:** Kindling is permanently **one student = one seat**. C2 multi-child and C3 classroom marked ❌ never; digests stay student-configured email (A5). Schools/multi-child parents buy separate seats. Wave 2 Track R reframed to shareable single-learner progress only. |
 | 2026-09-01 | **Wave 2** defined: compared CAPABILITIES §3 pending items vs shipped Phase 0–2.5; expanded Phase 3 epic sketches (C1+, C4–C10), Phase 4/5 status table; new §15 Wave 2 tracks (D deploy, P pedagogy, R shareable progress, X experience, V voice, S scale). Marked C5 lite + G1 complete in Phase 2.5. |
 | 2026-08-31 | Phase 2.5 Epic **G1** light spark challenge: Dashboard card, 3 solid turns, celebration chips, `challenge.*` events. |

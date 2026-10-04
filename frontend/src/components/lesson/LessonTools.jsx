@@ -64,6 +64,10 @@ export default function LessonTools({
   assessmentActive = false,
   assessmentScore = null,
   onStartAssessment,
+  prePostAvailable = false,
+  prePostBaseline = null,
+  onStartPrePostBaseline,
+  onStartPrePostFollowUp,
   onExitAssessment,
   onExitIntervention,
   onAcceptIntervention,
@@ -382,6 +386,27 @@ export default function LessonTools({
                 <ClipboardCheck size={14} />
                 Quick check
               </button>
+            )}
+          </div>
+        )}
+        {prePostAvailable && !assessmentActive && (
+          <div className="assessment-tools-block pre-post-check-tools">
+            {prePostBaseline ? (
+              <>
+                <p className="intervention-tools-text">
+                  Before check saved: {prePostBaseline.correct}/{prePostBaseline.total} ({prePostBaseline.percent}%). Take the after check when you finish learning.
+                </p>
+                <button type="button" className="guide-btn library-example-btn" onClick={onStartPrePostFollowUp} disabled={isArchiveView || interventionActive || multiStepActive}>
+                  <ClipboardCheck size={14} /> After-lesson check
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="intervention-tools-text">Optional before-and-after check with a fresh question set after the lesson.</p>
+                <button type="button" className="guide-btn library-example-btn" onClick={onStartPrePostBaseline} disabled={isArchiveView || interventionActive || multiStepActive}>
+                  <ClipboardCheck size={14} /> Before-and-after check
+                </button>
+              </>
             )}
           </div>
         )}

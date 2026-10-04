@@ -55,6 +55,28 @@ import "../../styles/lesson.css";
 
 export default function Lesson({ activeLesson, student, subjects }) {
   const subjectName = activeLesson?.subject || "Computer Science";
+  const requestedHomeworkWindow = Number(activeLesson?.homeworkWindowMinutes);
+  const homeworkWindowMinutes = [15, 25, 40].includes(requestedHomeworkWindow)
+    ? requestedHomeworkWindow
+    : null;
+  const [homeworkWindowSecondsLeft, setHomeworkWindowSecondsLeft] = useState(
+    homeworkWindowMinutes ? homeworkWindowMinutes * 60 : null
+  );
+  const [homeworkWindowNoticeDismissed, setHomeworkWindowNoticeDismissed] =
+    useState(false);
+
+  useEffect(() => {
+    if (!homeworkWindowMinutes) return undefined;
+    const deadline = Date.now() + homeworkWindowMinutes * 60 * 1000;
+    const updateRemaining = () => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setHomeworkWindowSecondsLeft(remaining);
+      if (remaining === 0) window.clearInterval(timer);
+    };
+    const timer = window.setInterval(updateRemaining, 1000);
+    updateRemaining();
+    return () => window.clearInterval(timer);
+  }, [homeworkWindowMinutes]);
   const studentName = student?.name?.trim() || "Student";
   const reviewMode = Boolean(activeLesson?.reviewMode && activeLesson?.reviewSkill);
   const reviewSkill = activeLesson?.reviewSkill || null;
@@ -497,6 +519,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
     interventionActive: intervention.status === "active",
     interventionContext: intervention.context,
     multiStepSession: multiStep.multiStepSession,
+    homeworkWindowMinutes,
     onTutorReply: handleTutorReply,
     onSessionReset: stopSpeaking,
     onSessionBegin: handleSessionBegin,
@@ -629,6 +652,9 @@ export default function Lesson({ activeLesson, student, subjects }) {
         skillSlugs,
         unit: unitName || opts.unit || "",
         timed: Boolean(opts.timed),
+        form: opts.form || "",
+        purpose: opts.purpose || "practice",
+        baseline: opts.baseline || null,
       });
       setMobilePanel("chat");
     },
@@ -1160,6 +1186,10 @@ export default function Lesson({ activeLesson, student, subjects }) {
           student={student}
           curriculum={student?.curriculum}
           lessonGoals={lessonGoals}
+          homeworkWindowMinutes={homeworkWindowMinutes}
+          homeworkWindowSecondsLeft={homeworkWindowSecondsLeft}
+          onDismissHomeworkWindow={() => setHomeworkWindowNoticeDismissed(true)}
+          homeworkWindowNoticeDismissed={homeworkWindowNoticeDismissed}
           messages={messages}
           isStreaming={isStreaming}
           isSpeaking={isSpeaking}
@@ -1427,6 +1457,10 @@ export default function Lesson({ activeLesson, student, subjects }) {
           onStartMultiStep={handleStartMultiStep}
           onExitMultiStep={handleExitMultiStep}
           assessmentAvailable={assessment.assessmentAvailable}
+          prePostAvailable={assessment.prePostAvailable}
+          prePostBaseline={assessment.prePostBaseline}
+          onStartPrePostBaseline={() => handleStartAssessment({ source: "pre_post_baseline", form: "A", purpose: "pre" })}
+          onStartPrePostFollowUp={() => assessment.startPrePostFollowUp()}
           assessmentActive={
             assessment.assessmentActive || assessment.assessmentCompleted
           }

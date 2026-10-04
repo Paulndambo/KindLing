@@ -134,6 +134,7 @@ def run_weekly_eval_sample(
             "sessionId": r.get("sessionId"),
             "scores": r.get("scores") or {},
             "weightedMean": r.get("weightedMean"),
+            "playbookAudit": r.get("playbookAudit"),
         }
         for r in results
     ]

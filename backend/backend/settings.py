@@ -35,6 +35,7 @@ if not SECRET_KEY:
     if not DEBUG:
         raise RuntimeError("SECRET_KEY must be set when DEBUG is disabled.")
     SECRET_KEY = "django-insecure-local-development-only"
+PLATFORM_GEMINI_API_KEY: str = os.environ.get("PLATFORM_GEMINI_API_KEY", "").strip()
 ALLOWED_HOSTS: List[str] = env_list("ALLOWED_HOSTS", ["localhost", "127.0.0.1", "[::1]"])
 if not DEBUG and not ALLOWED_HOSTS:
     raise RuntimeError("ALLOWED_HOSTS must be set when DEBUG is disabled.")
@@ -159,14 +160,15 @@ STORAGES = {
 # User uploads (homework photos — Epic A4). Local filesystem for dev.
 MEDIA_URL: str = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# A 5 MiB homework image expands to about 6.7 MiB when sent as base64 JSON.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 
 # Homework image limits (also enforced in learning.homework)
 KINDLING_HOMEWORK_MAX_BYTES: int = 5 * 1024 * 1024
 KINDLING_HOMEWORK_RETENTION_DAYS: int = 30
 
-# Multi-subject creation (POST /api/curriculum/subjects/). Off while Computer
-# Science is the sole pilot subject — flip True to re-enable custom subjects.
-ALLOW_CUSTOM_SUBJECTS: bool = False
+# Allow students to create subjects beyond the original Computer Science pilot.
+ALLOW_CUSTOM_SUBJECTS: bool = True
 
 # ---------------------------------------------------------------------------
 # Email — parent digests (Epic A5). Console backend for local/dev.
@@ -227,6 +229,7 @@ REST_FRAMEWORK: Dict[str, Any] = {
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ),
+    "DEFAULT_THROTTLE_RATES": {"platform_ai": "30/hour"},
 }
 
 SIMPLE_JWT: Dict[str, Any] = {

@@ -35,6 +35,7 @@ export {
   getLearningProfile,
   getSkillCatalog,
   getSkillPath,
+  downloadStandardsReport,
   getWorkedExamples,
   getMisconceptionCatalog,
   detectMisconceptionsApi,

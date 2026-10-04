@@ -22,7 +22,14 @@ from learning.mastery_engine import (
     prereq_readiness,
     skill_mastery_to_dict,
 )
-from learning.models import LearningProfile, SkillMastery, SkillReviewItem
+from learning.models import (
+    LearningEvent,
+    LearningEventType,
+    LearningProfile,
+    SkillMastery,
+    SkillReviewAttempt,
+    SkillReviewItem,
+)
 
 # Tunables
 STRUGGLE_WINDOW_DAYS = 7
@@ -38,6 +45,11 @@ REVIEW_INTERVAL_STEPS = (1.0, 3.0, 7.0, 14.0, 30.0, 60.0)
 # empty slots and other due skills still exist.
 MAX_PER_DOMAIN = 4
 MAX_PER_SUBJECT = 6
+REFLECTION_LOOKBACK_DAYS = 14
+WEEK_FOCUS_PRIORITY_BONUS = 0.12
+_FOCUS_STOP_WORDS = frozenset(
+    "a an and are at be by focus for from how i in it me my of on or the this to verify week we with".split()
+)
 
 MATH_SUBJECT = "Math Foundations"
 CS_SUBJECT = "Computer Science"
@@ -151,7 +163,62 @@ def _priority_for(sm: SkillMastery, reasons: List[str]) -> float:
         p += 0.15
     if "recent_struggle" in reasons:
         p += 0.2
+    if "practice_requested" in reasons:
+        p += 0.25
+    if "week_focus" in reasons:
+        p += WEEK_FOCUS_PRIORITY_BONUS
     return round(min(2.0, p), 3)
+
+
+def _normalized_label(value: str) -> str:
+    return " ".join(str(value or "").casefold().split())
+
+
+def _focus_tokens(value: str) -> set[str]:
+    return {
+        token.strip(".,!?;:()[]{}\"'`")
+        for token in str(value or "").casefold().split()
+        if len(token.strip(".,!?;:()[]{}\"'`")) >= 3
+        and token.strip(".,!?;:()[]{}\"'`") not in _FOCUS_STOP_WORDS
+    }
+
+
+def _matches_week_focus(week_focus: str, *labels: str) -> bool:
+    focus = _normalized_label(week_focus)
+    if not focus:
+        return False
+    for label in labels:
+        normalized = _normalized_label(label)
+        if normalized and (normalized in focus or focus in normalized):
+            return True
+        if _focus_tokens(focus) & _focus_tokens(label):
+            return True
+    return False
+
+
+def _recent_practice_topics(profile: LearningProfile, *, now=None) -> set[tuple[str, str]]:
+    """Subject/topic pairs the learner explicitly asked to practice again."""
+    if not profile.student_id:
+        return set()
+    now = now or timezone.now()
+    since = now - timedelta(days=REFLECTION_LOOKBACK_DAYS)
+    rows = LearningEvent.objects.filter(
+        student=profile.student,
+        event_type=LearningEventType.SESSION_REFLECT,
+        timestamp__gte=since,
+    ).only("payload")
+    topics: set[tuple[str, str]] = set()
+    for row in rows:
+        payload = row.payload if isinstance(row.payload, dict) else {}
+        if (
+            payload.get("phase") == "response"
+            and payload.get("nextId") == "practice"
+            and not payload.get("skipped")
+        ):
+            topic = _normalized_label(payload.get("topic"))
+            if topic:
+                topics.add((_normalized_label(payload.get("subject")), topic))
+    return topics
 
 
 def select_review_candidates(
@@ -166,6 +233,8 @@ def select_review_candidates(
     """
     now = now or timezone.now()
     enrolled = _enrolled_subject_keys(profile)
+    practice_topics = _recent_practice_topics(profile, now=now)
+    week_focus = getattr(getattr(profile, "student", None), "week_focus", "")
     masteries = list(
         SkillMastery.objects.filter(profile=profile)
         .select_related("skill")
@@ -189,6 +258,18 @@ def select_review_candidates(
             links=grouped.get(sm.skill_id, []),
             enrolled=enrolled,
         )
+        practice_key = (_normalized_label(subject), _normalized_label(topic))
+        if practice_key in practice_topics or ("", practice_key[1]) in practice_topics:
+            reasons.insert(0, "practice_requested")
+        if _matches_week_focus(
+            week_focus,
+            subject,
+            topic,
+            sm.skill.name,
+            sm.skill.short_label,
+            fallback_subject_for_skill(sm.skill),
+        ):
+            reasons.append("week_focus")
         out.append(
             {
                 "skill": sm.skill,
@@ -265,7 +346,11 @@ def schedule_reviews_for_profile(
                 existing.status = SkillReviewItem.Status.DUE
                 existing.due_at = now
                 existing.interval_days = min(existing.interval_days or 1.0, 1.0)
-            elif existing.due_at > now and reason in ("streak", "recent_struggle"):
+            elif existing.due_at > now and reason in (
+                "streak",
+                "recent_struggle",
+                "practice_requested",
+            ):
                 # Struggle → pull forward to due now
                 existing.due_at = now
                 existing.status = SkillReviewItem.Status.DUE
@@ -573,6 +658,9 @@ def complete_review(
     ease = float(item.ease or DEFAULT_EASE)
     interval = float(item.interval_days or 1.0)
     reps = int(item.repetitions or 0)
+    scheduled_due_at = item.due_at
+    due_delta_hours = round((now - scheduled_due_at).total_seconds() / 3600, 2)
+    planned_interval_days = interval
 
     if outcome == "success":
         reps += 1
@@ -606,6 +694,17 @@ def complete_review(
     item.snoozed_until = None
     item.status = status
     item.save()
+
+    SkillReviewAttempt.objects.create(
+        profile=profile,
+        skill=item.skill,
+        review_item=item,
+        outcome=outcome,
+        scheduled_due_at=scheduled_due_at,
+        completed_at=now,
+        due_delta_hours=due_delta_hours,
+        planned_interval_days=planned_interval_days,
+    )
 
     easier = None
     if outcome == "fail":
@@ -646,6 +745,9 @@ def complete_review(
         "outcome": outcome,
         "nextDueAt": item.due_at.isoformat(),
         "easierSkillSlug": easier,
+        "scheduledDueAt": scheduled_due_at.isoformat(),
+        "dueDeltaHours": due_delta_hours,
+        "plannedIntervalDays": planned_interval_days,
     }
 
 
@@ -655,7 +757,7 @@ def build_reviews_payload(
     refresh: bool = True,
 ) -> Dict[str, Any]:
     if not profile:
-        return {"due": [], "count": 0, "hasDue": False}
+        return {"due": [], "count": 0, "hasDue": False, "retention": empty_retention_summary()}
     due = list_due_reviews(profile, refresh=refresh)
     due_only = [d for d in due if d.get("isDue")]
     coverage = review_coverage(due)
@@ -669,4 +771,58 @@ def build_reviews_payload(
         "domainCount": coverage["domainCount"],
         "subjects": coverage["subjects"],
         "domains": coverage["domains"],
+        "retention": review_retention_summary(profile),
+    }
+
+
+def empty_retention_summary() -> Dict[str, Any]:
+    return {
+        "windowDays": 30,
+        "attempts": 0,
+        "successful": 0,
+        "successRatePct": None,
+        "intervalBands": [],
+    }
+
+
+def review_retention_summary(profile: LearningProfile, *, now=None) -> Dict[str, Any]:
+    """Summarize recall outcomes by planned spacing interval over 30 days."""
+    now = now or timezone.now()
+    attempts = list(
+        SkillReviewAttempt.objects.filter(
+            profile=profile,
+            completed_at__gte=now - timedelta(days=30),
+            completed_at__lte=now,
+        ).order_by("-completed_at")
+    )
+    if not attempts:
+        return empty_retention_summary()
+
+    bands = {
+        "1–3 days": [],
+        "4–14 days": [],
+        "15+ days": [],
+    }
+    for attempt in attempts:
+        interval = float(attempt.planned_interval_days or 1)
+        label = "1–3 days" if interval <= 3 else "4–14 days" if interval <= 14 else "15+ days"
+        bands[label].append(attempt)
+
+    def summarize(rows):
+        successful = sum(row.outcome == SkillReviewAttempt.Outcome.SUCCESS for row in rows)
+        return {
+            "attempts": len(rows),
+            "successful": successful,
+            "successRatePct": round(successful * 100 / len(rows)) if rows else None,
+        }
+
+    overall = summarize(attempts)
+    return {
+        "windowDays": 30,
+        **overall,
+        "intervalBands": [
+            {"label": label, **summarize(rows)}
+            for label, rows in bands.items()
+            if rows
+        ],
     }

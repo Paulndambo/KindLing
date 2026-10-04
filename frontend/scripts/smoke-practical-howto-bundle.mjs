@@ -3657,10 +3657,10 @@ function getKeyEntry(providerId) {
   };
 }
 function getPlatformGeminiKey() {
-  return String(import.meta.env.VITE_GEMINI_API_KEY || "").trim();
+  return ""; // Platform Gemini is server-side; the bundle must contain no key.
 }
 function hasPlatformGemini() {
-  return Boolean(getPlatformGeminiKey());
+  return true;
 }
 
 // src/services/ai/preferences.js

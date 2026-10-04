@@ -291,7 +291,7 @@ Resume snapshots can restore intervention / tools / personalization context as â
 
 `kindling_platform` stores **plan entitlements** and **routing preferences** (modes, model choices, key fingerprints) â€” **not** raw API secrets. Pilot plans: Spark / Ember / Forge.
 
-Platform default remains Gemini via `VITE_GEMINI_API_KEY` for zero-config demos.
+Platform Gemini credentials live in backend `PLATFORM_GEMINI_API_KEY` configuration and all platform requests pass through the authenticated, entitlement-gated API proxy. The browser handles user-provided BYOK credentials only.
 
 ---
 

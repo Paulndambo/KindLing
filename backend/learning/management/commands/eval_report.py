@@ -51,6 +51,7 @@ class Command(BaseCommand):
                 "scorer": r.scorer,
                 "scoredAt": r.scored_at.isoformat() if r.scored_at else None,
                 "overallNotes": r.overall_notes,
+                "playbookAudit": (r.evidence or {}).get("playbookAudit"),
             }
             for r in rows
         ]

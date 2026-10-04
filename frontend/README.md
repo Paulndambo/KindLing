@@ -25,7 +25,6 @@ npm install
 Create `.env` (optional if you only use BYOK in **Settings → AI providers**):
 
 ```env
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
 VITE_API_URL=http://127.0.0.1:8000
 ```
 
@@ -41,7 +40,6 @@ Open the URL Vite prints (usually http://localhost:5173). Run the Django API in 
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_GEMINI_API_KEY` | Platform default Gemini (chat / TTS / vision) |
 | `VITE_API_URL` | Django API base (recommended) |
 | `VITE_LEARNING_API_URL` | Optional override for event ingest |
 | `VITE_TELEMETRY` | Set `false` to disable client error/metric posts |

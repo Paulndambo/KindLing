@@ -13,6 +13,7 @@ class StudentProfileAdmin(admin.ModelAdmin):
         "is_onboarded",
         "digest_opt_in",
         "week_focus",
+        "target_date",
     )
     list_filter = ("is_onboarded", "digest_opt_in", "grade")
     search_fields = ("name", "user__email", "school_name", "family_email", "week_focus", "goal")
@@ -33,6 +34,8 @@ class StudentProfileAdmin(admin.ModelAdmin):
         "focus_subjects",
         "goal",
         "week_focus",
+        "target_label",
+        "target_date",
         "is_onboarded",
         "digest_opt_in",
         "family_email",

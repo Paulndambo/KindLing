@@ -43,7 +43,7 @@ class SubjectListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         from django.conf import settings
 
-        # Multi-subject creation gated off while Computer Science is sole pilot
+        # Keep the creation gate configurable for staged rollouts.
         if not getattr(settings, "ALLOW_CUSTOM_SUBJECTS", False):
             return Response(
                 {

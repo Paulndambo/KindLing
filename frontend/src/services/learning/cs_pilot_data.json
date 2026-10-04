@@ -1,5 +1,251 @@
 {
   "PILOT_SUBJECT": "Computer Science",
+  "standardFramework": {
+    "id": "kindling.cs-pilot.v1",
+    "name": "Kindling Computer Science Pilot",
+    "version": "1.0",
+    "scope": "Computer Science pilot layers L0–L5",
+    "source": "Computer Science.MD",
+    "alignmentStatus": "internal_reference",
+    "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+  },
+  "standardCrosswalk": [
+    {
+      "code": "CS.L0.1",
+      "skillSlug": "cs.l0.tech_basics",
+      "skillName": "Understanding technology"
+    },
+    {
+      "code": "CS.L0.2",
+      "skillSlug": "cs.l0.what_is_computer",
+      "skillName": "What is a computer?"
+    },
+    {
+      "code": "CS.L0.3",
+      "skillSlug": "cs.l0.computer_types",
+      "skillName": "Types of computers"
+    },
+    {
+      "code": "CS.L0.4",
+      "skillSlug": "cs.l0.hardware",
+      "skillName": "Computer hardware"
+    },
+    {
+      "code": "CS.L0.5",
+      "skillSlug": "cs.l0.software",
+      "skillName": "Computer software"
+    },
+    {
+      "code": "CS.L0.6",
+      "skillSlug": "cs.l0.files_folders",
+      "skillName": "Files & folders"
+    },
+    {
+      "code": "CS.L0.7",
+      "skillSlug": "cs.l0.operate_computer",
+      "skillName": "Operating a computer"
+    },
+    {
+      "code": "CS.L0.8",
+      "skillSlug": "cs.l0.internet_literacy",
+      "skillName": "Internet literacy"
+    },
+    {
+      "code": "CS.L0.9",
+      "skillSlug": "cs.l0.digital_safety",
+      "skillName": "Digital safety"
+    },
+    {
+      "code": "CS.L1.1",
+      "skillSlug": "cs.l1.problem_solving",
+      "skillName": "Problem solving"
+    },
+    {
+      "code": "CS.L1.2",
+      "skillSlug": "cs.l1.algorithms",
+      "skillName": "Algorithms (thinking)"
+    },
+    {
+      "code": "CS.L1.3",
+      "skillSlug": "cs.l1.abstraction",
+      "skillName": "Abstraction"
+    },
+    {
+      "code": "CS.L1.4",
+      "skillSlug": "cs.l1.pattern_recognition",
+      "skillName": "Pattern recognition"
+    },
+    {
+      "code": "CS.L1.5",
+      "skillSlug": "cs.l1.logical_thinking",
+      "skillName": "Logical thinking"
+    },
+    {
+      "code": "CS.L1.6",
+      "skillSlug": "cs.l1.representation",
+      "skillName": "Computational representation"
+    },
+    {
+      "code": "CS.L2.1",
+      "skillSlug": "cs.l2.history",
+      "skillName": "History of computing"
+    },
+    {
+      "code": "CS.L2.2",
+      "skillSlug": "cs.l2.number_systems",
+      "skillName": "Number systems"
+    },
+    {
+      "code": "CS.L2.3",
+      "skillSlug": "cs.l2.data_representation",
+      "skillName": "Data representation"
+    },
+    {
+      "code": "CS.L2.4",
+      "skillSlug": "cs.l2.boolean",
+      "skillName": "Boolean algebra"
+    },
+    {
+      "code": "CS.L2.5",
+      "skillSlug": "cs.l2.digital_logic",
+      "skillName": "Digital logic"
+    },
+    {
+      "code": "CS.L2.6",
+      "skillSlug": "cs.l2.how_computers_work",
+      "skillName": "How a computer actually works"
+    },
+    {
+      "code": "CS.L3.1",
+      "skillSlug": "cs.l3.prog_concepts",
+      "skillName": "Programming concepts"
+    },
+    {
+      "code": "CS.L3.2",
+      "skillSlug": "cs.l3.variables",
+      "skillName": "Variables"
+    },
+    {
+      "code": "CS.L3.3",
+      "skillSlug": "cs.l3.types",
+      "skillName": "Primitive types"
+    },
+    {
+      "code": "CS.L3.4",
+      "skillSlug": "cs.l3.operators",
+      "skillName": "Operators"
+    },
+    {
+      "code": "CS.L3.5",
+      "skillSlug": "cs.l3.control_flow",
+      "skillName": "Control flow"
+    },
+    {
+      "code": "CS.L3.6",
+      "skillSlug": "cs.l3.functions",
+      "skillName": "Functions"
+    },
+    {
+      "code": "CS.L3.7",
+      "skillSlug": "cs.l3.data_structures_intro",
+      "skillName": "Data structures (intro)"
+    },
+    {
+      "code": "CS.L3.8",
+      "skillSlug": "cs.l3.debugging",
+      "skillName": "Errors & debugging"
+    },
+    {
+      "code": "CS.L3.9",
+      "skillSlug": "cs.l3.files_io",
+      "skillName": "Program files & I/O"
+    },
+    {
+      "code": "CS.L3.10",
+      "skillSlug": "cs.l3.modules",
+      "skillName": "Modules & packages"
+    },
+    {
+      "code": "CS.L4.1",
+      "skillSlug": "cs.l4.algorithm_analysis",
+      "skillName": "Algorithm analysis"
+    },
+    {
+      "code": "CS.L4.2",
+      "skillSlug": "cs.l4.searching",
+      "skillName": "Searching"
+    },
+    {
+      "code": "CS.L4.3",
+      "skillSlug": "cs.l4.sorting",
+      "skillName": "Sorting"
+    },
+    {
+      "code": "CS.L4.4",
+      "skillSlug": "cs.l4.fundamental_ds",
+      "skillName": "Fundamental data structures"
+    },
+    {
+      "code": "CS.L4.5",
+      "skillSlug": "cs.l4.trees",
+      "skillName": "Trees"
+    },
+    {
+      "code": "CS.L4.6",
+      "skillSlug": "cs.l4.graphs",
+      "skillName": "Graphs"
+    },
+    {
+      "code": "CS.L4.7",
+      "skillSlug": "cs.l4.algorithmic_paradigms",
+      "skillName": "Algorithmic paradigms"
+    },
+    {
+      "code": "CS.L4.8",
+      "skillSlug": "cs.l4.advanced_algorithms",
+      "skillName": "Advanced algorithms"
+    },
+    {
+      "code": "CS.L5.1",
+      "skillSlug": "cs.l5.math_foundations",
+      "skillName": "Mathematics foundations"
+    },
+    {
+      "code": "CS.L5.2",
+      "skillSlug": "cs.l5.discrete_math",
+      "skillName": "Discrete mathematics"
+    },
+    {
+      "code": "CS.L5.3",
+      "skillSlug": "cs.l5.proof_techniques",
+      "skillName": "Proof techniques"
+    },
+    {
+      "code": "CS.L5.4",
+      "skillSlug": "cs.l5.combinatorics",
+      "skillName": "Combinatorics"
+    },
+    {
+      "code": "CS.L5.5",
+      "skillSlug": "cs.l5.probability",
+      "skillName": "Probability"
+    },
+    {
+      "code": "CS.L5.6",
+      "skillSlug": "cs.l5.statistics",
+      "skillName": "Statistics"
+    },
+    {
+      "code": "CS.L5.7",
+      "skillSlug": "cs.l5.linear_algebra",
+      "skillName": "Linear algebra"
+    },
+    {
+      "code": "CS.L5.8",
+      "skillSlug": "cs.l5.calculus",
+      "skillName": "Calculus"
+    }
+  ],
   "skills": [
     {
       "slug": "cs.l0.tech_basics",
@@ -7,6 +253,18 @@
       "shortLabel": "Tech basics",
       "domain": "cs_literacy",
       "description": "What is technology?; What is information?; What is data?; What is a digital device?; Analog vs digital; Digital information; Digital representation; Computers in everyday life; Examples of computers; Why computers exist; +2 more",
+      "standardCodes": [
+        "CS.L0.1"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.35,
       "pTransit": 0.16,
       "pSlip": 0.08,
@@ -19,6 +277,18 @@
       "shortLabel": "Computer model",
       "domain": "cs_literacy",
       "description": "Definition of a computer; Input; Processing; Output; Storage; Communication; Hardware; Software; Users; Computer systems",
+      "standardCodes": [
+        "CS.L0.2"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.3,
       "pTransit": 0.15,
       "pSlip": 0.08,
@@ -36,6 +306,18 @@
       "shortLabel": "Device types",
       "domain": "cs_literacy",
       "description": "Desktop computers; Laptops; Tablets; Smartphones; Servers; Mainframes; Supercomputers; Embedded computers; Microcontrollers; Game consoles; +4 more",
+      "standardCodes": [
+        "CS.L0.3"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
@@ -53,6 +335,18 @@
       "shortLabel": "Hardware",
       "domain": "cs_literacy",
       "description": "CPU; RAM; Storage; Motherboard; GPU; Power supply; Network interface; Cooling; Display; Keyboard; +10 more",
+      "standardCodes": [
+        "CS.L0.4"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.22,
       "pTransit": 0.13,
       "pSlip": 0.09,
@@ -70,6 +364,18 @@
       "shortLabel": "Software",
       "domain": "cs_literacy",
       "description": "Operating systems; Applications; Drivers; Utilities; Firmware; System software; Application software; Files; Processes; Programs",
+      "standardCodes": [
+        "CS.L0.5"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.22,
       "pTransit": 0.13,
       "pSlip": 0.09,
@@ -91,6 +397,18 @@
       "shortLabel": "Files",
       "domain": "cs_literacy",
       "description": "Files; File names; File extensions; Directories; Paths; File types; File permissions; Copying; Moving; Renaming; +4 more",
+      "standardCodes": [
+        "CS.L0.6"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
@@ -108,6 +426,18 @@
       "shortLabel": "Using a PC",
       "domain": "cs_literacy",
       "description": "Desktop environments; Windows/Linux/macOS concepts; Applications; Windows; Menus; Settings; Installing software; Updating software; Uninstalling software; Basic troubleshooting",
+      "standardCodes": [
+        "CS.L0.7"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
@@ -129,6 +459,18 @@
       "shortLabel": "Internet",
       "domain": "cs_literacy",
       "description": "Internet; Web; Browser; Search engine; Website; URL; Domain; Web page; Hyperlink; Download; +4 more",
+      "standardCodes": [
+        "CS.L0.8"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.28,
       "pTransit": 0.14,
       "pSlip": 0.08,
@@ -150,6 +492,18 @@
       "shortLabel": "Safety",
       "domain": "cs_literacy",
       "description": "Passwords; MFA; Phishing; Malware; Scams; Privacy; Personal data; Digital identity; Safe browsing; Social engineering; +1 more",
+      "standardCodes": [
+        "CS.L0.9"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.24,
       "pTransit": 0.13,
       "pSlip": 0.08,
@@ -167,6 +521,18 @@
       "shortLabel": "Solve problems",
       "domain": "comp_thinking",
       "description": "What is a problem?; Problem decomposition; Identifying constraints; Inputs; Outputs; Desired state; Breaking large problems into smaller problems",
+      "standardCodes": [
+        "CS.L1.1"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -184,6 +550,18 @@
       "shortLabel": "Algorithms",
       "domain": "comp_thinking",
       "description": "What is an algorithm?; Step-by-step instructions; Algorithms in everyday life; Precision; Determinism; Termination; Correctness",
+      "standardCodes": [
+        "CS.L1.2"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -201,6 +579,18 @@
       "shortLabel": "Abstraction",
       "domain": "comp_thinking",
       "description": "What is abstraction?; Ignoring irrelevant detail; Models; Interfaces; Layers; Encapsulation; Generalization",
+      "standardCodes": [
+        "CS.L1.3"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -218,6 +608,18 @@
       "shortLabel": "Patterns",
       "domain": "comp_thinking",
       "description": "Identifying patterns; Repetition; Sequences; Similarity; Generalization",
+      "standardCodes": [
+        "CS.L1.4"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -235,6 +637,18 @@
       "shortLabel": "Logic",
       "domain": "comp_thinking",
       "description": "Statements; Conditions; AND; OR; NOT; Truth; Logical implication; Contradiction; Equivalence",
+      "standardCodes": [
+        "CS.L1.5"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -252,6 +666,18 @@
       "shortLabel": "Represent",
       "domain": "comp_thinking",
       "description": "Symbols; Numbers; Text; Images; Sound; Instructions; State",
+      "standardCodes": [
+        "CS.L1.6"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.18,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -273,6 +699,18 @@
       "shortLabel": "History",
       "domain": "cs_foundations",
       "description": "Counting systems; Abacus; Mechanical calculators; Analytical Engine; Early computers; Turing; Von Neumann; Transistors; Integrated circuits; Personal computers; +4 more",
+      "standardCodes": [
+        "CS.L2.1"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.22,
       "pTransit": 0.12,
       "pSlip": 0.08,
@@ -290,6 +728,18 @@
       "shortLabel": "Binary & bases",
       "domain": "cs_foundations",
       "description": "Decimal; Binary; Octal; Hexadecimal; Base conversion; Binary arithmetic; Signed numbers; Two's complement",
+      "standardCodes": [
+        "CS.L2.2"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.11,
       "pSlip": 0.1,
@@ -311,6 +761,18 @@
       "shortLabel": "Data bits",
       "domain": "cs_foundations",
       "description": "Bits; Bytes; Words; Integers; Floating point; Characters; ASCII; Unicode; Strings; Boolean values; +3 more",
+      "standardCodes": [
+        "CS.L2.3"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.11,
       "pSlip": 0.1,
@@ -328,6 +790,18 @@
       "shortLabel": "Boolean",
       "domain": "cs_foundations",
       "description": "Boolean variables; AND; OR; NOT; XOR; NAND; NOR; Truth tables; Boolean expressions; Boolean simplification",
+      "standardCodes": [
+        "CS.L2.4"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.11,
       "pSlip": 0.1,
@@ -345,6 +819,18 @@
       "shortLabel": "Logic gates",
       "domain": "cs_foundations",
       "description": "Logic gates; Combinational circuits; Adders; Multiplexers; Decoders; Comparators; Sequential circuits; Flip-flops; Registers; Counters",
+      "standardCodes": [
+        "CS.L2.5"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.12,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -366,6 +852,18 @@
       "shortLabel": "Inside the machine",
       "domain": "cs_foundations",
       "description": "Machine instructions; CPU; Registers; ALU; Control unit; Program counter; Instruction cycle; Fetch; Decode; Execute; +2 more",
+      "standardCodes": [
+        "CS.L2.6"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.12,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -391,6 +889,18 @@
       "shortLabel": "What is code?",
       "domain": "programming",
       "description": "What is a program?; Source code; Compiler; Interpreter; Runtime; Syntax; Semantics; Errors; Debugging",
+      "standardCodes": [
+        "CS.L3.1"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -412,6 +922,18 @@
       "shortLabel": "Variables",
       "domain": "programming",
       "description": "Variables; Values; Assignment; Naming; Types; Constants; Scope",
+      "standardCodes": [
+        "CS.L3.2"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -429,6 +951,18 @@
       "shortLabel": "Types",
       "domain": "programming",
       "description": "Integers; Floating point; Boolean; Strings; Characters; None/null concepts",
+      "standardCodes": [
+        "CS.L3.3"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -446,6 +980,18 @@
       "shortLabel": "Operators",
       "domain": "programming",
       "description": "Arithmetic; Comparison; Logical; Assignment; Bitwise; Membership; Identity",
+      "standardCodes": [
+        "CS.L3.4"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -463,6 +1009,18 @@
       "shortLabel": "If & loops",
       "domain": "programming",
       "description": "Sequential execution; Conditions; if; elif; else; loops; while; for; break; continue",
+      "standardCodes": [
+        "CS.L3.5"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.12,
       "pTransit": 0.11,
       "pSlip": 0.11,
@@ -484,6 +1042,18 @@
       "shortLabel": "Functions",
       "domain": "programming",
       "description": "Function definition; Parameters; Arguments; Return values; Local variables; Scope; Pure functions; Side effects; Recursion",
+      "standardCodes": [
+        "CS.L3.6"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.12,
       "pTransit": 0.11,
       "pSlip": 0.11,
@@ -501,6 +1071,18 @@
       "shortLabel": "Lists & maps",
       "domain": "programming",
       "description": "Arrays/lists; Tuples; Sets; Dictionaries/maps; Strings; Stacks; Queues",
+      "standardCodes": [
+        "CS.L3.7"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.12,
       "pTransit": 0.11,
       "pSlip": 0.11,
@@ -522,6 +1104,18 @@
       "shortLabel": "Debug",
       "domain": "programming",
       "description": "Syntax errors; Runtime errors; Logic errors; Exceptions; Stack traces; Debuggers; Logging; Assertions; Defensive programming",
+      "standardCodes": [
+        "CS.L3.8"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -539,6 +1133,18 @@
       "shortLabel": "File I/O",
       "domain": "programming",
       "description": "Reading files; Writing files; CSV; JSON; Serialization; Deserialization",
+      "standardCodes": [
+        "CS.L3.9"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -560,6 +1166,18 @@
       "shortLabel": "Modules",
       "domain": "programming",
       "description": "Modules; Packages; Imports; Dependencies; Package managers; Virtual environments",
+      "standardCodes": [
+        "CS.L3.10"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.14,
       "pTransit": 0.12,
       "pSlip": 0.1,
@@ -577,6 +1195,18 @@
       "shortLabel": "Big-O intro",
       "domain": "algorithms",
       "description": "Correctness; Efficiency; Time complexity; Space complexity; Big O; Big Ω; Big Θ; Best case; Worst case; Average case; +1 more",
+      "standardCodes": [
+        "CS.L4.1"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -598,6 +1228,18 @@
       "shortLabel": "Search",
       "domain": "algorithms",
       "description": "Linear search; Binary search; Hash-based lookup; Search trees",
+      "standardCodes": [
+        "CS.L4.2"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -619,6 +1261,18 @@
       "shortLabel": "Sort",
       "domain": "algorithms",
       "description": "Bubble sort; Selection sort; Insertion sort; Merge sort; Quick sort; Heap sort; Counting sort; Radix sort",
+      "standardCodes": [
+        "CS.L4.3"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -640,6 +1294,18 @@
       "shortLabel": "Core structures",
       "domain": "algorithms",
       "description": "Arrays; Linked lists; Stacks; Queues; Deques; Hash tables; Trees; Heaps; Graphs",
+      "standardCodes": [
+        "CS.L4.4"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -657,6 +1323,18 @@
       "shortLabel": "Trees",
       "domain": "algorithms",
       "description": "Binary trees; Binary search trees; AVL trees; Red-black trees; B-trees; Tries; Segment trees; Fenwick trees",
+      "standardCodes": [
+        "CS.L4.5"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -674,6 +1352,18 @@
       "shortLabel": "Graphs",
       "domain": "algorithms",
       "description": "Directed graphs; Undirected graphs; Weighted graphs; Adjacency matrices; Adjacency lists; BFS; DFS; Shortest path; Dijkstra; Bellman-Ford; +5 more",
+      "standardCodes": [
+        "CS.L4.6"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -691,6 +1381,18 @@
       "shortLabel": "Paradigms",
       "domain": "algorithms",
       "description": "Brute force; Divide and conquer; Greedy algorithms; Dynamic programming; Backtracking; Branch and bound; Randomized algorithms",
+      "standardCodes": [
+        "CS.L4.7"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -712,6 +1414,18 @@
       "shortLabel": "Advanced algos",
       "domain": "algorithms",
       "description": "String algorithms; Computational geometry; Network flow; Matching; Approximation algorithms; Online algorithms; Streaming algorithms; External-memory algorithms; Parallel algorithms",
+      "standardCodes": [
+        "CS.L4.8"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.11,
       "pTransit": 0.1,
       "pSlip": 0.11,
@@ -733,6 +1447,18 @@
       "shortLabel": "Math foundations",
       "domain": "math_for_cs",
       "description": "Arithmetic; Fractions; Ratios; Percentages; Algebra; Equations; Functions; Graphs",
+      "standardCodes": [
+        "CS.L5.1"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -750,6 +1476,18 @@
       "shortLabel": "Discrete math",
       "domain": "math_for_cs",
       "description": "Propositions; Predicates; Quantifiers; Proofs; Inference; Sets; Subsets; Union; Intersection; Difference; +7 more",
+      "standardCodes": [
+        "CS.L5.2"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -775,6 +1513,18 @@
       "shortLabel": "Proofs",
       "domain": "math_for_cs",
       "description": "Direct proof; Contradiction; Contrapositive; Mathematical induction; Strong induction; Structural induction",
+      "standardCodes": [
+        "CS.L5.3"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -792,6 +1542,18 @@
       "shortLabel": "Counting",
       "domain": "math_for_cs",
       "description": "Counting; Permutations; Combinations; Pigeonhole principle; Recurrences; Generating functions",
+      "standardCodes": [
+        "CS.L5.4"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -813,6 +1575,18 @@
       "shortLabel": "Probability",
       "domain": "math_for_cs",
       "description": "Probability; Conditional probability; Bayes' theorem; Random variables; Expected value; Variance; Distributions",
+      "standardCodes": [
+        "CS.L5.5"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -830,6 +1604,18 @@
       "shortLabel": "Statistics",
       "domain": "math_for_cs",
       "description": "Descriptive statistics; Sampling; Estimation; Hypothesis testing; Regression; Correlation",
+      "standardCodes": [
+        "CS.L5.6"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -847,6 +1633,18 @@
       "shortLabel": "Linear algebra",
       "domain": "math_for_cs",
       "description": "Vectors; Matrices; Linear transformations; Eigenvalues; Eigenvectors; Matrix decomposition; Vector spaces",
+      "standardCodes": [
+        "CS.L5.7"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,
@@ -864,6 +1662,18 @@
       "shortLabel": "Calculus",
       "domain": "math_for_cs",
       "description": "Limits; Derivatives; Integrals; Multivariable calculus; Gradients; Optimization",
+      "standardCodes": [
+        "CS.L5.8"
+      ],
+      "standardFramework": {
+        "id": "kindling.cs-pilot.v1",
+        "name": "Kindling Computer Science Pilot",
+        "version": "1.0",
+        "scope": "Computer Science pilot layers L0–L5",
+        "source": "Computer Science.MD",
+        "alignmentStatus": "internal_reference",
+        "description": "Kindling's internal curriculum references. They are not external standards codes and have not been independently alignment-reviewed."
+      },
       "pInit": 0.1,
       "pTransit": 0.1,
       "pSlip": 0.12,

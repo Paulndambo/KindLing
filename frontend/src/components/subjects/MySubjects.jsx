@@ -102,6 +102,7 @@ export default function MySubjects({
   const [busy, setBusy] = useState(false);
   const [continueKeys, setContinueKeys] = useState(() => new Set());
   const [reviewItems, setReviewItems] = useState([]);
+  const [reviewRetention, setReviewRetention] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
 
@@ -126,14 +127,17 @@ export default function MySubjects({
   const refreshReviews = useCallback(async () => {
     if (!isLoggedIn || !hasProfile) {
       setReviewItems([]);
+      setReviewRetention(null);
       return;
     }
     setReviewLoading(true);
     try {
       const pack = await loadReviewSparks({ refresh: true });
       setReviewItems(pack.due || pack.dueNow || []);
+      setReviewRetention(pack.retention || null);
     } catch {
       setReviewItems([]);
+      setReviewRetention(null);
     } finally {
       setReviewLoading(false);
     }
@@ -149,6 +153,7 @@ export default function MySubjects({
     if (!isLoggedIn || !hasProfile) {
       setContinueKeys(new Set());
       setReviewItems([]);
+      setReviewRetention(null);
       return undefined;
     }
     let cancelled = false;
@@ -301,7 +306,7 @@ export default function MySubjects({
     return (
       <SubjectsPageShell
         title="Your learning path starts here."
-        subtitle="Sign in to open Computer Science lessons — or create subjects when multi-subject unlocks."
+        subtitle="Sign in to create subjects, build learning paths, and pick up where you left off."
         action={
           <button type="button" className="new-subj-btn" onClick={onGetStarted}>
             <Sparkles size={16} aria-hidden /> Get started
@@ -448,6 +453,7 @@ export default function MySubjects({
             compact
             variant="panel"
             items={reviewItems}
+            retention={reviewRetention}
             loading={reviewLoading}
             onRefresh={refreshReviews}
             onSnooze={handleSnoozeReview}

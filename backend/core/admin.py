@@ -1,6 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils import timezone
 
-from .models import ClientErrorReport, JobRun, ProductMetric, SafetyEvent
+from .models import ClientErrorReport, JobRun, OpsReviewFlag, ProductMetric, SafetyEvent
 
 
 @admin.register(ClientErrorReport)
@@ -76,6 +77,60 @@ class SafetyEventAdmin(admin.ModelAdmin):
         "extra",
     )
     ordering = ("-created_at",)
+
+
+@admin.register(OpsReviewFlag)
+class OpsReviewFlagAdmin(admin.ModelAdmin):
+    """Internal, metadata-only queue for support review; never expose raw text."""
+
+    list_display = (
+        "created_at",
+        "category",
+        "severity",
+        "status",
+        "session_id",
+        "user_id",
+        "reviewed_at",
+    )
+    list_filter = ("status", "category", "severity", "created_at")
+    search_fields = ("session_id", "trigger_key")
+    readonly_fields = (
+        "created_at",
+        "category",
+        "severity",
+        "trigger_key",
+        "session_id",
+        "user_id",
+        "safety_event",
+        "details",
+        "reviewed_at",
+    )
+    actions = ("mark_reviewed", "mark_resolved")
+    ordering = ("status", "-created_at")
+    date_hierarchy = "created_at"
+    list_select_related = ("safety_event",)
+
+    @admin.action(description="Mark selected flags as reviewed")
+    def mark_reviewed(self, request, queryset):
+        updated = queryset.exclude(status=OpsReviewFlag.Status.RESOLVED).update(
+            status=OpsReviewFlag.Status.REVIEWED,
+            reviewed_at=timezone.now(),
+        )
+        self.message_user(request, f"Marked {updated} flag(s) reviewed.", messages.SUCCESS)
+
+    @admin.action(description="Resolve selected flags")
+    def mark_resolved(self, request, queryset):
+        updated = queryset.update(
+            status=OpsReviewFlag.Status.RESOLVED,
+            reviewed_at=timezone.now(),
+        )
+        self.message_user(request, f"Resolved {updated} flag(s).", messages.SUCCESS)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(JobRun)

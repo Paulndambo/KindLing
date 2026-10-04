@@ -2,14 +2,13 @@
  * Credential + route resolution.
  *
  * Modes:
- *  - platform: Kindling env Gemini only
+ *  - platform: Kindling server-side Gemini proxy
  *  - byok: user vault only
  *  - auto: prefer user key for selected provider, else platform Gemini
  */
 
 import {
   getKeyEntry,
-  getPlatformGeminiKey,
   hasPlatformGemini,
 } from "./keyVault";
 import { loadLocalPreferences } from "./preferences";
@@ -79,7 +78,8 @@ export function resolveRoute(task = "chat") {
         provider: PLATFORM_PROVIDER,
         model: task === "tts" ? PLATFORM_TTS_MODEL : PLATFORM_CHAT_MODEL,
         source: /** @type {const} */ ("platform"),
-        apiKey: getPlatformGeminiKey(),
+        apiKey: "",
+        platformProxy: true,
         routingMode: mode,
         reason: "platform_forced_gemini",
       };
@@ -94,7 +94,8 @@ export function resolveRoute(task = "chat") {
               ? PLATFORM_TTS_MODEL
               : PLATFORM_CHAT_MODEL,
         source: /** @type {const} */ ("platform"),
-        apiKey: getPlatformGeminiKey(),
+        apiKey: "",
+        platformProxy: true,
         routingMode: mode,
         reason: "platform_env",
       };

@@ -152,6 +152,16 @@ export {
   listLocalMisconceptions,
 } from "./misconceptionEngine";
 export {
+  findMathScaffoldPack,
+  buildMathScaffoldPromptBlock,
+  listMathScaffoldPacks,
+} from "./mathScaffoldPacks";
+export {
+  findScienceScaffoldPack,
+  buildScienceScaffoldPromptBlock,
+  listScienceScaffoldPacks,
+} from "./scienceScaffoldPacks";
+export {
   createMultiStepSession,
   startMultiStepForTopic,
   applyStepAttempt,

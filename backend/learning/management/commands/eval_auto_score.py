@@ -120,6 +120,7 @@ class Command(BaseCommand):
                 "sessionId": r.get("sessionId"),
                 "scores": r.get("scores") or {},
                 "weightedMean": r.get("weightedMean"),
+                "playbookAudit": r.get("playbookAudit"),
             }
             for r in results
         ]
@@ -132,6 +133,7 @@ class Command(BaseCommand):
         if compare_cohort:
             comparisons = []
             maes = []
+            dimension_pairs = {}
             for r in results:
                 human = (
                     ManualSessionEval.objects.filter(
@@ -142,12 +144,6 @@ class Command(BaseCommand):
                     .first()
                 )
                 if not human:
-                    # allow any scorer in that cohort
-                    human = ManualSessionEval.objects.filter(
-                        client_session_key=r.get("sessionId"),
-                        cohort=compare_cohort,
-                    ).first()
-                if not human:
                     continue
                 cmp_ = compare_auto_vs_human(r.get("scores") or {}, human.scores or {})
                 if cmp_.get("n"):
@@ -156,17 +152,52 @@ class Command(BaseCommand):
                     )
                     if cmp_.get("mae") is not None:
                         maes.append(cmp_["mae"])
+                    for dimension, pair in (cmp_.get("byDim") or {}).items():
+                        bucket = dimension_pairs.setdefault(
+                            dimension, {"auto": [], "human": [], "absErr": []}
+                        )
+                        bucket["auto"].append(pair["auto"])
+                        bucket["human"].append(pair["human"])
+                        bucket["absErr"].append(pair["absErr"])
+            min_human_sessions = TARGET_SAMPLE_SIZE
+            by_dimension = {}
+            for dimension, values in dimension_pairs.items():
+                n = len(values["absErr"])
+                by_dimension[dimension] = {
+                    "n": n,
+                    "mae": round(sum(values["absErr"]) / n, 3) if n else None,
+                    # Positive bias means the heuristic tends to score higher than humans.
+                    "bias": round(
+                        sum(a - h for a, h in zip(values["auto"], values["human"])) / n,
+                        3,
+                    ) if n else None,
+                    "exact": round(
+                        sum(error == 0 for error in values["absErr"]) / n, 3
+                    ) if n else None,
+                    "within1": round(
+                        sum(error <= 1 for error in values["absErr"]) / n, 3
+                    ) if n else None,
+                }
             summary["humanCompare"] = {
                 "cohort": compare_cohort,
                 "sessionsCompared": len(comparisons),
                 "meanMae": round(sum(maes) / len(maes), 3) if maes else None,
+                "minimumHumanSessions": min_human_sessions,
+                "calibrationSampleReady": len(comparisons) >= min_human_sessions,
+                "byDimension": by_dimension,
                 "details": comparisons[:20],
             }
+            sample_status = (
+                "sample threshold met"
+                if summary["humanCompare"]["calibrationSampleReady"]
+                else f"needs {min_human_sessions} human-labeled sessions"
+            )
             self.stdout.write("")
             self.stdout.write(
                 f"Human compare ({compare_cohort}): "
                 f"{len(comparisons)} session(s) · "
-                f"MAE={summary['humanCompare']['meanMae']}"
+                f"MAE={summary['humanCompare']['meanMae']} · "
+                f"{sample_status}"
             )
 
         md = render_report_markdown(

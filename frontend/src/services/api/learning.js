@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import { API_BASE_URL, getAccessToken, setStoredTokens } from "./config";
 
 /**
  * Parent dashboard aggregates from the Kindling learning API.
@@ -111,6 +112,36 @@ export async function getSkillPath({ subject, topic, studentId } = {}) {
     method: "GET",
     auth: true,
   });
+}
+
+/** Download a CSV or forwardable plain-text progress summary for this learner. */
+export async function downloadStandardsReport({ format = "csv" } = {}) {
+  const narrative = format === "narrative";
+  const query = narrative ? "?format=narrative" : "";
+  const token = getAccessToken();
+  const response = await fetch(`${API_BASE_URL}/api/learning/standards-report/${query}`, {
+    headers: {
+      // Keep DRF's JSON error renderer negotiated; successful responses are raw downloads.
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (response.status === 401) setStoredTokens(null);
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.detail || `Could not export progress (${response.status}).`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = narrative
+    ? "kindling-progress-summary.txt"
+    : "kindling-standards-progress.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** List parent digests for the current student (Epic A5). */

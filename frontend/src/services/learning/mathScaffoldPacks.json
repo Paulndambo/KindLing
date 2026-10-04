@@ -1,0 +1,92 @@
+[
+  {
+    "id": "fraction-unit-sense",
+    "topics": ["fraction sense", "numerator and denominator", "reading fractions", "parts of a whole"],
+    "concept": "A fraction names equal-sized parts of one whole.",
+    "representation": "Use one shared bar, strip, or food item divided into equal parts.",
+    "steps": ["Name the whole and keep it the same.", "Divide it into equal parts; the denominator counts all parts.", "Count selected parts; the numerator tells how many are chosen."],
+    "check": "In 3/5, what does the 5 count, and what does the 3 count?",
+    "fade": "After one supported example, ask the learner to label a fresh fraction independently."
+  },
+  {
+    "id": "fraction-equivalence",
+    "topics": ["equivalent fractions", "equivalence"],
+    "concept": "Equivalent fractions name the same amount of the same-sized whole.",
+    "representation": "Keep the whole fixed and split each part into the same number of smaller parts.",
+    "steps": ["Draw or imagine the original fraction.", "Subdivide every part equally.", "Count the new selected parts and total parts; connect this to multiplying top and bottom by the same nonzero number."],
+    "check": "How can 1/2 be renamed in fourths without changing its size?",
+    "fade": "Invite the learner to explain why the amount stayed the same before trying a new pair."
+  },
+  {
+    "id": "fraction-add-like",
+    "topics": ["adding fractions", "like denominators", "adding like fractions"],
+    "concept": "Like denominators mean the fractions count same-sized pieces.",
+    "representation": "Use same-size fraction bars or pieces from one shared whole.",
+    "steps": ["Check that the denominators match.", "Combine the counts of selected pieces.", "Keep the denominator because piece size did not change."],
+    "check": "For 2/7 + 3/7, what is being counted and what stays the same?",
+    "fade": "Ask the learner to narrate the piece size and count on the next example."
+  },
+  {
+    "id": "fraction-add-unlike",
+    "topics": ["unlike denominators", "adding unlike fractions", "different denominators"],
+    "concept": "Fractions can be added when they describe the same-sized pieces.",
+    "representation": "Use a shared fraction bar or number line to show equal-sized units.",
+    "steps": ["Notice the piece sizes differ.", "Rename both fractions in a common unit using equivalent fractions.", "Combine the counts and simplify only if useful."],
+    "check": "Why can’t we count thirds and fifths together until we rename the pieces?",
+    "fade": "Have the learner choose a common unit and justify it on a fresh example."
+  },
+  {
+    "id": "place-value-decimals",
+    "topics": ["place value", "decimal place value", "decimals", "decimal numbers"],
+    "concept": "A digit's value depends on its place; each place is ten times its neighbor to the right.",
+    "representation": "Use a place-value chart and bundles of ten; align decimal points when comparing or calculating.",
+    "steps": ["Read the place name before the digit value.", "Compare or combine matching places.", "Regroup ten of one place into one of the next place when needed."],
+    "check": "In 4.26, what value does the 2 represent?",
+    "fade": "Ask the learner to identify the place and value before solving independently."
+  },
+  {
+    "id": "multiplication-equal-groups",
+    "topics": ["multiplication", "multiplication facts", "equal groups", "arrays"],
+    "concept": "Multiplication counts equal groups or equal rows and columns.",
+    "representation": "Draw an array or group objects before using a number sentence.",
+    "steps": ["Identify how many equal groups or rows.", "Identify how many in each group or columns.", "Count the total and connect it to the factors."],
+    "check": "In 4 groups of 3, which number tells the groups and which tells how many in each?",
+    "fade": "Let the learner sketch or describe the groups and write the matching equation."
+  },
+  {
+    "id": "division-sharing",
+    "topics": ["division", "sharing equally", "remainders", "division facts"],
+    "concept": "Division can mean sharing a total equally or finding how many groups fit.",
+    "representation": "Share counters one at a time, or circle equal groups from a total.",
+    "steps": ["Name the total and the group size or number of groups.", "Share or form equal groups.", "Check with multiplication and describe any remainder in context."],
+    "check": "If 17 objects are shared among 4 people, what does the leftover amount mean?",
+    "fade": "Ask the learner to choose sharing or grouping and explain the remainder."
+  },
+  {
+    "id": "ratio-proportional",
+    "topics": ["ratios", "proportions", "rates", "unit rate"],
+    "concept": "A ratio compares quantities in a consistent relationship.",
+    "representation": "Use a double number line or ratio table; keep corresponding quantities aligned.",
+    "steps": ["Name both quantities and their units.", "Scale both quantities by the same factor.", "Check that the relationship stays equivalent."],
+    "check": "If a recipe doubles the cups of flour, what must happen to the other ingredients?",
+    "fade": "Have the learner extend one row of a ratio table and explain the scale factor."
+  },
+  {
+    "id": "variable-unknown",
+    "topics": ["variables and unknowns", "variables", "expressions", "algebraic expressions"],
+    "concept": "A variable stands for a number whose value may be unknown or may change.",
+    "representation": "Use a covered number, balance, or story quantity, then connect it to a letter.",
+    "steps": ["Say what the letter represents.", "Substitute a value when given, or keep the unknown symbol when solving.", "Check that the expression matches the story or operation."],
+    "check": "If n is the number of marbles, what does n + 4 describe?",
+    "fade": "Ask the learner to define the variable and write a matching expression."
+  },
+  {
+    "id": "equation-balance",
+    "topics": ["simple equations", "one-step equations", "linear equations", "solving equations"],
+    "concept": "An equation is a balance; doing the same operation to both sides preserves equality.",
+    "representation": "Use a balance scale or equal boxes with the unknown on one side.",
+    "steps": ["Identify what is happening to the unknown.", "Undo that operation with its inverse on both sides.", "Substitute the result to check both sides are equal."],
+    "check": "For x + 5 = 12, what can we do to both sides to leave x by itself?",
+    "fade": "Let the learner choose and explain the inverse step on a nearby equation."
+  }
+]

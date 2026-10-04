@@ -28,6 +28,9 @@ export const AssessmentPhase = {
  * @param {boolean} [opts.timed]
  * @param {number} [opts.secondsPerQuestion]
  * @param {string} [opts.source] how the check was started
+ * @param {string} [opts.form] Optional Math Foundations parallel form (A/B)
+ * @param {string} [opts.purpose] practice | pre | post
+ * @param {object|null} [opts.baseline] Completed before-check summary for post form
  */
 export function createAssessmentSession({
   subject = "",
@@ -39,6 +42,9 @@ export function createAssessmentSession({
   timed = false,
   secondsPerQuestion = 45,
   source = "manual",
+  form = "",
+  purpose = "practice",
+  baseline = null,
 } = {}) {
   const n = Math.min(10, Math.max(3, Number(count) || ASSESSMENT_DEFAULT_COUNT));
   const slugs = [
@@ -51,6 +57,7 @@ export function createAssessmentSession({
     skillSlugs: slugs,
     unit,
     limit: n,
+    form,
   }).map((q) => ({
     ...q,
     // freeze options snapshot
@@ -69,6 +76,9 @@ export function createAssessmentSession({
     skillSlug: slugs[0] || questions[0]?.skillSlug || "",
     skillSlugs: slugs,
     source: source || "manual",
+    purpose: ["pre", "post"].includes(purpose) ? purpose : "practice",
+    form: ["A", "B"].includes(form) ? form : "",
+    baseline: purpose === "post" ? baseline : null,
     timed: Boolean(timed),
     secondsPerQuestion: Math.max(15, Number(secondsPerQuestion) || 45),
     questions,

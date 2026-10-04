@@ -110,6 +110,7 @@ export function useChatSession({
   interventionActive = false,
   interventionContext = null,
   multiStepSession = null,
+  homeworkWindowMinutes = null,
   onTutorReply,
   onSessionReset,
   onSessionBegin,
@@ -338,6 +339,7 @@ export function useChatSession({
             !(msForPrompt && msForPrompt.status === "active"),
           interventionContext: context,
           multiStepSession: msForPrompt,
+          homeworkWindowMinutes,
           topicContext: {
             ...normalizeTopicContext(topicContextRef.current),
             isFirstSession: false,
@@ -483,6 +485,7 @@ export function useChatSession({
         {
           interventionActive: restoredActive,
           interventionContext: restoredActive ? restoredCtx : null,
+          homeworkWindowMinutes,
           topicContext: {
             ...baseTopicCtx,
             isFirstSession: !hasHistory,
@@ -613,6 +616,7 @@ export function useChatSession({
         {
           interventionActive: false,
           interventionContext: null,
+          homeworkWindowMinutes,
           topicContext: {
             ...baseTopicCtx,
             isFirstSession: true,

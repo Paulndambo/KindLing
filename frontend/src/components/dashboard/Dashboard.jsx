@@ -13,15 +13,23 @@ import {
   ArrowRight,
   Loader2,
   RefreshCw,
+  Download,
+  Mail,
 } from "lucide-react";
 import { LEARNING_STYLE_OPTIONS, AVATAR_OPTIONS } from "../../constants/onboarding";
-import { getDashboard, ApiError, snoozeReviewSpark } from "../../services/api";
+import {
+  getDashboard,
+  ApiError,
+  snoozeReviewSpark,
+  downloadStandardsReport,
+} from "../../services/api";
 import ConfidenceChart from "../charts/ConfidenceChart";
 import ContinueStrip from "../subjects/ContinueStrip";
 import FamilyDigestCard from "./FamilyDigestCard";
 import ReviewSparkCard from "./ReviewSparkCard";
 import WeekFocusCard from "./WeekFocusCard";
 import SparkChallengeCard from "./SparkChallengeCard";
+import HomeworkWindowCard from "./HomeworkWindowCard";
 import { pickSparkChallengeCandidate } from "../../services/learning/sparkChallenge";
 
 function StatCard({ eyebrow, value, cap, icon: Icon }) {
@@ -109,6 +117,8 @@ export default function Dashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [exportingStandards, setExportingStandards] = useState("");
+  const [standardsExportError, setStandardsExportError] = useState("");
   // Bump to re-run the fetch effect (refresh / retry)
   const [fetchTick, setFetchTick] = useState(0);
 
@@ -254,14 +264,14 @@ export default function Dashboard({
   const handleStartReview = useCallback(
     (item) => {
       if (!onStartLesson || !item) return;
-      onStartLesson(item.subject || "Computer Science", item.topic || item.shortLabel, {
+      onStartLesson(item.subject || subjects[0]?.name || "General", item.topic || item.shortLabel, {
         reviewMode: true,
         reviewSkill: item.skillSlug,
         reviewSkillLabel: item.shortLabel || item.skillName,
         reviewId: item.id,
       });
     },
-    [onStartLesson]
+    [onStartLesson, subjects]
   );
 
   const handleSnoozeReview = useCallback(async (item, days) => {
@@ -269,6 +279,18 @@ export default function Dashboard({
     refreshDashboard({ silent: true });
     return result;
   }, [refreshDashboard]);
+
+  const handleStandardsExport = useCallback(async (format = "csv") => {
+    setExportingStandards(format);
+    setStandardsExportError("");
+    try {
+      await downloadStandardsReport({ format });
+    } catch (err) {
+      setStandardsExportError(err?.message || "Could not export progress. Please try again.");
+    } finally {
+      setExportingStandards(false);
+    }
+  }, []);
 
   /** Epic G1 — optional 3-solid-turn spark challenge */
   const sparkChallenge = useMemo(
@@ -286,7 +308,7 @@ export default function Dashboard({
     (candidate) => {
       if (!onStartLesson || !candidate) return;
       onStartLesson(
-        candidate.subject || "Computer Science",
+        candidate.subject || subjects[0]?.name || "General",
         candidate.topic || candidate.skillLabel,
         {
           challengeMode: true,
@@ -301,7 +323,7 @@ export default function Dashboard({
         }
       );
     },
-    [onStartLesson]
+    [onStartLesson, subjects]
   );
 
   /** Epic L2.4 — next-best-action from policy ranking */
@@ -404,54 +426,8 @@ export default function Dashboard({
   return (
     <section id="dashboard">
       <div className="dash-wrap">
-        {onStartLesson && (
-          <ContinueStrip
-            studentId={studentId}
-            onContinue={onStartLesson}
-            title="Pick up a lesson"
-          />
-        )}
-
-        {/* Epic C1 — Review spark */}
-        <ReviewSparkCard
-          items={reviewItems}
-          loading={refreshing}
-          onStartReview={handleStartReview}
-          onSnooze={handleSnoozeReview}
-          onRefresh={() => refreshDashboard({ silent: true })}
-        />
-
-        {/* Epic G1 — light spark challenge (optional) */}
-        <SparkChallengeCard
-          candidate={sparkChallenge}
-          onStartChallenge={handleStartChallenge}
-        />
-
-        {/* Epic C5 lite — week focus */}
-        <WeekFocusCard student={student} onStudentUpdate={onStudentUpdate} />
-
-        {/* Epic L2.4 — next best action (policy ranking) */}
-        {topNba && onStartLesson && (
-          <div className="nba-card" role="region" aria-label="Suggested next step">
-            <div className="nba-card-main">
-              <p className="eyebrow" style={{ marginBottom: 4 }}>
-                Suggested next step
-              </p>
-              <h3 className="nba-title">{topNba.label}</h3>
-              <p className="nba-reason">{topNba.reason}</p>
-            </div>
-            <button
-              type="button"
-              className="btn-primary nba-cta"
-              onClick={() => handleNba(topNba)}
-            >
-              {topNba.cta || "Go"}
-            </button>
-          </div>
-        )}
-
         {/* Hero header */}
-        <div className="dash-hero">
+        <header className="dash-hero">
           <div className="dash-hero-main">
             <div className="dash-avatar" aria-hidden="true">
               <AvatarIcon size={22} />
@@ -490,11 +466,10 @@ export default function Dashboard({
                 </span>
               </div>
             )}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="dash-hero-controls">
               <button
                 type="button"
                 className="btn-ghost"
-                style={{ padding: "6px 10px", fontSize: 12 }}
                 onClick={() => refreshDashboard({ silent: true })}
                 disabled={refreshing}
                 aria-label="Refresh dashboard"
@@ -534,28 +509,50 @@ export default function Dashboard({
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {error && (
-          <div
-            className="note-card"
-            style={{
-              marginBottom: 16,
-              borderColor: "rgba(180,60,60,0.25)",
-              color: "var(--berry)",
-            }}
-          >
-            <b>Could not load live data — </b>
-            {error}{" "}
+          <div className="dash-error" role="alert">
+            <AlertCircle size={17} aria-hidden />
+            <span><b>Could not load live data.</b> {error}</span>
             <button
               type="button"
               className="btn-ghost"
-              style={{ marginLeft: 8, padding: "2px 8px", fontSize: 12 }}
               onClick={() => refreshDashboard()}
             >
               Retry
             </button>
           </div>
+        )}
+
+        {/* Put the most useful action directly beneath the page heading. */}
+        {topNba && onStartLesson && (
+          <div
+            className="nba-card"
+            role="region"
+            aria-label="Suggested next step"
+          >
+            <div className="nba-card-main">
+              <p className="eyebrow">A good next step</p>
+              <h3 className="nba-title">{topNba.label}</h3>
+              <p className="nba-reason">{topNba.reason}</p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary nba-cta"
+              onClick={() => handleNba(topNba)}
+            >
+              {topNba.cta || "Go"} <ArrowRight size={15} aria-hidden />
+            </button>
+          </div>
+        )}
+
+        {onStartLesson && (
+          <ContinueStrip
+            studentId={studentId}
+            onContinue={onStartLesson}
+            title="Pick up a lesson"
+          />
         )}
 
         {/* Snapshot stats from backend week aggregates + profile totals */}
@@ -628,9 +625,28 @@ export default function Dashboard({
 
         <p className="dash-live-banner">
           {hasData
-            ? "Showing live Kindling data from your backend learning profile and sessions."
+            ? "Your learning activity and progress are up to date."
             : "No lesson data yet — complete a session and this dashboard will fill in automatically."}
         </p>
+
+        <div className="dash-practice-grid">
+          <ReviewSparkCard
+            items={reviewItems}
+            retention={reviewSparks.retention}
+            loading={refreshing}
+            onStartReview={handleStartReview}
+            onSnooze={handleSnoozeReview}
+            onRefresh={() => refreshDashboard({ silent: true })}
+          />
+          <SparkChallengeCard
+            candidate={sparkChallenge}
+            onStartChallenge={handleStartChallenge}
+          />
+          <WeekFocusCard student={student} onStudentUpdate={onStudentUpdate} />
+          {onStartLesson && (
+            <HomeworkWindowCard subjects={subjects} onStartLesson={onStartLesson} />
+          )}
+        </div>
 
         {/* Profile strip (student from API / onboarding) */}
         <div className="academic-card dash-profile-card">
@@ -675,9 +691,33 @@ export default function Dashboard({
           <div className="panel">
             <div className="dash-panel-head">
               <h3>Skill sparks</h3>
-              <span className="dash-delta">
-                <TrendingUp size={14} /> {stats.masteryDelta || "—"} this week
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="dash-delta">
+                  <TrendingUp size={14} /> {stats.masteryDelta || "—"} this week
+                </span>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleStandardsExport}
+                  disabled={Boolean(exportingStandards)}
+                  aria-label="Download standards progress CSV"
+                  title="Download standards progress as CSV"
+                >
+                  <Download size={15} />
+                  {exportingStandards === "csv" ? "Preparing…" : "Export CSV"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => handleStandardsExport("narrative")}
+                  disabled={Boolean(exportingStandards)}
+                  aria-label="Download an email-ready progress summary"
+                  title="Download a plain-text summary suitable for email"
+                >
+                  <Mail size={15} />
+                  {exportingStandards === "narrative" ? "Preparing…" : "Summary (.txt)"}
+                </button>
+              </div>
             </div>
             {recommendedNextSkill && (
               <div
@@ -713,7 +753,7 @@ export default function Dashboard({
               ) : (
                 <EmptyState
                   title="No skill sparks yet"
-                  body="Practice Computer Science topics — Kindling tracks fine-grained skills on a knowledge graph from digital literacy through programming and systems."
+                  body="Complete a lesson in any subject to see your skills, progress, and next steps here."
                 />
               )}
             </div>
@@ -721,6 +761,12 @@ export default function Dashboard({
               <b>Note from Kindling — </b>
               {noteText}
             </div>
+            <p className="dash-chart-cap" style={{ marginTop: 10 }}>
+              The Computer Science codes in these downloads belong to Kindling’s internal pilot framework; they are not externally reviewed standards.
+            </p>
+            {standardsExportError && (
+              <p role="status" className="form-error">{standardsExportError}</p>
+            )}
           </div>
 
           <div className="panel">

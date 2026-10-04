@@ -207,9 +207,10 @@ export function buildFingerprintMap() {
 }
 
 export function getPlatformGeminiKey() {
-  return String(import.meta.env.VITE_GEMINI_API_KEY || "").trim();
+  // Platform credentials are held by the backend; they must never be bundled.
+  return "";
 }
 
 export function hasPlatformGemini() {
-  return Boolean(getPlatformGeminiKey());
+  return true;
 }

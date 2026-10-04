@@ -12,6 +12,7 @@ import {
   Flame,
   Zap,
   ClipboardCheck,
+  Clock3,
 } from "lucide-react";
 import { challengeProgressLabel } from "../../services/learning/sparkChallenge";
 import { assessmentProgressLabel } from "../../services/learning/assessmentEngine";
@@ -123,6 +124,10 @@ export default function ChatPanel({
   /** Epic C5 — orientation goal chip under header */
   lessonGoals = null,
   showGoalsOrientation = true,
+  homeworkWindowMinutes = null,
+  homeworkWindowSecondsLeft = null,
+  homeworkWindowNoticeDismissed = false,
+  onDismissHomeworkWindow,
 }) {
   const fileInputRef = useRef(null);
   const interventionActive = intervention?.status === "active";
@@ -336,6 +341,36 @@ export default function ChatPanel({
         />
       )}
 
+      {homeworkWindowMinutes && !isArchiveView && !conversationEnded && (
+        homeworkWindowSecondsLeft > 0 ? (
+          <div className="homework-window-banner" role="timer" aria-live="off">
+            <Clock3 size={16} aria-hidden />
+            <strong>{homeworkWindowMinutes}-minute focus window</strong>
+            <span>
+              {Math.floor(homeworkWindowSecondsLeft / 60)}:
+              {String(homeworkWindowSecondsLeft % 60).padStart(2, "0")} left
+            </span>
+          </div>
+        ) : !homeworkWindowNoticeDismissed ? (
+          <div className="homework-window-banner is-finished" role="status">
+            <Clock3 size={16} aria-hidden />
+            <span>Your focus window is complete. You can wrap up or keep working.</span>
+            <button
+              type="button"
+              disabled={inputDisabled}
+              onClick={() =>
+                onSend?.("My focus window is up. Please help me summarize what I completed and one next step.")
+              }
+            >
+              Wrap up
+            </button>
+            <button type="button" className="homework-window-continue" onClick={onDismissHomeworkWindow}>
+              Keep working
+            </button>
+          </div>
+        ) : null
+      )}
+
       {isArchiveView && (
         <div className="archive-banner">
           <span>You’re viewing a saved conversation (read-only).</span>
@@ -424,8 +459,7 @@ export default function ChatPanel({
           <div className="error-toast config-toast" role="status">
             Kindling needs an AI route to tutor. Open{" "}
             <strong>Settings → AI providers</strong> to use platform Gemini or
-            add your own API key (BYOK), or set{" "}
-            <code>VITE_GEMINI_API_KEY</code> for the platform default.
+            add your own API key (BYOK). Platform AI must be enabled on the account.
           </div>
         )}
 

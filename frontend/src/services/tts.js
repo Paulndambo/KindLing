@@ -45,6 +45,7 @@ export function stripMarkdown(text) {
     .replace(/\[\[\s*check\s*:?[^\]]*\]\]/gi, " ")
     .replace(/⟦\s*visual\b[^⟧]*⟧/gi, " ")
     .replace(/\[\[\s*visual\s*:?[^\]]*\]\]/gi, " ")
+    .replace(/\[\[\s*lesson-image\s*:[^\]]*\]\]/gi, " ")
     .replace(/⟦\s*suggests?\b[^⟧]*⟧/gi, " ")
     .replace(/\[\[\s*suggests?\s*:?[^\]]*\]\]/gi, " ")
     .replace(/⟦\s*step\b[^⟧]*⟧/gi, " ")

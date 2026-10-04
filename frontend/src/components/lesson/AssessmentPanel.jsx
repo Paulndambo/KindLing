@@ -99,7 +99,7 @@ export default function AssessmentPanel({
           <ClipboardCheck size={16} aria-hidden />
           <div>
             <p className="assessment-eyebrow">
-              Quick check
+              {session.purpose === "pre" ? "Before check" : session.purpose === "post" ? "After check" : "Quick check"}
               {session.topic ? ` · ${session.topic}` : ""}
             </p>
             <h4 className="assessment-title">
@@ -154,6 +154,16 @@ export default function AssessmentPanel({
             {celeb?.body ||
               `You finished ${score.correct} of ${score.total}. Use the explanations as revision notes.`}
           </p>
+          {session.purpose === "pre" && (
+            <p className="assessment-done-body">Before check saved. Keep learning, then take the after-lesson check with a fresh set of questions.</p>
+          )}
+          {session.learningGain && (
+            <div className="assessment-learning-gain" role="status">
+              <strong>Learning check</strong>
+              <p>Before: {session.learningGain.baselineCorrect}/{session.learningGain.baselineTotal} ({session.learningGain.baselinePercent}%). After: {session.learningGain.postCorrect}/{session.learningGain.postTotal} ({session.learningGain.postPercent}%).</p>
+              <p>{session.learningGain.deltaPoints > 0 ? "+" : ""}{session.learningGain.deltaPoints} percentage points. This is an informal learning signal, not a grade.</p>
+            </div>
+          )}
           <ul className="assessment-score-list" aria-label="Results">
             {(session.answers || []).map((a, i) => (
               <li

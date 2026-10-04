@@ -7,6 +7,7 @@ import { Flame, ArrowRight, RefreshCw } from "lucide-react";
  */
 export default function ReviewSparkCard({
   items = [],
+  retention = null,
   loading = false,
   onStartReview,
   onSnooze,
@@ -82,6 +83,11 @@ export default function ReviewSparkCard({
                 Short refresh lessons — not a full new topic
               </p>
             ) : null}
+            {Number(retention?.attempts) >= 3 && (
+              <p className="review-spark-sub review-spark-retention">
+                Recent recall: {retention.successful}/{retention.attempts} successful across the last {retention.windowDays} days. Practice signal, not a grade.
+              </p>
+            )}
           </div>
         </div>
         {onRefresh && (
@@ -227,6 +233,8 @@ function reviewReason(reason) {
     rusty: "A short refresh can bring this skill back.",
     streak: "A few recent tries were tricky; this is a chance to revisit.",
     recent_struggle: "This came up as challenging recently.",
+    practice_requested: "You asked to practice this again soon.",
+    week_focus: "This supports something you want to work on.",
     prerequisite: "A helpful earlier skill to warm up first.",
   };
   return labels[reason] || "A short refresh will help keep this skill warm.";

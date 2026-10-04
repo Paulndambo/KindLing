@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -9,6 +9,39 @@ import { stripMathCheckTags } from "../../services/learning/mathVerifier";
 import { stripVisualTags } from "../../services/learning/manipulatives";
 import { stripStepTags } from "../../services/learning/multiStepEngine";
 import { stripSuggestTags } from "../../services/learning/tutorSuggestions";
+import { findLessonImage } from "../../services/learning/lessonImages";
+
+const LESSON_IMAGE_MARKER = /^\[\[lesson-image:\s*(.{2,100}?)\s*\]\]$/i;
+
+function TutorLessonImage({ query }) {
+  const [image, setImage] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    findLessonImage(query, controller.signal)
+      .then((result) => {
+        if (active) setImage(result);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [query]);
+
+  if (!image) return null;
+  return (
+    <figure className="tutor-lesson-visual">
+      <a href={image.href} target="_blank" rel="noopener noreferrer">
+        <img src={image.src} alt={image.title} loading="lazy" />
+      </a>
+      <figcaption>
+        Example image: <a href={image.href} target="_blank" rel="noopener noreferrer">{image.title}</a>
+      </figcaption>
+    </figure>
+  );
+}
 
 /**
  * Renders Kindling tutor replies as structured, learner-friendly content:
@@ -100,7 +133,17 @@ function InlineCode({ children }) {
 
 function markdownComponents() {
   return {
-    p: ({ children }) => <p className="tutor-p">{children}</p>,
+    p: ({ children }) => {
+      const paragraphText =
+        typeof children === "string"
+          ? children
+          : Array.isArray(children) && children.every((child) => typeof child === "string")
+            ? children.join("")
+            : "";
+      const marker = LESSON_IMAGE_MARKER.exec(paragraphText.trim());
+      if (marker) return <TutorLessonImage query={marker[1]} />;
+      return <p className="tutor-p">{children}</p>;
+    },
     h1: ({ children }) => <h3 className="tutor-h">{children}</h3>,
     h2: ({ children }) => <h3 className="tutor-h">{children}</h3>,
     h3: ({ children }) => <h4 className="tutor-h tutor-h-sm">{children}</h4>,
@@ -163,9 +206,19 @@ const STATIC_COMPONENTS = markdownComponents();
 
 function TutorMessageContent({ text, streaming = false }) {
   // Machine tags (check / visual / step / suggests) — never show to learners
-  const content = stripSuggestTags(
+  let content = stripSuggestTags(
     stripStepTags(stripVisualTags(stripMathCheckTags(text || "")))
   );
+  // Ensure a standalone marker becomes its own Markdown paragraph even when
+  // the model used single newlines around it.
+  content = content.replace(
+    /(^|\n)[ \t]*(\[\[lesson-image:[^\]\n]{2,100}\]\])[ \t]*(?=\n|$)/gi,
+    "$1\n$2\n"
+  );
+  if (streaming) {
+    const markerStart = content.toLowerCase().lastIndexOf("[[lesson-image:");
+    if (markerStart > content.lastIndexOf("]]")) content = content.slice(0, markerStart);
+  }
 
   // components object is stable; streaming only affects CSS class
   const components = useMemo(() => STATIC_COMPONENTS, []);

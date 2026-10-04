@@ -440,6 +440,9 @@ class SafetyEventIngestView(APIView):
             client_ts=data.get("client_ts"),
             extra=sanitize_extra(data.get("extra") or {}),
         )
+        from core.ops_flags import flag_safety_distress
+
+        flag_safety_distress(event)
 
         log_event(
             "safety.escalation",

@@ -38,6 +38,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         allow_blank=True,
         max_length=240,
     )
+    targetLabel = serializers.CharField(
+        source="target_label", required=False, allow_blank=True, max_length=120
+    )
+    targetDate = serializers.DateField(
+        source="target_date", required=False, allow_null=True
+    )
 
     class Meta:
         model = StudentProfile
@@ -57,6 +63,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "focusSubjects",
             "goal",
             "weekFocus",
+            "targetLabel",
+            "targetDate",
             "isOnboarded",
             "digestOptIn",
             "familyEmail",

@@ -41,6 +41,8 @@ export async function saveStudentProfile(profile) {
       focusSubjects: profile.focusSubjects || profile.focus_subjects || [],
       goal: profile.goal || "",
       weekFocus: profile.weekFocus || profile.week_focus || "",
+      targetLabel: profile.targetLabel || profile.target_label || "",
+      targetDate: profile.targetDate || profile.target_date || null,
       isOnboarded: true,
       digestOptIn: profile.digestOptIn ?? false,
       familyEmail: profile.familyEmail || "",

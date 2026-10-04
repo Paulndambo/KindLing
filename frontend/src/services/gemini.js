@@ -2,6 +2,8 @@ import { LEARNING_STYLE_OPTIONS } from "../constants/onboarding";
 import { familiarityMeta } from "../constants/familiarity";
 import { buildAgeAwarePolicyBlock } from "./safety";
 import { buildVisualPromptHint } from "./learning/manipulatives";
+import { buildMathScaffoldPromptBlock } from "./learning/mathScaffoldPacks";
+import { buildScienceScaffoldPromptBlock } from "./learning/scienceScaffoldPacks";
 import {
   buildLadderTutorBlock,
   buildLadderEnterMessage,
@@ -266,6 +268,20 @@ export function buildSystemPrompt(
     options.topicContext || learningInsights?.topicContext || null
   );
   const topicIntentBlock = buildTopicIntentPromptBlock(topicName, topicContext);
+  const mathScaffoldBlock = buildMathScaffoldPromptBlock({
+    subject: subjectName,
+    topic: topicName,
+  });
+  const scienceScaffoldBlock = buildScienceScaffoldPromptBlock({
+    subject: subjectName,
+    topic: topicName,
+  });
+  const homeworkWindowBlock = [15, 25, 40].includes(Number(options.homeworkWindowMinutes))
+    ? `Focused homework window (${Number(options.homeworkWindowMinutes)} minutes):
+- Help the learner make useful progress on the homework they describe or attach. Start with one manageable next step and keep the exchange focused.
+- Guide reasoning rather than simply supplying graded answers. Be patient and never rush, shame, or imply the learner has failed if the window ends.
+- The timer is an orientation cue, not a deadline. The lesson remains available after it ends. If the learner asks to wrap up, summarize what they completed and suggest one next step.`
+    : "";
 
   // Epic B4 — prefer curated library examples over free generation
   const libraryBlockFromInsights =
@@ -474,6 +490,9 @@ Extensive Student Profile & Academic Alignment:
 ${focusStr ? `- Subjects they especially want help with: ${focusStr}.` : ""}
 ${goalStr ? `- Primary learning goal: ${goalStr}.` : ""}
 ${topicIntentBlock}
+${mathScaffoldBlock}
+${scienceScaffoldBlock}
+${homeworkWindowBlock}
 
 Regional & Curriculum Adaptation Instructions:
 - Align your terminology, spelling (e.g., US vs UK English), and educational standards with ${country}'s ${curriculum} system.
@@ -502,6 +521,7 @@ Formatting (the app renders Markdown, math, code, and diagrams cleanly — use s
 - For diagrams, use a \`\`\`text fenced block with clean ASCII art (boxes, arrows, trees). Keep diagrams simple and readable.
 - Use Markdown tables when comparing ideas side-by-side.
 - Use > blockquotes for hints, tips, or "remember" callouts.
+- Occasionally add one relevant real-world image when seeing it would make the idea easier to understand (for example, an animal, place, object, scientific specimen, or historical artifact). Put this marker alone on its own line: [[lesson-image: concise Wikipedia topic]]. Use a specific, neutral educational topic (2–8 words). The app will look up a matching article image. Do not use the marker for every reply; skip it for abstract ideas, quick checks, or when a simple text/ASCII/math diagram is clearer. Never invent image URLs or use the marker more than once in a reply.
 - Do NOT dump raw HTML. Do NOT wrap the entire message in a single code fence.
 - Keep formatting purposeful — never decorative spam. Still keep messages age-appropriate and not overwhelming.
 

@@ -96,7 +96,7 @@ Status legend:
 | G14 | §11 | Immediate performance | **Done** (pilot) | A3, MCQ, linguistic | Expand domains later | A3 expand | — |
 | G15 | §11 | Independent performance (no scaffold) | **Done** (L4.1) | Post-ladder independence twin (no hints); `independence.*` events | Rate in digest later | **L4.1** ✅ | P1 |
 | G16 | §11 | Transfer (structurally new item) | **Done** thin (L4.2) | `transfer: true` bank items + prefer-transfer after L3 help | Expand bank coverage | **L4.2** ✅ | P2 |
-| G17 | §11 | Retention (1d / 7d / 30d) | **Partial** | Review spark outcomes | Not study-grade retention windows | **C1+** | P1 |
+| G17 | §11 | Retention (1d / 7d / 30d) | **Partial** | C1+.5 rolling 30-day recall outcomes by planned interval | Cohort-level 1/7/30-day retention and sustained lift still need longitudinal data | **C1+** | P1 |
 | G18 | §11 | Explanation quality (“why”) | **Partial** | Conversational | Not scored | **C8** rubric dimension | P2 |
 | G19 | §11 | Confidence–competence calibration | **Partial** | L1.3 `calibration` + `calibrationError` on state; pulse copy | Digest/dashboard surface later | **L1.3** ✅ thin | P2 |
 
@@ -113,7 +113,7 @@ Status legend:
 
 | ID | Review § | Ask | Status | Evidence today | Gap | PLAN map | Priority |
 |----|----------|-----|--------|----------------|-----|----------|----------|
-| G24 | §15 | Learning gain (pre/post) | **Missing** | — | No formal pre/post path | **C8** + thin **C6** pre/post pilot | P1 |
+| G24 | §15 | Learning gain (pre/post) | **Partial** | C6.7 alternate-form pilot | Optional Math Foundations before/after checks report a within-learner percentage-point change; cohort calibration and longitudinal analysis are not yet present | **C8** + thin **C6** pre/post pilot | P1 |
 | G25 | §15 | Tutor efficiency / gain per interaction | **Missing** | Telemetry volume only | No learning-science KPI | **C8** | P2 |
 | G26 | §16 | Scenario benchmark (policies A vs B) | **Partial** | C8.3 manual + C8.1 auto scores + MAE compare | Full policy A/B harness still later | **C8.1** ✅ thin | P1 |
 | G27 | §17 | Longitudinal intervention→outcome dataset | **Partial** | Learning events ingest | Schema not optimized for pedagogy research; no offline export for policy mining | **L5** event schema + export · builds on events API | P2 |
@@ -146,7 +146,7 @@ These are **additions** the review implies that are not fully covered by existin
 | Epic | Absorbs |
 |------|---------|
 | **C1+** | G17, G20–G21 |
-| **C6** (depth) | G15–G16, G24 thin pre/post; timed flag C6.3 |
+| **C6** (depth) | G15–G16, cohort calibration after C6.7 alternate-form pilot; timed flag C6.3 |
 | **C7** | G10 multi-domain scaffolds |
 | **C8** | G18, G24–G26, G28 scoring |
 | **B5+** | G11 misconception confidence + protocol |
@@ -171,7 +171,7 @@ Wave 2b — Learning intelligence core       [NEW — review P0]
 
 Wave 2c — Retention & assessment depth     [Track P, refined]
   C1+ Spaced review depth
-  C6 depth: broader banks and pre/post thin pilot (timed UI shipped; L4 independence twin shipped)
+  C6 depth: broader science banks and cohort calibration (timed UI + alternate-form pre/post pilot shipped; L4 independence twin shipped)
   L4  Independence/transfer checks wired to C6 + post-ladder
   C7  Playbook #2 only if sessions leave math
   A1 expand / P.5 as needed for C4/C6/C1+
@@ -180,7 +180,7 @@ Wave 2d — Teach medium                     [Track X]
   Diagrams, a11y, focus mode (supports CHANGE_REPRESENTATION)
 
 Wave 2e — Shareable progress               [Track R]
-  Digest polish; C10 stuck email; C4 single-learner export
+  Digest polish; C4 single-learner export
   Surface ADI / independence gently in digest (never shame)
 
 Wave 2f — Scale & data moat                [Tracks V + S + L5]
@@ -202,7 +202,7 @@ Wave 2f — Scale & data moat                [Tracks V + S + L5]
 | 7 | **C8.3** Manual rubric sheet + 10 recorded sessions | ✅ tooling; complete 10 human scores for baseline | G26 |
 | 8 | **C1+**.1–.2 Multi-subject due + schedule UX | Dashboard “Review today” clearer | G20–G21 |
 | 9 | **L4.1** After ladder L2/L3 success, offer 1 no-help twin (chat or C6 item) | Independence outcome logged | G15 |
-| 10 | **C6** depth + optional pre/post on one pilot skill | Thin learning-gain number for pilot cohort | G16, G24 |
+| 10 | **C6** depth + cohort calibration of the one-skill pre/post pilot | Calibrated learning-gain signal | G16, G24 |
 | 11 | **B5+** Misconception confidence + forced check item after remediation | Playbook steps tracked | G11 |
 | 12 | **C8.1–.2** Offline scorer CLI | C8.1 ✅ · C8.2 ✅ `weekly_eval_sample` | G24–G26 |
 | 13 | **L5** Export pedagogy trajectories (JSONL) | Research-ready dump from events | G27 |
@@ -236,23 +236,23 @@ Wave 2f — Scale & data moat                [Tracks V + S + L5]
 | Epic | Status | Review-driven next step |
 |------|--------|-------------------------|
 | **C1** Review v1 | ✅ | — |
-| **C1+** | ⚡ Partial | Multi-subject selection/balancing ✅; upcoming/reason + 1/3/7-day snooze ✅; bounded recall intervals ✅; week-focus tie-in and study-grade retention windows remain (G20–G21, G17) |
-| **C6** Assessment | ✅ v1 + timed | Broader banks + pre/post depth; L4 covers independence/transfer |
-| **C7** Playbooks | ⬜ | Codify math pack as data; second domain if needed (G10) |
-| **C8** Eval | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ | Manual + auto scorer + weekly job; calibrate on human labels next (G24–G26) |
+| **C1+** | ⚡ Partial | Multi-subject selection/balancing ✅; upcoming/reason + 1/3/7-day snooze ✅; bounded recall intervals ✅; week-focus tie-in ✅; rolling 30-day recall measurement shipped; cohort retention windows and sustained lift remain (G20–G21, G17) |
+| **C6** Assessment | ⚡ Offline v1 + timed; Math Foundations pilot has 3 items per core skill and science has 5 per scaffold area, including applied transfer; optional alternate-form pre/post checks cover both pilot domains | Wider subject coverage + cohort learning-gain calibration; L4 covers independence/transfer |
+| **C7** Playbooks | ⚡ Partial | Math/algebra and science packs plus C8 non-scoring sample cues for both domains; further domain breadth remains (G10) |
+| **C8** Eval | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ · C8.4 ✅ | Manual + auto scorer + weekly job + per-dimension human-label diagnostics; validation on ≥10 matched human-scored sessions remains (G24–G26) |
 | **B5** Misconceptions | ✅ pilot | B5+: confidence + enforced remediation check (G11) |
 | **A1** Skill graph | ✅ pilot | Expand coverage for C4/C6/C1+ (G10) |
 | **C4** Standards export | ⬜ | Single-learner only; can include mastery + ADI later |
 | **C5 / C5+** Goals | lite ✅ | Active objective in L1 (G04) |
-| **C9 / C10** | ⬜ | Ops flags / stuck email — orthogonal to review science, keep scheduled |
+| **C9 / C10** | ✅ | C9 staff queue and C10 opt-in support email shipped; R.1 student-owned recipient and unsent preview UX also shipped; live email delivery remains in Track D |
 
 ### PLAN §15 Track P status note
 
 | ID | PLAN work | Update |
 |----|-----------|--------|
-| P.1 | C1+ | Partial — cross-subject selection, schedule controls, snooze, and bounded interval progression shipped; week-focus tie-in/retention windows remain |
-| P.2 | C6 assessment | **v1 + timed practice ✅** — remaining = broader banks and pre/post measurement; independence/transfer are covered by L4 |
-| P.3 | C7 | ⬜ demand-gated |
+| P.1 | C1+ | Partial — cross-subject selection, schedule controls, snooze, bounded intervals, week-focus ranking, and rolling 30-day recall measurement shipped; cohort retention windows and sustained lift remain |
+| P.2 | C6 assessment | **v1 + timed practice ✅**; Math Foundations and all 8 science scaffold areas have usable offline banks with applied transfer items, and optional alternate-form pre/post checks report an informal gain signal in both domains — remaining = wider coverage and cohort calibration; L4 covers independence/transfer |
+| P.3 | C7 | Partial — math/algebra and science packs plus C8 sample audits; further domain breadth remains demand-gated |
 | P.4 | C8 | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ |
 | P.5 | A1 expand | ⬜ as needed |
 
@@ -306,11 +306,11 @@ From CAPABILITIES §5 + review spirit:
 
 **Already true:** Kindling is not a thin chatbot wrapper. It has struggle detection, a help ladder, pilot mastery and misconceptions, review sparks, assessment checks, a living profile, a **formal LearnerState + pedagogical policy loop (L1–L2)**, **ADI (L3)**, **independence twins (L4)**, **C8 eval tooling**, a **Computer Science** pilot path, and **practical how-to** teaching for hands-on skills.
 
-**Still open (science / product depth):** multi-subject review depth (**C1+**), broader domain playbooks (**C7**), decision-compliance scoring at scale, thin pre/post learning-gain pilots, L5 trajectory export, and hostable deploy (Track D) so beta cohorts can generate longitudinal data.
+**Still open (science / product depth):** multi-subject review depth (**C1+**), broader domain playbooks (**C7**), decision-compliance scoring at scale, cohort calibration of the C6.7 pre/post pilot, L5 trajectory export, and hostable deploy (Track D) so beta cohorts can generate longitudinal data.
 
 **Do next:** **Track D (deploy)** in parallel with **C1+ / C7 / C4** as demand requires — not a second build of L1–L4.  
 The moat is **longitudinal pedagogical intelligence**, not prettier chat.
 
 ---
 
-*Created: 2026-09-09 · Updated: 2026-09-10 — L1–L4/C6/C8/how-to marked shipped; summary aligned with monorepo.*
+*Created: 2026-09-09 · Updated: 2026-10-04 — P.6.1 download how-to guide, C6.10 science transfer checks, C7.4 science sample cues, C6.9 science alternate-form pre/post pilot, C8.4 human-label calibration diagnostics, and C6.8 science assessment depth reflected; actual scorer validation, wider coverage, and cohort learning-gain calibration remain open.*

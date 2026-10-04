@@ -213,6 +213,44 @@ export const LOCAL_PRACTICAL_GUIDES = [
     relatedHowTos: ["pg.cs.safety.password"],
   },
   {
+    id: "pg.cs.files.download",
+    skillSlug: "cs.l0.files_folders",
+    topics: ["Download files", "Downloading", "Save a file from a website", "Internet literacy"],
+    subject: "Computer Science",
+    title: "Download a file and find it safely",
+    skillGoal:
+      "Save a file from a trusted page, locate it in the device's Downloads folder, and decide whether it is the file you expected.",
+    conceptBrief:
+      "Downloading copies a file from a website onto your device. Check the source and file name before opening it, and ask a trusted adult if anything looks unexpected.",
+    platforms: ["Windows", "macOS", "Chromebook", "phone/tablet browser"],
+    steps: [
+      "Start from a website or link you expected to use, such as a teacher's page or a well-known library. Do not download from pop-ups or surprise messages.",
+      "Check the page title and link label. Choose Download or Save only when the file and source make sense.",
+      "If the browser asks where to save it, choose Downloads or a practice folder you can find again. Otherwise, most browsers save to Downloads by default.",
+      "Wait for the browser's download indicator to finish. Do not open a file that has not finished downloading.",
+      "Open your device's Files app, File Explorer, or Finder and select Downloads. On a phone or tablet, use Files / My Files or the browser's Downloads list.",
+      "Check the file name and type against what you expected. If the page asked for an unrelated app, password, or extra download, stop and ask a trusted adult.",
+      "When the file is one you expected, move it into a clearly named school folder if you want to keep it; otherwise delete it using the device's normal file controls.",
+    ],
+    platformNotes: [
+      "Windows: open File Explorer → Downloads.",
+      "Mac: open Finder → Downloads, or use the browser's download list.",
+      "Chromebook: open the Files app → Downloads.",
+      "Phone/tablet: open Files or My Files; the exact label varies by device.",
+    ],
+    tryIt: [
+      "With a trusted adult or teacher, download a harmless class handout from its expected source.",
+      "Find it in Downloads and say its name and file type before opening it.",
+      "Move it into your practice folder, then navigate away and find it again.",
+    ],
+    commonMistakes: [
+      "Clicking a large pop-up Download button instead of the expected link on the page.",
+      "Opening an unexpected installer or file just because a page says it is urgent.",
+      "Assuming every device saves downloads to the same place; check the browser's download list or Files app.",
+    ],
+    relatedHowTos: ["pg.cs.files.create_folder", "pg.cs.internet.search"],
+  },
+  {
     id: "pg.cs.safety.password",
     skillSlug: "cs.l0.digital_safety",
     topics: ["Digital safety", "Passwords", "Safety"],
@@ -291,13 +329,25 @@ export function findPracticalGuide({
     const byId = LOCAL_PRACTICAL_GUIDES.find((g) => g.id === guideId);
     if (byId) return byId;
   }
+  // A topic-specific procedure should beat the first generic guide for its skill.
+  const t = String(topic || "").trim();
+  const s = String(subject || "").trim();
+  if (t) {
+    const topicMatch = LOCAL_PRACTICAL_GUIDES.map((g) => ({
+      g,
+      score:
+        (topicMatchesGuide(t, g) ? 3 : 0) +
+        (s && g.subject && s.toLowerCase() === g.subject.toLowerCase() ? 1 : 0),
+    }))
+      .filter((item) => item.score >= 3)
+      .sort((a, b) => b.score - a.score);
+    if (topicMatch.length) return topicMatch[0].g;
+  }
   const slug = String(skillSlug || "").trim();
   if (slug) {
     const bySlug = LOCAL_PRACTICAL_GUIDES.find((g) => g.skillSlug === slug);
     if (bySlug) return bySlug;
   }
-  const t = String(topic || "").trim();
-  const s = String(subject || "").trim();
   const scored = LOCAL_PRACTICAL_GUIDES.map((g) => {
     let score = 0;
     if (topicMatchesGuide(t, g)) score += 3;

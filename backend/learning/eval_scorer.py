@@ -65,6 +65,53 @@ _PERSIST_RE = re.compile(
     r"\b(kept trying|stuck with|effort|persistence|bounce|try again|another go)\b",
     re.I,
 )
+_MATH_SUBJECT_RE = re.compile(r"\b(math|mathematics|algebra|arithmetic|numeracy)\b", re.I)
+_MATH_TOPIC_RE = re.compile(
+    r"\b(fraction|decimal|place value|equation|algebra|ratio|proportion|"
+    r"multiplication|division|number line|arithmetic)\b",
+    re.I,
+)
+_SCIENCE_SUBJECT_RE = re.compile(r"\b(science|biology|chemistry|physics|environmental science)\b", re.I)
+_SCIENCE_TOPIC_RE = re.compile(
+    r"\b(matter|particle|chemical reaction|reactant|product|force|motion|energy|heat|"
+    r"ecosystem|food chain|cell|organelle|investigation|fair test|variable|water cycle|earth system)\b",
+    re.I,
+)
+_SCAFFOLD_AUDIT_CUES = {
+    "representation": re.compile(
+        r"\b(bar|number line|array|equal groups?|balance|chart|table|draw|picture|model|pizza|chapati|share equally)\b",
+        re.I,
+    ),
+    "sequenced_step": re.compile(
+        r"\b(first|next|then|step\s*\d|one step|let'?s start|let'?s try)\b",
+        re.I,
+    ),
+    "understanding_check": re.compile(r"\?"),
+    "fade_or_transfer": re.compile(
+        r"\b(your turn|try (it )?(yourself|on your own)|on your own|show me|"
+        r"explain how|what do you notice|what would you do)\b",
+        re.I,
+    ),
+}
+_SCIENCE_AUDIT_CUES = {
+    "scientific_representation": re.compile(
+        r"\b(diagram|model|particle|food chain|food web|cell|equation|graph|table|draw|sketch)\b",
+        re.I,
+    ),
+    "evidence_or_reasoning": re.compile(
+        r"\b(because|evidence|observe|observation|data|result|therefore|suggests)\b",
+        re.I,
+    ),
+    "investigation_sequence": re.compile(
+        r"\b(first|next|then|measure|control|variable|fair test|repeat|record)\b",
+        re.I,
+    ),
+    "understanding_check": re.compile(r"\?"),
+    "prediction_or_transfer": re.compile(
+        r"\b(predict|what would happen|new example|another situation|your turn|try it yourself|explain how)\b",
+        re.I,
+    ),
+}
 
 # Pedagogy action → tutor-text cues (loose compliance)
 _ACTION_CUES: Dict[str, re.Pattern] = {
@@ -465,8 +512,84 @@ def score_lesson_session(session) -> Dict[str, Any]:
     except Exception:
         tutor_texts = None
     result = score_session_evidence(evidence, tutor_texts=tutor_texts)
+    audit_texts = tutor_texts
+    if audit_texts is None:
+        audit_texts = [str(turn.get("tutor") or "") for turn in evidence.get("turnsPreview") or []]
+    subject = getattr(session, "subject", "")
+    topic = getattr(session, "topic", "")
+    if _SCIENCE_SUBJECT_RE.search(subject or "") or _SCIENCE_TOPIC_RE.search(topic or ""):
+        playbook_audit = audit_science_playbook_signals(
+            subject=subject, topic=topic, tutor_texts=audit_texts
+        )
+    else:
+        playbook_audit = audit_math_playbook_signals(
+            subject=subject, topic=topic, tutor_texts=audit_texts
+        )
+    result["playbookAudit"] = playbook_audit
+    if playbook_audit.get("applicable"):
+        evidence["playbookAudit"] = playbook_audit
+        evidence.setdefault("scorerHints", []).append(
+            f"C7 {playbook_audit.get('domain', 'domain')}-playbook surface cues (not a quality score): "
+            + ", ".join(
+                f"{name}={'seen' if seen else 'not seen'}"
+                for name, seen in playbook_audit["signals"].items()
+            )
+            + ". Review fit and pacing manually."
+        )
     result["evidence"] = evidence
     return result
+
+
+def audit_math_playbook_signals(
+    *, subject: str = "", topic: str = "", tutor_texts: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Collect non-scoring surface cues for C7 playbook spot-checks in C8 samples."""
+    if not (_MATH_SUBJECT_RE.search(subject or "") or _MATH_TOPIC_RE.search(topic or "")):
+        return {"applicable": False, "subject": subject or "", "topic": topic or ""}
+
+    tutor_texts = [str(text or "") for text in (tutor_texts or []) if str(text or "").strip()]
+    signals = {
+        key: any(pattern.search(text) for text in tutor_texts)
+        for key, pattern in _SCAFFOLD_AUDIT_CUES.items()
+    }
+    observed = sum(signals.values())
+    return {
+        "applicable": True,
+        "domain": "math",
+        "subject": subject or "",
+        "topic": topic or "",
+        "signals": signals,
+        "observedCount": observed,
+        "signalCount": len(signals),
+        "coverage": round(observed / len(signals), 3),
+        "interpretation": "Heuristic surface cues only; use the C8 human sample to judge whether the scaffold fit the learner and topic.",
+    }
+
+
+def audit_science_playbook_signals(
+    *, subject: str = "", topic: str = "", tutor_texts: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Collect non-scoring science-playbook cues for C8 human spot-checks."""
+    if not (_SCIENCE_SUBJECT_RE.search(subject or "") or _SCIENCE_TOPIC_RE.search(topic or "")):
+        return {"applicable": False, "subject": subject or "", "topic": topic or ""}
+
+    tutor_texts = [str(text or "") for text in (tutor_texts or []) if str(text or "").strip()]
+    signals = {
+        key: any(pattern.search(text) for text in tutor_texts)
+        for key, pattern in _SCIENCE_AUDIT_CUES.items()
+    }
+    observed = sum(signals.values())
+    return {
+        "applicable": True,
+        "domain": "science",
+        "subject": subject or "",
+        "topic": topic or "",
+        "signals": signals,
+        "observedCount": observed,
+        "signalCount": len(signals),
+        "coverage": round(observed / len(signals), 3),
+        "interpretation": "Heuristic surface cues only; use the C8 human sample to judge scientific accuracy, scaffold fit, and learner understanding.",
+    }
 
 
 def _auto_summary(dims: Dict[str, Dict[str, Any]], mean: Optional[float]) -> str:

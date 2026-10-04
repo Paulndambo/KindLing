@@ -187,13 +187,13 @@ Items marked ✅ are **shipped** (Wave 1 + early Wave 2 intelligence slice — s
    Show-your-work mode with intermediate checks (A3 verifier), partial credit, and step-list UI (pilot packs).
 
 7. **Assessment modes** ✅ (v1) · **C6**  
-   Low-stakes offline-first MCQ quick checks (one question at a time) with tutor explanation after every answer; end-of-topic / readiness offer; results feed mastery. **Remaining:** timed UI, broader banks, thin pre/post gain.
+   Low-stakes offline-first MCQ quick checks (one question at a time) with tutor explanation after every answer; end-of-topic / readiness offer; results feed mastery. Math Foundations has three items per core skill with an optional alternate-form before/after pilot; each of eight science scaffold areas has five explained items, including an applied transfer item, and topics with two items in each form can use the same optional check. Both report percentage-point change as an informal signal. **Remaining:** wider subject coverage and cohort calibration.
 
 8. **Practical how-to teaching** ✅  
-   Hands-on skill topics get numbered device procedures + try-it checklists (not theory-only). Curated CS literacy guides; Socratic carve-out so procedures are not withheld. **Wave 2:** expand guide library / domain packs (**C7**).
+   Hands-on skill topics get numbered device procedures + try-it checklists (not theory-only). Curated CS literacy guides include files/folders, browser search, password habits, and downloading a trusted file across devices; Socratic carve-out so procedures are not withheld. **Wave 2:** add deeper guides and domain coverage (**C7**).
 
-9. **Teacher/tutor playbooks** ⬜ Wave 2 · **C7**  
-   Domain packs (CS literacy how-tos, early math, algebra, writing) with proven scaffolds Kindling follows consistently.
+9. **Teacher/tutor playbooks** ⚡ Partial · **C7**
+   Data-backed early-math/algebra and science scaffold packs guide lesson prompts; C8 samples surface non-scoring math and science consistency cues for human review. Further domain expansion follows session mix.
 
 10. **Learning intelligence loop (L1–L4)** ✅  
     LearnerState → pedagogical policy → ADI → independence twins. **Remaining:** L5 trajectory export, decision-compliance scoring depth, lifelong cross-subject model.
@@ -209,8 +209,8 @@ Items marked ✅ are **shipped** (Wave 1 + early Wave 2 intelligence slice — s
 3. **Affective check-ins** ✅  
    Mid-session feelings (B3) + session-start energy (B7) + end reflection (B8); celebrate persistence, not only accuracy.
 
-4. **Optional email alerts (opt-in)** ⬜ Wave 2 · **C10**  
-   “Stuck on fractions three sessions” can email the **same** student-configured digest address—without shaming the student in chat (A5 digests already ship). No parent app.
+4. **Optional email alerts (opt-in)** ✅ Wave 2 · **C10**
+   A daily rule sends a gentle support note to the same student-configured A5 digest address after repeated-fail flags span three sessions in 14 days. It uses the digest opt-in and observes a seven-day cooldown. No parent app.
 
 ### 3.3 Content, media & multimodal teaching
 
@@ -254,11 +254,11 @@ Items marked ✅ are **shipped** (Wave 1 + early Wave 2 intelligence slice — s
 2. **Teacher / classroom mode** ❌ **Out of product**  
    No rosters, class assignments, or class dashboards. Schools and learning institutions purchase **individual student seats** (same as any multi-learner buyer).
 
-3. **Standards alignment reports** ⬜ Wave 2 · **C4**  
-   Exportable progress for **this student** against curriculum frameworks (pilot skills already carry optional codes). Forwardable by email—not a class report product.
+3. **Standards alignment reports** ⚡ Partial · Wave 2 · **C4**
+   Authenticated CSV and email-ready text summary of this student's progress against the internal CS pilot references are available. These are not externally reviewed standards; external alignment remains open. This is not a class report product.
 
 4. **Goals & plans** ✅ lite / ⬜ full  
-   Lite: topic `learning_goal`, familiarity, week focus, lesson chips (**C5 lite**). Full exam timelines = Wave 2 · **C5+** (student-owned; no guardian contract product).
+   Lite: topic `learning_goal`, familiarity, week focus, lesson chips (**C5 lite**). Optional student-owned target date + countdown (**C5+.1**) and focused homework windows (**C5+.2**) ship; full planning remains Wave 2 · **C5+** (no guardian contract product).
 
 5. **Portfolios** ⬜ Phase 5 stretch  
    Showcase correct reasoning, projects, and writing for the single learner. Light spark challenge (G1) is **not** a portfolio/badge system.
@@ -271,8 +271,8 @@ Items marked ✅ are **shipped** (Wave 1 + early Wave 2 intelligence slice — s
 2. **Answer correctness verification** ✅ (math pilot)  
    Symbolic/rational checks on graded turns (A3); expand domains later.
 
-3. **Human-in-the-loop review** ⬜ Wave 2 · **C9**  
-   Ops/support flags for distress or repeated fail—not a parent portal.
+3. **Human-in-the-loop review** ✅ Wave 2 · **C9**
+   Staff can review scrubbed support flags for high-severity safety distress and repeated learning difficulty in the internal admin queue. This is not a parent portal.
 
 4. **Privacy by design** ✅ baseline / ⬜ deepen  
    Export/delete + safety doc today; retention UX + regional hosting = Phase 5.
@@ -329,7 +329,7 @@ Execution order lives in [`PLAN.md`](./PLAN.md). Mapping:
 | Horizon | Intent | Wave | Status |
 |---------|--------|------|--------|
 | **A** | High impact on existing code | **Wave 1** | ✅ Shipped (A1–A6 + platform floor minus Postgres host) |
-| **B** | Differentiation | **Wave 1.5–2** | ⚡ Partial — L1–L4, C6 v1, C8, practical how-to, CS pilot shipped; C1+/C7/C4/deploy still open |
+| **B** | Differentiation | **Wave 1.5–2** | ⚡ Partial — L1–L4, C6 v1, C8, practical how-to, CS pilot, first C7 math/algebra + science packs, and rolling C1+ recall measurement shipped; sustained C1+ lift, further C7 coverage, C4/deploy remain |
 | **C** | Category leadership | **Wave 2 scale** | ⬜ Phase 5 (+ deferred VR/collab/credentials) |
 
 ### Horizon A — Shipped product slice (Wave 1)
@@ -354,10 +354,10 @@ Execution order lives in [`PLAN.md`](./PLAN.md). Mapping:
 **Still open**
 
 - Spaced review **depth** (beyond v1) · **C1+**  
-- Domain playbook packs · **C7**  
-- Single-learner standards export; full student-owned goals/plans · **C4 / C5+**  
-- Digest polish + optional stuck emails · **C10**  
-- Ops review flags · **C9**; diagram rendering + accessibility pack (Phase 4 P0)  
+- Additional domain playbook breadth · **C7**
+- External standards alignment · **C4**; full goals planner · **C5+**
+- Digest polish · **A5**
+- Diagram rendering + accessibility pack (Phase 4 P0)
 - Hostable deploy / Postgres · Track D  
 - **Not in scope:** multi-child households, classroom/roster products  
 
@@ -394,4 +394,4 @@ Whatever is built next, these should stay non-negotiable:
 
 ---
 
-*Last updated: 2026-09-10 — CS pilot, L1–L4, C6/C8, practical how-to, suggestion chips reflected; Wave 2 Track D still the external-beta gate. Expert review gaps: [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*
+*Last updated: 2026-10-04 — P.6 download how-to guide, R.1 student-owned digest recipient and unsent preview UX, C6.10 science transfer checks, C7.4 science playbook sample cues, C6.9 science alternate-form learning-gain pilot, C8.4 human-label calibration diagnostics, C6.8 science assessment depth, C6.7 math alternate-form pilot, C9 scrubbed support-flag review queue, and C10 opt-in support email reflected alongside CS pilot, L1–L4, C6/C8, practical how-to, and suggestion chips; Wave 2 Track D still the external-beta gate for live email. Expert review gaps: [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*

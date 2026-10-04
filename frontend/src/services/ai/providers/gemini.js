@@ -3,11 +3,13 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
+import { createPlatformGeminiClient } from "../platformGemini";
 
 /**
  * @param {{ apiKey: string }} creds
  */
 export function createGeminiClient(creds) {
+  if (creds?.platformProxy) return createPlatformGeminiClient();
   if (!creds?.apiKey) return null;
   return new GoogleGenAI({ apiKey: creds.apiKey });
 }

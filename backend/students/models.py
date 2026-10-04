@@ -33,6 +33,8 @@ class StudentProfile(models.Model):
         default="",
         help_text="One-line 'this week I'm working on…' reminder for the learner.",
     )
+    target_label = models.CharField(max_length=120, blank=True, default="")
+    target_date = models.DateField(null=True, blank=True)
     is_onboarded = models.BooleanField(default=False)
     # Family digest preferences (Epic A5) — single-student account for now
     digest_opt_in = models.BooleanField(

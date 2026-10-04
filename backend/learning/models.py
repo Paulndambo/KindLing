@@ -391,7 +391,7 @@ class SkillReviewItem(models.Model):
     )
     due_at = models.DateTimeField(db_index=True)
     snoozed_until = models.DateTimeField(null=True, blank=True, db_index=True)
-    # Selection reasons: weak, rusty, streak, recent_struggle
+    # Selection reasons: weakness/struggle plus learner-requested practice/focus.
     reason = models.CharField(max_length=40, blank=True, default="")
     priority = models.FloatField(
         default=0.5,
@@ -423,6 +423,51 @@ class SkillReviewItem(models.Model):
 
     def __str__(self):
         return f"review {self.skill.slug} due {self.due_at} ({self.status})"
+
+
+class SkillReviewAttempt(models.Model):
+    """Outcome evidence for measuring recall against each scheduled interval."""
+
+    class Outcome(models.TextChoices):
+        SUCCESS = "success", "Successful recall"
+        PARTIAL = "partial", "Partial recall"
+        FAIL = "fail", "Needs another review"
+
+    profile = models.ForeignKey(
+        LearningProfile,
+        on_delete=models.CASCADE,
+        related_name="review_attempts",
+    )
+    skill = models.ForeignKey(
+        "curriculum.Skill",
+        on_delete=models.CASCADE,
+        related_name="review_attempts",
+    )
+    review_item = models.ForeignKey(
+        SkillReviewItem,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="attempts",
+    )
+    outcome = models.CharField(max_length=16, choices=Outcome.choices)
+    scheduled_due_at = models.DateTimeField()
+    completed_at = models.DateTimeField(db_index=True)
+    due_delta_hours = models.FloatField(
+        help_text="Hours from scheduled due time; negative means reviewed early."
+    )
+    planned_interval_days = models.FloatField(default=1.0)
+    via = models.CharField(max_length=32, blank=True, default="review_spark")
+
+    class Meta:
+        ordering = ["-completed_at"]
+        indexes = [
+            models.Index(fields=["profile", "-completed_at"]),
+            models.Index(fields=["profile", "outcome", "-completed_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.skill.slug} {self.outcome} @ {self.completed_at}"
 
 
 class ConversationStatus(models.TextChoices):
@@ -599,6 +644,40 @@ class ParentDigest(models.Model):
 
     def __str__(self):
         return f"Digest {self.student_id} {self.period_start.date()}–{self.period_end.date()} [{self.status}]"
+
+
+class StuckLearningAlert(models.Model):
+    """Idempotency and delivery record for the optional C10 support email."""
+
+    class Status(models.TextChoices):
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="stuck_learning_alerts",
+    )
+    window_end = models.DateField()
+    flag_count = models.PositiveSmallIntegerField(default=0)
+    recipient_email = models.EmailField(blank=True, default="")
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.FAILED)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    error = models.CharField(max_length=240, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["student", "window_end"],
+                name="uniq_stuck_alert_student_day",
+            ),
+        ]
+        indexes = [models.Index(fields=["student", "-sent_at"]) ]
+
+    def __str__(self):
+        return f"Stuck learning alert {self.student_id} {self.window_end} [{self.status}]"
 
 
 class ConversationMessage(models.Model):

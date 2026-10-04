@@ -741,6 +741,11 @@ def ingest_events(
                 session.topic = topic or session.topic
                 session.save()
 
+                # C9.1: flag sustained difficulty from graded outcomes only.
+                from core.ops_flags import flag_repeated_learning_difficulty
+
+                flag_repeated_learning_difficulty(session)
+
                 apply_exchange_to_profile_model(
                     profile,
                     subject=subject,

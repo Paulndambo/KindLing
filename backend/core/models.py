@@ -113,6 +113,37 @@ class SafetyEvent(models.Model):
         return f"{self.severity}:{self.category}:{self.code}"
 
 
+class OpsReviewFlag(models.Model):
+    """Scrubbed internal support flag; never contains learner message text."""
+
+    class Category(models.TextChoices):
+        DISTRESS = "distress", "Safety distress"
+        REPEATED_FAIL = "repeated_fail", "Repeated learning difficulty"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        REVIEWED = "reviewed", "Reviewed"
+        RESOLVED = "resolved", "Resolved"
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    category = models.CharField(max_length=32, choices=Category.choices, db_index=True)
+    severity = models.CharField(max_length=16, choices=SafetyEvent.Severity.choices, default=SafetyEvent.Severity.INFO)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN, db_index=True)
+    trigger_key = models.CharField(max_length=160, unique=True)
+    session_id = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    user_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    safety_event = models.ForeignKey(SafetyEvent, null=True, blank=True, on_delete=models.SET_NULL, related_name="review_flags")
+    details = models.JSONField(default=dict, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "category", "-created_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.category}:{self.status}:{self.session_id or self.pk}"
+
+
 class JobRun(models.Model):
     """
     Audit log for background job executions (Phase 0.5).

@@ -224,7 +224,7 @@ export function useSpeechSynthesis() {
 
       if (!getGeminiClientForTts()) {
         console.warn(
-          "Gemini TTS unavailable — set VITE_GEMINI_API_KEY or add a Gemini key in Settings"
+          "Gemini TTS unavailable — check platform AI availability or add a Gemini key in Settings"
         );
         setIsSpeaking(false);
         setIsLoadingVoice(false);

@@ -19,12 +19,14 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.html import escape
 
+from core.models import OpsReviewFlag
 from learning.models import (
     LearningEvent,
     LearningEventType,
     LearningProfile,
     LessonSession,
     ParentDigest,
+    StuckLearningAlert,
     SkillMastery,
     TopicMastery,
 )
@@ -640,6 +642,105 @@ def run_weekly_digests(*, dry_run: bool = False, force: bool = False) -> Dict[st
         "skipped": skipped,
         "failed": failed,
         "digest_ids": digests[:50],
+    }
+
+
+def run_stuck_learning_alerts(*, dry_run: bool = False) -> Dict[str, Any]:
+    """Email opted-in digest recipients after repeated difficulty across sessions."""
+    now = timezone.now()
+    threshold = max(2, int(getattr(settings, "C10_STUCK_SESSION_THRESHOLD", 3)))
+    window_days = max(1, int(getattr(settings, "C10_STUCK_SESSION_WINDOW_DAYS", 14)))
+    cooldown_days = max(1, int(getattr(settings, "C10_STUCK_ALERT_COOLDOWN_DAYS", 7)))
+    cutoff = now - timedelta(days=window_days)
+    by_user: Dict[int, set] = defaultdict(set)
+    rows = OpsReviewFlag.objects.filter(
+        category=OpsReviewFlag.Category.REPEATED_FAIL,
+        created_at__gte=cutoff,
+    ).exclude(session_id="").values_list("user_id", "session_id")
+    for user_id, session_id in rows.iterator():
+        if user_id:
+            by_user[user_id].add(session_id)
+
+    candidates = {
+        user_id: sessions
+        for user_id, sessions in by_user.items()
+        if len(sessions) >= threshold
+    }
+    if not candidates:
+        return {"ok": True, "job": "stuck_learning_alert", "candidates": 0, "sent": 0, "failed": 0, "dry_run": dry_run}
+
+    students = StudentProfile.objects.filter(
+        user_id__in=candidates,
+        is_onboarded=True,
+        digest_opt_in=True,
+    ).select_related("user")
+    sent = failed = skipped_cooldown = 0
+    today = timezone.localdate(now)
+    for student in students:
+        recipient = student.digest_recipient()
+        if not recipient:
+            continue
+        recent_alert = StuckLearningAlert.objects.filter(
+            student=student,
+            status=StuckLearningAlert.Status.SENT,
+            sent_at__gte=now - timedelta(days=cooldown_days),
+        ).exists()
+        if recent_alert:
+            skipped_cooldown += 1
+            continue
+        if dry_run:
+            continue
+
+        alert, _ = StuckLearningAlert.objects.get_or_create(
+            student=student,
+            window_end=today,
+            defaults={
+                "flag_count": len(candidates[student.user_id]),
+                "recipient_email": recipient,
+            },
+        )
+        if alert.status == StuckLearningAlert.Status.SENT:
+            continue
+        alert.flag_count = len(candidates[student.user_id])
+        alert.recipient_email = recipient
+        try:
+            send_mail(
+                subject="A little extra learning support is available",
+                message=(
+                    "Recent learning sessions included a few challenging moments. "
+                    "If it would help, Kindling is ready to continue with practice "
+                    "and step-by-step support. Learning takes time, and there is "
+                    "no pressure to do anything right away. You can turn these "
+                    "notes off with the Weekly digests setting in the dashboard."
+                ),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@kindling.local"),
+                recipient_list=[recipient],
+                fail_silently=False,
+            )
+            alert.status = StuckLearningAlert.Status.SENT
+            alert.sent_at = now
+            alert.error = ""
+            alert.save(update_fields=["flag_count", "recipient_email", "status", "sent_at", "error"])
+            sent += 1
+        except Exception as exc:
+            alert.status = StuckLearningAlert.Status.FAILED
+            # Mail backend exceptions may contain recipient addresses; retain only
+            # the exception class so delivery logs do not copy personal data.
+            alert.error = f"{type(exc).__name__}: delivery failed"[:240]
+            alert.save(update_fields=["flag_count", "recipient_email", "status", "error"])
+            failed += 1
+
+    return {
+        "ok": True,
+        "job": "stuck_learning_alert",
+        "dry_run": dry_run,
+        "threshold_sessions": threshold,
+        "window_days": window_days,
+        "cooldown_days": cooldown_days,
+        "candidates": len(candidates),
+        "sent": sent,
+        "failed": failed,
+        "skipped_cooldown": skipped_cooldown,
     }
 
 

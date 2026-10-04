@@ -46,6 +46,7 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [selectedIsPreview, setSelectedIsPreview] = useState(false);
   const [emailDraft, setEmailDraft] = useState(
     student?.familyEmail || ""
   );
@@ -120,13 +121,14 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
     setError("");
     try {
       const res = await generateDigest({
-        deliver: true,
+        deliver: false,
         dryRun: true,
         forcePreview: true,
       });
       const digest = res?.digest;
       if (digest) {
         setSelected(digest);
+        setSelectedIsPreview(true);
         await load();
       }
     } catch (err) {
@@ -149,7 +151,7 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
             style={{ marginRight: 8, verticalAlign: -3 }}
             color="var(--pine)"
           />
-          Family weekly digest
+          Weekly progress email
         </h3>
         <span className="dash-delta muted">Clear progress · never shaming</span>
       </div>
@@ -162,9 +164,10 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
           margin: "0 0 14px",
         }}
       >
-        Kindling can summarize lessons, time on task, strengths, and gentle next
-        steps for caregivers. Built from real learning events — effort first,
-        accuracy second.
+        You choose the recipient address and control the weekly opt-in here.
+        Repeated-learning support notes use the same opt-in and address. Preview
+        the email below before it is sent; generating a preview does not send it.
+        Progress focuses on effort and learning, with accuracy as one signal.
       </p>
 
       <div className="dash-digest-prefs">
@@ -187,14 +190,14 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
 
         <div className="dash-digest-email-row">
           <label htmlFor="family-email-input">
-            Family email
+            Recipient email
             <input
               id="family-email-input"
               type="email"
               value={emailDraft}
               onChange={(e) => setEmailDraft(e.target.value)}
               onBlur={saveEmail}
-              placeholder="caregiver@example.com"
+              placeholder="someone@example.com"
               disabled={busy}
             />
           </label>
@@ -234,7 +237,7 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
               style={{ marginRight: 6, display: "inline", verticalAlign: -2 }}
             />
           )}
-          Generate this week&apos;s preview
+          Preview this week&apos;s email
         </button>
         <button
           type="button"
@@ -273,8 +276,9 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
           <div className="dash-digest-preview-head">
             <strong>{selected.headline}</strong>
             <span className="dash-status-pill status-building">
-              {selected.status}
-              {selected.channel ? ` · ${selected.channel}` : ""}
+              {selectedIsPreview
+                ? "Preview · not sent"
+                : `${selected.status || "Saved"}${selected.channel ? ` · ${selected.channel}` : ""}`}
             </span>
           </div>
           <p className="dash-digest-period">
@@ -325,7 +329,10 @@ export default function FamilyDigestCard({ student, onStudentUpdate }) {
                   <button
                     type="button"
                     className="dash-digest-link"
-                    onClick={() => setSelected(d)}
+                    onClick={() => {
+                      setSelected(d);
+                      setSelectedIsPreview(false);
+                    }}
                   >
                     <strong>{d.headline || `Digest #${d.id}`}</strong>
                   </button>

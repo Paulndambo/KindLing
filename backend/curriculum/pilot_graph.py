@@ -706,6 +706,37 @@ PILOT_SUBJECT = "Computer Science"
 PILOT_COLOR = "#E8F1FB"
 PILOT_ICON = "code"
 
+# These are Kindling's own pilot curriculum references, not identifiers from an
+# externally reviewed standards framework. Keep provenance attached anywhere
+# the codes leave the seed module so reports cannot imply third-party alignment.
+PILOT_STANDARD_FRAMEWORK = {
+    "id": "kindling.cs-pilot.v1",
+    "name": "Kindling Computer Science Pilot",
+    "version": "1.0",
+    "scope": "Computer Science pilot layers L0–L5",
+    "source": "Computer Science.MD",
+    "alignmentStatus": "internal_reference",
+    "description": (
+        "Kindling's internal curriculum references. They are not external "
+        "standards codes and have not been independently alignment-reviewed."
+    ),
+}
+
+
+def pilot_standard_crosswalk() -> List[Dict[str, str]]:
+    """Return the stable internal code → pilot skill crosswalk."""
+    rows: List[Dict[str, str]] = []
+    for data in skill_dicts():
+        for code in data["standard_codes"]:
+            rows.append(
+                {
+                    "code": code,
+                    "skillSlug": data["slug"],
+                    "skillName": data["name"],
+                }
+            )
+    return rows
+
 # lesson name → list of (skill_slug, weight, is_primary)
 TOPIC_SKILLS: Dict[str, List[Tuple[str, float, bool]]] = {
     "Understanding technology": [
@@ -1298,6 +1329,8 @@ def export_frontend_payload() -> Dict[str, Any]:
                 "shortLabel": data["short_label"],
                 "domain": data["domain"],
                 "description": data["description"],
+                "standardCodes": data["standard_codes"],
+                "standardFramework": PILOT_STANDARD_FRAMEWORK,
                 "pInit": data["p_init"],
                 "pTransit": data["p_transit"],
                 "pSlip": data["p_slip"],
@@ -1337,6 +1370,8 @@ def export_frontend_payload() -> Dict[str, Any]:
         )
     return {
         "PILOT_SUBJECT": PILOT_SUBJECT,
+        "standardFramework": PILOT_STANDARD_FRAMEWORK,
+        "standardCrosswalk": pilot_standard_crosswalk(),
         "skills": skills_out,
         "topics": topics_out,
         "units": units_out,

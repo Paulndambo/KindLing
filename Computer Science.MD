@@ -2,6 +2,24 @@
 
 > **Implementation note (2026-09):** The live Kindling pilot seeds **L0–L5** as **Subject → Topic (unit / layer) → Subtopic (lesson = every Lx.y section)** via `backend/curriculum/pilot_graph.py` + `cs_provision.py`. Each lesson’s `learning_goal` lists the source bullet concepts so tutors cover full depth — not merged “highlight” lessons. L0 digital-literacy lessons (including **Files & folders**) also use **practical how-to** steps (`frontend/src/services/learning/practicalGuides.js`). Layers **L6+** below remain the intended full knowledge graph and are not provisioned in the pilot yet.
 
+### Kindling pilot reference codes (C4.1)
+
+Every seeded pilot skill has one stable internal code (`CS.Lx.y`) in
+`backend/curriculum/pilot_graph.py`. The crosswalk maps each code to its skill
+slug and display name and is included in the generated frontend graph and
+`GET /api/learning/skills/` response. These codes refer to Kindling's own
+L0–L5 pilot sequence; they are **not** codes from CSTA or another external
+standards framework and do not assert externally reviewed alignment. The
+framework metadata travels with the codes so a future student report can label
+their provenance accurately.
+
+External CSTA standards are not imported into this commercial product: the
+[2026 CSTA PK–12 standards license](https://csteachers.org/pk12standards/) is
+non-commercial, and CSTA describes an independent review process for validated
+alignment claims ([review process](https://csteachers.org/2017standards/standards-alignment-review/)).
+If external standards reporting is pursued, first select a framework and
+resolve its licensing and review requirements.
+
 I would design it as a **knowledge graph + prerequisite graph**, where a learner can enter at literally any point, but the system can recursively determine what they need to know before progressing.
 
 The key design principle would be:
