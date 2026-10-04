@@ -230,7 +230,7 @@ export default function ChatPanel({
             </button>
           )}
           <div style={{ minWidth: 0 }}>
-            <h3>{topicName}</h3>
+            <h1>{topicName}</h1>
             <p className="sub">
               {subjectName}
               {unitName ? ` · ${unitName}` : ""}

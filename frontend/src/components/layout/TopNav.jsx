@@ -195,6 +195,7 @@ export default function TopNav({
         role="dialog"
         aria-modal={mobileOpen ? "true" : undefined}
         aria-hidden={mobileOpen ? undefined : "true"}
+        inert={!mobileOpen}
         aria-label="Navigation menu"
       >
         <div className="mobile-drawer-inner">

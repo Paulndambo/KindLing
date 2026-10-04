@@ -64,7 +64,7 @@ function SubjectsPageShell({
         <header className="subj-head">
           <div className="subj-head-copy">
             <p className="eyebrow">{eyebrow}</p>
-            <h2>{title}</h2>
+            <h1>{title}</h1>
             {subtitle ? <p>{subtitle}</p> : null}
           </div>
           {action}
@@ -318,7 +318,7 @@ export default function MySubjects({
             <div className="subj-empty-icon" aria-hidden>
               <Library size={28} />
             </div>
-            <h3>Sign in to see your path</h3>
+            <h2>Sign in to see your path</h2>
             <p>
               Subjects and lessons stay with your student account so you can
               resume anytime.
@@ -356,7 +356,7 @@ export default function MySubjects({
             <div className="subj-empty-icon" aria-hidden>
               <Sparkles size={28} />
             </div>
-            <h3>Profile required</h3>
+            <h2>Profile required</h2>
             <p>Set up your learning profile, then your path appears here.</p>
             <button
               type="button"
@@ -391,7 +391,7 @@ export default function MySubjects({
   const selectedSubject = subjects.find((subject) => String(subject.id) === String(selectedSubjectId));
   if (selectedSubject) {
     return <section id="subjects" className="subjects-page"><div className="subj-wrap">
-      <header className="subj-head"><div className="subj-head-copy"><p className="eyebrow">Your path</p><h2>{selectedSubject.name}</h2><p>Plan, organize and continue learning in this subject.</p></div>{headerAction}</header>
+    <header className="subj-head"><div className="subj-head-copy"><p className="eyebrow">Your path</p><h1>{selectedSubject.name}</h1><p>Plan, organize and continue learning in this subject.</p></div>{headerAction}</header>
       <div className="subj-stack"><SubjectDetail key={selectedSubject.id} subject={selectedSubject} onBack={() => onSelectSubject(null)} onAddTopic={onAddTopic} onAddSubtopic={onAddSubtopic} onStartLesson={onStartLesson}/></div>
     </div>{ALLOW_CUSTOM_SUBJECTS && modalOpen && <NewSubjectModal onClose={() => !busy && setModalOpen(false)} onCreate={handleCreate} saving={busy}/>}</section>;
   }
@@ -402,7 +402,7 @@ export default function MySubjects({
         <header className="subj-head">
           <div className="subj-head-copy">
             <p className="eyebrow">Your path</p>
-            <h2>
+            <h1>
               {ALLOW_CUSTOM_SUBJECTS
                 ? studentName === "you"
                   ? "What do you want to learn?"
@@ -410,7 +410,7 @@ export default function MySubjects({
                 : studentName === "you"
                   ? "Your Computer Science path"
                   : `${studentName}'s Computer Science path`}
-            </h2>
+            </h1>
             <p>
               {ALLOW_CUSTOM_SUBJECTS
                 ? `Subjects and topics Kindling can teach${
@@ -488,9 +488,9 @@ export default function MySubjects({
               </span>
               <div className="subj-panel-head-copy">
                 <p className="eyebrow">Curriculum</p>
-                <h3 id="subj-library-title">
+                <h2 id="subj-library-title">
                   {ALLOW_CUSTOM_SUBJECTS ? "Your subjects" : SOLE_SUBJECT_NAME}
-                </h3>
+                </h2>
                 <p className="subj-panel-meta">
                   {loading
                     ? "Loading your path…"
@@ -516,11 +516,11 @@ export default function MySubjects({
                   <div className="subj-empty-icon" aria-hidden>
                     <BookOpen size={26} />
                   </div>
-                  <h3>
+                  <h2>
                     {ALLOW_CUSTOM_SUBJECTS
                       ? "No subjects yet"
                       : `${SOLE_SUBJECT_NAME} is loading…`}
-                  </h3>
+                  </h2>
                   <p>
                     {ALLOW_CUSTOM_SUBJECTS
                       ? "Create your first subject — then add topics to start lessons."

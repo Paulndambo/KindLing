@@ -89,10 +89,10 @@ export default function Overview({
         <div className="path-card">
           <div className="path-head">
             <p className="eyebrow">Right now, in a lesson</p>
-            <h3>
+            <h2>
               {possessive.charAt(0).toUpperCase() + possessive.slice(1)} mastery
               path — Fractions
-            </h3>
+            </h2>
           </div>
           <MasteryPathSvg />
         </div>

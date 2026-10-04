@@ -434,9 +434,9 @@ export default function Dashboard({
             </div>
             <div>
               <p className="eyebrow">Dashboard</p>
-              <h2>
+              <h1>
                 {greeting}, {studentName}
-              </h2>
+              </h1>
               <p className="dash-hero-sub">
                 Your progress, strengths, and next lessons — tuned to{" "}
                 <strong>{grade}</strong>
@@ -534,7 +534,7 @@ export default function Dashboard({
           >
             <div className="nba-card-main">
               <p className="eyebrow">A good next step</p>
-              <h3 className="nba-title">{topNba.label}</h3>
+          <h2 className="nba-title">{topNba.label}</h2>
               <p className="nba-reason">{topNba.reason}</p>
             </div>
             <button
@@ -650,9 +650,9 @@ export default function Dashboard({
 
         {/* Profile strip (student from API / onboarding) */}
         <div className="academic-card dash-profile-card">
-          <h4>
+          <h2>
             <GraduationCap size={18} color="var(--pine)" /> Your learning profile
-          </h4>
+          </h2>
           <div className="academic-grid">
             <div className="academic-item">
               <b>School</b>
@@ -690,7 +690,7 @@ export default function Dashboard({
         <div className="dash-grid">
           <div className="panel">
             <div className="dash-panel-head">
-              <h3>Skill sparks</h3>
+              <h2>Skill sparks</h2>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span className="dash-delta">
                   <TrendingUp size={14} /> {stats.masteryDelta || "—"} this week
@@ -771,7 +771,7 @@ export default function Dashboard({
 
           <div className="panel">
             <div className="dash-panel-head">
-              <h3>Confidence</h3>
+              <h2>Confidence</h2>
               <span className="dash-delta muted">From recent exchanges</span>
             </div>
             <ConfidenceChart points={confidencePoints} />
@@ -799,7 +799,7 @@ export default function Dashboard({
         {/* Strengths / focus + activity */}
         <div className="dash-grid dash-grid-equal">
           <div className="panel">
-            <h3>What&apos;s going well</h3>
+            <h2>What&apos;s going well</h2>
             {strengths.length ? (
               <ul className="dash-insight-list">
                 {strengths.map((s) => (
@@ -818,7 +818,7 @@ export default function Dashboard({
                 body="After a few successful exchanges on a topic, Kindling lists it as a strength."
               />
             )}
-            <h3 className="dash-subhead">Worth more practice</h3>
+            <h2 className="dash-subhead">Worth more practice</h2>
             {focusAreas.length ? (
               <ul className="dash-insight-list">
                 {focusAreas.map((s) => (
@@ -840,7 +840,7 @@ export default function Dashboard({
           </div>
 
           <div className="panel">
-            <h3>Recent activity</h3>
+            <h2>Recent activity</h2>
             <div className="dash-activity">
               {recentActivity.length ? (
                 recentActivity.map((a) => (
@@ -871,13 +871,13 @@ export default function Dashboard({
         {/* Upcoming plan from backend suggestions */}
         <div className="panel dash-plan-panel">
           <div className="dash-panel-head">
-            <h3>
+            <h2>
               <CalendarDays
                 size={18}
                 style={{ marginRight: 8, verticalAlign: -3 }}
               />
               Coming up
-            </h3>
+            </h2>
             <span className="dash-delta muted">Suggested by Kindling</span>
           </div>
           <div className="plan-list dash-plan-list">
