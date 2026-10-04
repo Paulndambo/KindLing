@@ -55,6 +55,7 @@ export default function TopNav({
 
   return (
     <>
+      <header>
       <nav className="topnav" aria-label="Primary">
         <BrandLogo onClick={() => handleNav("overview")} />
 
@@ -176,6 +177,7 @@ export default function TopNav({
           </button>
         </div>
       </nav>
+      </header>
 
       {/* Mobile drawer overlay */}
       {mobileOpen && (

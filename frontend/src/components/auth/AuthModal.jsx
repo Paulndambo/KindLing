@@ -223,8 +223,9 @@ export default function AuthModal({
         <form onSubmit={handleFormSubmit}>
           {isRegister && (
             <div className="field-block">
-              <span className="field-label">Your name</span>
+              <label className="field-label" htmlFor="auth-name">Your name</label>
               <input
+                id="auth-name"
                 type="text"
                 className="modal-input"
                 placeholder="e.g. Alex"
@@ -237,8 +238,9 @@ export default function AuthModal({
             </div>
           )}
           <div className="field-block">
-            <span className="field-label">Email address</span>
+            <label className="field-label" htmlFor="auth-email">Email address</label>
             <input
+              id="auth-email"
               type="email"
               className="modal-input"
               placeholder="you@school.edu"
@@ -250,8 +252,9 @@ export default function AuthModal({
             />
           </div>
           <div className="field-block">
-            <span className="field-label">Password</span>
+            <label className="field-label" htmlFor="auth-password">Password</label>
             <input
+              id="auth-password"
               type="password"
               className="modal-input"
               placeholder={isRegister ? "At least 8 characters" : "••••••••"}
@@ -263,8 +266,9 @@ export default function AuthModal({
           </div>
           {isRegister && (
             <div className="field-block">
-              <span className="field-label">Confirm password</span>
+              <label className="field-label" htmlFor="auth-password-confirm">Confirm password</label>
               <input
+                id="auth-password-confirm"
                 type="password"
                 className="modal-input"
                 placeholder="••••••••"
