@@ -28,6 +28,28 @@ def env_list(name: str, default: List[str] | None = None) -> List[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def load_local_env() -> None:
+    """Load backend/.env for local development without overriding host config."""
+    env_path = BASE_DIR / ".env"
+    if not env_path.is_file():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        entry = line.strip()
+        if not entry or entry.startswith("#"):
+            continue
+        if entry.startswith("export "):
+            entry = entry[7:].lstrip()
+        name, separator, value = entry.partition("=")
+        if not separator or not name.strip():
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        os.environ.setdefault(name.strip(), value)
+
+
+load_local_env()
+
 APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
 DEBUG: bool = env_bool("DEBUG", APP_ENV != "production")
 SECRET_KEY: str = os.environ.get("SECRET_KEY", "").strip()
@@ -36,7 +58,17 @@ if not SECRET_KEY:
         raise RuntimeError("SECRET_KEY must be set when DEBUG is disabled.")
     SECRET_KEY = "django-insecure-local-development-only"
 PLATFORM_GEMINI_API_KEY: str = os.environ.get("PLATFORM_GEMINI_API_KEY", "").strip()
+SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "").strip()
 ALLOWED_HOSTS: List[str] = env_list("ALLOWED_HOSTS", ["localhost", "127.0.0.1", "[::1]"])
+ALLOW_SELF_SERVICE_PLAN_ACTIVATION = env_bool(
+    "ALLOW_SELF_SERVICE_PLAN_ACTIVATION", DEBUG
+)
+# ngrok assigns a new hostname when a temporary tunnel is restarted. Allow the
+# current development tunnel by default, and let developers override it without
+# broadening the accepted hosts to every ngrok subdomain.
+NGROK_HOST = os.environ.get("NGROK_HOST", "logical-useful-shad.ngrok-free.app").strip()
+if DEBUG and NGROK_HOST and NGROK_HOST not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(NGROK_HOST)
 if not DEBUG and not ALLOWED_HOSTS:
     raise RuntimeError("ALLOWED_HOSTS must be set when DEBUG is disabled.")
 
@@ -181,6 +213,9 @@ if os.environ.get("EMAIL_HOST"):
     EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
     EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
     EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+    EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
+    if EMAIL_USE_TLS and EMAIL_USE_SSL:
+        raise RuntimeError("EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled.")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     if not DEBUG:
@@ -229,7 +264,11 @@ REST_FRAMEWORK: Dict[str, Any] = {
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ),
-    "DEFAULT_THROTTLE_RATES": {"platform_ai": "30/hour"},
+    "DEFAULT_THROTTLE_RATES": {
+        "platform_ai": "30/hour",
+        "anon": "5/hour",
+        "user": "5/hour",
+    },
 }
 
 SIMPLE_JWT: Dict[str, Any] = {

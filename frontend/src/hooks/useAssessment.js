@@ -136,10 +136,12 @@ export function useAssessment({
       form = "",
       purpose = "practice",
       baseline = null,
+      questions = null,
+      topic = topicName,
     } = {}) => {
       const ses = createAssessmentSession({
         subject: subjectName,
-        topic: topicName,
+        topic,
         unit: unit || "",
         skillSlug,
         skillSlugs,
@@ -149,6 +151,7 @@ export function useAssessment({
         form,
         purpose,
         baseline,
+        questions,
       });
       if (!ses) return null;
       setOffer(null);
@@ -165,6 +168,7 @@ export function useAssessment({
         source: ses.source,
         purpose: ses.purpose,
         form: ses.form,
+        offlinePack: source === "offline_pack",
       });
       trackMetric("assessment.started", {
         sessionId: getSessionId?.(),

@@ -75,7 +75,8 @@ Before a student message is sent to the tutor model, Kindling runs lightweight p
 | Telemetry | Client errors, product metrics (scrubbed) | `ClientErrorReport`, `ProductMetric` |
 | Safety events | Distress category codes only | `SafetyEvent` |
 | Homework photos | Worksheet images + vision analysis JSON (Epic A4) | `HomeworkUpload` + `MEDIA_ROOT` |
-| AI traffic | Lesson text / homework images to Gemini when the browser has an API key | Google (per Gemini terms) |
+| AI traffic | Lesson text / homework images to Google Gemini through either a learner-owned key or Kindling's server proxy | Google (per Gemini terms); platform requests also pass through Kindling's API |
+| Support requests | Category, subject, message, optional reply address, account id when signed in | Kindling database; support inbox receives a ticket reference/category notification when configured |
 
 Browser **localStorage** may also cache profiles, conversation shelves, and learning event queues until cleared.
 
@@ -96,6 +97,7 @@ Notes:
 - Deletion cascades student-owned curriculum and learning rows via ORM FKs.  
 - Local browser caches are **not** wiped by the API—users should clear site data or log out after delete.  
 - For manual requests, operators can use Django admin or these APIs.
+- Support requests may contain learner-provided text; the form advises learners not to include passwords, payment-card details, or sensitive personal information. Staff should treat request text as private support data and resolve/delete it when no longer needed.
 
 Example:
 
@@ -142,7 +144,8 @@ No automated multi-year purge job yet (see Phase 0.5 / platform backlog).
 - Gemini still generates free text; prompt policy reduces but does not eliminate risk.  
 - No human moderation queue, parental consent flow, or regional data residency yet.  
 - No formal DPA / subprocessors list in this baseline—add before commercial child deployments.
+- The in-app Terms and Privacy pages are beta drafts; they do not replace counsel review or a founder's explicit risk acceptance before external enrollment.
 
 ---
 
-*Aligned with PLAN.md Phase 0.4 and CAPABILITIES.md §3.6.*
+*Aligned with NEXT_STEPS.md Phase 0.4 and CAPABILITIES.md §3.6.*

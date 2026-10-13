@@ -142,6 +142,25 @@ python manage.py run_scheduled_jobs
 - **Cohort:** `auto-weekly-YYYY-Www` (ISO week)
 - **JobRun result:** counts + means only (no transcript PII)
 
+## Learning outcome report
+
+Use the read-only outcome report to compare immediate assessment results with
+no-scaffold transfer checks and spaced-review recall, grouped by subject and
+self-reported grade band. Grade bands are broad proxies, not verified ages;
+the report contains aggregate counts and rates only.
+
+```bash
+# Print a 90-day aggregate report (choose another window with --days)
+python manage.py learning_outcome_report --days 90
+
+# Write Markdown and JSON aggregates
+python manage.py learning_outcome_report --days 90 --out eval_samples/outcomes.md
+```
+
+Pre/post gain is reported only when a completed follow-up includes a linked
+baseline. Review recall is grouped by planned spacing interval. Empty groups
+mean no outcome evidence was recorded; they are not zero-performance scores.
+
 ## After C8.2
 
 | Next | Work |

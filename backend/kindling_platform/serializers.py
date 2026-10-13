@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from .models import (
     AiRoutingPreference,
+    BillingInvoice,
     BillingCycle,
     PlanId,
     PlatformSubscription,
@@ -48,6 +49,41 @@ class SubscriptionSelectSerializer(serializers.Serializer):
     billing_cycle = serializers.ChoiceField(
         choices=BillingCycle.choices, required=False, default=BillingCycle.MONTHLY
     )
+
+
+class InvoiceRequestSerializer(serializers.Serializer):
+    plan = serializers.ChoiceField(choices=(PlanId.EMBER, PlanId.FORGE))
+    billing_cycle = serializers.ChoiceField(
+        choices=BillingCycle.choices, default=BillingCycle.MONTHLY
+    )
+
+
+class BillingInvoiceSerializer(serializers.ModelSerializer):
+    invoice_number = serializers.SerializerMethodField()
+    plan_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BillingInvoice
+        fields = (
+            "id",
+            "invoice_number",
+            "plan",
+            "plan_name",
+            "billing_cycle",
+            "amount",
+            "currency",
+            "status",
+            "payment_reference",
+            "created_at",
+            "paid_at",
+        )
+        read_only_fields = fields
+
+    def get_invoice_number(self, obj):
+        return f"KND-{obj.created_at:%Y}-{obj.pk:06d}"
+
+    def get_plan_name(self, obj):
+        return serialize_plan(obj.plan).get("name", obj.plan)
 
 
 class AiRoutingPreferenceSerializer(serializers.ModelSerializer):

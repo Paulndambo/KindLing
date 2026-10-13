@@ -11,6 +11,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from learning.signal_quality import SIGNAL_RELIABILITY_THRESHOLD
+
 
 LEARNER_STATE_VERSION = 1
 
@@ -306,7 +308,11 @@ def build_learner_state_from_profile(
     }
 
     eng_hist = profile.get("engagementHistory") or profile.get("engagement_history") or []
-    conf_hist = profile.get("confidenceHistory") or profile.get("confidence_history") or []
+    conf_hist = (
+        profile.get("confidenceEvidenceHistory")
+        or profile.get("confidence_evidence_history")
+        or []
+    )
     last = last_signals or {}
     eng_level = _clamp01(last.get("engagement"))
     if eng_level is None:
@@ -317,7 +323,15 @@ def build_learner_state_from_profile(
         "recent": list(eng_hist)[-8:],
     }
 
-    conf_level = _clamp01(last.get("confidence"))
+    confidence_evidence = (
+        (last.get("signalEvidence") or {}).get("learnerConfidence") or {}
+    )
+    conf_level = (
+        _clamp01(confidence_evidence.get("value"))
+        if float(confidence_evidence.get("confidence") or 0)
+        >= SIGNAL_RELIABILITY_THRESHOLD
+        else None
+    )
     conf_mean = _mean(conf_hist)
     if conf_level is None:
         conf_level = conf_mean

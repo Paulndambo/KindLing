@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from learning.signal_quality import correctness_evidence
+
 
 ADI_VERSION = 1
 ADI_WINDOW = 12
@@ -303,6 +305,7 @@ def turns_from_exchange_events(events: List[Any]) -> List[Dict[str, Any]]:
             or payload.get("correctness")
             or ""
         )
+        correctness_reliable, _ = correctness_evidence(signals)
         level = (
             signals.get("interventionLevel")
             or payload.get("interventionLevel")
@@ -315,7 +318,7 @@ def turns_from_exchange_events(events: List[Any]) -> List[Dict[str, Any]]:
         )
         out.append(
             {
-                "correctness": correctness,
+                "correctness": correctness if correctness_reliable else "unknown",
                 "isHintRequest": bool(
                     signals.get("isHintRequest") or payload.get("isHintRequest")
                 ),

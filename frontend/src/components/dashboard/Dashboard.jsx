@@ -184,7 +184,7 @@ export default function Dashboard({
   const confidencePoints = useMemo(() => {
     const series = data?.confidenceHistory?.[week];
     if (Array.isArray(series) && series.length) return series;
-    return [40, 40, 40, 40, 40, 40, 40];
+    return [];
   }, [data, week]);
 
   const masteryRows = data?.masteryMap || [];
@@ -350,10 +350,21 @@ export default function Dashboard({
         recommendedNextSkill?.subject ||
         subjects[0]?.name ||
         "Computer Science";
+      const actionOnlyLabel =
+        item.kind === "lesson" ||
+        item.kind === "challenge" ||
+        [
+          "Independent practice",
+          "Quick check",
+          "Fair stretch",
+          "Rework a sticky idea",
+        ].includes(item.label);
       const top =
         item.topic ||
         recommendedNextSkill?.topic ||
-        (typeof item.label === "string" && !/^Review|Independent|Quick|Fair/i.test(item.label)
+        (!actionOnlyLabel &&
+        typeof item.label === "string" &&
+        !/^Review|Independent|Quick|Fair|Rework/i.test(item.label)
           ? item.label
           : null) ||
         subjects[0]?.topics?.[0]?.name ||
@@ -774,7 +785,14 @@ export default function Dashboard({
               <h2>Confidence</h2>
               <span className="dash-delta muted">From recent exchanges</span>
             </div>
-            <ConfidenceChart points={confidencePoints} />
+            {confidencePoints.length ? (
+              <ConfidenceChart points={confidencePoints} />
+            ) : (
+              <p className="dash-chart-cap">
+                No reliable learner confidence cue yet. Kindling will learn
+                this from what {studentName} tells the tutor.
+              </p>
+            )}
             <p className="dash-chart-cap">
               How sure {studentName} felt across recent turns — climbing is a
               good sign; dips usually mean a tougher topic.
@@ -788,7 +806,9 @@ export default function Dashboard({
               </div>
               <div>
                 <b>
-                  {confidencePoints[confidencePoints.length - 1] ?? 0}%
+                  {confidencePoints.length
+                    ? `${confidencePoints[confidencePoints.length - 1]}%`
+                    : "—"}
                 </b>
                 <span>latest confidence</span>
               </div>

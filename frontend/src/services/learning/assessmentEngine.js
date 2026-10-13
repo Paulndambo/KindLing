@@ -45,6 +45,7 @@ export function createAssessmentSession({
   form = "",
   purpose = "practice",
   baseline = null,
+  questions: providedQuestions = null,
 } = {}) {
   const n = Math.min(10, Math.max(3, Number(count) || ASSESSMENT_DEFAULT_COUNT));
   const slugs = [
@@ -52,13 +53,15 @@ export function createAssessmentSession({
       [...(Array.isArray(skillSlugs) ? skillSlugs : []), skillSlug].filter(Boolean)
     ),
   ];
-  const questions = questionsForTopic(subject, topic, {
-    skillSlug: slugs[0] || "",
-    skillSlugs: slugs,
-    unit,
-    limit: n,
-    form,
-  }).map((q) => ({
+  const questions = (Array.isArray(providedQuestions) && providedQuestions.length
+    ? providedQuestions.slice(0, n)
+    : questionsForTopic(subject, topic, {
+        skillSlug: slugs[0] || "",
+        skillSlugs: slugs,
+        unit,
+        limit: n,
+        form,
+      })).map((q) => ({
     ...q,
     // freeze options snapshot
     options: (q.options || []).map((o) => ({ ...o })),

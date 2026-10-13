@@ -74,6 +74,69 @@ class PlatformSubscription(models.Model):
         return f"{self.user_id}:{self.plan}:{self.status}"
 
 
+class BillingInvoice(models.Model):
+    """Per-student invoice request, marked paid by an authorized operator."""
+
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "Requested"
+        PAID = "paid", "Paid"
+        VOID = "void", "Void"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="kindling_invoices",
+    )
+    plan = models.CharField(max_length=32, choices=PlanId.choices)
+    billing_cycle = models.CharField(max_length=16, choices=BillingCycle.choices)
+    amount = models.DecimalField(max_digits=9, decimal_places=2)
+    currency = models.CharField(max_length=3, default="USD")
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.REQUESTED)
+    payment_reference = models.CharField(max_length=160, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    marked_paid_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="marked_kindling_invoices_paid",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "status", "-created_at"], name="kindling_pl_user_id_9003b6_idx")]
+
+    def __str__(self):
+        return f"KND-{self.pk or 'new'}:{self.user_id}:{self.plan}:{self.status}"
+
+
+class PlatformAiDailyUsage(models.Model):
+    """Platform-AI request reservations for one learner and UTC day."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="platform_ai_daily_usage",
+    )
+    usage_date = models.DateField()
+    request_count = models.PositiveIntegerField(default=0)
+    estimated_tokens = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "usage_date"],
+                name="unique_platform_ai_daily_usage",
+            )
+        ]
+        indexes = [models.Index(fields=["usage_date", "user"], name="kindling_pl_usage_d_759ae5_idx")]
+
+    def __str__(self):
+        return f"{self.user_id}:{self.usage_date}:{self.request_count}"
+
+
 class AiRoutingPreference(models.Model):
     """
     How this account resolves LLM calls.

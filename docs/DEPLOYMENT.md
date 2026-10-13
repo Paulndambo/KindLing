@@ -15,6 +15,8 @@ Set these values in the host's secret/environment manager; do not commit real va
 - `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS`: comma-separated full frontend origins including `https://`
 - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`
 - `PLATFORM_GEMINI_API_KEY`: optional server-side Gemini key for platform AI plans; never set this as a `VITE_*` frontend variable
+- `ALLOW_SELF_SERVICE_PLAN_ACTIVATION=false`: keep paid plan activation behind invoice payment confirmation in production
+- `SUPPORT_EMAIL`: monitored staff inbox for support-request notifications (set before inviting students)
 
 Django refuses non-debug startup if the secret, database URL, allowed hosts, or SMTP host is missing. SQLite and console email remain development defaults only. Production HTTPS redirect, secure cookies, proxy HTTPS detection, and HSTS are enabled in non-debug mode. Set `SECURE_SSL_REDIRECT=false` only when TLS is terminated elsewhere and the app cannot receive the forwarded protocol header.
 
@@ -45,13 +47,28 @@ Probe `GET /health/live/`, `GET /health/ready/`, then `GET /health/`. Readiness 
 
 ## Scheduled jobs
 
-Configure one scheduler to run this command every 5 minutes in the same release/environment:
+The self-managed Compose deployment includes one scheduler container. It starts after the API health check, runs the due-job command immediately, then waits five minutes between checks. It shares the API environment and media volume so scheduled reports and retention jobs see the expected storage. Keep exactly one scheduler instance; do not also configure an external cron for the same deployment.
+
+Start and inspect it with:
 
 ```sh
-python manage.py run_scheduled_jobs
+docker compose -f docker-compose.production.yml up -d --build scheduler
+docker compose -f docker-compose.production.yml logs -f scheduler
 ```
 
-The internal job intervals determine which jobs are due. Verify `GET /api/jobs/status/` and run `python manage.py run_job heartbeat` once after first deploy. Avoid running overlapping scheduler instances.
+Set `KINDLING_SCHEDULER_INTERVAL_SECONDS` in `backend/.env.production` to change the check cadence (default 300 seconds). The internal job intervals determine which jobs are due. Verify `GET /api/jobs/status/` shows recent successful runs, and run `docker compose -f docker-compose.production.yml exec api python manage.py run_job heartbeat` once after first deploy if you want an immediate manual check. Scheduled runs are live (`dry_run=False`), so opted-in email digests and alerts can be delivered when due. Avoid running overlapping scheduler instances.
+
+For managed application platforms, configure one scheduled task to invoke `python manage.py run_scheduled_jobs` every five minutes using the same release, environment variables, database, and durable media storage as the API.
+
+## Per-student invoice billing (manual beta path)
+
+In account Settings, a signed-in student requests an Ember or Forge invoice for their own seat. The request appears under Django Admin → Billing invoices. Issue the invoice using the team's chosen payment channel, enter the received payment reference, select the invoice, and run **Mark selected invoices paid and activate their student plans**. The action records who confirmed payment and activates only that student's seat for the selected billing period. Do not run the action until funds are confirmed. Paid-plan self-activation is disabled when `DEBUG=false`; `ALLOW_SELF_SERVICE_PLAN_ACTIVATION` is a development/demo-only escape hatch and must stay false in production.
+
+The platform Gemini route reserves one request and a conservative byte-derived token estimate against the student's UTC-day allowance before contacting the provider: Spark allows 30 requests / 60,000 estimated tokens per day and Ember allows 120 requests / 300,000 estimated tokens. It returns HTTP 429 when either limit is exhausted and reports remaining allowance in response headers. This is a safety estimate, not provider-reported token metering or a USD-cost budget; track actual provider spend and tune the allowances before opening a larger cohort. BYOK traffic does not pass through this platform proxy and is billed by the learner's provider.
+
+## Support requests
+
+Learners can submit a short support request from Settings → Help & feedback. The API stores the request in Django Admin → Support requests and sends a notification containing only its reference and category to `SUPPORT_EMAIL` (the message remains in the staff queue). Configure a monitored inbox and confirm it can receive email before launch. Staff should review new and high-priority requests at least once each business day. Mark a request high priority when it blocks account access, billing, or a learner's ability to continue tutoring; routine how-to questions and feedback remain normal priority. The form is not an emergency or crisis channel; urgent safety concerns should go to a trusted adult or local emergency support.
 
 ## Uploaded homework files
 
@@ -72,13 +89,16 @@ createdb kindling_restore_drill
 pg_restore --clean --if-exists --no-owner --dbname kindling_restore_drill kindling-backup.dump
 ```
 
-Point a temporary deployment at the restored database, run `python manage.py migrate --check`, and verify `GET /health/ready/`. Record the backup timestamp, restore duration, and result. Never test restore over production. Back up uploaded media separately.
+Point an isolated temporary deployment at the restored database, run `python manage.py migrate --check`, and verify `GET /health/ready/`. Restore media separately and confirm a non-sensitive sample file is readable. Disable outbound email, billing, and AI provider calls for the drill. Record the backup timestamp, restore duration, and result using [the restore drill record](./BACKUP_RESTORE_DRILL_RECORD.md); store backup identifiers and evidence in access-controlled operations storage, never secrets or student data in Git. Never test restore over production. Back up uploaded media separately.
 
 ## Pre-launch items still requiring external setup
 
 - Provision host, DNS/TLS, managed PostgreSQL, and durable media storage.
 - Set host secrets and validate migration/seed behavior on an empty staging database.
 - Configure actual SMTP/ESP and confirm a test delivery.
+- From the backend environment, run `python manage.py send_test_email you@example.com`; this sends one explicit test message and confirms the backend accepted it. Confirm inbox delivery (including spam folder) before treating email as production-ready.
+- For SMTP, set `EMAIL_USE_TLS=true` with `EMAIL_USE_SSL=false` for STARTTLS, or `EMAIL_USE_TLS=false` with `EMAIL_USE_SSL=true` for implicit TLS. `EMAIL_TIMEOUT` defaults to 10 seconds.
 - Configure scheduler and verify a successful job.
-- Choose payment/invoice flow, AI key custody/quotas, invite restriction, support contact, and legal links. These are Track D/BETA P0 work but are not implemented by the container foundation.
-- Run and record an actual database/media backup restore drill.
+- Set `SUPPORT_EMAIL`, verify delivery to the monitored support inbox, and assign daily queue ownership.
+- Review and approve the in-app Terms and Privacy beta drafts with counsel; confirm service-specific data handling before external enrollment.
+- Run and sign off an actual isolated database and media backup restore drill using the linked record template.

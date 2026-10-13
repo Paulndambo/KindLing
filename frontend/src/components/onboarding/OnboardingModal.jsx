@@ -48,6 +48,9 @@ export default function OnboardingModal({
   const [grade, setGrade] = useState(seed.grade || "");
   const [avatar, setAvatar] = useState(seed.avatar || "sparkles");
   const [country, setCountry] = useState(seed.country || "");
+  const [preferredLanguage, setPreferredLanguage] = useState(
+    seed.preferredLanguage || ""
+  );
   const [schoolName, setSchoolName] = useState(seed.schoolName || "");
   const [schoolType, setSchoolType] = useState(seed.schoolType || "");
   const [curriculum, setCurriculum] = useState(seed.curriculum || "");
@@ -172,6 +175,7 @@ export default function OnboardingModal({
         avatar,
         country: country || "",
         countryFlag: countryObj?.flag || "",
+        preferredLanguage: preferredLanguage.trim(),
         schoolName: schoolName.trim(),
         schoolType: schoolType || "",
         curriculum: curriculum || "",
@@ -381,6 +385,25 @@ export default function OnboardingModal({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="field-block">
+              <label className="field-label" htmlFor="preferred-language">
+                Language for tutoring (optional)
+              </label>
+              <input
+                id="preferred-language"
+                className="modal-input"
+                placeholder="e.g. English, Kiswahili, Arabic"
+                value={preferredLanguage}
+                maxLength={80}
+                onChange={(e) => setPreferredLanguage(e.target.value)}
+                onKeyDown={onKeyContinue}
+              />
+              <p className="field-hint">
+                Kindling will teach in this language when it can. The app
+                interface is currently in English.
+              </p>
             </div>
 
             <div className="field-block">

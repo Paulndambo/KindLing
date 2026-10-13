@@ -10,7 +10,7 @@
  *   confidence | assistance | objective | interaction
  */
 
-import { Affect } from "./types";
+import { Affect, SIGNAL_RELIABILITY_THRESHOLD } from "./types";
 import { buildLocalSkillPath, STATE_LABELS } from "./skillGraph";
 import { computeAdiFromContext, serializeAdi } from "./adi";
 
@@ -225,12 +225,15 @@ export function assistanceLabelFromLevel(level, { interventionActive } = {}) {
   return "high_support";
 }
 
-function buildBehaviourFlags(behavior = {}, lastSignals = null) {
+function buildBehaviourFlags(behavior = {}, lastSignals = null, struggle = null) {
   const flags = [];
-  if ((behavior.rapidGuessRate || 0) > 0.25 || lastSignals?.rapidGuess) {
+  if ((struggle?.consecutiveRapidGuesses || 0) >= 2) {
     flags.push("rapid_guessing");
   }
-  if ((behavior.shortAnswerRate || 0) > 0.4 || lastSignals?.shortAnswer) {
+  if (
+    (Number(behavior.shortAnswers) || 0) >= 3 &&
+    (behavior.shortAnswerRate || 0) > 0.4
+  ) {
     flags.push("short_answers");
   }
   if ((behavior.offTopicRate || 0) > 0.2 || lastSignals?.offTopic) {
@@ -397,7 +400,7 @@ export function buildLearnerState({
       Number(
         struggleSnapshot?.persistenceScore ?? behavior.persistenceScore
       ) || 0,
-    flags: buildBehaviourFlags(behavior, lastSignals),
+    flags: buildBehaviourFlags(behavior, lastSignals, struggleSnapshot),
   };
 
   // ── Engagement ──
@@ -411,8 +414,12 @@ export function buildLearnerState({
   };
 
   // ── Confidence + calibration (L1.3) ──
-  const confLive = clamp01(lastSignals?.confidence);
-  const confMean = mean(profile?.confidenceHistory);
+  const liveConfidenceEvidence = lastSignals?.signalEvidence?.learnerConfidence;
+  const confLive =
+    liveConfidenceEvidence?.confidence >= SIGNAL_RELIABILITY_THRESHOLD
+      ? clamp01(liveConfidenceEvidence.value)
+      : null;
+  const confMean = mean(profile?.confidenceEvidenceHistory);
   const confLevel = confLive != null ? confLive : confMean;
   const competence = competenceFromMastery(masteryRow, profile?.totals);
   const { calibration, error: calErr } = calibrateConfidenceCompetence(
@@ -512,7 +519,9 @@ export function buildLearnerState({
     prefersStepByStep:
       topPref === "step_by_step" || (prefs.step_by_step || 0) >= 2,
     prefersEnergetic: topPref === "energetic" || (prefs.energetic || 0) >= 2,
-    lowTypingTolerance: (behavior.shortAnswerRate || 0) > 0.4,
+    lowTypingTolerance:
+      (Number(behavior.shortAnswers) || 0) >= 3 &&
+      (behavior.shortAnswerRate || 0) > 0.4,
     voiceInputCount: Number(behavior.voiceInputCount) || 0,
   };
 

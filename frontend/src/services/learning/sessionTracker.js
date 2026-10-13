@@ -4,7 +4,7 @@
  */
 
 import { STRUGGLE_THRESHOLDS } from "./struggleThresholds";
-import { Affect } from "./types";
+import { Affect, SIGNAL_RELIABILITY_THRESHOLD } from "./types";
 import { scorePersistenceDelta } from "./affectCheckIn";
 
 function clamp(n, min, max) {
@@ -263,12 +263,17 @@ export function createSessionTracker({
         consecutiveIncorrect: state.consecutiveIncorrect,
         afterCheckInStuck: state.afterCheckInStuck,
       };
+      const correctnessReliable =
+        (signals?.signalEvidence?.correctness?.confidence ??
+          signals?.correctnessConfidence ??
+          0) >= SIGNAL_RELIABILITY_THRESHOLD &&
+        ["correct", "partial", "incorrect"].includes(signals?.correctness);
 
       if (signals?.isHintRequest) {
         state.counters.hints += 1;
         state.consecutiveHints += 1;
       }
-      if (signals?.correctness === "correct") {
+      if (correctnessReliable && signals?.correctness === "correct") {
         state.counters.correct += 1;
         state.consecutiveIncorrect = 0;
         state.consecutiveHints = 0;
@@ -281,13 +286,13 @@ export function createSessionTracker({
           STRUGGLE_THRESHOLDS.SCAFFOLD_MAX
         );
       }
-      if (signals?.correctness === "partial") {
+      if (correctnessReliable && signals?.correctness === "partial") {
         state.counters.partial += 1;
         // Partial understanding soft-resets the hard fail streak
         state.consecutiveIncorrect = 0;
         state.consecutiveRapidGuesses = 0;
       }
-      if (signals?.correctness === "incorrect") {
+      if (correctnessReliable && signals?.correctness === "incorrect") {
         state.counters.incorrect += 1;
         state.consecutiveIncorrect += 1;
       }
@@ -298,16 +303,27 @@ export function createSessionTracker({
       if (signals?.shortAnswer) {
         state.counters.shortAnswers += 1;
         state.consecutiveShortAnswers += 1;
-        bumpScaffold(STRUGGLE_THRESHOLDS.SCAFFOLD_SHORT_STEP);
+        if (state.consecutiveShortAnswers >= 3) {
+          bumpScaffold(STRUGGLE_THRESHOLDS.SCAFFOLD_SHORT_STEP);
+        }
       } else if (signals && !signals.isHintRequest) {
         state.consecutiveShortAnswers = 0;
       }
 
-      if (signals?.rapidGuess) {
+      if (
+        signals?.rapidGuess &&
+        correctnessReliable &&
+        signals?.correctness === "incorrect"
+      ) {
         state.counters.rapidGuesses += 1;
         state.consecutiveRapidGuesses += 1;
         bumpScaffold(STRUGGLE_THRESHOLDS.SCAFFOLD_RAPID_STEP);
-      } else if (signals && !signals.isHintRequest) {
+      } else if (
+        correctnessReliable &&
+        signals &&
+        !signals.rapidGuess &&
+        !signals.isHintRequest
+      ) {
         state.consecutiveRapidGuesses = 0;
       }
 
@@ -319,7 +335,11 @@ export function createSessionTracker({
       }
 
       // Epic B3 affect + persistence
-      if (signals?.affect) {
+      if (
+        signals?.affect &&
+        (signals?.signalEvidence?.affect?.confidence ?? 0) >=
+          SIGNAL_RELIABILITY_THRESHOLD
+      ) {
         state.recentAffects = pushRolling(state.recentAffects, signals.affect);
         if (signals.affect === Affect.FRUSTRATED) {
           state.consecutiveFrustrated += 1;
@@ -329,7 +349,10 @@ export function createSessionTracker({
         }
       }
 
-      const persist = scorePersistenceDelta(signals, priorForPersist);
+      const persist = scorePersistenceDelta(
+        correctnessReliable ? signals : { ...signals, correctness: "unknown" },
+        priorForPersist
+      );
       if (persist.delta > 0) {
         state.persistenceScore += persist.delta;
         state.counters.persistenceEvents += 1;
@@ -342,7 +365,9 @@ export function createSessionTracker({
       }
       state.afterCheckInStuck = false;
       state.lastWasHint = Boolean(signals?.isHintRequest);
-      state.lastCorrectness = signals?.correctness || state.lastCorrectness;
+      if (correctnessReliable) {
+        state.lastCorrectness = signals?.correctness || state.lastCorrectness;
+      }
 
       // Epic B5 misconception session memory
       if (signals?.misconceptions?.length) {
@@ -606,14 +631,19 @@ export function createSessionTracker({
             )
           : null;
 
+      const confidenceSamples = state.turns
+        .map((turn) => turn.signals?.signalEvidence?.learnerConfidence)
+        .filter(
+          (evidence) =>
+            evidence?.value != null &&
+            evidence.confidence >= SIGNAL_RELIABILITY_THRESHOLD
+        );
       const avgConfidence =
-        state.turns.length > 0
+        confidenceSamples.length > 0
           ? Number(
               (
-                state.turns.reduce(
-                  (s, t) => s + (t.signals?.confidence || 0),
-                  0
-                ) / state.turns.length
+                confidenceSamples.reduce((sum, evidence) => sum + evidence.value, 0) /
+                confidenceSamples.length
               ).toFixed(3)
             )
           : null;

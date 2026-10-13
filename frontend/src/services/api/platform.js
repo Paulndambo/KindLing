@@ -8,6 +8,14 @@ export function fetchSubscription() {
   return apiRequest("/api/platform/subscription/");
 }
 
+export function fetchInvoices() {
+  return apiRequest("/api/platform/invoices/");
+}
+
+export function requestInvoice(body) {
+  return apiRequest("/api/platform/invoices/", { method: "POST", json: body });
+}
+
 /**
  * Activate / change plan (pilot checkout — no Stripe yet).
  * @param {{ plan: string, billing_cycle?: 'monthly'|'yearly' }} body

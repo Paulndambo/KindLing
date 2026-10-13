@@ -1,8 +1,25 @@
 from rest_framework import serializers
 
-from .models import ClientErrorReport, ProductMetric
+from .models import ClientErrorReport, ProductMetric, SupportRequest
 
 # SafetyEvent imported only for choice documentation; validation is string-based
+
+
+class SupportRequestSerializer(serializers.Serializer):
+    category = serializers.ChoiceField(choices=SupportRequest.Category.choices)
+    subject = serializers.CharField(max_length=120, trim_whitespace=True)
+    message = serializers.CharField(max_length=3000, trim_whitespace=True)
+    contact_email = serializers.EmailField(required=False, allow_blank=True)
+
+    def validate_subject(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Add a short subject.")
+        return value.strip()
+
+    def validate_message(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Add a short description so the team can help.")
+        return value.strip()
 
 
 class ClientErrorReportSerializer(serializers.Serializer):

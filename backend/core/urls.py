@@ -10,6 +10,7 @@ from .views import (
     JobsStatusView,
     SafetyEventIngestView,
     SafetyPolicyView,
+    SupportRequestView,
 )
 
 urlpatterns = [
@@ -46,6 +47,11 @@ urlpatterns = [
         "api/safety/policy/",
         SafetyPolicyView.as_view(),
         name="safety-policy",
+    ),
+    path(
+        "api/support/requests/",
+        SupportRequestView.as_view(),
+        name="support-requests",
     ),
     # Background jobs
     path(

@@ -20,6 +20,27 @@ services:
       retries: 3
       start_period: 20s
 
+  scheduler:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ./backend/.env.production
+    command:
+      - sh
+      - -c
+      - >-
+        while true; do
+          python manage.py run_scheduled_jobs || echo "Scheduled job runner exited with an error";
+          sleep "$${KINDLING_SCHEDULER_INTERVAL_SECONDS:-300}";
+        done
+    volumes:
+      - kindling_media:/app/media
+    depends_on:
+      api:
+        condition: service_healthy
+
   proxy:
     image: caddy:2-alpine
     restart: unless-stopped

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import {
   buildSystemPrompt,
   createChatSession,
@@ -194,7 +194,7 @@ export function useChatSession({
   useEffect(() => {
     toolsRef.current = tools;
   }, [tools]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     insightsRef.current = learningInsights;
   }, [learningInsights]);
   useEffect(() => {
@@ -802,13 +802,12 @@ export function useChatSession({
       try {
         if (!stillCurrent()) return false;
 
-        let chat = chatRef.current;
-        if (!chat) {
-          chat = rebuildChatWithHistory(
-            interventionActiveRef.current,
-            interventionContextRef.current
-          );
-        }
+        // Rebuild for every tutor request so this turn receives the latest
+        // learner state and policy decision, while preserving the transcript.
+        const chat = rebuildChatWithHistory(
+          interventionActiveRef.current,
+          interventionContextRef.current
+        );
         if (!chat || !stillCurrent()) {
           throw new Error("Chat session unavailable");
         }
@@ -960,6 +959,8 @@ export function useChatSession({
       imageUrl = null,
       homeworkId = null,
       analysis = null,
+      attachmentKind = "image",
+      attachmentName = "",
     } = {}) => {
       if (
         isStreaming ||
@@ -999,6 +1000,8 @@ export function useChatSession({
         homework: {
           id: homeworkId,
           imageUrl,
+          attachmentKind,
+          attachmentName: String(attachmentName || "").slice(0, 200),
           analysis: analysis
             ? {
                 problem: analysis.problem,

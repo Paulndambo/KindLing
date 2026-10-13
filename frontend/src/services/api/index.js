@@ -63,6 +63,8 @@ export {
 export {
   fetchPlanCatalog,
   fetchSubscription,
+  fetchInvoices,
+  requestInvoice,
   selectSubscriptionPlan,
   patchSubscription,
   fetchAiRouting,

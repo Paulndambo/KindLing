@@ -32,6 +32,7 @@ export async function saveStudentProfile(profile) {
       avatar: profile.avatar || "sparkles",
       country: profile.country || "",
       countryFlag: profile.countryFlag || "",
+      preferredLanguage: profile.preferredLanguage || "",
       schoolName: profile.schoolName || "",
       schoolType: profile.schoolType || "",
       curriculum: profile.curriculum || "",

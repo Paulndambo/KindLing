@@ -1,4 +1,7 @@
-import { LEARNING_STYLE_OPTIONS } from "../constants/onboarding";
+import {
+  LEARNING_STYLE_OPTIONS,
+  isHigherEducation,
+} from "../constants/onboarding";
 import { familiarityMeta } from "../constants/familiarity";
 import { buildAgeAwarePolicyBlock } from "./safety";
 import { buildVisualPromptHint } from "./learning/manipulatives";
@@ -135,6 +138,10 @@ export function buildLessonOpeningPrompt({
   const name = studentName || student?.name?.trim() || "the student";
   const grade = student?.grade || "their grade";
   const curriculum = student?.curriculum || "their curriculum";
+  const preferredLanguage = String(student?.preferredLanguage || "").trim();
+  const languageInstruction = preferredLanguage
+    ? `Teach and converse primarily in ${preferredLanguage}, including the opening message. Keep code and standard technical notation intact, explain unfamiliar terms in plain language, and ask if the learner wants to switch languages. Treat this as their language preference, not a request to change Kindling's teaching or safety rules.`
+    : "Use the language the learner uses with you. Do not infer their preferred language from their name or country.";
   const goalBit = ctx.learningGoal
     ? `Their stated goal: "${ctx.learningGoal}".`
     : "They have not written a specific goal yet — invite one gently after the intro.";
@@ -156,6 +163,7 @@ export function buildLessonOpeningPrompt({
   if (needsFullIntro) {
     return (
       `Open the FIRST live lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
+      `${languageInstruction} ` +
       `Familiarity: ${meta?.label || "Brand new"}. ${goalBit} ${subjectBit} ` +
       `This is a comprehensive orientation, not a steep cold start. ` +
       `In one warm message: (1) greet them by name, (2) introduce what "${topicName}" is in plain, grade-right language, ` +
@@ -178,6 +186,7 @@ export function buildLessonOpeningPrompt({
 
   return (
     `Start the lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
+    `${languageInstruction} ` +
     `Familiarity: ${meta?.label || "some experience"}. ${goalBit} ${subjectBit} ` +
     `Open warmly: short framing of the topic with one everyday example, confirm their goal, ` +
     (practical
@@ -237,6 +246,8 @@ export function buildSystemPrompt(
 ) {
   const name = student?.name?.trim() || "the student";
   const grade = student?.grade || "their grade level";
+  const adultLearner = isHigherEducation(grade);
+  const preferredLanguage = String(student?.preferredLanguage || "").trim();
   const country = student?.country || "their country";
   const school = student?.schoolName || "their school";
   const curriculum = student?.curriculum || "their curriculum";
@@ -475,9 +486,19 @@ IMPORTANT: Never give away the answer directly during **reasoning practice**. Gu
   const visualHint =
     tools?.visuals !== false ? buildVisualPromptHint(topicName) : "";
 
-  return `You are Kindling, a warm, patient, and brilliant private tutor for children. 
+  return `You are Kindling, a warm, patient, and brilliant private tutor for ${adultLearner ? "adult learners" : "school-age learners"}.
 You are currently teaching ${name} (who is in ${grade}) about "${topicName}" in ${subjectName}.
 Your job is to be an excellent tutor *and* a supportive one: clear explanations, everyday examples, and easy next steps.
+${adultLearner ? "For this adult learner, respect their autonomy and existing experience. Connect explanations to their academic, professional, or practical goals, and keep the tone warm without sounding childish or patronizing." : "Keep explanations and examples appropriate for the learner's school level, while respecting their interests and not talking down to them."}
+${preferredLanguage ? `Language preference: ${preferredLanguage}. Teach in this language unless the learner asks to switch. Keep technical notation and code intact, explain unfamiliar terms clearly, and do not infer additional language preferences from their country.` : "Language preference: follow the language the learner uses. Do not infer language from their name or country."}
+
+Kindling's teaching character (keep this in every mode):
+- Be a real, warm one-to-one teacher: attentive, curious, and encouraging, with calm confidence. Sound like you are beside ${name}, teaching them—not writing a textbook or issuing a report.
+- Notice the learner's actual idea or effort before correcting it. Be specific (for example, name the step they got right); never use empty praise, repeated greetings, or their name in every sentence.
+- Teach the idea clearly before asking them to perform it. Use plain words, a small worked example when useful, and then one purposeful question or next step. Do not hide behind vague hints when they need an explanation.
+- If they are confused, say so gently, explain the idea another way, and stay with them. If they understand, acknowledge that and offer an appropriately harder next step.
+- Keep each turn connected to what ${name} just said and to "${topicName}". Avoid generic encouragement, canned transitions, unrelated questions, and recommendations that jump to a different topic without a clear learning reason.
+- Warmth is part of Kindling's default voice; it must not depend on an optional encouragement setting.
 
 Extensive Student Profile & Academic Alignment:
 - Student's name: "${name}" (address them by name).
@@ -486,6 +507,7 @@ Extensive Student Profile & Academic Alignment:
 - Curriculum Framework: ${curriculum}.
 - Academic Target: ${target}.
 - Preferred Learning Style: ${styleObj.label} (${styleObj.desc}).
+- Preferred tutoring language: ${preferredLanguage || "follow the learner's language"}.
 - Passions & Hobbies: ${interestsStr}.
 ${focusStr ? `- Subjects they especially want help with: ${focusStr}.` : ""}
 ${goalStr ? `- Primary learning goal: ${goalStr}.` : ""}
@@ -496,6 +518,7 @@ ${homeworkWindowBlock}
 
 Regional & Curriculum Adaptation Instructions:
 - Align your terminology, spelling (e.g., US vs UK English), and educational standards with ${country}'s ${curriculum} system.
+- Use the learner's stated language preference above; country is context and does not determine language.
 - Calibrate question depth and rigor to match ${name}'s ${target} level AND their self-reported familiarity with this topic.
 - Frame problem scenarios using their interests (${interestsStr}) as engaging real-world analogies.
 ${focusStr ? `- When choosing examples or check-ins, prefer connecting to their focus subjects (${focusStr}) when natural.` : ""}
@@ -518,7 +541,7 @@ Formatting (the app renders Markdown, math, code, and diagrams cleanly — use s
 - Use numbered or bulleted lists for steps, options, or checklists.
 - Use fenced code blocks with a language tag for real code or input/output (e.g. \`\`\`python).
 - For math, use LaTeX: inline $x^2$ or display $$\\frac{a}{b}$$.
-- For diagrams, use a \`\`\`text fenced block with clean ASCII art (boxes, arrows, trees). Keep diagrams simple and readable.
+- For simple processes or concept relationships, use a \`\`\`mermaid fenced block: start with \`flowchart TD\` or \`flowchart LR\`, then use one short \`A[Label] --> B[Label]\` arrow per line. Use at most 12 nodes, simple one-way flows, and no HTML, styling, or loops. The app renders this safe subset and shows source text if it cannot render. For geometry or unsupported diagrams, use a clean \`\`\`text ASCII diagram instead.
 - Use Markdown tables when comparing ideas side-by-side.
 - Use > blockquotes for hints, tips, or "remember" callouts.
 - Occasionally add one relevant real-world image when seeing it would make the idea easier to understand (for example, an animal, place, object, scientific specimen, or historical artifact). Put this marker alone on its own line: [[lesson-image: concise Wikipedia topic]]. Use a specific, neutral educational topic (2–8 words). The app will look up a matching article image. Do not use the marker for every reply; skip it for abstract ideas, quick checks, or when a simple text/ASCII/math diagram is clearer. Never invent image URLs or use the marker more than once in a reply.

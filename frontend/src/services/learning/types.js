@@ -101,6 +101,9 @@ export const Correctness = {
   UNKNOWN: "unknown",
 };
 
+/** Heuristic signals below this reliability stay descriptive, not decisive. */
+export const SIGNAL_RELIABILITY_THRESHOLD = 0.65;
+
 /** Affective / confidence signals inferred from language. */
 export const Affect = {
   CONFIDENT: "confident",

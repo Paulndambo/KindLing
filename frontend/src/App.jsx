@@ -6,6 +6,7 @@ import { useSubjects } from "./hooks/useSubjects";
 import TopNav from "./components/layout/TopNav";
 import AuthModal from "./components/auth/AuthModal";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
+import LegalPage from "./components/legal/LegalPage";
 
 const Overview = lazy(() => import("./components/overview/Overview"));
 const MySubjects = lazy(() => import("./components/subjects/MySubjects"));
@@ -205,6 +206,21 @@ export default function App() {
 
       <main id="main-content" className="app-main" tabIndex={-1}>
         <Suspense fallback={<ScreenFallback />}>
+          {(screen === "privacy" || screen === "terms") && (
+            <LegalPage
+              kind={screen}
+              onBack={() => setScreen("overview")}
+              onSupport={() => setScreen("support")}
+            />
+          )}
+          {screen === "support" && (
+            <Settings
+              key={screen}
+              initialTab="support"
+              isLoggedIn={isLoggedIn}
+              onOpenLogin={handleOpenLogin}
+            />
+          )}
           {screen === "overview" && (
             <Overview
               goTo={handleNavigate}
@@ -270,12 +286,23 @@ export default function App() {
           )}
           {screen === "settings" && (
             <Settings
+              key={screen}
+              initialTab="subscription"
               isLoggedIn={isLoggedIn}
               onOpenLogin={handleOpenLogin}
             />
           )}
         </Suspense>
       </main>
+
+      <footer className="app-legal-footer">
+        <span>© 2026 Kindling · Every student, taught like the only one in the room.</span>
+        <nav aria-label="Legal and support links">
+          <button type="button" onClick={() => setScreen("support")}>Help & feedback</button>
+          <button type="button" onClick={() => setScreen("privacy")}>Privacy</button>
+          <button type="button" onClick={() => setScreen("terms")}>Terms</button>
+        </nav>
+      </footer>
 
       <AuthModal
         isOpen={authOpen}

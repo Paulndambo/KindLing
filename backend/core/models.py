@@ -190,3 +190,47 @@ class JobRun(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} [{self.status}]"
+
+
+class SupportRequest(models.Model):
+    """Learner feedback and help requests for staff follow-up."""
+
+    class Category(models.TextChoices):
+        TECHNICAL = "technical", "Technical issue"
+        ACCOUNT = "account", "Account access"
+        BILLING = "billing", "Billing"
+        ACCESSIBILITY = "accessibility", "Accessibility"
+        OTHER = "other", "Other feedback"
+
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        IN_PROGRESS = "in_progress", "In progress"
+        RESOLVED = "resolved", "Resolved"
+
+    class Priority(models.TextChoices):
+        NORMAL = "normal", "Normal"
+        HIGH = "high", "High"
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    category = models.CharField(max_length=24, choices=Category.choices, db_index=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.NEW, db_index=True)
+    priority = models.CharField(max_length=12, choices=Priority.choices, default=Priority.NORMAL, db_index=True)
+    subject = models.CharField(max_length=120)
+    message = models.TextField(max_length=3000)
+    contact_email = models.EmailField(blank=True, default="")
+    notification_sent = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="support_requests",
+    )
+    internal_notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "priority", "-created_at"], name="core_support_status_9a618f_idx")]
+
+    def __str__(self) -> str:
+        return f"SUP-{self.pk or 'new'}:{self.category}:{self.status}"

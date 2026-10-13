@@ -10,8 +10,10 @@ from typing import Any
 
 from django.db import connection
 from django.db.models import Avg, Count
+from django.conf import settings
+from django.core.mail import send_mail
 from django.utils import timezone
-from rest_framework import permissions, status
+from rest_framework import permissions, status, throttling
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,7 +21,7 @@ from rest_framework.views import APIView
 from learning.models import LearningEvent, LearningEventType
 
 from .logging_utils import log_event, sanitize_extra, sanitize_text
-from .models import ClientErrorReport, ProductMetric, SafetyEvent
+from .models import ClientErrorReport, ProductMetric, SafetyEvent, SupportRequest
 from .safety import policy_notes_for_grade
 from .serializers import (
     ClientErrorBatchSerializer,
@@ -27,6 +29,7 @@ from .serializers import (
     ProductMetricBatchSerializer,
     ProductMetricSerializer,
     SafetyEventSerializer,
+    SupportRequestSerializer,
 )
 
 
@@ -56,6 +59,63 @@ def _request_id(request: Request) -> str:
     return getattr(request, "kindling_request_id", "") or request.headers.get(
         "X-Request-ID", ""
     )
+
+
+class SupportRequestView(APIView):
+    """Persist a learner support request and notify the configured support inbox."""
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
+
+    def post(self, request):
+        serializer = SupportRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        fields = serializer.validated_data
+        user = request.user if request.user.is_authenticated else None
+        contact_email = fields.get("contact_email", "")
+        if user and not contact_email:
+            contact_email = user.email
+
+        ticket = SupportRequest.objects.create(
+            user=user,
+            contact_email=contact_email,
+            category=fields["category"],
+            subject=fields["subject"],
+            message=fields["message"],
+        )
+
+        notified = False
+        support_email = getattr(settings, "SUPPORT_EMAIL", "").strip()
+        if support_email:
+            try:
+                notified = send_mail(
+                    subject=f"Kindling support request SUP-{ticket.pk:08d}",
+                    message=(
+                        f"A learner submitted a {ticket.get_category_display().lower()} request.\n"
+                        f"Review ticket SUP-{ticket.pk:08d} in Django Admin.\n"
+                        "The message is intentionally not copied into email."
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[support_email],
+                    fail_silently=False,
+                ) == 1
+            except Exception:
+                log_event(
+                    "support.notification_failed",
+                    level=logging.ERROR,
+                    ticket_id=ticket.pk,
+                )
+            if notified:
+                ticket.notification_sent = True
+                ticket.save(update_fields=["notification_sent"])
+
+        return Response(
+            {
+                "reference": f"SUP-{ticket.pk:08d}",
+                "notification_sent": notified,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LivenessView(APIView):

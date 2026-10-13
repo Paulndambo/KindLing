@@ -21,7 +21,7 @@ export const PLAN_CATALOG = [
     trialDays: 30,
     features: [
       "Full teaching system for 30 days",
-      "Live adaptive lessons (capped platform AI)",
+      "Live adaptive lessons (daily platform-AI request and usage cap)",
       "Student dashboard & mastery pulse",
       "Then choose Forge or Ember to continue",
     ],
@@ -33,6 +33,8 @@ export const PLAN_CATALOG = [
       familyDigest: false,
       prioritySupport: false,
       dailyLessonSoftCap: 4,
+      dailyPlatformAiRequests: 30,
+      dailyPlatformAiTokens: 60000,
     },
   },
   {
@@ -56,6 +58,8 @@ export const PLAN_CATALOG = [
       familyDigest: true,
       prioritySupport: false,
       dailyLessonSoftCap: null,
+      dailyPlatformAiRequests: 0,
+      dailyPlatformAiTokens: 0,
     },
   },
   {
@@ -67,7 +71,7 @@ export const PLAN_CATALOG = [
     highlight: true,
     features: [
       "Everything in the teaching system",
-      "Platform AI tokens included (monthly envelope)",
+      "Platform AI included (daily request and usage cap)",
       "Homework photo help · guardian digests",
       "BYOK optional · priority support",
     ],
@@ -79,6 +83,8 @@ export const PLAN_CATALOG = [
       familyDigest: true,
       prioritySupport: true,
       dailyLessonSoftCap: null,
+      dailyPlatformAiRequests: 120,
+      dailyPlatformAiTokens: 300000,
     },
   },
 ];

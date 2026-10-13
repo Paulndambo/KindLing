@@ -1,7 +1,14 @@
 from django.contrib import admin, messages
 from django.utils import timezone
 
-from .models import ClientErrorReport, JobRun, OpsReviewFlag, ProductMetric, SafetyEvent
+from .models import (
+    ClientErrorReport,
+    JobRun,
+    OpsReviewFlag,
+    ProductMetric,
+    SafetyEvent,
+    SupportRequest,
+)
 
 
 @admin.register(ClientErrorReport)
@@ -32,6 +39,22 @@ class ClientErrorReportAdmin(admin.ModelAdmin):
         "request_id",
     )
     ordering = ("-created_at",)
+
+
+@admin.register(SupportRequest)
+class SupportRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at", "status", "priority", "category", "subject",
+        "user", "contact_email", "notification_sent",
+    )
+    list_filter = ("status", "priority", "category", "notification_sent")
+    search_fields = ("subject", "message", "contact_email", "user__email")
+    readonly_fields = (
+        "created_at", "user", "contact_email", "notification_sent",
+        "category", "subject", "message",
+    )
+    raw_id_fields = ("user",)
+    ordering = ("priority", "-created_at")
 
 
 @admin.register(ProductMetric)

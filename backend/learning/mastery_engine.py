@@ -14,6 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from curriculum.models import Skill, SkillPrerequisite, TopicSkillLink
+from learning.signal_quality import correctness_evidence
 from learning.models import Correctness, LearningProfile, SkillMastery, TopicMastery
 
 # Thresholds (tunable)
@@ -242,18 +243,16 @@ def update_skills_for_exchange(
         ).select_related("skill")
     )
     if not links:
-        # Fuzzy: topic name only (pilot topics unique enough)
-        links = list(
-            TopicSkillLink.objects.filter(
-                topic_name__iexact=(topic or "").strip()
-            ).select_related("skill")
-        )
-    if not links:
         return []
 
-    correctness = (signals or {}).get("correctness") or Correctness.UNKNOWN
-    confidence = float((signals or {}).get("confidence") or 0.5)
-    is_hint = bool((signals or {}).get("isHintRequest"))
+    correctness_reliable, _ = correctness_evidence(signals)
+    correctness = (
+        (signals or {}).get("correctness") or Correctness.UNKNOWN
+        if correctness_reliable
+        else Correctness.UNKNOWN
+    )
+    if not correctness_reliable:
+        return []
     obs = observation_from_correctness(correctness)
     partial = correctness == Correctness.PARTIAL
 
@@ -268,22 +267,22 @@ def update_skills_for_exchange(
         # Slightly damp updates when locked (still learn if they practice early)
         damp = 1.0 if ready else 0.55
         # Confidence modulates transit-ish strength
-        conf_boost = 0.85 + 0.3 * confidence
+        conf_boost = 0.85 + 0.3 * float(
+            ((signals.get("signalEvidence") or {}).get("correctness") or {}).get(
+                "confidence", 0.5
+            )
+        )
 
         p_before = apply_forgetting(sm.p_know, sm.last_evidence_at, now=now)
         p_transit = skill.p_transit * damp * conf_boost
-        if is_hint and obs is not False:
-            # Hint request without incorrect: small uncertainty bump down
-            p_after = clamp(p_before - 0.02 * damp)
-        else:
-            p_after = bkt_update(
-                p_before,
-                correct=obs,
-                partial=partial,
-                p_transit=min(0.35, p_transit),
-                p_slip=skill.p_slip,
-                p_guess=skill.p_guess,
-            )
+        p_after = bkt_update(
+            p_before,
+            correct=obs,
+            partial=partial,
+            p_transit=min(0.35, p_transit),
+            p_slip=skill.p_slip,
+            p_guess=skill.p_guess,
+        )
 
         sm.p_know = p_after
         sm.score = round(p_after * 100, 2)
@@ -431,18 +430,16 @@ def build_topic_skill_path(
     subject: str,
     topic: str,
 ) -> Dict[str, Any]:
-    """Skills for a topic + readiness + recommended next skill in domain."""
-    links = list(
-        TopicSkillLink.objects.filter(
-            subject_name__iexact=(subject or "").strip(),
-            topic_name__iexact=(topic or "").strip(),
-        )
-        .select_related("skill")
-        .order_by("skill__sort_order")
-    )
-    if not links:
+    """Skills for an explicitly mapped subject/topic lesson path."""
+    subject_value = (subject or "").strip()
+    topic_value = (topic or "").strip()
+    links = []
+    if subject_value and topic_value:
         links = list(
-            TopicSkillLink.objects.filter(topic_name__iexact=(topic or "").strip())
+            TopicSkillLink.objects.filter(
+                subject_name__iexact=subject_value,
+                topic_name__iexact=topic_value,
+            )
             .select_related("skill")
             .order_by("skill__sort_order")
         )
@@ -514,22 +511,28 @@ def recommend_next_skill(
     topic: str = "",
 ) -> Optional[Dict[str, Any]]:
     """
-    Pick the best next skill: unlocked, lowest p_know among ready/learning,
-    prefer current domain.
+    Pick the weakest ready skill linked to the active subject and topic.
+    Without a mapped lesson path, leave the recommendation unset.
     """
-    qs = Skill.objects.filter(is_pilot=True).order_by("sort_order")
-    # Prefer domain of current topic skills
+    topic_value = (topic or "").strip()
+    subject_value = (subject or "").strip()
+    if not subject_value or not topic_value:
+        return None
+
     topic_links = TopicSkillLink.objects.filter(
-        topic_name__iexact=(topic or "").strip()
+        subject_name__iexact=subject_value,
+        topic_name__iexact=topic_value,
     ).select_related("skill")
-    domains = {l.skill.domain for l in topic_links}
+    topic_links = list(topic_links)
+    if not topic_links:
+        return None
+
+    linked_skill_ids = {link.skill_id for link in topic_links}
+    qs = Skill.objects.filter(pk__in=linked_skill_ids, is_pilot=True).order_by(
+        "sort_order"
+    )
     candidates = []
     for skill in qs:
-        if domains and skill.domain not in domains and domains:
-            # still allow later; score domain match
-            domain_bonus = 0
-        else:
-            domain_bonus = 1
         if profile:
             sm = get_or_init_skill_mastery(profile, skill)
             ready, blocking = prereq_readiness(profile, skill)
@@ -539,7 +542,6 @@ def recommend_next_skill(
                 continue
             candidates.append(
                 (
-                    domain_bonus,
                     -sm.p_know,  # weaker first
                     skill.sort_order,
                     skill,
@@ -548,12 +550,12 @@ def recommend_next_skill(
                 )
             )
         else:
-            candidates.append((domain_bonus, 0, skill.sort_order, skill, None, []))
+            candidates.append((0, skill.sort_order, skill, None, []))
 
     if not candidates:
         return None
-    candidates.sort(key=lambda x: (-x[0], x[1], x[2]))
-    _b, _p, _s, skill, sm, _blocking = candidates[0]
+    candidates.sort(key=lambda x: (x[0], x[1]))
+    _p, _s, skill, sm, _blocking = candidates[0]
     if sm:
         return skill_mastery_to_dict(sm)
     return {

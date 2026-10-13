@@ -1,4 +1,9 @@
-import { Correctness, Affect, StruggleSignal } from "./types";
+import {
+  Correctness,
+  Affect,
+  StruggleSignal,
+  SIGNAL_RELIABILITY_THRESHOLD,
+} from "./types";
 import {
   isMathPilotContext,
   parseCheckTags,
@@ -50,6 +55,10 @@ const CONFIDENT_PATTERNS = [
   /\b(i know|definitely|obviously|easy|of course|for sure|100%|clearly)\b/i,
 ];
 
+const DIRECT_CORRECTNESS_PATTERNS = [
+  /\b(correct|exactly|that's right|that is right|you got it|not quite|not exactly|incorrect|not right|mistake|try again|let's rethink)\b/i,
+];
+
 const CURIOUS_PATTERNS = [
   /\b(why|how come|what if|curious|wonder|interesting|tell me more)\b/i,
 ];
@@ -57,6 +66,12 @@ const CURIOUS_PATTERNS = [
 const DISENGAGED_PATTERNS = [
   /^(ok|k|idk|sure|fine|yeah|yep|no|nah|idc)\.?$/i,
   /^.{0,2}$/,
+];
+const DISENGAGED_LANGUAGE_PATTERNS = [
+  /^(ok|k|idk|sure|fine|yeah|yep|no|nah|idc)\.?$/i,
+];
+const SELF_REPORTED_HESITATION_PATTERNS = [
+  /\b(i think|maybe|not sure|probably|guess|kinda|kind of|sort of|perhaps|might be)\b/i,
 ];
 
 const VISUAL_PREF_CUES = [
@@ -338,6 +353,27 @@ export function analyzeExchange({
     preferChecker: true,
   });
   const correctness = graded.correctness;
+  const directFeedback =
+    matchAny(tutorClean, DIRECT_CORRECTNESS_PATTERNS) ||
+    matchAny(tutorClean, PARTIAL_PATTERNS);
+  const conflictingFeedback =
+    matchAny(tutorClean, CORRECT_PATTERNS) &&
+    matchAny(tutorClean, INCORRECT_PATTERNS);
+  const correctnessReliability = verification?.checked
+    ? clamp(Number(verification.confidence) || 0, 0, 1)
+    : conflictingFeedback
+      ? 0.2
+      : correctness === Correctness.UNKNOWN
+        ? 0
+        : correctness === Correctness.EXPLORING
+          ? 0.85
+          : correctness === Correctness.PARTIAL
+            ? directFeedback
+              ? 0.62
+              : 0.5
+            : directFeedback
+              ? 0.62
+              : 0.45;
 
   // Epic B1 struggle facets (per-turn; session tracker aggregates streaks)
   const shortAnswer = !isHint && isShortAnswer(studentText);
@@ -373,6 +409,27 @@ export function analyzeExchange({
   if (verification?.checked && verification.confidence >= 0.85) {
     confidence = Math.min(1, Math.max(confidence, 0.55));
   }
+  const explicitConfidence =
+    matchAny(studentText || "", CONFIDENT_PATTERNS) ||
+    matchAny(studentText || "", SELF_REPORTED_HESITATION_PATTERNS);
+  const explicitConfidenceValue = matchAny(studentText || "", CONFIDENT_PATTERNS)
+    ? 0.8
+    : explicitConfidence
+      ? 0.35
+      : null;
+  const affectHasCue = matchAny(studentText || "", [
+    ...FRUSTRATED_PATTERNS,
+    ...DISENGAGED_LANGUAGE_PATTERNS,
+    ...CURIOUS_PATTERNS,
+    ...HESITANT_PATTERNS.slice(0, 1),
+    ...CONFIDENT_PATTERNS,
+  ]);
+  const affectEvidenceConfidence =
+    !affectHasCue
+      ? 0.2
+      : matchAny(studentText || "", DISENGAGED_LANGUAGE_PATTERNS)
+        ? 0.5
+        : 0.78;
 
   const struggleFlags = [];
   if (shortAnswer) struggleFlags.push(StruggleSignal.SHORT_ANSWERS);
@@ -395,6 +452,29 @@ export function analyzeExchange({
     linguisticCorrectness: linguistic,
     gradeSource: graded.source,
     verification,
+    correctnessConfidence: correctnessReliability,
+    signalEvidence: {
+      correctness: {
+        value: correctness,
+        confidence: correctnessReliability,
+        source: graded.source,
+        cues: conflictingFeedback
+          ? ["conflicting_tutor_feedback"]
+          : correctness === Correctness.UNKNOWN
+            ? []
+            : [directFeedback ? "explicit_tutor_feedback" : "broad_language_cue"],
+      },
+      affect: {
+        value: affect,
+        confidence: affectEvidenceConfidence,
+        source: affect === Affect.NEUTRAL ? "no_lexical_cue" : "learner_language",
+      },
+      learnerConfidence: {
+        value: explicitConfidenceValue,
+        confidence: explicitConfidence ? 0.7 : 0,
+        source: explicitConfidence ? "learner_language" : "not_observed",
+      },
+    },
     affect,
     engagement,
     confidence: clamp(Number(confidence.toFixed(2)), 0, 1),
@@ -410,7 +490,9 @@ export function analyzeExchange({
     shortAnswer,
     rapidGuess,
     preferSlowDown,
-    offTopic: offTopic.isOffTopic,
+    offTopic:
+      offTopic.isOffTopic &&
+      offTopic.confidence >= SIGNAL_RELIABILITY_THRESHOLD,
     offTopicMeta: offTopic,
     struggleFlags,
     tags,

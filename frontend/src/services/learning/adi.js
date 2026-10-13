@@ -11,6 +11,7 @@
  */
 
 import { InterventionLevel, normalizeLevel } from "./interventionLadder";
+import { SIGNAL_RELIABILITY_THRESHOLD } from "./types";
 
 export const ADI_VERSION = 1;
 /** Rolling window of graded turns used for live ADI */
@@ -356,6 +357,11 @@ export function turnsFromSessionSnapshot(sessionSnapshot, intervention = null) {
 
   return turns.map((t) => {
     const sig = t.signals || {};
+    const correctnessReliable =
+      (sig?.signalEvidence?.correctness?.confidence ??
+        sig?.correctnessConfidence ??
+        0) >= SIGNAL_RELIABILITY_THRESHOLD &&
+      ["correct", "partial", "incorrect"].includes(sig?.correctness);
     // Prefer per-turn snapshot if we stored it; else use session live for recent turns
     const turnLevel =
       sig.interventionLevel ??
@@ -366,7 +372,7 @@ export function turnsFromSessionSnapshot(sessionSnapshot, intervention = null) {
       t.interventionActive ??
       (liveActive && turnLevel > 0);
     return {
-      correctness: sig.correctness,
+      correctness: correctnessReliable ? sig.correctness : "unknown",
       isHintRequest: Boolean(sig.isHintRequest),
       interventionLevel: turnLevel,
       interventionActive: turnActive,

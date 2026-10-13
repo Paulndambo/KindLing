@@ -2,7 +2,7 @@
 
 **Audience:** engineers joining or extending Kindling  
 **Status:** Living document — aligned with Phases 0–2.5 + Wave 2 intelligence slice (L1–L4, C6, C8, CS pilot, practical how-to)  
-**Companion docs:** [CAPABILITIES.md](../CAPABILITIES.md) (product *what*), [PLAN.md](../PLAN.md) (execution *order*), [README.md](../README.md) (setup), [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md) (trust floor), [EVAL_RUBRIC_C8.md](./EVAL_RUBRIC_C8.md) (eval harness)
+**Companion docs:** [CAPABILITIES.md](CAPABILITIES.md) (product *what*), [NEXT_STEPS.md](NEXT_STEPS.md) (execution *order*), [README.md](README.md) (setup), [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md) (trust floor), [EVAL_RUBRIC_C8.md](./EVAL_RUBRIC_C8.md) (eval harness)
 
 This handbook explains **how Kindling is built**, the **concepts** that structure the code, **architecture**, and the **design decisions / trade-offs** the team should preserve when changing it.
 
@@ -20,7 +20,7 @@ Kindling is not a chat wrapper around a model. It is a **closed-loop tutoring sy
 
 Everything in the monorepo either serves that loop or the platform floor that keeps it operable (auth, health, jobs, safety, failure UX).
 
-**Non-negotiable product rules** (also CAPABILITIES §5 / PLAN §3):
+**Non-negotiable product rules** (also CAPABILITIES §5 / NEXT_STEPS §3):
 
 | Rule | Engineering implication |
 |------|-------------------------|
@@ -43,10 +43,10 @@ If a PR fights these, it is the wrong PR — even if the feature is clever.
 | Doc | Owns |
 |-----|------|
 | `CAPABILITIES.md` | Product inventory + vision backlog |
-| `PLAN.md` | Phased epics, exit criteria, sequencing |
+| `NEXT_STEPS.md` | Phased epics, exit criteria, sequencing |
 | This file | Architecture, concepts, trade-offs, “how to change safely” |
 | `backend/README.md` | API map and ops commands |
-| `docs/SAFETY_AND_PRIVACY.md` | What we store, escalate, export/delete |
+| `SAFETY_AND_PRIVACY.md` | What we store, escalate, export/delete |
 
 Do not invent parallel roadmaps in code comments. Link the epic id (`A3`, `B5`, …) in PRs and migrations when relevant.
 
@@ -75,7 +75,7 @@ Phase 3+   Wave 2 remaining      deploy/Postgres (Track D); C1+/C7/C4; Phase 4 d
 | **X** | Experience | lesson UI, resume, failure banners |
 | **S** | Platform | core jobs, telemetry, `kindling_platform`, deploy |
 
-Cross-cutting standards (PLAN §11): additive learning-event payloads, JWT auth extensible to roles later, backend tests for mastery/correctness/thresholds, PII-minimized logs, heavy work async, prompt changes called out in PR review.
+Cross-cutting standards (NEXT_STEPS §11): additive learning-event payloads, JWT auth extensible to roles later, backend tests for mastery/correctness/thresholds, PII-minimized logs, heavy work async, prompt changes called out in PR review.
 
 ---
 
@@ -523,7 +523,7 @@ Details: [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md).
 3. Emit `struggle.signal` with payload.  
 4. Map severity → ladder level in `selectInterventionLevel`.  
 5. Student copy: warm, non-shaming.  
-6. Test threshold edges; update CAPABILITIES/PLAN checkmarks if epic-scoped.
+6. Test threshold edges; update CAPABILITIES/NEXT_STEPS checkmarks if epic-scoped.
 
 ### 11.2 New pilot skill / example / misconception / multistep
 
@@ -590,7 +590,7 @@ Honest backlog for engineers (not a product pitch):
 | i18n / duplex voice | Partial TTS/STT | Phase 4+ |
 | Feature flags | Informal | Explicit flags for risky pedagogy rolls |
 
-Phase gates: external beta still needs Track D deploy closeout (PLAN §15). Product intelligence L1–L4 is already in-repo.
+Phase gates: external beta still needs Track D deploy closeout (NEXT_STEPS §15). Product intelligence L1–L4 is already in-repo.
 
 ---
 
@@ -628,8 +628,8 @@ Phase gates: external beta still needs Track D deploy closeout (PLAN §15). Prod
 5. Hit `GET /api/telemetry/summary/` and `GET /api/learning/dashboard/` with a token.  
 6. Read this handbook §8 before proposing structural rewrites.
 
-**When stuck:** CAPABILITIES for *whether* we want it, PLAN for *when*, this file for *how the system thinks*, backend README for *which URL*.
+**When stuck:** CAPABILITIES for *whether* we want it, NEXT_STEPS for *when*, this file for *how the system thinks*, backend README for *which URL*.
 
 ---
 
-*Last updated: 2026-09-10 — Wave 1 + Wave 2 intelligence (L1–L4, C6, C8, CS pilot, practical how-to); Track D deploy still open (PLAN §15).*
+*Last updated: 2026-09-10 — Wave 1 + Wave 2 intelligence (L1–L4, C6, C8, CS pilot, practical how-to); Track D deploy still open (NEXT_STEPS §15).*

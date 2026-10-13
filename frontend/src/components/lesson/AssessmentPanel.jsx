@@ -92,19 +92,31 @@ export default function AssessmentPanel({
         explaining ? " explaining" : ""
       }`}
       role="region"
-      aria-label="Quick check assessment"
+      aria-label={
+        session.source === "offline_pack"
+          ? "Offline practice pack"
+          : "Quick check assessment"
+      }
     >
       <div className="assessment-head">
         <div className="assessment-head-left">
           <ClipboardCheck size={16} aria-hidden />
           <div>
             <p className="assessment-eyebrow">
-              {session.purpose === "pre" ? "Before check" : session.purpose === "post" ? "After check" : "Quick check"}
+              {session.source === "offline_pack"
+                ? "Offline practice pack"
+                : session.purpose === "pre"
+                  ? "Before check"
+                  : session.purpose === "post"
+                    ? "After check"
+                    : "Quick check"}
               {session.topic ? ` · ${session.topic}` : ""}
             </p>
             <h4 className="assessment-title">
               {done
                 ? celeb?.headline || "Check complete"
+                : session.source === "offline_pack"
+                  ? "Choose your answer"
                 : session.topic
                   ? `Check your understanding`
                   : "Revision check"}

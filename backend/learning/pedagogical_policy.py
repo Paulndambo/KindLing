@@ -13,6 +13,8 @@ import random
 import re
 import time
 
+from learning.signal_quality import SIGNAL_RELIABILITY_THRESHOLD, correctness_evidence
+
 
 PEDAGOGY_POLICY_VERSION = 1
 
@@ -191,7 +193,28 @@ def decide_pedagogy(
         "subject": ctx.get("subject") or state.get("subject") or "",
         "topic": ctx.get("topic") or state.get("topic") or "",
     }
-    last = ctx.get("lastSignals") or {}
+    raw_last = ctx.get("lastSignals") or {}
+    correctness_reliable, _ = correctness_evidence(raw_last)
+    evidence = raw_last.get("signalEvidence") or {}
+    affect_reliable = float(
+        (evidence.get("affect") or {}).get("confidence") or 0
+    ) >= SIGNAL_RELIABILITY_THRESHOLD
+    last = {
+        **raw_last,
+        "correctness": (
+            raw_last.get("correctness")
+            if correctness_reliable
+            or (
+                raw_last.get("correctness") == "exploring"
+                and float(
+                    (evidence.get("correctness") or {}).get("confidence") or 0
+                )
+                >= SIGNAL_RELIABILITY_THRESHOLD
+            )
+            else "unknown"
+        ),
+        "affect": raw_last.get("affect") if affect_reliable else None,
+    }
     intervention = ctx.get("intervention") or {}
     adi = state.get("adi") or ctx.get("adi") or {}
     behaviour = state.get("behaviour") or {}
@@ -202,7 +225,11 @@ def decide_pedagogy(
         or behaviour.get("consecutiveIncorrect")
         or 0
     )
-    affect = last.get("affect") or ctx.get("affect")
+    affect = (
+        (ctx.get("lastCheckIn") or {}).get("affect")
+        or last.get("affect")
+        or ctx.get("affect")
+    )
     flags = behaviour.get("flags") or []
 
     if ctx.get("assessmentActive"):
@@ -254,7 +281,15 @@ def decide_pedagogy(
             confidence=0.78,
         )
 
-    if (last.get("rapidGuess") or "rapid_guessing" in flags) and last.get("correctness") == "incorrect":
+    consecutive_rapid = int(
+        ctx.get("consecutiveRapidGuesses")
+        or behaviour.get("consecutiveRapidGuesses")
+        or 0
+    )
+    if (
+        consecutive_rapid >= 2
+        and last.get("correctness") == "incorrect"
+    ):
         return _finalize(
             PedagogicalAction.SLOW_DOWN,
             reasons=["rapid_guessing"],
@@ -284,8 +319,17 @@ def decide_pedagogy(
         )
 
     mcs = state.get("misconceptions") or ctx.get("activeMisconceptions") or []
-    if mcs and last.get("correctness") in ("incorrect", "partial"):
-        top = mcs[0] if isinstance(mcs[0], dict) else {"label": str(mcs[0])}
+    supported_misconception = next(
+        (
+            m
+            for m in mcs
+            if isinstance(m, dict)
+            and float(m.get("confidence") or 0) >= SIGNAL_RELIABILITY_THRESHOLD
+        ),
+        None,
+    )
+    if supported_misconception and last.get("correctness") in ("incorrect", "partial"):
+        top = supported_misconception
         params["misconceptionLabel"] = top.get("label")
         params["misconceptionId"] = top.get("id")
         return _finalize(

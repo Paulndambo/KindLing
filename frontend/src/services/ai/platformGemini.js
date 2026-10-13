@@ -11,7 +11,10 @@ async function generate({ model, contents, config, stream = false }) {
   const response = await fetch(`${API_BASE_URL}${ENDPOINT}`, {
     method: "POST",
     headers: {
-      Accept: "text/event-stream",
+      // DRF negotiates the request before our view can return its streaming
+      // HttpResponse. Ask for JSON during negotiation; the successful response
+      // still uses text/event-stream and is consumed as an SSE stream below.
+      Accept: "application/json",
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },

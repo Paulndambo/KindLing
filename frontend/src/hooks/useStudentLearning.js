@@ -66,6 +66,7 @@ import {
   pedagogyDirectives,
   serializePedagogyDecision,
   rankNextBestActions,
+  SIGNAL_RELIABILITY_THRESHOLD,
   buildPracticalHowToPromptBlock,
   practicalHowToDirectives,
   findPracticalGuide,
@@ -1474,11 +1475,25 @@ export function useStudentLearning({
           ) {
             signals.correctness = multiStepOutcome.gradedCorrectness;
             signals.gradeSource = "multistep";
+            signals.correctnessConfidence = 1;
+            signals.signalEvidence.correctness = {
+              value: signals.correctness,
+              confidence: 1,
+              source: "multistep",
+              cues: ["structured_step_grade"],
+            };
           } else if (
             multiStepOutcome.stepResult?.correctness === "correct"
           ) {
             signals.correctness = "partial"; // micro-win on a step
             signals.gradeSource = "multistep_step";
+            signals.correctnessConfidence = 1;
+            signals.signalEvidence.correctness = {
+              value: signals.correctness,
+              confidence: 1,
+              source: "multistep_step",
+              cues: ["structured_step_grade"],
+            };
           }
         }
       }
@@ -1493,6 +1508,13 @@ export function useStudentLearning({
         };
         signals.correctness = assessmentOutcome.correctness;
         signals.gradeSource = "assessment";
+        signals.correctnessConfidence = 1;
+        signals.signalEvidence.correctness = {
+          value: signals.correctness,
+          confidence: 1,
+          source: "assessment",
+          cues: ["structured_assessment_grade"],
+        };
         signals.confidence = Math.max(signals.confidence || 0, 0.85);
         if (assessmentOutcome.expected) {
           signals.verification = {
@@ -1511,7 +1533,10 @@ export function useStudentLearning({
         activeMisconceptionIds: tracker.getActiveMisconceptionIds?.() || [],
         previousHits: tracker.getLastMisconceptionIds?.() || [],
         currentHits: signals.misconceptions || [],
-        correctness: signals.correctness,
+        correctness:
+          signals.correctnessConfidence >= SIGNAL_RELIABILITY_THRESHOLD
+            ? signals.correctness
+            : "unknown",
       });
       if (remediated.length) {
         signals.misconceptionsRemediated = remediated.map((id) => {
@@ -1682,23 +1707,24 @@ export function useStudentLearning({
 
       // Epic L2 — log pedagogical decision for this turn (closed-loop control)
       {
-        const turnDecision = decidePedagogy(
-          buildLearnerState({
-            profile: nextProfile,
-            studentId,
-            subject: tracker.subject,
-            topic: tracker.topic,
-            lastSignals: signals,
-            sessionSummary: {
-              turnCount: tracker.snapshot?.turns?.length || 0,
-              scaffoldingBias: tracker.scaffoldingBias,
-            },
-            intervention: interventionRef.current,
-            struggleSnapshot: tracker.getStruggleSnapshot?.() || null,
-            activeMisconceptions: activeMisconceptionHits,
-            sessionSnapshot: tracker.snapshot,
+        const turnLearnerState = buildLearnerState({
+          profile: nextProfile,
+          studentId,
+          subject: tracker.subject,
+          topic: tracker.topic,
+          lastSignals: signals,
+          sessionSummary: {
+            turnCount: tracker.snapshot?.turns?.length || 0,
             scaffoldingBias: tracker.scaffoldingBias,
-          }),
+          },
+          intervention: interventionRef.current,
+          struggleSnapshot: tracker.getStruggleSnapshot?.() || null,
+          activeMisconceptions: activeMisconceptionHits,
+          sessionSnapshot: tracker.snapshot,
+          scaffoldingBias: tracker.scaffoldingBias,
+        });
+        const turnDecision = decidePedagogy(
+          turnLearnerState,
           {
             subject: tracker.subject,
             topic: tracker.topic,
@@ -1725,10 +1751,16 @@ export function useStudentLearning({
               sessionId: tracker.id,
               subject: tracker.subject,
               topic: tracker.topic,
-              phase: "post_turn",
+              phase: "next_turn",
               ...serializePedagogyDecision(turnDecision, {
-                correctness: signals?.correctness || null,
-                affect: signals?.affect || null,
+                inputs: {
+                  learnerState: serializeLearnerState(turnLearnerState),
+                  signals: {
+                    correctness: signals?.correctness || null,
+                    evidence: signals?.signalEvidence || null,
+                    hintUsed: Boolean(wasHintRequest),
+                  },
+                },
               }),
             },
             { studentId, sessionId: tracker.id }
@@ -1854,7 +1886,9 @@ export function useStudentLearning({
         const before = challengeProgressRef.current.correct;
         const next = applyChallengeGradedTurn(
           challengeProgressRef.current,
-          signals.correctness
+          signals.correctnessConfidence >= SIGNAL_RELIABILITY_THRESHOLD
+            ? signals.correctness
+            : "unknown"
         );
         challengeProgressRef.current = next;
         setChallengeProgress({ ...next, skillLabel });
@@ -2150,7 +2184,11 @@ export function useStudentLearning({
         const decision = evaluateInterventionTrigger({
           consecutiveIncorrect: tracker.consecutiveIncorrect,
           currentStatus: cur.status,
-          affect: signals.affect,
+          affect:
+            signals.signalEvidence?.affect?.confidence >=
+            SIGNAL_RELIABILITY_THRESHOLD
+              ? signals.affect
+              : "neutral",
           consecutiveHints: tracker.consecutiveHints,
           consecutiveShortAnswers: tracker.consecutiveShortAnswers,
           consecutiveRapidGuesses: tracker.consecutiveRapidGuesses,

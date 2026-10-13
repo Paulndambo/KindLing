@@ -3,8 +3,10 @@ import {
   fetchAiRouting,
   fetchPlanCatalog,
   fetchSubscription,
+  fetchInvoices,
   patchAiRouting,
   patchSubscription,
+  requestInvoice,
   selectSubscriptionPlan,
 } from "../services/api";
 import {
@@ -58,6 +60,8 @@ function saveLocalSubscription(sub) {
 export function usePlatformSettings({ isLoggedIn } = {}) {
   const [plans, setPlans] = useState(PLAN_CATALOG);
   const [subscription, setSubscription] = useState(() => loadLocalSubscription());
+  const [invoices, setInvoices] = useState([]);
+  const [invoiceNotice, setInvoiceNotice] = useState("");
   const [preferences, setPreferences] = useState(() => loadLocalPreferences());
   const [keyStatuses, setKeyStatuses] = useState(() => listKeyStatuses());
   const [runtime, setRuntime] = useState(() => getRuntimeSnapshot());
@@ -87,10 +91,12 @@ export function usePlatformSettings({ isLoggedIn } = {}) {
       if (catalog?.plans?.length) setPlans(catalog.plans);
 
       if (isLoggedIn) {
-        const [sub, routing] = await Promise.all([
+        const [sub, routing, invoiceRows] = await Promise.all([
           fetchSubscription().catch(() => null),
           fetchAiRouting().catch(() => null),
+          fetchInvoices().catch(() => []),
         ]);
+        if (Array.isArray(invoiceRows)) setInvoices(invoiceRows);
         if (sub) {
           setSubscription({ ...sub, source: "api" });
           saveLocalSubscription({
@@ -218,6 +224,33 @@ export function usePlatformSettings({ isLoggedIn } = {}) {
     [isLoggedIn]
   );
 
+  const createInvoiceRequest = useCallback(
+    async (planId, billingCycle = "monthly") => {
+      if (!isLoggedIn) {
+        const message = "Log in to request an invoice for this student seat.";
+        setError(message);
+        throw new Error(message);
+      }
+      setSaving(true);
+      setError("");
+      setInvoiceNotice("");
+      try {
+        const invoice = await requestInvoice({ plan: planId, billing_cycle: billingCycle });
+        setInvoices((current) => [invoice, ...current.filter((row) => row.id !== invoice.id)]);
+        setInvoiceNotice(
+          `${invoice.invoice_number} requested for $${invoice.amount} ${invoice.currency}. Kindling will confirm payment and activate this seat.`
+        );
+        return invoice;
+      } catch (err) {
+        setError(err?.message || "Could not request an invoice");
+        throw err;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [isLoggedIn]
+  );
+
   const updatePreferences = useCallback(
     async (partial) => {
       const next = saveLocalPreferences(partial);
@@ -286,6 +319,8 @@ export function usePlatformSettings({ isLoggedIn } = {}) {
   return {
     plans,
     subscription,
+    invoices,
+    invoiceNotice,
     activePlan,
     entitlements,
     preferences,
@@ -299,6 +334,7 @@ export function usePlatformSettings({ isLoggedIn } = {}) {
     testing,
     reload: load,
     selectPlan,
+    createInvoiceRequest,
     setCancelAtPeriodEnd,
     updatePreferences,
     saveProviderKey,

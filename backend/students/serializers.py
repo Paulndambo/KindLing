@@ -9,6 +9,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     countryFlag = serializers.CharField(
         source="country_flag", required=False, allow_blank=True
     )
+    preferredLanguage = serializers.CharField(
+        source="preferred_language",
+        required=False,
+        allow_blank=True,
+        max_length=80,
+    )
     schoolName = serializers.CharField(
         source="school_name", required=False, allow_blank=True
     )
@@ -54,6 +60,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "avatar",
             "country",
             "countryFlag",
+            "preferredLanguage",
             "schoolName",
             "schoolType",
             "curriculum",

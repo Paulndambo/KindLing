@@ -28,6 +28,11 @@ from .models import (
     SessionTurn,
     TopicMastery,
 )
+from .signal_quality import (
+    affect_is_reliable,
+    correctness_evidence,
+    learner_confidence_value,
+)
 
 DEFAULT_TOTALS = {
     "sessions": 0,
@@ -71,6 +76,7 @@ def empty_profile_dict(student_id: str = "anonymous") -> dict:
         "affectHistory": [],
         "engagementHistory": [],
         "confidenceHistory": [],
+        "confidenceEvidenceHistory": [],
         "strengths": [],
         "focusAreas": [],
         "behavior": deepcopy(DEFAULT_BEHAVIOR),
@@ -162,12 +168,14 @@ def apply_exchange_to_profile_model(
 
     totals["exchanges"] = totals.get("exchanges", 0) + 1
     correctness = (signals or {}).get("correctness") or Correctness.UNKNOWN
+    correctness_reliable, _evidence_confidence = correctness_evidence(signals)
+    observed_correctness = correctness if correctness_reliable else Correctness.UNKNOWN
 
-    if correctness == Correctness.CORRECT:
+    if observed_correctness == Correctness.CORRECT:
         totals["correct"] = totals.get("correct", 0) + 1
-    elif correctness == Correctness.PARTIAL:
+    elif observed_correctness == Correctness.PARTIAL:
         totals["partial"] = totals.get("partial", 0) + 1
-    elif correctness == Correctness.INCORRECT:
+    elif observed_correctness == Correctness.INCORRECT:
         totals["incorrect"] = totals.get("incorrect", 0) + 1
 
     if signals.get("isHintRequest"):
@@ -192,21 +200,20 @@ def apply_exchange_to_profile_model(
         topic_key=key,
         defaults={"subject": subject or "General", "topic": topic or "General", "score": 40},
     )
-    mastery.attempts += 1
-    mastery.last_correctness = correctness
-    confidence = float(signals.get("confidence") or 0.5)
+    if correctness_reliable:
+        mastery.attempts += 1
+    mastery.last_correctness = observed_correctness
 
-    if correctness == Correctness.CORRECT:
+    if observed_correctness == Correctness.CORRECT:
         mastery.correct += 1
-        mastery.score = min(98, mastery.score + 8 + confidence * 4)
-    elif correctness == Correctness.PARTIAL:
+        mastery.score = min(98, mastery.score + 8)
+    elif observed_correctness == Correctness.PARTIAL:
         mastery.score = min(95, mastery.score + 3)
-    elif correctness == Correctness.INCORRECT:
+    elif observed_correctness == Correctness.INCORRECT:
         mastery.incorrect += 1
-        mastery.score = max(5, mastery.score - 6 - (1 - confidence) * 3)
+        mastery.score = max(5, mastery.score - 6)
     elif signals.get("isHintRequest"):
         mastery.hints += 1
-        mastery.score = max(5, mastery.score - 2)
     mastery.save()
 
     # Epic A1: skill-graph BKT update when topic maps to pilot skills
@@ -274,13 +281,17 @@ def apply_exchange_to_profile_model(
             delivery[pref] = delivery.get(pref, 0) + 1
 
     affect = signals.get("affect") or Affect.NEUTRAL
-    profile.affect_history = push_rolling(profile.affect_history, affect)
+    if affect_is_reliable(signals):
+        profile.affect_history = push_rolling(profile.affect_history, affect)
     profile.engagement_history = push_rolling(
         profile.engagement_history, signals.get("engagement", 0.5)
     )
-    profile.confidence_history = push_rolling(
-        profile.confidence_history, signals.get("confidence", 0.5)
-    )
+    confidence_value = learner_confidence_value(signals)
+    if confidence_value is not None:
+        profile.confidence_evidence_history = push_rolling(
+            profile.confidence_evidence_history or [],
+            confidence_value,
+        )
 
     ex = totals.get("exchanges") or 1
     behavior["hintRate"] = round(totals.get("hints", 0) / ex, 3)
@@ -360,9 +371,9 @@ def build_personalization_insights(
     topic_mastery = profile.mastery_entries.filter(topic_key=key).first()
     recent_affect = (profile.affect_history or [])[-5:]
     eng_hist = profile.engagement_history or []
-    conf_hist = profile.confidence_history or []
+    conf_hist = profile.confidence_evidence_history or []
     avg_engagement = sum(eng_hist) / len(eng_hist) if eng_hist else 0.5
-    avg_confidence = sum(conf_hist) / len(conf_hist) if conf_hist else 0.5
+    avg_confidence = sum(conf_hist) / len(conf_hist) if conf_hist else None
 
     frustrated = sum(1 for a in recent_affect if a == Affect.FRUSTRATED)
     hesitant = sum(1 for a in recent_affect if a == Affect.HESITANT)
@@ -479,8 +490,10 @@ def build_personalization_insights(
         ),
         skill_summary,
         (
-            f"Avg confidence ~{round(avg_confidence * 100)}%, "
+            f"Explicit confidence language ~{round(avg_confidence * 100)}%, "
             f"engagement ~{round(avg_engagement * 100)}%."
+            if avg_confidence is not None
+            else f"No reliable confidence cue yet; engagement ~{round(avg_engagement * 100)}%."
         ),
     ]
 
@@ -491,7 +504,9 @@ def build_personalization_insights(
             "accuracy": accuracy,
             "topicMastery": round(topic_mastery.score) if topic_mastery else None,
             "avgEngagement": round(avg_engagement, 2),
-            "avgConfidence": round(avg_confidence, 2),
+            "avgConfidence": round(avg_confidence, 2)
+            if avg_confidence is not None
+            else None,
             "hintRate": behavior.get("hintRate", 0),
             "focusAreas": profile.focus_areas or [],
             "strengths": profile.strengths or [],
@@ -556,7 +571,8 @@ def profile_to_api_dict(profile: LearningProfile) -> dict:
         },
         "affectHistory": profile.affect_history or [],
         "engagementHistory": profile.engagement_history or [],
-        "confidenceHistory": profile.confidence_history or [],
+        "confidenceHistory": profile.confidence_evidence_history or [],
+        "confidenceEvidenceHistory": profile.confidence_evidence_history or [],
         "strengths": profile.strengths or [],
         "focusAreas": profile.focus_areas or [],
         "behavior": {**DEFAULT_BEHAVIOR, **(profile.behavior or {})},
@@ -695,6 +711,21 @@ def ingest_events(
                         signals["linguisticCorrectness"] = linguistic
                         signals["gradeSource"] = graded["source"]
                         signals["correctness"] = graded["correctness"]
+                        if graded["source"] == "math_verifier":
+                            signals["correctnessConfidence"] = verification.get(
+                                "confidence", 0
+                            )
+                            signal_evidence = signals.setdefault(
+                                "signalEvidence", {}
+                            )
+                            signal_evidence["correctness"] = {
+                                "value": graded["correctness"],
+                                "confidence": verification.get("confidence", 0),
+                                "source": "math_verifier",
+                                "cues": [
+                                    verification.get("method") or "verified_answer"
+                                ],
+                            }
                         if verification.get("discrepancy"):
                             from core.logging_utils import log_event
                             import logging
@@ -723,10 +754,18 @@ def ingest_events(
                     or signals.get("inputModality")
                     or "text",
                     response_ms=payload.get("responseMs") or signals.get("responseMs"),
-                    correctness=signals.get("correctness") or "",
-                    affect=signals.get("affect") or "",
+                    correctness=(
+                        signals.get("correctness") or ""
+                        if correctness_evidence(signals)[0]
+                        else ""
+                    ),
+                    affect=(
+                        signals.get("affect") or ""
+                        if affect_is_reliable(signals)
+                        else ""
+                    ),
                     engagement=signals.get("engagement"),
-                    confidence=signals.get("confidence"),
+                    confidence=learner_confidence_value(signals),
                     is_hint_request=bool(signals.get("isHintRequest")),
                     is_question=bool(signals.get("isQuestion")),
                     signals=signals,
@@ -789,10 +828,18 @@ def ingest_events(
                             tutor_text=t.get("tutorText") or "",
                             input_modality=t.get("inputModality") or "text",
                             response_ms=sig.get("responseMs"),
-                            correctness=sig.get("correctness") or "",
-                            affect=sig.get("affect") or "",
+                            correctness=(
+                                sig.get("correctness") or ""
+                                if correctness_evidence(sig)[0]
+                                else ""
+                            ),
+                            affect=(
+                                sig.get("affect") or ""
+                                if affect_is_reliable(sig)
+                                else ""
+                            ),
                             engagement=sig.get("engagement"),
-                            confidence=sig.get("confidence"),
+                            confidence=learner_confidence_value(sig),
                             is_hint_request=bool(sig.get("isHintRequest")),
                             is_question=bool(sig.get("isQuestion")),
                             signals=sig,
@@ -816,6 +863,10 @@ def ingest_events(
                         profile.engagement_history = snap["engagementHistory"]
                     if "confidenceHistory" in snap:
                         profile.confidence_history = snap["confidenceHistory"]
+                    if "confidenceEvidenceHistory" in snap:
+                        profile.confidence_evidence_history = snap[
+                            "confidenceEvidenceHistory"
+                        ]
                     if "strengths" in snap:
                         profile.strengths = snap["strengths"]
                     if "focusAreas" in snap:
@@ -1072,7 +1123,9 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         for f in focus_areas
     ]
 
-    conf_hist = (profile.confidence_history if profile else None) or []
+    conf_hist = (
+        (profile.confidence_evidence_history if profile else None) or []
+    )
     conf_all = [int(round((c or 0) * 100)) for c in conf_hist]
     conf_this = conf_all[-7:] if conf_all else []
     conf_last = (
@@ -1080,9 +1133,6 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         if len(conf_all) >= 14
         else (conf_all[:7] if len(conf_all) > 7 else list(conf_this))
     )
-    conf_this = _pad_series(conf_this, 7, default=40)
-    conf_last = _pad_series(conf_last, 7, default=40)
-
     insights = None
     if profile:
         insights = build_personalization_insights(profile)
@@ -1096,14 +1146,9 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         or mastery_map
     )
 
+    # This dashboard payload has no active lesson subject/topic. Do not turn a
+    # global pilot-catalog skill into a learner-specific recommendation.
     next_skill = None
-    if profile:
-        try:
-            from learning.mastery_engine import recommend_next_skill
-
-            next_skill = recommend_next_skill(profile)
-        except Exception:
-            next_skill = None
 
     # Epic C1 — Review spark due items
     review_sparks = {"due": [], "dueNow": [], "count": 0, "hasDue": False}

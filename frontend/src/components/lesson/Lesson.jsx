@@ -15,6 +15,7 @@ import {
   buildLocalSkillPath,
 } from "../../services/learning/skillGraph";
 import { skillSlugsForLessonTopic } from "../../services/learning/assessmentBank";
+import { offlinePracticePackFor } from "../../services/learning/offlinePracticePacks";
 import {
   resolveLessonGoals,
   goalsToTopicContext,
@@ -24,6 +25,9 @@ import {
   attachHomeworkAnalysis,
   buildHomeworkStudentCaption,
   buildHomeworkTutorPrompt,
+  analyzeHomeworkDocumentWithAI,
+  extractHomeworkDocumentText,
+  getHomeworkFileKind,
   readFileAsDataUrl,
   uploadHomeworkFile,
   validateHomeworkFile,
@@ -54,6 +58,33 @@ import IndependencePanel, {
 import "../../styles/lesson.css";
 
 export default function Lesson({ activeLesson, student, subjects }) {
+  const [accessibility, setAccessibility] = useState(() => {
+    try {
+      const saved = JSON.parse(
+        window.localStorage.getItem("kindling.lesson.accessibility") || "{}"
+      );
+      return {
+        highContrast: Boolean(saved.highContrast),
+        spaciousReading: Boolean(saved.spaciousReading),
+        darkTheme: Boolean(saved.darkTheme),
+      };
+    } catch {
+      return { highContrast: false, spaciousReading: false, darkTheme: false };
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("kindling.lesson.accessibility", JSON.stringify(accessibility));
+    } catch {
+      // Preferences still work for this visit if storage is unavailable.
+    }
+  }, [accessibility]);
+  const updateAccessibility = (key) =>
+    setAccessibility((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  const [focusMode, setFocusMode] = useState(false);
   const subjectName = activeLesson?.subject || "Computer Science";
   const requestedHomeworkWindow = Number(activeLesson?.homeworkWindowMinutes);
   const homeworkWindowMinutes = [15, 25, 40].includes(requestedHomeworkWindow)
@@ -210,6 +241,25 @@ export default function Lesson({ activeLesson, student, subjects }) {
   const [inputVal, setInputVal] = useState("");
   const inputRef = useRef(null);
   const lastInputWasVoiceRef = useRef(false);
+  useEffect(() => {
+    const handleLessonShortcut = (event) => {
+      if (event.altKey && event.shiftKey && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setFocusMode((current) => !current);
+      } else if (
+        event.altKey &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "i"
+      ) {
+        event.preventDefault();
+        inputRef.current?.focus();
+      } else if (event.key === "Escape" && focusMode) {
+        setFocusMode(false);
+      }
+    };
+    window.addEventListener("keydown", handleLessonShortcut);
+    return () => window.removeEventListener("keydown", handleLessonShortcut);
+  }, [focusMode]);
   const [homeworkBusy, setHomeworkBusy] = useState(false);
   const [homeworkError, setHomeworkError] = useState("");
 
@@ -450,6 +500,10 @@ export default function Lesson({ activeLesson, student, subjects }) {
       }
     },
   });
+  const offlinePracticePack = useMemo(
+    () => offlinePracticePackFor(subjectName, topicName),
+    [subjectName, topicName]
+  );
   assessmentApiRef.current = assessment;
   interventionStatusRef.current = intervention.status;
 
@@ -626,7 +680,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
   // Epic C6 — quick check controls (questions target current subtopic / skills)
   const handleStartAssessment = useCallback(
     (opts = {}) => {
-      if (tools.voiceOutput) prepareAudio();
+      if (tools.voiceOutput && opts.source !== "offline_pack") prepareAudio();
       // Leave multi-step if open so panels don't stack
       if (multiStep.multiStepActive) {
         multiStep.exitMultiStep();
@@ -655,6 +709,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
         form: opts.form || "",
         purpose: opts.purpose || "practice",
         baseline: opts.baseline || null,
+        questions: opts.questions || null,
+        topic: opts.topic || topicName,
       });
       setMobilePanel("chat");
     },
@@ -666,6 +722,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
       reviewSkill,
       skillPath,
       unitName,
+      topicName,
     ]
   );
 
@@ -804,51 +861,59 @@ export default function Lesson({ activeLesson, student, subjects }) {
       setHomeworkError("");
       const check = validateHomeworkFile(file);
       if (!check.ok) {
-        setHomeworkError(check.reason || "Could not use that image.");
+        setHomeworkError(check.reason || "Could not use that file.");
         return;
       }
       if (!hasAi) {
-        setHomeworkError("AI is not configured — cannot read the photo yet.");
+        setHomeworkError("AI is not configured — I can't read this attachment yet.");
         return;
       }
 
       setHomeworkBusy(true);
       try {
-        const { dataUrl, base64, mimeType } = await readFileAsDataUrl(file);
+        const attachmentKind = check.kind || getHomeworkFileKind(file);
+        let homeworkMeta = { id: null, imageUrl: null };
+        let analysis;
 
-        // 1) Persist upload (best-effort when offline / unauth)
-        let homeworkMeta = {
-          id: null,
-          imageUrl: dataUrl,
-        };
-        try {
-          const uploaded = await uploadHomeworkFile(file, {
+        if (attachmentKind === "image") {
+          const { dataUrl, base64, mimeType } = await readFileAsDataUrl(file);
+          homeworkMeta.imageUrl = dataUrl;
+          try {
+            const uploaded = await uploadHomeworkFile(file, {
+              subject: subjectName,
+              topic: topicName,
+              conversationId: conversationId || "",
+              studentId,
+            });
+            homeworkMeta = {
+              id: uploaded.id,
+              imageUrl: uploaded.imageUrl || dataUrl,
+            };
+          } catch (upErr) {
+            console.warn("Homework upload failed, continuing with local preview", upErr);
+          }
+          analysis = await analyzeHomeworkWithGemini({
+            base64,
+            mimeType,
             subject: subjectName,
             topic: topicName,
-            conversationId: conversationId || "",
-            studentId,
+            studentName,
           });
-          homeworkMeta = {
-            id: uploaded.id,
-            imageUrl: uploaded.imageUrl || dataUrl,
-          };
-        } catch (upErr) {
-          // Still allow local analysis if upload fails
-          console.warn("Homework upload failed, continuing with local preview", upErr);
+        } else {
+          const documentText = await extractHomeworkDocumentText(file);
+          analysis = await analyzeHomeworkDocumentWithAI({
+            text: documentText,
+            subject: subjectName,
+            topic: topicName,
+            studentName,
+          });
         }
-
-        // 2) Vision / OCR via Gemini
-        const analysis = await analyzeHomeworkWithGemini({
-          base64,
-          mimeType,
-          subject: subjectName,
-          topic: topicName,
-          studentName,
-        });
 
         if (analysis.isHomework === false) {
           setHomeworkError(
-            "That photo does not look like school work. Try a clearer page of your homework."
+            attachmentKind === "document"
+              ? "That document does not look like school work. Try a worksheet, notes, or assignment file."
+              : "That photo does not look like school work. Try a clearer page of your homework."
           );
           trackMetric("homework.rejected_not_homework", {
             tags: { subject: subjectName, topic: topicName },
@@ -865,13 +930,17 @@ export default function Lesson({ activeLesson, student, subjects }) {
           }
         }
 
-        const caption = buildHomeworkStudentCaption(analysis);
+        const caption = buildHomeworkStudentCaption(analysis, {
+          attachmentKind,
+          fileName: file.name,
+        });
         const apiMessage = buildHomeworkTutorPrompt({
           analysis,
           subject: subjectName,
           topic: topicName,
           studentName,
           interventionActive: intervention.status === "active",
+          attachmentKind,
         });
 
         if (tools.voiceOutput) prepareAudio();
@@ -881,6 +950,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
           imageUrl: homeworkMeta.imageUrl,
           homeworkId: homeworkMeta.id,
           analysis,
+          attachmentKind,
+          attachmentName: file.name,
         });
 
         // Strong struggle signal from photo → offer guide mode (respect intervention rules)
@@ -1151,6 +1222,10 @@ export default function Lesson({ activeLesson, student, subjects }) {
     <section id="lesson">
       <div
         className={`lesson-shell${pathCollapsed ? " path-collapsed" : ""}`}
+        data-contrast={accessibility.highContrast ? "high" : "standard"}
+        data-reading={accessibility.spaciousReading ? "spacious" : "standard"}
+        data-theme={accessibility.darkTheme ? "dark" : "light"}
+        data-focus-mode={focusMode ? "true" : "false"}
         data-mobile-panel={mobilePanel}
       >
         <LessonPath
@@ -1226,6 +1301,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
           onDismissPersistenceNote={dismissPersistenceNote}
           pathCollapsed={pathCollapsed}
           onExpandPath={() => setPathCollapsed(false)}
+          focusMode={focusMode}
+          onToggleFocusMode={() => setFocusMode((current) => !current)}
           isResume={conversationMeta?.isResume}
           isArchiveView={isArchiveView || Boolean(viewingArchiveId)}
           conversationEnded={conversationMeta?.status === "ended"}
@@ -1400,6 +1477,9 @@ export default function Lesson({ activeLesson, student, subjects }) {
 
         <LessonTools
           tools={tools}
+          accessibility={accessibility}
+          onToggleAccessibility={updateAccessibility}
+          isSpeaking={isSpeaking}
           onToggle={toggle}
           diffPct={effectiveDiffPct}
           diffLabel={diffLabel}
@@ -1457,6 +1537,15 @@ export default function Lesson({ activeLesson, student, subjects }) {
           onStartMultiStep={handleStartMultiStep}
           onExitMultiStep={handleExitMultiStep}
           assessmentAvailable={assessment.assessmentAvailable}
+          offlinePracticePack={offlinePracticePack}
+          onStartOfflinePracticePack={() => {
+            if (!offlinePracticePack) return;
+            handleStartAssessment({
+              source: "offline_pack",
+              questions: offlinePracticePack.questions,
+              topic: offlinePracticePack.title,
+            });
+          }}
           prePostAvailable={assessment.prePostAvailable}
           prePostBaseline={assessment.prePostBaseline}
           onStartPrePostBaseline={() => handleStartAssessment({ source: "pre_post_baseline", form: "A", purpose: "pre" })}

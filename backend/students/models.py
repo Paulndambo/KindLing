@@ -17,6 +17,12 @@ class StudentProfile(models.Model):
     avatar = models.CharField(max_length=40, blank=True, default="sparkles")
     country = models.CharField(max_length=80, blank=True, default="")
     country_flag = models.CharField(max_length=16, blank=True, default="")
+    preferred_language = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Language the learner prefers for tutoring and explanations.",
+    )
     school_name = models.CharField(max_length=200, blank=True, default="")
     school_type = models.CharField(max_length=80, blank=True, default="")
     curriculum = models.CharField(max_length=120, blank=True, default="")

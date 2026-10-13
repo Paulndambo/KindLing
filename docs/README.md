@@ -1,0 +1,381 @@
+# Kindling
+
+**Kindling** is an AI-powered adaptive tutoring platform. It provides warm, patient 1-on-1 lessons that adapt in real time to how a student thinks, struggles, and succeeds—backed by a Django learning API and a multi-provider AI gateway (platform Gemini by default, optional BYOK).
+
+```
+Kindling/
+├── frontend/          # React + Vite SPA (live lessons, dashboard, subjects, settings)
+├── backend/           # Django REST API (auth, profile, curriculum, learning, safety, jobs)
+└── docs/              # All project documentation and plans
+    ├── README.md      # Documentation index — start here
+    ├── CAPABILITIES.md
+    ├── NEXT_STEPS.md  # Complete phased plan + latest priorities
+    └── PITCH_DECK.md
+```
+
+| Doc | Purpose |
+|-----|---------|
+| [CAPABILITIES.md](./CAPABILITIES.md) | Full inventory + longer-term vision (✅ shipped vs ⬜ Wave 2) |
+| [NEXT_STEPS.md](./NEXT_STEPS.md) | Execution order — **Wave 1 shipped**; **Wave 2** = §15 + Phases 3–5 |
+| [REVIEW_GAP_ANALYSIS.md](./REVIEW_GAP_ANALYSIS.md) | Expert review (`REVIEW_FEEDBACK.md`) vs shipped product — gaps, next-steps map, build order |
+| [ENGINEERING.md](./ENGINEERING.md) | Architecture, concepts, design decisions & trade-offs (eng team) |
+| [SAFETY_AND_PRIVACY.md](./SAFETY_AND_PRIVACY.md) | Child-safety & privacy baseline |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Production container, configuration, jobs, and backup/restore runbook |
+| [PITCH_DECK.md](./PITCH_DECK.md) | YC pitch materials + application answer bank |
+| [BETA_LAUNCH.md](./BETA_LAUNCH.md) | Paid student beta checklist (individual seats; must-ship, 4–6 week order) |
+| [Kindling_YC_Pitch.pptx](../Kindling_YC_Pitch.pptx) | 10-slide YC partner deck |
+| [backend guide](./backend/README.md) | Full API map, jobs, observability |
+| [frontend guide](./frontend/README.md) | Frontend-focused notes |
+
+---
+
+## Why Kindling
+
+- **Adaptive tutor** — Socratic by default on reasoning; graduated help when stuck (micro-hint → worked example → full guide → break / easier path)
+- **Hands-on how-to** — Practical skills (e.g. files & folders) get numbered device steps and try-it checklists, not theory-only lectures
+- **Knows the student** — Grade, curriculum, country, interests, and learning style shape every lesson
+- **Closed learning loop** — Signals → LearnerState (L1) → pedagogical decision (L2) → ADI (L3) → independence twins (L4); tutor executes the decided move
+- **Pilot pedagogy depth** — Computer Science path + skill graph/BKT-lite, worked examples, misconceptions, multi-step work, C6 quick checks, C8 eval tooling
+- **Low-friction replies** — Real-world examples + 3–5 one-tap suggestion chips every teaching turn
+- **Presentation matters** — Math, lists, code, tables, and diagrams render cleanly while streaming
+- **Voice-ready** — Optional speak-aloud (TTS) and speech-to-text answers
+- **Progress the learner can trust** — Subjects, resume, skill sparks, Review spark, goals/week focus, learner pulse; optional guardian digests
+- **Session rhythm** — Start energy check-in, end reflection, light spark challenge (no badge economy)
+- **Flexible AI** — Platform Gemini and/or bring-your-own-key (Gemini, OpenAI-compatible, Anthropic, Groq, OpenRouter)
+- **Production floor** — Health probes, telemetry, failure UX, safety escalation, background jobs skeleton (Postgres/host deploy = Wave 2 Track D)
+
+---
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19, Vite, Lucide, vanilla CSS design system |
+| Backend | Django 5.1, DRF, SimpleJWT, CORS, SQLite by default |
+| AI | Multi-provider gateway in the browser; platform default = Gemini |
+| Data | Student profile, curriculum graph, learning events/sessions, mastery, digests, homework media |
+| Seed | `seed_kindling` — demo student + **Computer Science** pilot graph (sole subject for now) |
+
+**Domain model:** each user account is one student (one `StudentProfile`). Commercial model is **always individual seats**—a parent or school with multiple learners buys **one subscription per learner**. Optional progress digests: the student configures a recipient email (parent/teacher); there is no multi-child parent account or classroom product.
+
+---
+
+## Architecture (high level)
+
+```
+┌──────────────────────────┐     JWT + REST      ┌───────────────────────────┐
+│  frontend (Vite / React) │ ─────────────────►  │  backend (Django + DRF)    │
+│  Lesson UI + tools       │                     │  accounts / students       │
+│  AI gateway (multi-      │ ── provider APIs ─► │  curriculum (skills,      │
+│    provider / BYOK)      │     (browser)       │    examples, misconceptions│
+│  learning event queue    │ ─────────────────► │  learning events, mastery, │
+│  Settings, dashboard     │                     │    digests, homework       │
+└──────────────────────────┘                     │  core (health, safety,     │
+                                                 │    jobs, telemetry)        │
+                                                 │  kindling_platform (plans) │
+                                                 └───────────────────────────┘
+```
+
+- **Tutor chat / TTS / vision** resolve through the frontend AI layer (platform Gemini env key and/or user BYOK in **Settings → AI providers**). Raw API keys stay in the browser; the API stores only routing prefs and non-secret fingerprints.
+- **Auth, profile, subjects, conversations, digests, platform plans, and learning analytics** go through the Django API when `VITE_API_URL` is set.
+- Learning events can run in **local-mock** mode if the API is unavailable (queue + local profile still update).
+
+---
+
+## Prerequisites
+
+- **Node.js** 18+ (frontend)
+- **Python** 3.11+ recommended (backend; 3.13/3.14 also used in dev)
+- An AI route for live tutoring:
+  - Platform: `PLATFORM_GEMINI_API_KEY` in `backend/.env`, **or**
+  - BYOK: API key in the app under **Settings → AI providers**
+
+---
+
+## Quick start
+
+### 1. Backend
+
+```bash
+cd backend
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+# source .venv/bin/activate
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_kindling
+python manage.py runserver
+```
+
+API base: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+**Demo login** (also `POST /api/auth/demo/`):
+
+| Field    | Value                  |
+|----------|------------------------|
+| Email    | `student@kindling.edu` |
+| Password | `kindling-demo`        |
+
+`seed_kindling` loads the demo student, the **Computer Science** pilot path (units → subtopics + skills), worked-example / misconception catalogs, multi-step packs, sample mastery sparks, and a preview parent digest. Math Foundations pedagogy packs remain available in-repo for fraction tools and examples.
+
+More detail: [backend guide](./backend/README.md).
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+Create `backend/.env` for platform AI and `frontend/.env` for the API URL:
+
+```env
+PLATFORM_GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+```env
+# frontend/.env
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+For BYOK, add a provider key in the app under **Settings → AI providers**. Do not put platform keys in `VITE_` variables.
+
+Optional frontend settings:
+
+```env
+# VITE_LEARNING_API_URL=http://127.0.0.1:8000/api/learning/events/
+# VITE_TELEMETRY=false
+```
+
+```bash
+npm run dev
+```
+
+Open the URL Vite prints (usually [http://localhost:5173](http://localhost:5173)).
+
+Log in with the demo account (or register), complete onboarding if prompted, open **My Subjects → Computer Science**, pick a lesson (e.g. **Files & folders**), and start tutoring.
+
+More detail: [frontend guide](./frontend/README.md).
+
+---
+
+## Main product surfaces
+
+| Area | What you get |
+|------|----------------|
+| **Overview** | Product home / marketing entry |
+| **Auth & onboarding** | Register, login, demo; rich student profile (grade, curriculum, interests, learning style, …) |
+| **My Subjects** | Computer Science pilot path; continue cards; transcript search |
+| **Live lesson** | Streaming tutor, unit/lesson path + skill sparks, tools sidebar, learner pulse |
+| **Practical how-to** | Numbered device steps + try-it for literacy skills (files, apps, browser, safety) |
+| **Suggestion chips** | 3–5 one-tap follow-ups after tutor turns |
+| **Help ladder** | Soft idle nudge → offer → micro-hint → worked example → full guide → break/easier path; escalate / exit anytime |
+| **Quick check (C6)** | Low-stakes MCQ assessment with tutor explanations |
+| **Independence twin (L4)** | No-scaffold / transfer check after heavy help |
+| **Show library example** | Curated worked examples from the pilot catalog (preferred over free generation) |
+| **Show your work** | Multi-step problems with intermediate checks and partial credit (pilot packs) |
+| **Manipulatives** | Interactive fraction tools on matching math pilot topics |
+| **Homework photo** | Upload notebook/homework image → vision analysis + guided help path |
+| **Dashboard** | Mastery, skill readiness, next-best step, confidence views, family digest panel |
+| **Settings** | AI providers / BYOK routing, plan entitlements (Spark / Ember / Forge pilot) |
+
+---
+
+## What’s implemented (current monorepo)
+
+High-signal features already shipped (see CAPABILITIES / NEXT_STEPS for full tables):
+
+### Learning science & intelligence
+
+- **Computer Science** pilot curriculum (units → subtopics) + skill graph / **BKT-lite** mastery
+- **LearnerState (L1)** → **pedagogical policy (L2)** → **ADI (L3)** → **independence twins (L4)**
+- **Practical how-to guides** for hands-on literacy skills (not theory-only)
+- Math **correctness verifier** (hidden `⟦check …⟧` tags; server prefers checker when applicable)
+- **Worked-example library**, **misconception engine**, **multi-step show-your-work**
+- **C6** low-stakes quick checks; **C8** eval rubric + auto scorer + weekly sample job
+- **Review spark** (C1 v1) + light **spark challenge** (G1)
+
+### Intervention, affect & session rhythm
+
+- Rich struggle signals + graduated help ladder (exit anytime)
+- Affective check-ins, session-start energy, end-of-session reflection
+- Persistence celebration (student UI + parent digest “Effort & heart”)
+- Real-world example rule + suggestion chips (including how-to chips)
+
+### Continuity & family
+
+- Topic conversations with resume snapshots, localStorage cache, and transcript search
+- Opt-in **weekly parent digests** (job + Dashboard family panel; effort-first copy)
+- Homework photo uploads with retention policy (default 30 days)
+
+### Platform floor
+
+- Health live/ready endpoints, structured request logs, client error + product metrics
+- AI/API failure UX (retry, offline event queue, chat history kept)
+- Age-aware safety policy + distress escalation path (pause tutor + scrubbed `SafetyEvent`)
+- Account export / delete (`GET /api/auth/export/`, `DELETE /api/auth/account/`)
+- Background job runner (`heartbeat`, `weekly_digest`, `review_schedule`, `weekly_eval_sample`, …)
+- Pilot plans & AI routing prefs under `/api/platform/`
+
+**Still Wave 2:** hostable Postgres deploy (Track D), C1+ review depth, C7 playbooks, standards export, diagrams/a11y, PWA/scale.
+
+---
+
+## Key technical capabilities
+
+- Multi-provider AI gateway (`frontend/src/services/ai/`): platform Gemini + BYOK for Gemini, OpenAI-compatible, Anthropic, Groq, OpenRouter; per-task routing (chat / vision / TTS) on higher plans
+- Streaming tutoring with profile-, safety-, pedagogy-, and how-to-aware system prompts
+- Learning pipeline: signals → LearnerState → policy decision → profile/events → next prompt
+- Rich tutor rendering (Markdown, GFM tables, KaTeX, code blocks, diagrams)
+- Gemini TTS + browser speech recognition
+- Django apps: `accounts`, `students`, `curriculum`, `learning`, `core`, `kindling_platform`
+
+### Useful API groups
+
+| Group | Examples |
+|-------|----------|
+| **Auth** `/api/auth/` | `POST …/register/`, `…/login/`, `…/demo/`, `…/refresh/`, `GET …/me/`, `GET …/export/`, `DELETE …/account/` |
+| **Students** `/api/students/` | `GET/PATCH …/me/` (profile + digest prefs) |
+| **Subjects** `/api/subjects/` | subjects & topics CRUD |
+| **Learning** `/api/learning/` | events, profile, dashboard, sessions |
+| Skills | `GET …/skills/`, `…/skills/path/`, `…/skills/next/` |
+| Pedagogy libraries | `GET …/worked-examples/`, `…/misconceptions/`, `…/multistep/` |
+| Math / homework | `POST …/verify-math/`, `POST …/homework/` |
+| Digests | `GET/POST …/digests/` |
+| Conversations | shelf, ensure, resume, messages, archive, continue list, transcript search |
+| **Platform** `/api/platform/` | plans, subscription, AI routing prefs |
+| **Safety** `/api/safety/` | policy by grade, distress event ingest |
+| **Ops** | `GET /health/`, `GET /api/telemetry/summary/`, `GET /api/jobs/status/` |
+
+Full tables: [backend guide](./backend/README.md).
+
+---
+
+## Environment variables (frontend)
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `PLATFORM_GEMINI_API_KEY` | Backend secret | Platform Gemini chat + TTS + vision; never expose as a `VITE_` variable |
+| `VITE_API_URL` | Recommended | Base URL for auth, profile, subjects, learning, platform |
+| `VITE_LEARNING_API_URL` | Optional | Override learning event ingest endpoint |
+| `VITE_LEARNING_USE_HTTPBIN` | Optional | Dev-only remote sink for events |
+| `VITE_TELEMETRY` | Optional | Set `false` to disable client error/metric posts |
+
+Without any AI route (env key or BYOK), the lesson UI loads but tutoring cannot stream. Configure keys under **Settings → AI providers** if you prefer not to use `.env`.
+
+**Backend** defaults to SQLite (`backend/db.sqlite3`) for local dev. For production, point Django at Postgres and keep secrets out of the repo (see NEXT_STEPS Phase 0.1 and [backend guide](./backend/README.md)).
+
+---
+
+## Development scripts
+
+### Frontend (`frontend/`)
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server with HMR |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | ESLint |
+
+Pedagogy unit smokes under `frontend/scripts/` (see each script header for any esbuild/bundle step):
+
+```bash
+node scripts/smoke-struggle-b1.mjs
+node scripts/smoke-struggle-b2.mjs
+node scripts/smoke-affect-b3.mjs
+node scripts/smoke-worked-b4.mjs
+node scripts/smoke-misconception-b5.mjs
+node scripts/smoke-multistep-b6.mjs
+```
+
+### Backend (`backend/`)
+
+| Command | Description |
+|---------|-------------|
+| `python manage.py runserver` | Dev API server |
+| `python manage.py migrate` | Apply migrations |
+| `python manage.py seed_kindling` | Demo student + pilot pedagogy data |
+| `python manage.py createsuperuser` | Django admin user |
+| `python manage.py run_job list` | List background jobs |
+| `python manage.py run_job heartbeat` | Prove job runner |
+| `python manage.py run_job weekly_digest --dry-run` | Digest dry-run |
+| `python manage.py run_scheduled_jobs` | Run every due job by interval |
+| `python manage.py test` | Backend test suite (includes B1–B6 pedagogy tests) |
+
+Admin (after superuser): [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+
+---
+
+## Repository map
+
+```
+frontend/src/
+  components/     # Lesson, dashboard, auth, subjects, settings, overview
+  hooks/          # Auth, chat session, learning, multi-step, speech, profile
+  services/
+    ai/           # Multi-provider gateway, key vault, routing
+    learning/     # Signals, struggle, ladder, misconceptions, multistep, …
+    api/          # REST client (auth, learning, platform)
+    safety/       # Age policy + distress client
+  styles/         # Lesson + tutor content CSS
+
+backend/
+  accounts/           # JWT auth, demo login, export/delete
+  students/           # Student profile (1:1 with user), digest prefs
+  curriculum/         # Subjects, topics, skill graph, worked examples,
+                      #   misconception defs, multi-step problems
+  learning/           # Events, sessions, mastery, digests, homework, APIs
+  core/               # Health, telemetry, safety, job runner
+  kindling_platform/  # Plans (Spark / Ember / Forge), subscription, AI routing prefs
+```
+
+---
+
+## Design principles
+
+1. **Respect the learner** — normalize struggle; never shame in student-facing copy.  
+2. **Guide before giving** — Socratic by default; intervention explicit and exit-able.  
+3. **Presentation is pedagogy** — math/code/diagrams stay readable while streaming.  
+4. **Adapt quietly** — scores and models stay internal; tutor speech stays human.  
+5. **Parents and students see progress differently** — student: encouragement; family: clarity.  
+6. **Safety and privacy scale with trust** — especially for children.  
+
+---
+
+## Roadmap snapshot
+
+**Done (see NEXT_STEPS.md):** production floor (minus Postgres host), Horizon A, intervention depth, session rhythm, **Wave 2 intelligence** (L1–L4, C6 v1, C8, CS pilot, practical how-to, suggestion chips), multi-provider AI + pilot plans.
+
+**Next (Wave 2 remaining — NEXT_STEPS §15):** Postgres/hostable deploy (Track D), C1+ review depth, C7 domain playbooks / how-to expand, single-learner standards export, diagrams/a11y, digest polish. **Not planned:** multi-child households or classroom software (multi-learner = multi-seat).
+
+**Paid beta path (~25 students, individual seats):** **[BETA_LAUNCH.md](./BETA_LAUNCH.md)** — hosting, per-student billing; optional student-configured digest email.
+
+Full detail: **[NEXT_STEPS.md](./NEXT_STEPS.md)** and **[CAPABILITIES.md](./CAPABILITIES.md)**.
+
+---
+
+## Try the pilot pedagogy (after seed)
+
+1. Log in as the demo student (`student@kindling.edu` / `kindling-demo`).  
+2. Open **My Subjects → Computer Science → Digital & computer literacy → Files & folders**.  
+3. Start the lesson. Expect a warm orientation **and** a path into numbered how-to steps (create a folder, try-it checklist). Tap chips like **Show me how step by step**.  
+4. In **Tools**, also try:
+   - **Help ladder** (or wait idle / struggle to see soft nudge → offer)
+   - **Quick check** (C6 low-stakes MCQ)
+   - **Show library example** / **Show your work** on topics that support them  
+5. Optionally upload a **homework photo** for guided help.  
+6. Leave mid-lesson and return via **Continue** on My Subjects / Dashboard.  
+7. Dashboard → family digest preview (opt-in + generate); note suggested next step / skill sparks.  
+8. **Settings** → AI providers / plan routing if you want BYOK instead of the platform Gemini key.
+
+---
+
+## License & contributing
+
+Project-specific license and contribution guidelines can be added here as the project is published. For local development, use the demo account or register a new student through the UI.

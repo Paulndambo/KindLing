@@ -284,12 +284,6 @@ export default function Overview({
         </div>
       </div>
 
-      <footer className="kdl-footer">
-        <span>
-          © 2026 Kindling. Every student, taught like the only one in the room.
-        </span>
-        <span>Privacy · For students · For schools</span>
-      </footer>
     </section>
   );
 }

@@ -411,6 +411,7 @@ export const EMPTY_STUDENT_PROFILE = {
   avatar: "sparkles",
   country: "",
   countryFlag: "",
+  preferredLanguage: "",
   schoolName: "",
   schoolType: "",
   curriculum: "",

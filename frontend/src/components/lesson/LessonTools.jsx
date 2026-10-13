@@ -26,6 +26,9 @@ const LADDER_BTNS = [
 
 export default function LessonTools({
   tools,
+  accessibility = { highContrast: false, spaciousReading: false },
+  onToggleAccessibility,
+  isSpeaking = false,
   onToggle,
   diffPct,
   diffLabel,
@@ -69,6 +72,8 @@ export default function LessonTools({
   onStartPrePostBaseline,
   onStartPrePostFollowUp,
   onExitAssessment,
+  offlinePracticePack = null,
+  onStartOfflinePracticePack,
   onExitIntervention,
   onAcceptIntervention,
   onDeclineIntervention,
@@ -347,6 +352,23 @@ export default function LessonTools({
         )}
 
         {/* Epic C6 — quick check (works offline; no AI required) */}
+        {offlinePracticePack && !assessmentActive && (
+          <div className="offline-practice-pack">
+            <h4>{offlinePracticePack.title}</h4>
+            <p className="intervention-tools-text">
+              {offlinePracticePack.questionCount} saved questions with built-in explanations. Ready offline after this lesson loads; no AI needed.
+            </p>
+            <button
+              type="button"
+              className="guide-btn library-example-btn"
+              onClick={onStartOfflinePracticePack}
+              disabled={isStreaming || isArchiveView || interventionActive || multiStepActive}
+            >
+              <ClipboardCheck size={14} />
+              Start offline pack
+            </button>
+          </div>
+        )}
         {(assessmentAvailable || assessmentActive) && (
           <div className="assessment-tools-block">
             <p className="intervention-tools-text" style={{ marginTop: 10 }}>
@@ -622,39 +644,92 @@ export default function LessonTools({
             <Volume2 size={15} />
             Voice Output
           </div>
-          <div
+          <button
+            type="button"
             className={`switch ${tools.voiceOutput ? "on" : ""}`}
             onClick={() => onToggle("voiceOutput")}
             role="switch"
             aria-checked={tools.voiceOutput}
+            aria-label="Voice output"
           />
         </div>
         {tools.voiceOutput && (
-          <p className="voice-info">
-            Kindling reads replies in a natural Gemini voice. Click{" "}
-            <strong>Read aloud</strong> under any message to replay it.
-          </p>
+          <>
+            <p className="voice-info">
+              Tutor replies stay visible as captions. Kindling reads them aloud;
+              click{" "}
+              <strong>Read aloud</strong> under any message to replay one.
+            </p>
+            {isSpeaking && (
+              <p className="voice-status" role="status" aria-live="polite">
+                Kindling is reading a reply aloud. The text remains visible.
+              </p>
+            )}
+          </>
         )}
       </div>
+
+      <section className="accessibility-tools" aria-labelledby="accessibility-tools-title">
+        <h4 id="accessibility-tools-title">Reading &amp; display</h4>
+        <label className="accessibility-option">
+          <input
+            type="checkbox"
+            checked={accessibility.highContrast}
+            onChange={() => onToggleAccessibility?.("highContrast")}
+          />
+          <span>
+            <strong>High contrast</strong>
+            <small>Stronger text, borders, and focus outlines</small>
+          </span>
+        </label>
+        <label className="accessibility-option">
+          <input
+            type="checkbox"
+            checked={accessibility.spaciousReading}
+            onChange={() => onToggleAccessibility?.("spaciousReading")}
+          />
+          <span>
+            <strong>Spacious reading</strong>
+            <small>
+              A clear sans-serif typeface with more line and letter spacing
+            </small>
+          </span>
+        </label>
+        <label className="accessibility-option">
+          <input
+            type="checkbox"
+            checked={accessibility.darkTheme}
+            onChange={() => onToggleAccessibility?.("darkTheme")}
+          />
+          <span>
+            <strong>Dark lesson theme</strong>
+            <small>Use a darker background for the lesson and chat</small>
+          </span>
+        </label>
+      </section>
 
       <div>
         <h4>Tools</h4>
         <div className="tool-row">
           Show visual models{" "}
-          <div
+          <button
+            type="button"
             className={`switch ${tools.visuals ? "on" : ""}`}
             onClick={() => onToggle("visuals")}
             role="switch"
             aria-checked={tools.visuals}
+            aria-label="Show visual models"
           />
         </div>
         <div className="tool-row">
           Extra encouragement{" "}
-          <div
+          <button
+            type="button"
             className={`switch ${tools.encourage ? "on" : ""}`}
             onClick={() => onToggle("encourage")}
             role="switch"
             aria-checked={tools.encourage}
+            aria-label="Extra encouragement"
           />
         </div>
       </div>

@@ -9,7 +9,7 @@
  * Graph payload kept in cs_pilot_data.json (generated from curriculum.pilot_graph).
  */
 
-import { Correctness } from "./types";
+import { Correctness, SIGNAL_RELIABILITY_THRESHOLD } from "./types";
 import csPilot from "./cs_pilot_data.json";
 
 export const PILOT_SUBJECT = csPilot.PILOT_SUBJECT || "Computer Science";
@@ -133,8 +133,19 @@ export function applySkillsToProfile(profile, { subject, topic, signals }) {
   const next = structuredClone(profile);
   if (!next.skills) next.skills = {};
 
-  const correctness = signals?.correctness || Correctness.UNKNOWN;
-  const confidence = Number(signals?.confidence ?? 0.5);
+  const correctnessReliable =
+    (signals?.signalEvidence?.correctness?.confidence ??
+      signals?.correctnessConfidence ??
+      0) >= SIGNAL_RELIABILITY_THRESHOLD &&
+    [Correctness.CORRECT, Correctness.PARTIAL, Correctness.INCORRECT].includes(
+      signals?.correctness
+    );
+  const correctness = correctnessReliable
+    ? signals?.correctness || Correctness.UNKNOWN
+    : Correctness.UNKNOWN;
+  const confidence = Number(
+    signals?.signalEvidence?.correctness?.confidence ?? 0.5
+  );
   const isHint = Boolean(signals?.isHintRequest);
   let obs = null;
   if (correctness === Correctness.CORRECT) obs = true;
@@ -151,26 +162,26 @@ export function applySkillsToProfile(profile, { subject, topic, signals }) {
     const { ready } = prereqReady(next.skills, link.slug);
     const damp = ready ? 1 : 0.55;
     const confBoost = 0.85 + 0.3 * confidence;
-    const pTransit = Math.min(0.35, meta.pTransit * damp * confBoost);
+    const pTransit = correctnessReliable
+      ? Math.min(0.35, meta.pTransit * damp * confBoost)
+      : 0;
 
     let pAfter;
-    if (isHint && obs !== false) {
-      pAfter = clamp((sm.pKnow || meta.pInit) - 0.02 * damp);
-    } else {
-      pAfter = bktUpdate(sm.pKnow || meta.pInit, {
-        correct: obs,
-        partial,
-        pTransit,
-        pSlip: meta.pSlip,
-        pGuess: meta.pGuess,
-      });
-    }
+    pAfter = bktUpdate(sm.pKnow || meta.pInit, {
+      correct: obs,
+      partial,
+      pTransit: isHint && !correctnessReliable ? 0 : pTransit,
+      pSlip: meta.pSlip,
+      pGuess: meta.pGuess,
+    });
 
     sm.pKnow = pAfter;
     sm.score = Math.round(pAfter * 1000) / 10;
-    sm.attempts = (sm.attempts || 0) + 1;
-    sm.lastEvidenceAt = new Date().toISOString();
-    sm.lastCorrectness = correctness;
+    if (correctnessReliable) {
+      sm.attempts = (sm.attempts || 0) + 1;
+      sm.lastEvidenceAt = new Date().toISOString();
+      sm.lastCorrectness = correctness;
+    }
 
     if (correctness === Correctness.CORRECT) {
       sm.correct = (sm.correct || 0) + 1;
@@ -263,6 +274,20 @@ export function applySkillsToProfile(profile, { subject, topic, signals }) {
  * Build skill path payload for a topic (lesson path UI + insights).
  */
 export function buildLocalSkillPath(profile, subject, topic) {
+  if (
+    !subject?.trim() ||
+    subject.trim().toLocaleLowerCase() !== PILOT_SUBJECT.toLocaleLowerCase()
+  ) {
+    return {
+      subject,
+      topic,
+      skills: [],
+      hasGraph: false,
+      topicState: STATE.READY,
+      topicStateLabel: STATE_LABELS[STATE.READY],
+      recommendedNext: null,
+    };
+  }
   const links = TOPIC_SKILL_MAP[topic];
   if (!links?.length) {
     return {
@@ -312,19 +337,17 @@ export function buildLocalSkillPath(profile, subject, topic) {
 
 function recommendLocalNext(skillsMap, topic) {
   const links = TOPIC_SKILL_MAP[topic] || [];
-  const domains = new Set(
-    links.map((l) => skillBySlug[l.slug]?.domain).filter(Boolean)
-  );
   const candidates = [];
-  for (const meta of PILOT_SKILLS) {
+  for (const link of links) {
+    const meta = skillBySlug[link.slug];
+    if (!meta) continue;
     const { ready } = prereqReady(skillsMap, meta.slug);
     if (!ready) continue;
     const sm = skillsMap[meta.slug] || emptySkillState(meta.slug);
     if (sm.state === STATE.MASTERED) continue;
-    const domainBonus = domains.size && domains.has(meta.domain) ? 1 : 0;
-    candidates.push({ domainBonus, p: sm.pKnow || 0, meta, sm });
+    candidates.push({ p: sm.pKnow || 0, meta, sm });
   }
-  candidates.sort((a, b) => b.domainBonus - a.domainBonus || a.p - b.p);
+  candidates.sort((a, b) => a.p - b.p);
   if (!candidates.length) return null;
   const c = candidates[0];
   return {

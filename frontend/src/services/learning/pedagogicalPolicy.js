@@ -9,7 +9,7 @@
  */
 
 import { InterventionLevel, normalizeLevel, levelMeta } from "./interventionLadder";
-import { StruggleSignal } from "./types";
+import { StruggleSignal, SIGNAL_RELIABILITY_THRESHOLD } from "./types";
 import { suggestEasierRelatedSkill, buildLocalSkillPath } from "./skillGraph";
 import {
   findPracticalGuide,
@@ -223,7 +223,28 @@ export function decidePedagogy(learnerState = null, context = {}) {
     topic: context.topic || state.topic || "",
   };
 
-  const last = context.lastSignals || null;
+  const rawLast = context.lastSignals || null;
+  const correctnessReliable =
+    (rawLast?.signalEvidence?.correctness?.confidence ??
+      rawLast?.correctnessConfidence ??
+      0) >= SIGNAL_RELIABILITY_THRESHOLD;
+  const affectReliable =
+    (rawLast?.signalEvidence?.affect?.confidence ?? 0) >=
+    SIGNAL_RELIABILITY_THRESHOLD;
+  const last = rawLast
+    ? {
+        ...rawLast,
+        correctness: correctnessReliable
+          ? rawLast.correctness
+          : "unknown",
+        rapidGuess:
+          rawLast.rapidGuess &&
+          correctnessReliable &&
+          rawLast.correctness === "incorrect" &&
+          (context.consecutiveRapidGuesses || 0) >= 2,
+        affect: affectReliable ? rawLast.affect : null,
+      }
+    : null;
   const intervention = context.intervention || null;
   const struggle = context.struggleSnapshot || state.behaviour || {};
   const adi = state.adi || context.adi || null;
@@ -238,9 +259,9 @@ export function decidePedagogy(learnerState = null, context = {}) {
     struggle.consecutiveIncorrect ??
     0;
   const affect =
-    last?.affect ||
-    context.affect ||
     context.lastCheckIn?.affect ||
+    (affectReliable ? rawLast?.affect : null) ||
+    context.affect ||
     null;
   // Only explicit energy signals — bare "frustrated" alone must not skip prereq/help rules
   const lowEnergy = Boolean(
@@ -384,8 +405,7 @@ export function decidePedagogy(learnerState = null, context = {}) {
   // ── Rapid guessing ──
   const rapid =
     last?.rapidGuess ||
-    state.behaviour?.flags?.includes("rapid_guessing") ||
-    (struggle.consecutiveRapidGuesses || 0) >= 1;
+    (struggle.consecutiveRapidGuesses || 0) >= 2;
   if (rapid && last?.correctness === "incorrect") {
     reasons.push("rapid_guessing");
     return finalize(PedagogicalAction.SLOW_DOWN, {
@@ -444,8 +464,14 @@ export function decidePedagogy(learnerState = null, context = {}) {
     context.activeMisconceptions ||
     last?.misconceptions ||
     [];
-  if (mcs.length && (last?.correctness === "incorrect" || last?.correctness === "partial")) {
-    const top = mcs[0];
+  const supportedMisconception = mcs.find(
+    (item) => Number(item?.confidence || 0) >= SIGNAL_RELIABILITY_THRESHOLD
+  );
+  if (
+    supportedMisconception &&
+    (last?.correctness === "incorrect" || last?.correctness === "partial")
+  ) {
+    const top = supportedMisconception;
     reasons.push("active_misconception", top.id || top.label);
     return finalize(PedagogicalAction.REMEDIATE_MISCONCEPTION, {
       reasons,
@@ -494,7 +520,12 @@ export function decidePedagogy(learnerState = null, context = {}) {
 
   // ── Calibration (L1.3 → L2 policy) ──
   const cal = state.confidence?.calibration || "unknown";
-  if (cal === "overconfident" && last?.correctness !== "correct") {
+  if (
+    cal === "overconfident" &&
+    last?.correctness &&
+    last.correctness !== "unknown" &&
+    last.correctness !== "correct"
+  ) {
     reasons.push("overconfident_calibration");
     return finalize(PedagogicalAction.CHECK_UNDERSTANDING, {
       reasons,
@@ -924,9 +955,24 @@ export function rankNextBestActions({
     });
   }
 
-  const focus = focusAreas[0] || state.knowledge?.focusAreas?.[0];
+  const focus = [
+    ...(Array.isArray(focusAreas) ? focusAreas : []),
+    ...(Array.isArray(state.knowledge?.focusAreas)
+      ? state.knowledge.focusAreas
+      : []),
+  ].find((item) => {
+    if (!item || typeof item !== "object" || !item.topic || !item.subject) {
+      return false;
+    }
+    return (
+      String(item.subject).trim().toLocaleLowerCase() ===
+        String(subject || "").trim().toLocaleLowerCase() &&
+      String(item.topic).trim().toLocaleLowerCase() ===
+        String(topic || "").trim().toLocaleLowerCase()
+    );
+  });
   if (focus) {
-    const label = typeof focus === "string" ? focus : focus.topic || focus.label;
+    const label = focus.topic;
     if (label) {
       items.push({
         action: PedagogicalAction.CONTINUE_SOCRATIC,
@@ -935,6 +981,8 @@ export function rankNextBestActions({
         reason: "Gentle focus area",
         cta: "Open lesson",
         kind: "focus",
+        topic: focus.topic,
+        subject: focus.subject,
       });
     }
   }

@@ -5,6 +5,7 @@ import {
   CreditCard,
   Flame,
   KeyRound,
+  LifeBuoy,
   Loader2,
   Lock,
   RefreshCw,
@@ -17,10 +18,12 @@ import { usePlatformSettings } from "../../hooks/usePlatformSettings";
 import { PROVIDERS, getProvider, modelsForProvider } from "../../services/ai";
 import { ROUTING_MODES } from "../../constants/subscription";
 import ProviderKeyCard from "./ProviderKeyCard";
+import SupportPanel from "./SupportPanel";
 
 const TABS = [
   { id: "subscription", label: "Subscription", Icon: CreditCard },
   { id: "ai", label: "AI providers", Icon: KeyRound },
+  { id: "support", label: "Help & feedback", Icon: LifeBuoy },
 ];
 
 function PlanIcon({ planId }) {
@@ -46,14 +49,16 @@ function formatPrice(plan, cycle) {
   return { main: `$${monthly}/mo`, sub: yearly ? `or $${yearly}/yr` : "" };
 }
 
-export default function Settings({ isLoggedIn, onOpenLogin }) {
-  const [tab, setTab] = useState("subscription");
+export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscription" }) {
+  const [tab, setTab] = useState(initialTab);
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const {
     plans,
     subscription,
+    invoices,
+    invoiceNotice,
     activePlan,
     entitlements,
     preferences,
@@ -66,6 +71,7 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
     testResult,
     testing,
     selectPlan,
+    createInvoiceRequest,
     setCancelAtPeriodEnd,
     updatePreferences,
     saveProviderKey,
@@ -91,7 +97,12 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
 
   const handleSelectPlan = async (planId) => {
     try {
-      await selectPlan(planId, billingCycle);
+      const plan = plans.find((item) => item.id === planId);
+      if (plan?.priceMonthly > 0) {
+        await createInvoiceRequest(planId, billingCycle);
+      } else {
+        await selectPlan(planId, billingCycle);
+      }
     } catch {
       /* error state set in hook */
     }
@@ -238,7 +249,7 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
                   <button
                     type="button"
                     className={selected ? "btn-ghost plan-cta" : "btn-primary plan-cta"}
-                    disabled={saving || selected}
+                    disabled={saving || selected || (plan.priceMonthly > 0 && !isLoggedIn)}
                     onClick={() => handleSelectPlan(plan.id)}
                   >
                     {saving ? (
@@ -250,7 +261,7 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
                     ) : plan.priceMonthly === 0 ? (
                       "Start free trial"
                     ) : (
-                      `Choose ${plan.name}`
+                      `Request ${plan.name} invoice`
                     )}
                   </button>
                 </article>
@@ -258,17 +269,42 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
             })}
           </div>
 
+          {invoiceNotice && (
+            <div className="panel settings-panel-soft" role="status" style={{ marginTop: 14 }}>
+              <p className="settings-muted">{invoiceNotice}</p>
+            </div>
+          )}
+
+          {subscription?.platform_ai_daily_usage?.limit > 0 && (
+            <p className="settings-muted" style={{ marginTop: 12 }}>
+              Platform AI today: {subscription.platform_ai_daily_usage.used} of {subscription.platform_ai_daily_usage.limit} requests used; resets at midnight UTC.
+              {` Estimated tokens: ${subscription.platform_ai_daily_usage.estimatedTokensUsed.toLocaleString()} of ${subscription.platform_ai_daily_usage.estimatedTokenLimit.toLocaleString()}.`}
+              {subscription.platform_ai_daily_usage.softWarning ? " You’re nearing today’s allowance." : ""}
+            </p>
+          )}
+
+          {invoices?.some((invoice) => invoice.status === "requested") && (
+            <div className="panel settings-panel-soft" style={{ marginTop: 14 }}>
+              <div className="dash-panel-head"><h3>Invoice requests</h3></div>
+              {invoices.filter((invoice) => invoice.status === "requested").map((invoice) => (
+                <p className="settings-muted" key={invoice.id}>
+                  {invoice.invoice_number} · {invoice.plan_name} · ${invoice.amount} {invoice.currency} · awaiting payment confirmation
+                </p>
+              ))}
+            </div>
+          )}
+
           <div className="panel settings-panel-soft">
             <div className="dash-panel-head">
               <h3>Billing notes</h3>
             </div>
             <p className="settings-muted">
-              You rent Kindling&apos;s teaching algorithm.{" "}
+              Paid plans use per-student invoices. After you request one, the Kindling team confirms payment and activates that seat. You rent Kindling&apos;s teaching algorithm.{" "}
               <strong>Ember</strong> includes platform AI tokens (monthly
               envelope). <strong>Forge</strong> is algorithm rent only—you pay
-              model usage through your own keys. Spark is a 30-day trial with
-              capped platform AI. Pilot checkout is instant (no card capture
-              yet).
+              model usage through your own keys. Spark includes capped platform
+              AI. Daily platform-AI request caps apply; BYOK usage is billed by
+              your AI provider.
             </p>
             {subscription?.current_period_end && (
               <p className="settings-muted" style={{ marginTop: 8 }}>
@@ -570,6 +606,8 @@ export default function Settings({ isLoggedIn, onOpenLogin }) {
           )}
         </section>
       )}
+
+      {tab === "support" && <SupportPanel isLoggedIn={isLoggedIn} />}
     </div>
   );
 }

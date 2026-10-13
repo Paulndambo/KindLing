@@ -213,6 +213,7 @@ class LearningProfile(models.Model):
     affect_history = models.JSONField(default=list, blank=True)
     engagement_history = models.JSONField(default=list, blank=True)
     confidence_history = models.JSONField(default=list, blank=True)
+    confidence_evidence_history = models.JSONField(default=list, blank=True)
     strengths = models.JSONField(default=list, blank=True)
     focus_areas = models.JSONField(default=list, blank=True)
     behavior = models.JSONField(default=dict, blank=True)

@@ -1,4 +1,9 @@
-import { STORAGE_KEYS, Correctness, Affect } from "./types";
+import {
+  STORAGE_KEYS,
+  Correctness,
+  Affect,
+  SIGNAL_RELIABILITY_THRESHOLD,
+} from "./types";
 import {
   applySkillsToProfile,
   buildLocalSkillPath,
@@ -41,6 +46,7 @@ export function createEmptyProfile(studentId = "anonymous") {
     affectHistory: [], // last N affect labels
     engagementHistory: [], // last N scores 0–1
     confidenceHistory: [], // last N scores 0–1
+    confidenceEvidenceHistory: [], // explicit learner confidence only
     /** Epic B3 self-reported check-in option ids */
     affectCheckInHistory: [],
     strengths: [], // topic keys recently mastered
@@ -106,11 +112,21 @@ function pushRolling(arr, value, max = 40) {
 export function applyExchangeToProfile(profile, { subject, topic, signals }) {
   const next = structuredClone(profile);
   const key = topicKey(subject, topic);
+  const correctnessReliable =
+    (signals?.signalEvidence?.correctness?.confidence ??
+      signals?.correctnessConfidence ??
+      0) >= SIGNAL_RELIABILITY_THRESHOLD &&
+    [Correctness.CORRECT, Correctness.PARTIAL, Correctness.INCORRECT].includes(
+      signals?.correctness
+    );
+  const observedCorrectness = correctnessReliable
+    ? signals.correctness
+    : Correctness.UNKNOWN;
 
   next.totals.exchanges += 1;
-  if (signals.correctness === Correctness.CORRECT) next.totals.correct += 1;
-  if (signals.correctness === Correctness.PARTIAL) next.totals.partial += 1;
-  if (signals.correctness === Correctness.INCORRECT) next.totals.incorrect += 1;
+  if (observedCorrectness === Correctness.CORRECT) next.totals.correct += 1;
+  if (observedCorrectness === Correctness.PARTIAL) next.totals.partial += 1;
+  if (observedCorrectness === Correctness.INCORRECT) next.totals.incorrect += 1;
   if (signals.isHintRequest) next.totals.hints += 1;
   if (signals.isQuestion) next.totals.questionsAsked += 1;
 
@@ -141,21 +157,24 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
     };
   }
   const m = next.mastery[key];
-  m.attempts += 1;
-  m.lastCorrectness = signals.correctness;
+  if (correctnessReliable) m.attempts += 1;
+  m.lastCorrectness = observedCorrectness;
+  m.lastEvidenceConfidence =
+    signals?.signalEvidence?.correctness?.confidence ??
+    signals?.correctnessConfidence ??
+    0;
   m.updatedAt = new Date().toISOString();
 
-  if (signals.correctness === Correctness.CORRECT) {
+  if (observedCorrectness === Correctness.CORRECT) {
     m.correct += 1;
-    m.score = Math.min(98, m.score + 8 + signals.confidence * 4);
-  } else if (signals.correctness === Correctness.PARTIAL) {
+    m.score = Math.min(98, m.score + 8);
+  } else if (observedCorrectness === Correctness.PARTIAL) {
     m.score = Math.min(95, m.score + 3);
-  } else if (signals.correctness === Correctness.INCORRECT) {
+  } else if (observedCorrectness === Correctness.INCORRECT) {
     m.incorrect += 1;
-    m.score = Math.max(5, m.score - 6 - (1 - signals.confidence) * 3);
+    m.score = Math.max(5, m.score - 6);
   } else if (signals.isHintRequest) {
     m.hints += 1;
-    m.score = Math.max(5, m.score - 2);
   }
 
   // Misconceptions accumulate (Epic B5: playbook + active flag)
@@ -203,15 +222,26 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
     }
   }
 
-  next.affectHistory = pushRolling(next.affectHistory, signals.affect);
+  if (
+    (signals?.signalEvidence?.affect?.confidence ?? 0) >=
+    SIGNAL_RELIABILITY_THRESHOLD
+  ) {
+    next.affectHistory = pushRolling(next.affectHistory, signals.affect);
+  }
   next.engagementHistory = pushRolling(
     next.engagementHistory,
     signals.engagement
   );
-  next.confidenceHistory = pushRolling(
-    next.confidenceHistory,
-    signals.confidence
-  );
+  const learnerConfidence = signals?.signalEvidence?.learnerConfidence;
+  if (
+    learnerConfidence?.value != null &&
+    learnerConfidence.confidence >= SIGNAL_RELIABILITY_THRESHOLD
+  ) {
+    next.confidenceEvidenceHistory = pushRolling(
+      next.confidenceEvidenceHistory || [],
+      learnerConfidence.value
+    );
+  }
 
   // Behavior rates (Epic B1: explicit short/rapid/off-topic counters)
   const ex = next.totals.exchanges || 1;
@@ -219,7 +249,11 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
   if (signals.shortAnswer) {
     next.behavior.shortAnswers = (next.behavior.shortAnswers || 0) + 1;
   }
-  if (signals.rapidGuess) {
+  if (
+    signals.rapidGuess &&
+    correctnessReliable &&
+    observedCorrectness === Correctness.INCORRECT
+  ) {
     next.behavior.rapidGuesses = (next.behavior.rapidGuesses || 0) + 1;
   }
   if (signals.offTopic) {
@@ -234,14 +268,6 @@ export function applyExchangeToProfile(profile, { subject, topic, signals }) {
   next.behavior.offTopicRate = Number(
     ((next.behavior.offTopic || 0) / ex).toFixed(3)
   );
-  // Fallback: low-engagement turns still count toward short-answer feel
-  if (!next.behavior.shortAnswers) {
-    const lowEng = next.engagementHistory.filter((e) => e < 0.35).length;
-    next.behavior.shortAnswerRate = Number(
-      (lowEng / Math.max(next.engagementHistory.length, 1)).toFixed(3)
-    );
-  }
-
   // Strengths / focus from mastery scores
   const ranked = Object.values(next.mastery).sort((a, b) => b.score - a.score);
   next.strengths = ranked
@@ -367,11 +393,12 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
       ? profile.engagementHistory.reduce((a, b) => a + b, 0) /
         profile.engagementHistory.length
       : 0.5;
+  const confidenceEvidence = profile.confidenceEvidenceHistory || [];
   const avgConfidence =
-    profile.confidenceHistory.length > 0
-      ? profile.confidenceHistory.reduce((a, b) => a + b, 0) /
-        profile.confidenceHistory.length
-      : 0.5;
+    confidenceEvidence.length > 0
+      ? confidenceEvidence.reduce((a, b) => a + b, 0) /
+        confidenceEvidence.length
+      : null;
 
   const frustrated = recentAffect.filter((a) => a === Affect.FRUSTRATED).length;
   const hesitant = recentAffect.filter((a) => a === Affect.HESITANT).length;
@@ -539,7 +566,9 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
         ? `Current topic mastery estimate: ${Math.round(topicMastery.score)}/100.`
         : "No mastery data for this topic yet.",
       skillSummary,
-      `Avg confidence ~${Math.round(avgConfidence * 100)}%, engagement ~${Math.round(avgEngagement * 100)}%.`,
+      avgConfidence != null
+        ? `Explicit confidence language ~${Math.round(avgConfidence * 100)}%, engagement ~${Math.round(avgEngagement * 100)}%.`
+        : `No reliable confidence cue yet; engagement ~${Math.round(avgEngagement * 100)}%.`,
     ]
       .filter(Boolean)
       .join(" "),
@@ -548,7 +577,8 @@ export function buildPersonalizationInsights(profile, { subject, topic } = {}) {
       accuracy,
       topicMastery: topicMastery ? Math.round(topicMastery.score) : null,
       avgEngagement: Number(avgEngagement.toFixed(2)),
-      avgConfidence: Number(avgConfidence.toFixed(2)),
+      avgConfidence:
+        avgConfidence != null ? Number(avgConfidence.toFixed(2)) : null,
       hintRate: profile.behavior.hintRate,
       focusAreas: profile.focusAreas,
       strengths: profile.strengths,

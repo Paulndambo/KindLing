@@ -22,7 +22,7 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
         "trialDays": 30,
         "features": [
             "Full teaching system for 30 days",
-            "Live adaptive lessons (capped platform AI)",
+            "Live adaptive lessons (daily platform-AI request and usage cap)",
             "Student dashboard & mastery pulse",
             "Then choose Forge or Ember to continue",
         ],
@@ -34,6 +34,8 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
             "familyDigest": False,
             "prioritySupport": False,
             "dailyLessonSoftCap": 4,
+            "dailyPlatformAiRequests": 30,
+            "dailyPlatformAiTokens": 60000,
         },
     },
     PlanId.FORGE: {
@@ -57,6 +59,8 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
             "familyDigest": True,
             "prioritySupport": False,
             "dailyLessonSoftCap": None,
+            "dailyPlatformAiRequests": 0,
+            "dailyPlatformAiTokens": 0,
         },
     },
     PlanId.EMBER: {
@@ -68,7 +72,7 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
         "highlight": True,
         "features": [
             "Everything in the teaching system",
-            "Platform AI tokens included (monthly envelope)",
+            "Platform AI included (daily request and usage cap)",
             "Homework photo help · guardian digests",
             "BYOK optional · priority support",
         ],
@@ -80,6 +84,8 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
             "familyDigest": True,
             "prioritySupport": True,
             "dailyLessonSoftCap": None,
+            "dailyPlatformAiRequests": 120,
+            "dailyPlatformAiTokens": 300000,
         },
     },
 }
