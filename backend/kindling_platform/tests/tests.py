@@ -3,7 +3,9 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import AiRoutingPreference, PlanId, PlatformSubscription
+from ..models import AiRoutingPreference, PlanId, PlatformSubscription
+from ..serializers import ensure_subscription
+from ..usage import daily_ai_usage, reserve_daily_ai_request
 
 User = get_user_model()
 
@@ -87,3 +89,38 @@ class PlatformApiTests(APITestCase):
         pref = AiRoutingPreference.objects.get(user=self.user)
         self.assertEqual(pref.routing_mode, "byok")
         self.assertNotIn("apiKey", str(pref.key_fingerprints))
+
+    def test_daily_ai_cap_is_per_user_and_consumes_full_allocation(self):
+        other_user = User.objects.create_user(
+            username="second@kindling.edu",
+            email="second@kindling.edu",
+            password="test-pass-12345",
+        )
+        sub_a = ensure_subscription(self.user)
+        sub_b = ensure_subscription(other_user)
+
+        # User A consumes 992,605 of 1,000,000 tokens, then makes another 8,000-token turn
+        first = reserve_daily_ai_request(self.user, sub_a, 992605)
+        self.assertTrue(first["allowed"])
+        self.assertEqual(first["estimatedTokenLimit"], 1000000)
+        self.assertEqual(first["estimatedTokensRemaining"], 7395)
+
+        # User A still has 7,395 tokens left and can consume the rest of their allocation
+        second = reserve_daily_ai_request(self.user, sub_a, 8000)
+        self.assertTrue(second["allowed"])
+        self.assertEqual(second["estimatedTokensRemaining"], 0)
+
+        # Now User A has exhausted their allocation and is blocked
+        third = reserve_daily_ai_request(self.user, sub_a, 1000)
+        self.assertFalse(third["allowed"])
+        self.assertEqual(third["estimatedTokensRemaining"], 0)
+
+        # User B is completely unaffected by User A exhausting their cap
+        usage_b = daily_ai_usage(other_user, sub_b)
+        self.assertEqual(usage_b["used"], 0)
+        self.assertEqual(usage_b["estimatedTokensRemaining"], 1000000)
+        res_b = reserve_daily_ai_request(other_user, sub_b, 5000)
+        self.assertTrue(res_b["allowed"])
+        self.assertEqual(res_b["used"], 1)
+        self.assertEqual(res_b["estimatedTokensRemaining"], 995000)
+

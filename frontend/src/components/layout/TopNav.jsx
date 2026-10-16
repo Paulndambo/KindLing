@@ -8,6 +8,7 @@ export default function TopNav({
   screen,
   isLoggedIn,
   student,
+  hasSubjects = false,
   onNavigate,
   onOpenLogin,
   onGetStarted,
@@ -63,16 +64,28 @@ export default function TopNav({
         <div className="navtabs navtabs-desktop" aria-label="Main sections">
           {NAV.map((item) => {
             const active = screen === item.id;
+            const lessonMissingSubject =
+              item.id === "lesson" && isLoggedIn && !hasSubjects;
+            const showLock =
+              (item.protected && !isLoggedIn) || lessonMissingSubject;
             return (
               <button
                 key={item.id}
                 type="button"
                 aria-current={active ? "page" : undefined}
-                className={active ? "active" : ""}
+                className={`${active ? "active" : ""}${
+                  lessonMissingSubject ? " is-locked" : ""
+                }`.trim()}
+                disabled={lessonMissingSubject}
+                title={
+                  lessonMissingSubject
+                    ? "Add a subject in My Subjects before starting a lesson"
+                    : undefined
+                }
                 onClick={() => onNavigate(item.id)}
               >
                 {item.label}
-                {item.protected && !isLoggedIn && (
+                {showLock && (
                   <Lock size={11} className="lock-icon" aria-hidden />
                 )}
               </button>
@@ -123,6 +136,12 @@ export default function TopNav({
               <button
                 type="button"
                 className="cta-btn"
+                disabled={!hasSubjects}
+                title={
+                  !hasSubjects
+                    ? "Add a subject in My Subjects before starting a lesson"
+                    : undefined
+                }
                 onClick={() => onNavigate("lesson")}
               >
                 Start a lesson
@@ -213,16 +232,28 @@ export default function TopNav({
           <div className="mobile-nav-section">
             {NAV.map((item) => {
               const active = screen === item.id;
+              const lessonMissingSubject =
+                item.id === "lesson" && isLoggedIn && !hasSubjects;
+              const showLock =
+                (item.protected && !isLoggedIn) || lessonMissingSubject;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  className={`mobile-nav-item${active ? " active" : ""}`}
+                  className={`mobile-nav-item${active ? " active" : ""}${
+                    lessonMissingSubject ? " is-locked" : ""
+                  }`}
                   aria-current={active ? "page" : undefined}
+                  disabled={lessonMissingSubject}
+                  title={
+                    lessonMissingSubject
+                      ? "Add a subject in My Subjects before starting a lesson"
+                      : undefined
+                  }
                   onClick={() => handleNav(item.id)}
                 >
                   {item.label}
-                  {item.protected && !isLoggedIn && (
+                  {showLock && (
                     <Lock size={12} className="lock-icon" aria-hidden />
                   )}
                 </button>
@@ -236,6 +267,12 @@ export default function TopNav({
                 <button
                   type="button"
                   className="cta-btn mobile-cta"
+                  disabled={!hasSubjects}
+                  title={
+                    !hasSubjects
+                      ? "Add a subject in My Subjects before starting a lesson"
+                      : undefined
+                  }
                   onClick={() => handleNav("lesson")}
                 >
                   Start a lesson

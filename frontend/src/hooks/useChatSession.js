@@ -11,7 +11,15 @@ import {
   summarizeConversation,
   isAiAvailable,
 } from "../services/gemini";
-import { AI_CONFIG_CHANGED } from "../services/ai";
+import {
+  AI_CONFIG_CHANGED,
+  PLATFORM_AI_CAP_EVENT,
+  clearPlatformAiCap,
+  getPlatformAiCap,
+  recordPlatformAiCap,
+  resolveRoute,
+} from "../services/ai";
+import { fetchSubscription, getAccessToken } from "../services/api";
 import {
   getActiveConversation,
   listArchivedConversations,
@@ -152,18 +160,116 @@ export function useChatSession({
   const [safetyEscalation, setSafetyEscalation] = useState(null);
   /** Re-render when BYOK keys / routing prefs change. */
   const [aiConfigTick, setAiConfigTick] = useState(0);
+  const [platformCap, setPlatformCap] = useState(() => getPlatformAiCap());
+  const [dailyAiUsage, setDailyAiUsage] = useState(
+    () => getPlatformAiCap()?.usage || null
+  );
 
   useEffect(() => {
-    const bump = () => setAiConfigTick((t) => t + 1);
+    const bump = () => {
+      setAiConfigTick((t) => t + 1);
+      setPlatformCap(getPlatformAiCap());
+    };
+    const handleCapEvent = (e) => {
+      const cap = e?.detail !== undefined ? getPlatformAiCap() : getPlatformAiCap();
+      setPlatformCap(cap);
+      if (cap?.usage) setDailyAiUsage(cap.usage);
+      if (cap?.code === "daily_ai_cap_reached") {
+        const route = resolveRoute("chat");
+        if (route?.source === "platform") {
+          setChatError((prev) =>
+            prev?.code === "DAILY_AI_CAP_REACHED"
+              ? prev
+              : {
+                  ...classifyFailure({
+                    code: "daily_ai_cap_reached",
+                    message: cap.detail,
+                    usage: cap.usage,
+                  }),
+                  phase: prev?.phase || "stream",
+                }
+          );
+        }
+      } else {
+        setChatError((prev) =>
+          prev?.code === "DAILY_AI_CAP_REACHED" ? null : prev
+        );
+      }
+    };
     window.addEventListener(AI_CONFIG_CHANGED, bump);
     window.addEventListener("storage", bump);
+    window.addEventListener(PLATFORM_AI_CAP_EVENT, handleCapEvent);
     return () => {
       window.removeEventListener(AI_CONFIG_CHANGED, bump);
       window.removeEventListener("storage", bump);
+      window.removeEventListener(PLATFORM_AI_CAP_EVENT, handleCapEvent);
     };
   }, []);
 
+  // Re-evaluate daily cap whenever the active student/account changes
+  useEffect(() => {
+    const cap = getPlatformAiCap();
+    setPlatformCap(cap);
+    setDailyAiUsage(cap?.usage || null);
+    if (!cap) {
+      setChatError((prev) =>
+        prev?.code === "DAILY_AI_CAP_REACHED" ? null : prev
+      );
+    }
+  }, [studentId]);
+
   const hasAi = isAiAvailable();
+  const activeRoute = resolveRoute("chat");
+  const isPlatformRoute = activeRoute?.source === "platform";
+  const dailyCapReached = Boolean(
+    isPlatformRoute &&
+      (platformCap?.code === "daily_ai_cap_reached" ||
+        chatError?.code === "DAILY_AI_CAP_REACHED" ||
+        chatError?.apiCode === "daily_ai_cap_reached")
+  );
+
+  // If the user switches from Platform AI to a BYOK key, clear the daily cap lock
+  useEffect(() => {
+    if (!isPlatformRoute && chatError?.code === "DAILY_AI_CAP_REACHED") {
+      setChatError(null);
+    }
+  }, [isPlatformRoute, chatError]);
+
+  // Proactively check subscription daily AI usage for the authenticated user
+  useEffect(() => {
+    if (!isPlatformRoute || !getAccessToken()) return undefined;
+    let cancelled = false;
+    fetchSubscription()
+      .then((sub) => {
+        if (cancelled || !sub?.platform_ai_daily_usage) return;
+        const usage = sub.platform_ai_daily_usage;
+        setDailyAiUsage(usage);
+        const requestsExhausted =
+          Number(usage.limit) > 0 && Number(usage.remaining) <= 0;
+        const tokensExhausted =
+          Number(usage.estimatedTokenLimit) > 0 &&
+          Number(usage.estimatedTokensRemaining) <= 0;
+        if (requestsExhausted || tokensExhausted) {
+          recordPlatformAiCap({
+            detail: `Today's platform AI allowance is used up. It resets at ${usage.resetsAt || "midnight UTC"}.`,
+            code: "daily_ai_cap_reached",
+            usage,
+          });
+        } else if (getPlatformAiCap()) {
+          clearPlatformAiCap();
+        } else {
+          setChatError((prev) =>
+            prev?.code === "DAILY_AI_CAP_REACHED" ? null : prev
+          );
+        }
+      })
+      .catch(() => {
+        /* ignore background usage check failure */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isPlatformRoute, aiConfigTick, studentId]);
 
   const chatRef = useRef(null);
   /** Last failed action so Retry can re-run without re-showing the student bubble. */
@@ -587,6 +693,18 @@ export function useChatSession({
         }
 
         onAwaitingStudentRef.current?.();
+        const existingCap =
+          resolveRoute("chat")?.source === "platform" ? getPlatformAiCap() : null;
+        if (existingCap?.code === "daily_ai_cap_reached") {
+          surfaceAiError(
+            {
+              code: "daily_ai_cap_reached",
+              message: existingCap.detail,
+              usage: existingCap.usage,
+            },
+            { phase: "resume" }
+          );
+        }
         requestAnimationFrame(() => scrollToBottom());
         return;
       }
@@ -640,6 +758,21 @@ export function useChatSession({
         surfaceAiError(err, { phase: "greeting" });
         return;
       }
+
+      const existingCap =
+        resolveRoute("chat")?.source === "platform" ? getPlatformAiCap() : null;
+      if (existingCap?.code === "daily_ai_cap_reached") {
+        surfaceAiError(
+          {
+            code: "daily_ai_cap_reached",
+            message: existingCap.detail,
+            usage: existingCap.usage,
+          },
+          { phase: "greeting" }
+        );
+        return;
+      }
+
       setIsStreaming(true);
       const greetingPrompt = buildLessonOpeningPrompt({
         topicName,
@@ -964,6 +1097,7 @@ export function useChatSession({
     } = {}) => {
       if (
         isStreaming ||
+        dailyCapReached ||
         modeRef.current === "archive_view" ||
         safetyEscalation ||
         !apiMessage?.trim()
@@ -1031,6 +1165,7 @@ export function useChatSession({
     },
     [
       isStreaming,
+      dailyCapReached,
       safetyEscalation,
       surfaceAiError,
       rebuildChatWithHistory,
@@ -1045,6 +1180,7 @@ export function useChatSession({
       if (
         !trimmed ||
         isStreaming ||
+        dailyCapReached ||
         modeRef.current === "archive_view" ||
         safetyEscalation
       )
@@ -1133,6 +1269,7 @@ export function useChatSession({
     },
     [
       isStreaming,
+      dailyCapReached,
       streamTutorFromMessage,
       topicName,
       subjectName,
@@ -1177,7 +1314,8 @@ export function useChatSession({
    * Retry the last failed greeting or student turn without losing history.
    */
   const retryLastFailed = useCallback(async () => {
-    if (isStreaming || modeRef.current === "archive_view") return false;
+    if (isStreaming || dailyCapReached || modeRef.current === "archive_view")
+      return false;
     const failed = lastFailedRef.current;
     if (!failed) {
       setChatError(null);
@@ -1235,6 +1373,7 @@ export function useChatSession({
     return true;
   }, [
     isStreaming,
+    dailyCapReached,
     rebuildChatWithHistory,
     streamTutorFromMessage,
     surfaceAiError,
@@ -1243,7 +1382,12 @@ export function useChatSession({
 
   const enterInterventionMode = useCallback(
     async (context = {}) => {
-      if (isStreaming || !isAiAvailable() || modeRef.current === "archive_view")
+      if (
+        isStreaming ||
+        dailyCapReached ||
+        !isAiAvailable() ||
+        modeRef.current === "archive_view"
+      )
         return false;
 
       // Refuse to open help mode for a topic we are no longer on
@@ -1302,6 +1446,7 @@ export function useChatSession({
     },
     [
       isStreaming,
+      dailyCapReached,
       rebuildChatWithHistory,
       streamTutorFromMessage,
       subjectName,
@@ -1311,7 +1456,12 @@ export function useChatSession({
 
   const exitInterventionMode = useCallback(
     async (context = {}) => {
-      if (isStreaming || !isAiAvailable() || modeRef.current === "archive_view")
+      if (
+        isStreaming ||
+        dailyCapReached ||
+        !isAiAvailable() ||
+        modeRef.current === "archive_view"
+      )
         return false;
 
       const currentStudent = studentRef.current;
@@ -1334,7 +1484,13 @@ export function useChatSession({
         systemUi: { kind: "intervention_exit", text: "Back to practice" },
       });
     },
-    [isStreaming, rebuildChatWithHistory, streamTutorFromMessage, topicName]
+    [
+      isStreaming,
+      dailyCapReached,
+      rebuildChatWithHistory,
+      streamTutorFromMessage,
+      topicName,
+    ]
   );
 
   /** Epic B6 — enter show-your-work multi-step mode */
@@ -1342,6 +1498,7 @@ export function useChatSession({
     async (session) => {
       if (
         isStreaming ||
+        dailyCapReached ||
         !isAiAvailable() ||
         modeRef.current === "archive_view" ||
         !session
@@ -1368,12 +1525,17 @@ export function useChatSession({
         },
       });
     },
-    [isStreaming, rebuildChatWithHistory, streamTutorFromMessage]
+    [isStreaming, dailyCapReached, rebuildChatWithHistory, streamTutorFromMessage]
   );
 
   const exitMultiStepMode = useCallback(
     async (session = null) => {
-      if (isStreaming || !isAiAvailable() || modeRef.current === "archive_view") {
+      if (
+        isStreaming ||
+        dailyCapReached ||
+        !isAiAvailable() ||
+        modeRef.current === "archive_view"
+      ) {
         return false;
       }
       const prev = session || multiStepSessionRef.current;
@@ -1394,7 +1556,7 @@ export function useChatSession({
         systemUi: { kind: "multistep_exit", text: "Back to open practice" },
       });
     },
-    [isStreaming, rebuildChatWithHistory, streamTutorFromMessage]
+    [isStreaming, dailyCapReached, rebuildChatWithHistory, streamTutorFromMessage]
   );
 
   /**
@@ -1415,12 +1577,14 @@ export function useChatSession({
     try {
       const transcript = buildTranscript(conv.messages || []);
       const studentName = studentRef.current?.name?.trim() || "Student";
-      let summaryPayload = await summarizeConversation({
-        studentName,
-        subject: subjectName,
-        topic: topicName,
-        transcript,
-      });
+      let summaryPayload = dailyCapReached
+        ? null
+        : await summarizeConversation({
+            studentName,
+            subject: subjectName,
+            topic: topicName,
+            transcript,
+          });
       if (!summaryPayload) {
         summaryPayload = buildFallbackSummary({
           topic: topicName,
@@ -1468,14 +1632,21 @@ export function useChatSession({
     } finally {
       setIsSummarizing(false);
     }
-  }, [isStreaming, isSummarizing, studentId, subjectName, topicName]);
+  }, [
+    isStreaming,
+    isSummarizing,
+    dailyCapReached,
+    studentId,
+    subjectName,
+    topicName,
+  ]);
 
   /**
    * Start a brand-new conversation on this topic.
    * Archives the current one (with summary) if it has substance.
    */
   const startNewConversation = useCallback(async () => {
-    if (isStreaming || isSummarizing) return;
+    if (isStreaming || isSummarizing || dailyCapReached) return;
 
     const convId = conversationIdRef.current;
     if (convId) {
@@ -1569,10 +1740,18 @@ export function useChatSession({
       archived: listArchivedConversations(refreshed),
     });
     setSessionTrigger((n) => n + 1);
-  }, [isStreaming, isSummarizing, studentId, subjectName, topicName]);
+  }, [
+    isStreaming,
+    isSummarizing,
+    dailyCapReached,
+    studentId,
+    subjectName,
+    topicName,
+  ]);
 
   /** After ending, continue with a new conversation on same topic */
   const continueAfterEnd = useCallback(async () => {
+    if (dailyCapReached) return;
     const next = createConversation({
       subject: subjectName,
       topic: topicName,
@@ -1588,7 +1767,7 @@ export function useChatSession({
     conversationIdRef.current = next.id;
     setViewingArchiveId(null);
     setSessionTrigger((n) => n + 1);
-  }, [studentId, subjectName, topicName]);
+  }, [dailyCapReached, studentId, subjectName, topicName]);
   const openJournal = useCallback(() => {
     refreshJournalList();
     setJournalOpen(true);
@@ -1665,6 +1844,9 @@ export function useChatSession({
     viewingArchiveId,
     isArchiveView: Boolean(viewingArchiveId),
     hasAi,
+    dailyCapReached,
+    dailyAiUsage:
+      chatError?.usage || platformCap?.usage || dailyAiUsage || null,
     chatError,
     clearChatError,
     retryLastFailed,

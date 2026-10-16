@@ -34,6 +34,7 @@ export default function LessonTools({
   diffLabel,
   isStreaming,
   hasAi,
+  dailyCapReached = false,
   student,
   studentName,
   onRequestHint,
@@ -202,11 +203,17 @@ export default function LessonTools({
                 key={level}
                 type="button"
                 className={`ladder-rung${isCurrent ? " current" : ""}`}
-                disabled={isStreaming || !hasAi || isArchiveView}
+                disabled={
+                  isStreaming || !hasAi || dailyCapReached || isArchiveView
+                }
                 onClick={() =>
                   onRequestLevel ? onRequestLevel(level) : onRequestGuide?.()
                 }
-                title={label}
+                title={
+                  dailyCapReached
+                    ? "Unavailable — daily AI allowance reached"
+                    : label
+                }
               >
                 <span className="ladder-rung-num">{level}</span>
                 <Icon size={13} />
@@ -229,7 +236,7 @@ export default function LessonTools({
                   type="button"
                   className="intervention-btn primary compact"
                   onClick={onEscalateIntervention}
-                  disabled={isStreaming || !hasAi}
+                  disabled={isStreaming || !hasAi || dailyCapReached}
                 >
                   <ArrowUpRight size={13} />
                   More help
@@ -239,7 +246,7 @@ export default function LessonTools({
                 type="button"
                 className="intervention-exit-btn full"
                 onClick={onExitIntervention}
-                disabled={isStreaming}
+                disabled={isStreaming || dailyCapReached}
               >
                 <X size={14} />
                 {intervention.context?.exitLabel || "Exit help"}
@@ -260,7 +267,7 @@ export default function LessonTools({
                 type="button"
                 className="intervention-btn primary compact"
                 onClick={onAcceptIntervention}
-                disabled={isStreaming || !hasAi}
+                disabled={isStreaming || !hasAi || dailyCapReached}
               >
                 {intervention.context?.acceptCta || "Start help"}
               </button>
@@ -293,9 +300,14 @@ export default function LessonTools({
                 type="button"
                 className="guide-btn library-example-btn"
                 onClick={onRequestLibraryExample}
-                disabled={isStreaming || !hasAi || isArchiveView}
+                disabled={
+                  isStreaming || !hasAi || dailyCapReached || isArchiveView
+                }
                 style={{
-                  opacity: isStreaming || !hasAi || isArchiveView ? 0.45 : 1,
+                  opacity:
+                    isStreaming || !hasAi || dailyCapReached || isArchiveView
+                      ? 0.45
+                      : 1,
                 }}
               >
                 <BookOpen size={14} />
@@ -321,7 +333,7 @@ export default function LessonTools({
                 type="button"
                 className="intervention-exit-btn full"
                 onClick={onExitMultiStep}
-                disabled={isStreaming}
+                disabled={isStreaming || dailyCapReached}
               >
                 <X size={14} />
                 Exit show-your-work
@@ -334,12 +346,17 @@ export default function LessonTools({
                 disabled={
                   isStreaming ||
                   !hasAi ||
+                  dailyCapReached ||
                   isArchiveView ||
                   interventionActive
                 }
                 style={{
                   opacity:
-                    isStreaming || !hasAi || isArchiveView || interventionActive
+                    isStreaming ||
+                    !hasAi ||
+                    dailyCapReached ||
+                    isArchiveView ||
+                    interventionActive
                       ? 0.45
                       : 1,
                 }}
@@ -741,6 +758,7 @@ export default function LessonTools({
         disabled={
           isStreaming ||
           !hasAi ||
+          dailyCapReached ||
           interventionActive ||
           conversationEnded ||
           isArchiveView
@@ -749,6 +767,7 @@ export default function LessonTools({
           opacity:
             isStreaming ||
             !hasAi ||
+            dailyCapReached ||
             interventionActive ||
             conversationEnded ||
             isArchiveView
@@ -756,13 +775,15 @@ export default function LessonTools({
               : 1,
         }}
       >
-        {isStreaming
-          ? "Kindling is thinking…"
-          : interventionActive
-            ? activeLevel === 1
-              ? "💡 In micro-hint"
-              : "💡 Help mode active"
-            : "💡 Get a hint"}
+        {dailyCapReached
+          ? "🔒 Daily AI limit reached"
+          : isStreaming
+            ? "Kindling is thinking…"
+            : interventionActive
+              ? activeLevel === 1
+                ? "💡 In micro-hint"
+                : "💡 Help mode active"
+              : "💡 Get a hint"}
       </button>
 
       <div className="conversation-tools-panel">
@@ -789,7 +810,7 @@ export default function LessonTools({
             type="button"
             className="new-conversation-btn"
             onClick={onStartNewConversation || onRestart}
-            disabled={isStreaming || isSummarizing || !hasAi}
+            disabled={isStreaming || isSummarizing || !hasAi || dailyCapReached}
           >
             <MessageSquarePlus size={14} />
             New conversation
@@ -815,7 +836,7 @@ export default function LessonTools({
           type="button"
           className="restart-lesson-btn subtle"
           onClick={onRestart}
-          disabled={isStreaming || isSummarizing}
+          disabled={isStreaming || isSummarizing || dailyCapReached}
           title="Same as new conversation — archives the current thread"
         >
           <RefreshCw size={14} /> Fresh start on this topic

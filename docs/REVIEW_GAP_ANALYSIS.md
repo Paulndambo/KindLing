@@ -96,7 +96,7 @@ Status legend:
 | G14 | §11 | Immediate performance | **Done** (pilot) | A3, MCQ, linguistic | Expand domains later | A3 expand | — |
 | G15 | §11 | Independent performance (no scaffold) | **Done** (L4.1) | Post-ladder independence twin (no hints); `independence.*` events | Rate in digest later | **L4.1** ✅ | P1 |
 | G16 | §11 | Transfer (structurally new item) | **Done** thin (L4.2) | `transfer: true` bank items + prefer-transfer after L3 help | Expand bank coverage | **L4.2** ✅ | P2 |
-| G17 | §11 | Retention (1d / 7d / 30d) | **Partial** | C1+.5 rolling 30-day recall outcomes plus first-lesson D7/D14/D30 return cohorts | Sustained review lift still needs longitudinal comparison | **C1+** | P1 |
+| G17 | §11 | Retention (1d / 7d / 30d) | **Partial** | C1+.5 rolling recall, first-lesson cohorts, and within-learner pre-due vs post-review return comparison | Real-cohort follow-up and a non-review comparison group are still needed to assess review lift | **C1+** | P1 |
 | G18 | §11 | Explanation quality (“why”) | **Partial** | Conversational | Not scored | **C8** rubric dimension | P2 |
 | G19 | §11 | Confidence–competence calibration | **Partial** | L1.3 `calibration` + `calibrationError` on state; pulse copy | Digest/dashboard surface later | **L1.3** ✅ thin | P2 |
 
@@ -113,7 +113,7 @@ Status legend:
 
 | ID | Review § | Ask | Status | Evidence today | Gap | NEXT_STEPS map | Priority |
 |----|----------|-----|--------|----------------|-----|----------|----------|
-| G24 | §15 | Learning gain (pre/post) | **Partial** | C6.7 alternate-form pilot + aggregate skill/band calibration report | Optional Math and Science checks report paired means, gain spread, and a confidence interval; empirical cohort calibration and longitudinal comparison are still needed | **C8** + thin **C6** pre/post pilot | P1 |
+| G24 | §15 | Learning gain (pre/post) | **Partial** | C6.7 counterbalanced alternate-form pilot + aggregate calibration report | Randomized A/B order, first-per-learner form score comparisons, paired means, gain spread, and confidence intervals are implemented; empirical cohort validation is still needed | **C8** + thin **C6** pre/post pilot | P1 |
 | G25 | §15 | Tutor efficiency / gain per interaction | **Missing** | Telemetry volume only | No learning-science KPI | **C8** | P2 |
 | G26 | §16 | Scenario benchmark (policies A vs B) | **Partial** | C8.3 manual + C8.1 auto scores + MAE compare | Full policy A/B harness still later | **C8.1** ✅ thin | P1 |
 | G27 | §17 | Longitudinal intervention→outcome dataset | **Partial** | Learning events ingest | Schema not optimized for pedagogy research; no offline export for policy mining | **L5** event schema + export · builds on events API | P2 |
@@ -236,9 +236,9 @@ Wave 2f — Scale & data moat                [Tracks V + S + L5]
 | Epic | Status | Review-driven next step |
 |------|--------|-------------------------|
 | **C1** Review v1 | ✅ | — |
-| **C1+** | ⚡ Partial | Multi-subject selection/balancing ✅; upcoming/reason + 1/3/7-day snooze ✅; bounded recall intervals ✅; week-focus tie-in ✅; rolling 30-day recall and first-lesson D7/D14/D30 cohorts shipped; sustained review lift remains (G20–G21, G17) |
-| **C6** Assessment | ⚡ Offline v1 + timed; Math Foundations pilot has 3 items per core skill and science has 5 per scaffold area, including applied transfer; optional alternate-form pre/post checks cover both pilot domains | Wider subject coverage + cohort learning-gain calibration; L4 covers independence/transfer |
-| **C7** Playbooks | ⚡ Partial | Math/algebra and science packs plus C8 non-scoring sample cues for both domains; further domain breadth remains (G10) |
+| **C1+** | ⚡ Partial | Multi-subject selection/balancing ✅; upcoming/reason + 1/3/7-day snooze ✅; bounded recall intervals ✅; week-focus tie-in ✅; rolling 30-day recall, first-lesson D7/D14/D30 cohorts, and within-learner review-return comparison shipped; real-cohort interpretation remains (G20–G21, G17) |
+| **C6** Assessment | ⚡ Offline v1 + timed; Math Foundations pilot has 3 items per core skill and science has 5 per scaffold area, including applied transfer; randomized alternate-form pre/post checks and first-per-learner A/B score comparison cover both pilot domains | Wider subject coverage + empirical cohort validation of form balance and learning-gain reliability; L4 covers independence/transfer |
+| **C7** Playbooks | ⚡ Partial | Math/algebra, science, and writing packs plus C8 non-scoring sample cues for all three; further domain depth and human review remain (G10) |
 | **C8** Eval | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ · C8.4 ✅ | Manual + auto scorer + weekly job + per-dimension human-label diagnostics; validation on ≥10 matched human-scored sessions remains (G24–G26) |
 | **B5** Misconceptions | ✅ pilot | B5+: confidence + enforced remediation check (G11) |
 | **A1** Skill graph | ✅ pilot | Expand coverage for C4/C6/C1+ (G10) |
@@ -250,9 +250,9 @@ Wave 2f — Scale & data moat                [Tracks V + S + L5]
 
 | ID | NEXT_STEPS work | Update |
 |----|-----------|--------|
-| P.1 | C1+ | Partial — cross-subject selection, schedule controls, snooze, bounded intervals, week-focus ranking, rolling recall, and first-lesson D7/D14/D30 cohorts shipped; sustained review lift remains |
-| P.2 | C6 assessment | **v1 + timed practice ✅**; Math Foundations and all 8 science scaffold areas have usable offline banks with applied transfer items, optional alternate-form pre/post checks in both domains, and aggregate skill/band paired-gain calibration — remaining = wider coverage and empirical cohort calibration; L4 covers independence/transfer |
-| P.3 | C7 | Partial — math/algebra and science packs plus C8 sample audits; further domain breadth remains demand-gated |
+| P.1 | C1+ | Partial — cross-subject selection, schedule controls, snooze, bounded intervals, week-focus ranking, rolling recall, first-lesson cohorts, and within-learner review-return comparison shipped; real-cohort follow-up remains |
+| P.2 | C6 assessment | **v1 + timed practice ✅**; Math Foundations and all 8 science scaffold areas have usable offline banks with applied transfer items, randomized/counterbalanced alternate-form pre/post checks, first-per-learner A/B score comparisons, and paired-gain calibration — remaining = wider coverage and empirical cohort validation; L4 covers independence/transfer |
+| P.3 | C7 | Partial — math/algebra, science, and writing packs plus C8 human-review cues; further domain depth remains demand-gated |
 | P.4 | C8 | C8.3 ✅ · C8.1 ✅ · C8.2 ✅ |
 | P.5 | A1 expand | ⬜ as needed |
 

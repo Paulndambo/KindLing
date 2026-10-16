@@ -4,10 +4,10 @@ import {
   ArrowRight,
   Check,
   CheckCircle,
-  Building2,
   Loader2,
   Plus,
   Sparkles,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   AVATAR_OPTIONS,
@@ -15,23 +15,14 @@ import {
   COUNTRY_OPTIONS,
   LEARNING_STYLE_OPTIONS,
   EMPTY_STUDENT_PROFILE,
-  FOCUS_SUBJECT_OPTIONS,
   MAX_INTERESTS,
-  MAX_FOCUS_SUBJECTS,
   ONBOARDING_STEPS,
   COUNTRY_CURRICULUM_HINTS,
   isHigherEducation,
-  getSchoolTypeOptions,
   getCurriculumOptions,
-  getTargetLevelOptions,
   getInterestOptions,
   getGoalOptions,
-  getInstitutionLabel,
 } from "../../constants/onboarding";
-
-function WhyHint({ children }) {
-  return <p className="onboard-why">{children}</p>;
-}
 
 export default function OnboardingModal({
   initialProfile,
@@ -52,33 +43,32 @@ export default function OnboardingModal({
     seed.preferredLanguage || ""
   );
   const [schoolName, setSchoolName] = useState(seed.schoolName || "");
-  const [schoolType, setSchoolType] = useState(seed.schoolType || "");
   const [curriculum, setCurriculum] = useState(seed.curriculum || "");
-  const [academicTarget, setAcademicTarget] = useState(
-    seed.academicTarget || ""
-  );
   const [learningStyle, setLearningStyle] = useState(
     seed.learningStyle || "visual"
   );
   const [interests, setInterests] = useState(
     Array.isArray(seed.interests) ? seed.interests : []
   );
-  const [focusSubjects, setFocusSubjects] = useState(
-    Array.isArray(seed.focusSubjects)
-      ? seed.focusSubjects
-      : Array.isArray(seed.focus_subjects)
-        ? seed.focus_subjects
-        : []
-  );
   const [goal, setGoal] = useState(seed.goal || "");
   const [customInterest, setCustomInterest] = useState("");
+  const [showMoreOptions, setShowMoreOptions] = useState(
+    Boolean(seed.country || seed.curriculum || seed.preferredLanguage || seed.schoolName)
+  );
   const [localError, setLocalError] = useState("");
 
+  // Preserve any existing legacy fields so editing a profile never wipes them
+  const preservedSchoolType = seed.schoolType || "";
+  const preservedAcademicTarget = seed.academicTarget || "";
+  const preservedFocusSubjects = Array.isArray(seed.focusSubjects)
+    ? seed.focusSubjects
+    : Array.isArray(seed.focus_subjects)
+      ? seed.focus_subjects
+      : [];
+
+  const totalSteps = ONBOARDING_STEPS.length;
   const higherEd = isHigherEducation(grade);
-  const institution = getInstitutionLabel(grade);
-  const schoolTypeOptions = useMemo(() => getSchoolTypeOptions(grade), [grade]);
   const curriculumOptions = useMemo(() => getCurriculumOptions(grade), [grade]);
-  const targetOptions = useMemo(() => getTargetLevelOptions(grade), [grade]);
   const interestOptions = useMemo(() => getInterestOptions(grade), [grade]);
   const goalOptions = useMemo(() => getGoalOptions(grade), [grade]);
 
@@ -86,7 +76,7 @@ export default function OnboardingModal({
     COUNTRY_OPTIONS.find((c) => c.name === country) || null;
 
   const step1Ready = Boolean(name.trim() && grade);
-  const canJumpTo = (n) => n < step || (n === step) || (isEditMode && n <= 5);
+  const canJumpTo = (n) => n < step || n === step || (isEditMode && n <= totalSteps);
 
   const selectGrade = (nextGrade) => {
     const wasHigher = isHigherEducation(grade);
@@ -94,9 +84,7 @@ export default function OnboardingModal({
     setGrade(nextGrade);
 
     if (wasHigher !== nextHigher) {
-      setSchoolType("");
       setCurriculum("");
-      setAcademicTarget("");
       setGoal("");
       setInterests([]);
     }
@@ -104,7 +92,6 @@ export default function OnboardingModal({
 
   const selectCountry = (nextCountry) => {
     setCountry(nextCountry);
-    // Soft-suggest curriculum once if they haven't picked one yet
     if (!curriculum && nextCountry && COUNTRY_CURRICULUM_HINTS[nextCountry]) {
       const hint = COUNTRY_CURRICULUM_HINTS[nextCountry];
       const match = curriculumOptions.find((c) => c.label === hint);
@@ -130,14 +117,6 @@ export default function OnboardingModal({
     setCustomInterest("");
   };
 
-  const toggleFocusSubject = (item) => {
-    setFocusSubjects((prev) => {
-      if (prev.includes(item)) return prev.filter((i) => i !== item);
-      if (prev.length >= MAX_FOCUS_SUBJECTS) return prev;
-      return [...prev, item];
-    });
-  };
-
   const goNext = () => {
     setLocalError("");
     if (step === 1 && !step1Ready) {
@@ -148,7 +127,7 @@ export default function OnboardingModal({
       );
       return;
     }
-    setStep((s) => Math.min(5, s + 1));
+    setStep((s) => Math.min(totalSteps, s + 1));
   };
 
   const goBack = () => {
@@ -177,12 +156,12 @@ export default function OnboardingModal({
         countryFlag: countryObj?.flag || "",
         preferredLanguage: preferredLanguage.trim(),
         schoolName: schoolName.trim(),
-        schoolType: schoolType || "",
+        schoolType: preservedSchoolType,
         curriculum: curriculum || "",
-        academicTarget: academicTarget || "",
+        academicTarget: preservedAcademicTarget,
         learningStyle: learningStyle || "visual",
         interests,
-        focusSubjects,
+        focusSubjects: preservedFocusSubjects,
         goal: goal || "",
         isOnboarded: true,
       });
@@ -195,14 +174,12 @@ export default function OnboardingModal({
 
   const displayError = localError || error;
   const displayName = name.trim() || "you";
-  const styleLabel =
-    LEARNING_STYLE_OPTIONS.find((s) => s.id === learningStyle)?.label ||
-    learningStyle;
 
   const onKeyContinue = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (step < 5) goNext();
+      if (step < totalSteps) goNext();
+      else handleFinish();
     }
   };
 
@@ -214,14 +191,17 @@ export default function OnboardingModal({
       aria-modal="true"
       aria-labelledby="onboard-title"
     >
-      <div className="wizard-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="wizard-card wizard-card--lean"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="wizard-top">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="eyebrow">
-              {isEditMode ? "Edit profile" : "Welcome to Kindling"}
+              {isEditMode ? "Edit profile" : "Quick setup"}
             </span>
             <span className="wizard-step-count">
-              Step {step} of {ONBOARDING_STEPS.length}
+              Step {step} of {totalSteps}
             </span>
           </div>
           {isEditMode && (
@@ -236,16 +216,16 @@ export default function OnboardingModal({
           role="progressbar"
           aria-valuenow={step}
           aria-valuemin={1}
-          aria-valuemax={5}
-          aria-label={`Onboarding step ${step} of 5`}
+          aria-valuemax={totalSteps}
+          aria-label={`Onboarding step ${step} of ${totalSteps}`}
         >
           <div
             className="wizard-progress-fill"
-            style={{ width: `${(step / 5) * 100}%` }}
+            style={{ width: `${(step / totalSteps) * 100}%` }}
           />
         </div>
 
-        <div className="wizard-step-dots" aria-hidden="true">
+        <div className="wizard-step-dots wizard-step-dots--lean" aria-hidden="true">
           {ONBOARDING_STEPS.map((s) => (
             <button
               key={s.id}
@@ -269,21 +249,17 @@ export default function OnboardingModal({
           <div>
             <h3 id="onboard-title">Who&apos;s learning?</h3>
             <p className="modal-sub">
-              A few basics so Kindling can greet you properly and teach at the
-              right level.
+              Just your name and level so Kindling pitches explanations right.
             </p>
-            <WhyHint>
-              Grade matters for age-appropriate language and safety. You can
-              change anything later.
-            </WhyHint>
 
             <div className="field-block">
-              <span className="field-label">
+              <label className="field-label" htmlFor="onboard-name-input">
                 Your name <span className="req-star">*</span>
-              </span>
+              </label>
               <input
+                id="onboard-name-input"
                 className="modal-input"
-                placeholder="e.g. Alex, Sam, Jordan"
+                placeholder="e.g. Alex"
                 value={name}
                 autoFocus
                 onChange={(e) => setName(e.target.value)}
@@ -293,7 +269,7 @@ export default function OnboardingModal({
 
             <div className="field-block">
               <span className="field-label">
-                Grade / level of study <span className="req-star">*</span>
+                Grade or study level <span className="req-star">*</span>
               </span>
               <div className="grade-grid">
                 {GRADE_OPTIONS.map((g) => (
@@ -307,16 +283,10 @@ export default function OnboardingModal({
                   </button>
                 ))}
               </div>
-              {higherEd && (
-                <p className="field-hint">
-                  Higher education selected — curriculum and interests will
-                  adapt for university / college.
-                </p>
-              )}
             </div>
 
             <div className="field-block" style={{ marginBottom: 0 }}>
-              <span className="field-label">Choose an avatar</span>
+              <span className="field-label">Pick an avatar</span>
               <div className="avatar-grid">
                 {AVATAR_OPTIONS.map(({ id, label, Icon }) => (
                   <button
@@ -340,16 +310,26 @@ export default function OnboardingModal({
             ) : null}
 
             <div className="modal-actions">
+              {isEditMode && (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleFinish}
+                  disabled={!step1Ready || saving}
+                >
+                  {saving ? "Saving…" : "Save now"}
+                </button>
+              )}
               <button
                 type="button"
                 className="btn-primary"
                 disabled={!step1Ready}
                 onClick={goNext}
               >
-                Continue{" "}
+                Next: Personalize{" "}
                 <ArrowRight
                   size={15}
-                  style={{ marginLeft: 6, display: "inline" }}
+                  style={{ marginLeft: 4, display: "inline" }}
                 />
               </button>
             </div>
@@ -358,267 +338,14 @@ export default function OnboardingModal({
 
         {step === 2 && (
           <div>
-            <h3 id="onboard-title">
-              Where do you learn?
-            </h3>
+            <h3 id="onboard-title">How should Kindling teach {displayName}?</h3>
             <p className="modal-sub">
-              Optional — helps Kindling match spelling, examples, and{" "}
-              {institution} context.
+              All optional — pick what fits and jump straight into your first
+              lesson.
             </p>
-            <WhyHint>
-              Skip anything you&apos;re unsure about. Country is the most useful
-              signal if you only pick one.
-            </WhyHint>
 
             <div className="field-block">
-              <span className="field-label">Country</span>
-              <select
-                className="modal-input"
-                style={{ cursor: "pointer" }}
-                value={country}
-                onChange={(e) => selectCountry(e.target.value)}
-              >
-                <option value="">Select a country…</option>
-                {COUNTRY_OPTIONS.map((c) => (
-                  <option key={c.code} value={c.name}>
-                    {c.flag} {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field-block">
-              <label className="field-label" htmlFor="preferred-language">
-                Language for tutoring (optional)
-              </label>
-              <input
-                id="preferred-language"
-                className="modal-input"
-                placeholder="e.g. English, Kiswahili, Arabic"
-                value={preferredLanguage}
-                maxLength={80}
-                onChange={(e) => setPreferredLanguage(e.target.value)}
-                onKeyDown={onKeyContinue}
-              />
-              <p className="field-hint">
-                Kindling will teach in this language when it can. The app
-                interface is currently in English.
-              </p>
-            </div>
-
-            <div className="field-block">
-              <span className="field-label">
-                {higherEd
-                  ? "University / college name (optional)"
-                  : "School name (optional)"}
-              </span>
-              <input
-                className="modal-input"
-                placeholder={
-                  higherEd
-                    ? "e.g. State University, Community College"
-                    : "e.g. Lincoln Middle School, Homeschool"
-                }
-                value={schoolName}
-                onChange={(e) => setSchoolName(e.target.value)}
-                onKeyDown={onKeyContinue}
-              />
-            </div>
-
-            <div className="field-block">
-              <span className="field-label">
-                {higherEd
-                  ? "Degree / programme track (optional)"
-                  : "Educational curriculum (optional)"}
-              </span>
-              {country && curriculum && COUNTRY_CURRICULUM_HINTS[country] === curriculum ? (
-                <p className="field-hint" style={{ marginTop: 0 }}>
-                  Suggested from your country — change anytime.
-                </p>
-              ) : null}
-              <div className="onboard-scroll-list">
-                {curriculumOptions.map((cur) => (
-                  <button
-                    key={cur.id}
-                    type="button"
-                    className={`goal-card ${curriculum === cur.label ? "selected" : ""}`}
-                    style={{ margin: 0 }}
-                    onClick={() =>
-                      setCurriculum((prev) =>
-                        prev === cur.label ? "" : cur.label
-                      )
-                    }
-                  >
-                    <div>
-                      <div style={{ fontSize: 13.5, fontWeight: 700 }}>
-                        {cur.label}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 11.5,
-                          color: "var(--ink-soft)",
-                          fontWeight: 400,
-                        }}
-                      >
-                        {cur.desc}
-                      </div>
-                    </div>
-                    {curriculum === cur.label && (
-                      <Check size={16} color="#3E8A8F" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="field-block" style={{ marginBottom: 0 }}>
-              <span className="field-label">
-                {higherEd ? "Institution type (optional)" : "School type (optional)"}
-              </span>
-              <div className="grade-grid">
-                {schoolTypeOptions.map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    className={`grade-pill ${schoolType === st ? "selected" : ""}`}
-                    onClick={() =>
-                      setSchoolType((prev) => (prev === st ? "" : st))
-                    }
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn-ghost" onClick={goBack}>
-                Back
-              </button>
-              <button type="button" className="btn-ghost" onClick={goNext}>
-                Skip for now
-              </button>
-              <button type="button" className="btn-primary" onClick={goNext}>
-                Continue{" "}
-                <ArrowRight
-                  size={15}
-                  style={{ marginLeft: 6, display: "inline" }}
-                />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div>
-            <h3 id="onboard-title">What should we focus on?</h3>
-            <p className="modal-sub">
-              Tell Kindling what success looks like and which subjects matter
-              most right now.
-            </p>
-            <WhyHint>
-              Focus preferences shape how Kindling talks with you. Live lessons
-              currently run on Computer Science — more subjects unlock later.
-            </WhyHint>
-
-            <div className="field-block">
-              <span className="field-label">
-                Subjects you want help with{" "}
-                <span className="field-label-meta">
-                  up to {MAX_FOCUS_SUBJECTS}
-                </span>
-              </span>
-              <div className="interest-chips">
-                {FOCUS_SUBJECT_OPTIONS.map((item) => {
-                  const sel = focusSubjects.includes(item);
-                  const blocked =
-                    !sel && focusSubjects.length >= MAX_FOCUS_SUBJECTS;
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`interest-chip focus-chip ${sel ? "selected" : ""}`}
-                      disabled={blocked}
-                      onClick={() => toggleFocusSubject(item)}
-                    >
-                      {item} {sel ? "✓" : "+"}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="field-block">
-              <span className="field-label">
-                {higherEd ? "Academic ambition (optional)" : "Academic target (optional)"}
-              </span>
-              <div className="style-grid">
-                {targetOptions.map((tgt) => (
-                  <button
-                    key={tgt.id}
-                    type="button"
-                    className={`style-card ${academicTarget === tgt.label ? "selected" : ""}`}
-                    onClick={() =>
-                      setAcademicTarget((prev) =>
-                        prev === tgt.label ? "" : tgt.label
-                      )
-                    }
-                  >
-                    <h4>{tgt.label}</h4>
-                    <p>{tgt.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="field-block" style={{ marginBottom: 0 }}>
-              <span className="field-label">Primary learning goal (optional)</span>
-              <div className="grade-grid">
-                {goalOptions.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    className={`grade-pill ${goal === g ? "selected" : ""}`}
-                    onClick={() => setGoal((prev) => (prev === g ? "" : g))}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn-ghost" onClick={goBack}>
-                Back
-              </button>
-              <button type="button" className="btn-ghost" onClick={goNext}>
-                Skip for now
-              </button>
-              <button type="button" className="btn-primary" onClick={goNext}>
-                Continue{" "}
-                <ArrowRight
-                  size={15}
-                  style={{ marginLeft: 6, display: "inline" }}
-                />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div>
-            <h3 id="onboard-title">How do you learn best?</h3>
-            <p className="modal-sub">
-              Kindling will weave your style and interests into examples — across
-              every subject you study.
-            </p>
-            <WhyHint>
-              Interests make explanations stick (e.g. sports analogies). You can
-              pick up to {MAX_INTERESTS}.
-            </WhyHint>
-
-            <div className="field-block">
-              <span className="field-label">Preferred learning style</span>
+              <span className="field-label">Explanation style</span>
               <div className="style-grid">
                 {LEARNING_STYLE_OPTIONS.map((st) => (
                   <button
@@ -634,13 +361,11 @@ export default function OnboardingModal({
               </div>
             </div>
 
-            <div className="field-block" style={{ marginBottom: 0 }}>
+            <div className="field-block">
               <span className="field-label">
-                {higherEd
-                  ? "Fields & passions"
-                  : "Passions & interests"}{" "}
+                Interests for examples{" "}
                 <span className="field-label-meta">
-                  {interests.length}/{MAX_INTERESTS}
+                  optional · {interests.length}/{MAX_INTERESTS}
                 </span>
               </span>
               <div className="interest-chips">
@@ -663,7 +388,7 @@ export default function OnboardingModal({
               <div className="custom-interest-row">
                 <input
                   className="modal-input"
-                  placeholder="Add your own interest…"
+                  placeholder="Or type your own interest…"
                   value={customInterest}
                   disabled={interests.length >= MAX_INTERESTS}
                   onChange={(e) => setCustomInterest(e.target.value)}
@@ -688,121 +413,109 @@ export default function OnboardingModal({
               </div>
             </div>
 
-            <div className="modal-actions">
-              <button type="button" className="btn-ghost" onClick={goBack}>
-                Back
-              </button>
-              <button type="button" className="btn-primary" onClick={goNext}>
-                Review{" "}
-                <ArrowRight
-                  size={15}
-                  style={{ marginLeft: 6, display: "inline" }}
-                />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 5 && (
-          <div>
-            <h3 id="onboard-title">You&apos;re ready, {displayName}!</h3>
-            <p className="modal-sub">
-              Here&apos;s how Kindling will show up for you. Next up: add a
-              subject and start a lesson.
-            </p>
-
-            <div className="tutor-preview-card">
-              <h4>
-                <Sparkles size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
-                Your tutor intro
-              </h4>
-              <p>
-                &quot;Hi{name.trim() ? ` ${name.trim()}` : ""} — I&apos;m
-                Kindling. I&apos;ll teach at a{" "}
-                <strong>{grade || "comfortable"}</strong> level
-                {curriculum ? (
-                  <>
-                    {" "}
-                    using <strong>{curriculum}</strong>
-                  </>
-                ) : null}
-                {country ? (
-                  <>
-                    {" "}
-                    in <strong>
-                      {country}
-                      {countryObj?.flag ? ` ${countryObj.flag}` : ""}
-                    </strong>
-                  </>
-                ) : null}
-                {focusSubjects.length > 0 ? (
-                  <>
-                    , with extra care for{" "}
-                    <strong>{focusSubjects.join(", ")}</strong>
-                  </>
-                ) : null}
-                {interests.length > 0 ? (
-                  <>
-                    , and examples from{" "}
-                    <strong>{interests.slice(0, 3).join(", ")}</strong>
-                  </>
-                ) : null}
-                . When you&apos;re stuck, I&apos;ll guide you — not just hand
-                over the answer.&quot;
-              </p>
-            </div>
-
-            <div className="academic-card" style={{ margin: "16px 0" }}>
-              <h4 style={{ fontSize: 13.5, marginBottom: 8 }}>
-                <Building2 size={15} /> Your profile snapshot
-              </h4>
-              <div className="academic-grid">
-                <div className="academic-item">
-                  <b>Name &amp; level</b>
-                  <span>
-                    {name.trim() || "—"}
-                    {grade ? ` · ${grade}` : ""}
-                  </span>
-                </div>
-                <div className="academic-item">
-                  <b>Focus subjects</b>
-                  <span>
-                    {focusSubjects.length
-                      ? focusSubjects.join(", ")
-                      : "Any subject you add"}
-                  </span>
-                </div>
-                <div className="academic-item">
-                  <b>
-                    {higherEd ? "Programme" : "Curriculum"} &amp; target
-                  </b>
-                  <span>
-                    {curriculum || "Not set"}
-                    {academicTarget ? ` · ${academicTarget}` : ""}
-                  </span>
-                </div>
-                <div className="academic-item">
-                  <b>Style &amp; goal</b>
-                  <span>
-                    {styleLabel}
-                    {goal ? ` · ${goal}` : ""}
-                  </span>
-                </div>
-                <div className="academic-item">
-                  <b>Location</b>
-                  <span>
-                    {countryObj?.flag ? `${countryObj.flag} ` : ""}
-                    {country || "—"}
-                    {schoolName ? ` · ${schoolName}` : ""}
-                  </span>
-                </div>
-                <div className="academic-item">
-                  <b>Interests</b>
-                  <span>
-                    {interests.length ? interests.join(", ") : "—"}
-                  </span>
-                </div>
+            <div className="field-block">
+              <span className="field-label">Main goal (optional)</span>
+              <div className="grade-grid">
+                {goalOptions.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    className={`grade-pill ${goal === g ? "selected" : ""}`}
+                    onClick={() => setGoal((prev) => (prev === g ? "" : g))}
+                  >
+                    {g}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            <div className="onboard-more-wrap">
+              <button
+                type="button"
+                className="onboard-more-toggle"
+                aria-expanded={showMoreOptions}
+                onClick={() => setShowMoreOptions((o) => !o)}
+              >
+                <SlidersHorizontal size={14} aria-hidden />
+                <span>
+                  {showMoreOptions ? "Hide" : "More"} options (country,
+                  curriculum, language, school)
+                </span>
+              </button>
+
+              {showMoreOptions && (
+                <div className="onboard-more-body">
+                  <div className="onboard-more-grid">
+                    <div className="field-block">
+                      <label className="field-label" htmlFor="onboard-country">
+                        Country
+                      </label>
+                      <select
+                        id="onboard-country"
+                        className="modal-input"
+                        value={country}
+                        onChange={(e) => selectCountry(e.target.value)}
+                      >
+                        <option value="">Select country…</option>
+                        {COUNTRY_OPTIONS.map((c) => (
+                          <option key={c.code} value={c.name}>
+                            {c.flag} {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="field-block">
+                      <label
+                        className="field-label"
+                        htmlFor="onboard-curriculum"
+                      >
+                        {higherEd ? "Programme track" : "Curriculum"}
+                      </label>
+                      <select
+                        id="onboard-curriculum"
+                        className="modal-input"
+                        value={curriculum}
+                        onChange={(e) => setCurriculum(e.target.value)}
+                      >
+                        <option value="">Standard / not sure</option>
+                        {curriculumOptions.map((cur) => (
+                          <option key={cur.id} value={cur.label}>
+                            {cur.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="field-block">
+                      <label className="field-label" htmlFor="onboard-language">
+                        Tutoring language
+                      </label>
+                      <input
+                        id="onboard-language"
+                        className="modal-input"
+                        placeholder="e.g. English, Español"
+                        value={preferredLanguage}
+                        maxLength={80}
+                        onChange={(e) => setPreferredLanguage(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="field-block">
+                      <label className="field-label" htmlFor="onboard-school">
+                        {higherEd ? "University / college" : "School name"}
+                      </label>
+                      <input
+                        id="onboard-school"
+                        className="modal-input"
+                        placeholder="Optional"
+                        value={schoolName}
+                        onChange={(e) => setSchoolName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {displayError && (
@@ -826,22 +539,16 @@ export default function OnboardingModal({
               >
                 {saving ? (
                   <>
-                    <Loader2
-                      size={16}
-                      style={{
-                        marginRight: 6,
-                        display: "inline",
-                        verticalAlign: "middle",
-                      }}
-                    />
+                    <Loader2 size={16} className="spin" />
                     Saving…
                   </>
                 ) : (
                   <>
-                    <CheckCircle
-                      size={16}
-                      style={{ marginRight: 6, display: "inline" }}
-                    />{" "}
+                    {isEditMode ? (
+                      <CheckCircle size={16} />
+                    ) : (
+                      <Sparkles size={16} />
+                    )}
                     {isEditMode ? "Save changes" : "Start learning"}
                   </>
                 )}

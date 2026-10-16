@@ -193,7 +193,7 @@ Items marked ✅ are **shipped** (Wave 1 + early Wave 2 intelligence slice — s
    Hands-on skill topics get numbered device procedures + try-it checklists (not theory-only). Curated CS literacy guides include files/folders, browser search, password habits, and downloading a trusted file across devices; Socratic carve-out so procedures are not withheld. **Wave 2:** add deeper guides and domain coverage (**C7**).
 
 9. **Teacher/tutor playbooks** ⚡ Partial · **C7**
-   Data-backed early-math/algebra and science scaffold packs guide lesson prompts; C8 samples surface non-scoring math and science consistency cues for human review. Further domain expansion follows session mix.
+   Data-backed early-math/algebra, science, and writing scaffold packs guide lesson prompts; writing guidance keeps the learner as author. C8 samples surface non-scoring domain cues for human review. Further domain depth follows session mix.
 
 10. **Learning intelligence loop (L1–L4)** ✅  
     LearnerState → pedagogical policy → ADI → independence twins. **Remaining:** L5 trajectory export, decision-compliance scoring depth, lifelong cross-subject model.
@@ -329,7 +329,7 @@ Execution order lives in [`NEXT_STEPS.md`](./NEXT_STEPS.md). Mapping:
 | Horizon | Intent | Wave | Status |
 |---------|--------|------|--------|
 | **A** | High impact on existing code | **Wave 1** | ✅ Shipped (A1–A6 + platform floor minus Postgres host) |
-| **B** | Differentiation | **Wave 1.5–2** | ⚡ Partial — L1–L4, C6 v1, C8, practical how-to, CS pilot, first C7 math/algebra + science packs, and rolling C1+ recall measurement shipped; sustained C1+ lift, further C7 coverage, C4/deploy remain |
+| **B** | Differentiation | **Wave 1.5–2** | ⚡ Partial — L1–L4, C6 v1, C8, practical how-to, CS pilot, C7 math/algebra + science + writing packs, and C1+ recall/return measurement shipped; real-cohort learning evidence, further C7 depth, C4/deploy remain |
 | **C** | Category leadership | **Wave 2 scale** | ⬜ Phase 5 (+ deferred VR/collab/credentials) |
 
 ### Horizon A — Shipped product slice (Wave 1)
@@ -350,6 +350,7 @@ Execution order lives in [`NEXT_STEPS.md`](./NEXT_STEPS.md). Mapping:
 - Assessment quick checks (C6 v1) + eval harness (C8.1–C8.3)  
 - Computer Science pilot curriculum (units → subtopics)  
 - Practical how-to teaching + suggestion chips + real-world example rule  
+- Data-backed writing scaffolds that coach planning, evidence, and revision while preserving learner authorship
 
 **Still open**
 
@@ -394,4 +395,4 @@ Whatever is built next, these should stay non-negotiable:
 
 ---
 
-*Last updated: 2026-10-04 — P.6 download how-to guide, R.1 student-owned digest recipient and unsent preview UX, C6.10 science transfer checks, C7.4 science playbook sample cues, C6.9 science alternate-form learning-gain pilot, C8.4 human-label calibration diagnostics, C6.8 science assessment depth, C6.7 math alternate-form pilot, C9 scrubbed support-flag review queue, and C10 opt-in support email reflected alongside CS pilot, L1–L4, C6/C8, practical how-to, and suggestion chips; Wave 2 Track D still the external-beta gate for live email. Expert review gaps: [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*
+*Last updated: 2026-10-13 — added C7.5 writing scaffolds and human-review cues; October 4 baseline includes P.6 how-to, R.1 digest UX, C6 science assessment, C7.4 cues, C8.4 calibration, C9/C10 support, and Wave 2 Track D readiness. Expert review gaps: [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md).*

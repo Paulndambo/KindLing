@@ -34,7 +34,7 @@ export const PLAN_CATALOG = [
       prioritySupport: false,
       dailyLessonSoftCap: 4,
       dailyPlatformAiRequests: 30,
-      dailyPlatformAiTokens: 60000,
+      dailyPlatformAiTokens: 1000000,
     },
   },
   {
@@ -84,7 +84,7 @@ export const PLAN_CATALOG = [
       prioritySupport: true,
       dailyLessonSoftCap: null,
       dailyPlatformAiRequests: 120,
-      dailyPlatformAiTokens: 300000,
+      dailyPlatformAiTokens: 1000000,
     },
   },
 ];

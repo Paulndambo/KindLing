@@ -1,5 +1,7 @@
 import json
+import random
 import re
+import time
 from decimal import Decimal
 from datetime import timedelta
 from urllib.error import HTTPError, URLError
@@ -260,9 +262,36 @@ class PlatformGeminiView(APIView):
             },
             method="POST",
         )
-        try:
-            upstream = urlopen(upstream_request, timeout=90)
-        except HTTPError as exc:
+        upstream = None
+        upstream_error = None
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                upstream = urlopen(upstream_request, timeout=90)
+                break
+            except HTTPError as exc:
+                # Gemini can briefly return 503 while capacity is recovering.
+                # Retry transient server failures with bounded exponential
+                # backoff and jitter; never retry malformed requests or auth
+                # and quota failures.
+                if exc.code not in (500, 502, 503, 504) or attempt == max_attempts - 1:
+                    upstream_error = exc
+                    break
+                retry_after = exc.headers.get("Retry-After") if exc.headers else None
+                try:
+                    retry_delay = min(max(0.0, float(retry_after)), 4.0)
+                except (TypeError, ValueError):
+                    retry_delay = min(0.5 * (2**attempt), 2.0)
+                exc.close()
+                time.sleep(retry_delay + random.uniform(0.0, 0.25))
+            except (URLError, TimeoutError):
+                return Response(
+                    {"detail": "Gemini service is temporarily unavailable. Please try again shortly."},
+                    status=502,
+                )
+
+        if upstream_error is not None:
+            exc = upstream_error
             # Do not pass raw provider bodies to clients; report actionable
             # configuration/quota failures without leaking request details.
             if exc.code in (401, 403):
@@ -281,6 +310,12 @@ class PlatformGeminiView(APIView):
                     {"detail": "Gemini quota or rate limit reached. Check the provider project quota."},
                     status=503,
                 )
+            if exc.code == 503:
+                return Response(
+                    {"detail": "Gemini is temporarily overloaded. Please try again shortly."},
+                    status=503,
+                    headers={"Retry-After": "2"},
+                )
             if exc.code in (400, 404):
                 return Response(
                     {
@@ -293,8 +328,6 @@ class PlatformGeminiView(APIView):
                 {"detail": "Gemini request failed.", "provider_status": exc.code},
                 status=502,
             )
-        except (URLError, TimeoutError):
-            return Response({"detail": "Gemini service is temporarily unavailable."}, status=502)
 
         if streaming:
             def relay():

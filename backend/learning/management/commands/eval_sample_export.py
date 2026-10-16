@@ -21,7 +21,11 @@ from learning.eval_rubric import (
     extract_session_evidence,
     render_score_sheet_markdown,
 )
-from learning.eval_scorer import audit_math_playbook_signals, audit_science_playbook_signals
+from learning.eval_scorer import (
+    audit_math_playbook_signals,
+    audit_science_playbook_signals,
+    audit_writing_playbook_signals,
+)
 from learning.models import LessonSession, ManualSessionEval
 
 
@@ -111,6 +115,12 @@ class Command(BaseCommand):
                 topic=session.topic,
                 tutor_texts=tutor_texts,
             )
+            if not playbook_audit.get("applicable"):
+                playbook_audit = audit_writing_playbook_signals(
+                    subject=session.subject,
+                    topic=session.topic,
+                    tutor_texts=tutor_texts,
+                )
             if not playbook_audit.get("applicable"):
                 playbook_audit = audit_math_playbook_signals(
                     subject=session.subject,

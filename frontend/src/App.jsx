@@ -7,6 +7,7 @@ import TopNav from "./components/layout/TopNav";
 import AuthModal from "./components/auth/AuthModal";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import LegalPage from "./components/legal/LegalPage";
+import "./styles/platform.css";
 
 const Overview = lazy(() => import("./components/overview/Overview"));
 const MySubjects = lazy(() => import("./components/subjects/MySubjects"));
@@ -99,12 +100,25 @@ export default function App() {
     studentId: student?.id ?? null,
   });
 
+  const hasSubjects = Boolean(subjects?.length);
+
+  // Never stay on the Lesson screen if the user has no recorded subjects
+  useEffect(() => {
+    if (screen === "lesson" && isLoggedIn && !subjectsLoading && !hasSubjects) {
+      setScreen("subjects");
+    }
+  }, [screen, isLoggedIn, subjectsLoading, hasSubjects]);
+
   const afterAuthNavigate = useCallback(() => {
     if (pendingTab) {
-      setScreen(pendingTab);
+      if (pendingTab === "lesson" && !subjects?.length) {
+        setScreen("subjects");
+      } else {
+        setScreen(pendingTab);
+      }
       clearPendingTab();
     }
-  }, [pendingTab, clearPendingTab]);
+  }, [pendingTab, subjects, clearPendingTab]);
 
   const handleLogin = useCallback(
     async (email, password) => {
@@ -140,7 +154,7 @@ export default function App() {
   }, [isLoggedIn, openAuth, setOnboardingOpen]);
 
   const handleGetStarted = useCallback(() => {
-    openAuth("register", "lesson");
+    openAuth("register", "subjects");
   }, [openAuth]);
 
   const handleOpenLogin = useCallback(() => {
@@ -155,35 +169,86 @@ export default function App() {
     (tabId) => {
       const navItem = NAV.find((n) => n.id === tabId);
       if (navItem?.protected && !isLoggedIn) {
-        requireAuth(tabId, "login");
+        requireAuth(tabId === "lesson" ? "subjects" : tabId, "login");
         return;
+      }
+      if (tabId === "lesson") {
+        if (student && !student.isOnboarded) {
+          setOnboardingOpen(true);
+          return;
+        }
+        if (!hasSubjects) {
+          setScreen("subjects");
+          return;
+        }
+        if (
+          !activeLesson?.subject ||
+          !subjects.some((s) => s.name === activeLesson.subject)
+        ) {
+          const firstSubject = subjects[0];
+          const firstUnit = firstSubject?.topics?.[0];
+          const firstLeaf =
+            firstUnit?.subtopics?.[0]?.name || firstUnit?.name || "";
+          setActiveLesson({
+            subject: firstSubject.name,
+            topic: firstLeaf,
+            unit: firstUnit?.name || "",
+          });
+        }
       }
       setScreen(tabId);
     },
-    [isLoggedIn, requireAuth]
+    [
+      isLoggedIn,
+      requireAuth,
+      student,
+      setOnboardingOpen,
+      hasSubjects,
+      activeLesson,
+      subjects,
+    ]
   );
 
   const startLesson = useCallback(
     (subjectName, topicName, opts = null) => {
       if (!isLoggedIn) {
-        requireAuth("lesson", "register");
+        requireAuth("subjects", "register");
         return;
       }
       if (student && !student.isOnboarded) {
         setOnboardingOpen(true);
         return;
       }
+      if (!hasSubjects) {
+        setScreen("subjects");
+        return;
+      }
+      const matchedSubject =
+        subjects.find((s) => s.name === subjectName) || subjects[0];
+      const firstUnit = matchedSubject?.topics?.[0];
+      const resolvedTopic =
+        topicName ||
+        firstUnit?.subtopics?.[0]?.name ||
+        firstUnit?.name ||
+        "";
       // opts: reviewMode (C1), challengeMode (G1), skill labels, etc.
       const extra =
         opts && typeof opts === "object" && !Array.isArray(opts) ? opts : {};
       setActiveLesson({
-        subject: subjectName,
-        topic: topicName,
+        subject: matchedSubject.name,
+        topic: resolvedTopic,
         ...extra,
       });
       setScreen("lesson");
     },
-    [isLoggedIn, requireAuth, student, setOnboardingOpen]
+    [
+      isLoggedIn,
+      requireAuth,
+      student,
+      setOnboardingOpen,
+      hasSubjects,
+      subjects,
+    ]
   );
 
   return (
@@ -195,6 +260,7 @@ export default function App() {
         screen={screen}
         isLoggedIn={isLoggedIn}
         student={student}
+        hasSubjects={hasSubjects}
         onNavigate={handleNavigate}
         onOpenLogin={handleOpenLogin}
         onGetStarted={handleGetStarted}
@@ -238,16 +304,13 @@ export default function App() {
                   setOnboardingOpen(true);
                   return;
                 }
-                // Prefer subjects so learners pick a topic rather than a blank lesson
-                if (subjects?.length) {
-                  setScreen("subjects");
-                  return;
-                }
-                setScreen("lesson");
+                // Always direct to My Subjects if no subject is recorded or to pick a topic
+                setScreen("subjects");
               }}
             />
           )}
-          {screen === "subjects" && (
+          {(screen === "subjects" ||
+            (screen === "lesson" && !subjectsLoading && !hasSubjects)) && (
             <MySubjects
               subjects={subjects}
               loading={subjectsLoading}
@@ -267,12 +330,16 @@ export default function App() {
               onOpenOnboarding={handleOpenOnboarding}
             />
           )}
-          {screen === "lesson" && (
+          {screen === "lesson" && subjectsLoading && !hasSubjects && (
+            <ScreenFallback />
+          )}
+          {screen === "lesson" && hasSubjects && (
             <Lesson
-              key={`${activeLesson?.subject ?? "general"}-${activeLesson?.topic ?? "default"}-${activeLesson?.reviewSkill ?? activeLesson?.challengeSkill ?? "open"}`}
+              key={`${activeLesson?.subject ?? subjects[0]?.name ?? "general"}-${activeLesson?.topic ?? "default"}-${activeLesson?.reviewSkill ?? activeLesson?.challengeSkill ?? "open"}`}
               activeLesson={activeLesson}
               student={student}
               subjects={subjects}
+              onNavigate={handleNavigate}
             />
           )}
           {screen === "dashboard" && (

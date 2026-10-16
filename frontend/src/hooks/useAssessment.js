@@ -302,11 +302,25 @@ export function useAssessment({
     return { session: next, completed: false };
   }, [session, emit, getSessionId]);
 
-  const startPrePostBaseline = useCallback((options = {}) => startAssessment({ ...options, source: "pre_post_baseline", form: "A", purpose: "pre" }), [startAssessment]);
+  const startPrePostBaseline = useCallback(
+    (options = {}) =>
+      startAssessment({
+        ...options,
+        source: "pre_post_baseline",
+        // Randomize the baseline form so a learning effect is not inseparable
+        // from the form order; the follow-up always receives the opposite.
+        form: Math.random() < 0.5 ? "A" : "B",
+        purpose: "pre",
+      }),
+    [startAssessment]
+  );
   const startPrePostFollowUp = useCallback(() => {
     if (!prePostBaseline) return null;
     return startAssessment({
-      source: "pre_post_followup", form: "B", purpose: "post", baseline: prePostBaseline,
+      source: "pre_post_followup",
+      form: prePostBaseline.form === "A" ? "B" : "A",
+      purpose: "post",
+      baseline: prePostBaseline,
       skillSlug: prePostBaseline.skillSlug, skillSlugs: prePostBaseline.skillSlugs,
       count: prePostBaseline.total,
     });

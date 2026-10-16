@@ -14,7 +14,7 @@ from learning.outcome_reporting import (
 
 
 class Command(BaseCommand):
-    help = "Aggregate learning outcomes by subject and self-reported grade band."
+    help = "Aggregate learning outcomes, review returns, and pre/post checks."
 
     def add_arguments(self, parser):
         parser.add_argument("--days", type=int, default=90)

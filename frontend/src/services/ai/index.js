@@ -48,3 +48,11 @@ export {
 } from "./preferences";
 
 export { AI_CONFIG_CHANGED, emitAiConfigChanged } from "./events";
+
+export {
+  PLATFORM_AI_CAP_EVENT,
+  getPlatformAiCap,
+  recordPlatformAiCap,
+  clearPlatformAiCap,
+} from "./platformGemini";
+

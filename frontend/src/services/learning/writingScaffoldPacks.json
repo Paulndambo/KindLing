@@ -1,0 +1,56 @@
+[
+  {
+    "id": "writing-understand-the-task",
+    "topics": ["essay prompt", "understand the assignment", "writing task", "prompt analysis", "essay"],
+    "concept": "A writing prompt sets a purpose, audience, and task; unpacking those parts turns a broad assignment into manageable decisions.",
+    "representation": "Mark the task words, topic, audience, and required evidence in four separate colors or columns.",
+    "steps": ["Restate what the prompt asks the writer to do.", "Name the topic and intended reader.", "List the required parts and any evidence or format rules."],
+    "check": "In your own words, what must your reader understand or believe by the end?",
+    "fade": "Give the learner a fresh prompt and ask them to identify its task, audience, and requirements independently."
+  },
+  {
+    "id": "writing-plan-and-outline",
+    "topics": ["essay planning", "essay writing", "argumentative essay", "outline", "organize ideas", "writing plan", "brainstorming"],
+    "concept": "A plan arranges a writer's own ideas in an order that helps the reader follow the purpose.",
+    "representation": "Use a small idea map or outline with a beginning, a few main points, and a closing; keep evidence beside the point it supports.",
+    "steps": ["Collect several ideas before choosing one direction.", "Group related ideas under a few main points.", "Put the points in an order that makes sense to the reader."],
+    "check": "Which of your points should come first, and what makes that order helpful?",
+    "fade": "Ask the learner to sketch a short plan for a new prompt and explain the order in their own words."
+  },
+  {
+    "id": "writing-claim-thesis",
+    "topics": ["thesis statement", "claim", "main argument", "central idea"],
+    "concept": "A thesis or claim gives the reader a focused answer to the prompt that the rest of the writing can support.",
+    "representation": "Use a one-sentence frame: topic + the writer's answer or position + the main reason, when useful.",
+    "steps": ["Answer the prompt directly in a few words.", "Narrow the answer so it can be supported in this piece.", "Check that each planned section connects back to it."],
+    "check": "Could a thoughtful reader disagree with this claim, and what reason will you use to support it?",
+    "fade": "Have the learner revise their own broad claim into a focused one and name the evidence they would need."
+  },
+  {
+    "id": "writing-paragraph",
+    "topics": ["paragraph structure", "body paragraph", "topic sentence", "paragraph development"],
+    "concept": "A clear paragraph develops one main point with explanation and relevant detail, then connects it to the larger purpose.",
+    "representation": "Map the paragraph as point → evidence or example → explanation → link back to the claim.",
+    "steps": ["State one main point in the learner's own words.", "Choose a relevant example, fact, or detail.", "Explain how that detail supports the point.", "Connect the point to the larger claim or next idea."],
+    "check": "What does your evidence show, and how does it support the paragraph's point?",
+    "fade": "Ask the learner to plan the next paragraph using the same map without filling in its sentences for them."
+  },
+  {
+    "id": "writing-evidence",
+    "topics": ["use evidence", "quote and explain", "text evidence", "citation", "sources in writing"],
+    "concept": "Evidence earns trust when it is relevant, represented accurately, and explained in relation to the writer's point.",
+    "representation": "Use a three-column note: point, source detail, what the detail helps show; keep quotation marks around exact words.",
+    "steps": ["Choose a detail that directly relates to the point.", "Record the source and preserve quoted words exactly.", "Explain what the detail means and why it supports the point."],
+    "check": "If your reader asks 'How does that prove your point?', what explanation would you give?",
+    "fade": "Let the learner select and explain a second piece of evidence, checking the source independently."
+  },
+  {
+    "id": "writing-revise-and-edit",
+    "topics": ["revise writing", "edit a draft", "revision", "proofread", "improve a draft"],
+    "concept": "Revision improves meaning and organization; editing checks sentence clarity and conventions after the ideas are in place.",
+    "representation": "Do two passes: a reader-purpose pass for ideas and order, then a sentence pass for clarity, spelling, and punctuation.",
+    "steps": ["Read the draft as the intended audience and find the main message.", "Revise one idea or organization issue that would help the reader most.", "Read sentence by sentence for clarity and conventions."],
+    "check": "Which one change would make your meaning clearest to a reader, and why?",
+    "fade": "Have the learner choose and explain one revision in a new paragraph before checking surface details."
+  }
+]

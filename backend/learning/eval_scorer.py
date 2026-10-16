@@ -77,6 +77,12 @@ _SCIENCE_TOPIC_RE = re.compile(
     r"ecosystem|food chain|cell|organelle|investigation|fair test|variable|water cycle|earth system)\b",
     re.I,
 )
+_WRITING_SUBJECT_RE = re.compile(r"\b(writing|english|language arts|literacy|composition)\b", re.I)
+_WRITING_TOPIC_RE = re.compile(
+    r"\b(essay prompt|outline|thesis statement|claim|paragraph structure|"
+    r"text evidence|citation|revise writing|revision|proofread|writing task)\b",
+    re.I,
+)
 _SCAFFOLD_AUDIT_CUES = {
     "representation": re.compile(
         r"\b(bar|number line|array|equal groups?|balance|chart|table|draw|picture|model|pizza|chapati|share equally)\b",
@@ -109,6 +115,26 @@ _SCIENCE_AUDIT_CUES = {
     "understanding_check": re.compile(r"\?"),
     "prediction_or_transfer": re.compile(
         r"\b(predict|what would happen|new example|another situation|your turn|try it yourself|explain how)\b",
+        re.I,
+    ),
+}
+_WRITING_AUDIT_CUES = {
+    "planning_or_structure": re.compile(
+        r"\b(outline|organize|order|idea map|paragraph|point → evidence|point to evidence)\b",
+        re.I,
+    ),
+    "evidence_or_explanation": re.compile(
+        r"\b(evidence|example|source|because|supports your point|what it shows)\b",
+        re.I,
+    ),
+    "sequenced_revision": re.compile(
+        r"\b(first|next|then|revision|revise|edit|proofread|reader)\b",
+        re.I,
+    ),
+    "understanding_check": re.compile(r"\?"),
+    "learner_authorship_or_fade": re.compile(
+        r"\b(your own words|your idea|your draft|your turn|try it yourself|"
+        r"what would you change|choose one change)\b",
         re.I,
     ),
 }
@@ -521,6 +547,10 @@ def score_lesson_session(session) -> Dict[str, Any]:
         playbook_audit = audit_science_playbook_signals(
             subject=subject, topic=topic, tutor_texts=audit_texts
         )
+    elif _WRITING_SUBJECT_RE.search(subject or "") or _WRITING_TOPIC_RE.search(topic or ""):
+        playbook_audit = audit_writing_playbook_signals(
+            subject=subject, topic=topic, tutor_texts=audit_texts
+        )
     else:
         playbook_audit = audit_math_playbook_signals(
             subject=subject, topic=topic, tutor_texts=audit_texts
@@ -589,6 +619,32 @@ def audit_science_playbook_signals(
         "signalCount": len(signals),
         "coverage": round(observed / len(signals), 3),
         "interpretation": "Heuristic surface cues only; use the C8 human sample to judge scientific accuracy, scaffold fit, and learner understanding.",
+    }
+
+
+def audit_writing_playbook_signals(
+    *, subject: str = "", topic: str = "", tutor_texts: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Collect non-scoring writing-playbook cues for C8 human spot-checks."""
+    if not (_WRITING_SUBJECT_RE.search(subject or "") or _WRITING_TOPIC_RE.search(topic or "")):
+        return {"applicable": False, "subject": subject or "", "topic": topic or ""}
+
+    tutor_texts = [str(text or "") for text in (tutor_texts or []) if str(text or "").strip()]
+    signals = {
+        key: any(pattern.search(text) for text in tutor_texts)
+        for key, pattern in _WRITING_AUDIT_CUES.items()
+    }
+    observed = sum(signals.values())
+    return {
+        "applicable": True,
+        "domain": "writing",
+        "subject": subject or "",
+        "topic": topic or "",
+        "signals": signals,
+        "observedCount": observed,
+        "signalCount": len(signals),
+        "coverage": round(observed / len(signals), 3),
+        "interpretation": "Heuristic surface cues only; use the C8 human sample to judge writing guidance, voice, accuracy, and learner authorship.",
     }
 
 

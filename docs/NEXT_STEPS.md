@@ -472,7 +472,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 **Done when:** Student can optionally set energy at session start; choosing low energy changes tutor pacing or offers break/easier path within one turn.  
 **How:** Open Math Foundations → chip appears once → pick “low” → first tutor message or banner reflects lighter pace / break offer.  
 **Beta map:** [`BETA_LAUNCH.md`](./BETA_LAUNCH.md) **P1.8**  
-**Verify:** `frontend/scripts/smoke-session-start-b7.mjs` (esbuild bundle); backend `learning.tests_affect_b3` B7 case.
+**Verify:** `frontend/scripts/smoke-session-start-b7.mjs` (esbuild bundle); backend `learning.tests.tests_affect_b3` B7 case.
 
 ### Epic B8 — End-of-session reflection ✅
 
@@ -488,7 +488,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 **Done when:** Ending a normal lesson can capture a 10-second reflection and surface a sensible next step (continue topic, review spark, or rest).  
 **How:** Practice → **Wrap up** → reflection card → Save & finish / Skip → journal summary + optional Review spark CTA.  
 **Beta map:** **P1.9**  
-**Verify:** `frontend/scripts/smoke-session-reflect-b8.mjs`; backend `learning.tests_session_reflect_b8`; browser `verify-session-reflect-b8.mjs`.
+**Verify:** `frontend/scripts/smoke-session-reflect-b8.mjs`; backend `learning.tests.tests_session_reflect_b8`; browser `verify-session-reflect-b8.mjs`.
 
 ### Epic C1 — Spaced review v1 (detail) ✅
 
@@ -505,7 +505,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 **Done when:** Within 7 days of struggle on a pilot skill, learner sees an auto-suggested review and can complete it in-product.  
 **How:** Miss fraction items → later open Dashboard → Review spark → short practice → skill spark moves.  
 **Beta map:** **P1.2**  
-**Verify:** `learning.tests_review_c1`; `frontend/scripts/smoke-review-c1.mjs`; browser `verify-review-c1.mjs`.
+**Verify:** `learning.tests.tests_review_c1`; `frontend/scripts/smoke-review-c1.mjs`; browser `verify-review-c1.mjs`.
 
 ### Epic C5 — Goals surface (lite) ✅
 
@@ -521,7 +521,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 **Done when:** Student can see and lightly set a goal that shapes the first turns of a lesson without a planning product.  
 **How:** Set goal on subject/topic → open lesson → tutor references it; path or tools shows the goal chip.  
 **Beta map:** **P2.4**  
-**Verify:** `frontend/scripts/smoke-goals-c5.mjs`; backend `students.tests_goals_c5`; browser `verify-goals-c5.mjs`.
+**Verify:** `frontend/scripts/smoke-goals-c5.mjs`; backend `students.tests.tests_goals_c5`; browser `verify-goals-c5.mjs`.
 
 ### Epic G1 — Light spark challenge (optional, post-C1) ✅
 
@@ -535,7 +535,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 
 **Done when:** A motivated student can take a short optional challenge that reuses mastery events without new economy systems.  
 **Beta map:** **P2.9** (only if P0/P1 green and learners ask for “something to beat”)  
-**Verify:** `frontend/scripts/smoke-challenge-g1.mjs`; backend `learning.tests_challenge_g1`; browser `verify-challenge-g1.mjs`.
+**Verify:** `frontend/scripts/smoke-challenge-g1.mjs`; backend `learning.tests.tests_challenge_g1`; browser `verify-challenge-g1.mjs`.
 
 **Phase 2.5 exit criteria (beta product slice)**
 
@@ -557,13 +557,13 @@ Escalation: “More help” while active; session escalates after lighter levels
 
 | Epic | Capability | Deliverable | Status | Notes |
 |------|------------|-------------|--------|-------|
-| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, clearer schedule UX, richer forgetting curve | ⚡ Partial | Cross-subject selection/balancing ✅; upcoming/reason display ✅; snooze ✅; week-focus tie-in ✅; rolling 30-day recall outcomes by planned interval now captured and surfaced; sustained lift validation remains |
+| **C1+** | §3.1.4 Spaced review depth | Multi-subject due list, clearer schedule UX, richer forgetting curve | ⚡ Partial | Cross-subject selection/balancing ✅; upcoming/reason display ✅; snooze ✅; week-focus tie-in ✅; rolling 30-day recall, first-lesson cohorts, and within-learner return after completed review vs pre-due baseline are reported; real-cohort follow-up and causal lift remain unproven |
 | **C2** | §3.5.1 Parent accounts | — | ❌ | **Out of product forever** — student-configured digest email only (A5) |
 | **C3** | §3.5.2 Classroom mode | — | ❌ | **Out of product forever** — institutions buy per-seat; no roster product |
 | **C4** | §3.5.3 Standards reports | Export progress vs framework codes for **this student** | ⚡ Partial | Authenticated CSV + email-ready narrative for the internal CS pilot; external standards alignment remains |
 | **C5+** | §3.5.4 Goals & plans (full) | Exam prep timelines, homework windows, weekly focus (student-owned) | ⚡ Partial | Student-owned target date + countdown ✅; week-focus lite ✅; focused homework windows ✅; full planner remains |
-| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ⚡ Partial | Offline MCQ + timed practice ✅; Math Foundations has 3 items per core skill, each of 8 science scaffold areas has 5 explained items including an applied transfer item, and optional alternate-form checks include aggregate skill/band calibration; wider coverage and empirical cohort calibration remain — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
-| **C7** | §3.1.8 Domain playbooks | Early-math/algebra scaffold pack + second thin domain pack | ⚡ Partial | C7.1 math/algebra ✅; C7.2 science ✅; C8 samples now include non-scoring science playbook cues alongside math; further domain breadth remains |
+| **C6** | §3.1.7 Assessment modes | Low-stakes quizzes / end-of-topic checks separate from open chat | ⚡ Partial | Offline MCQ + timed practice ✅; Math Foundations has 3 items per core skill, each of 8 science scaffold areas has 5 explained items including an applied transfer item; alternate-form pilots now randomize A/B order and report first-per-learner score balance plus paired gain; wider coverage and empirical cohort validation remain — see [`REVIEW_GAP_ANALYSIS.md`](./REVIEW_GAP_ANALYSIS.md) |
+| **C7** | §3.1.8 Domain playbooks | Early-math/algebra scaffold pack + second thin domain pack | ⚡ Partial | C7.1 math/algebra ✅; C7.2 science ✅; C7.5 writing mini-pack ✅ with learner-authorship guidance; C8 reports surface non-scoring math/science/writing cues for human review; broader depth and human validation remain |
 | **C8** | §3.6.5 Eval harness | Automated scores: hint quality, Socratic fidelity, intervention timing | ⚡ C8.1–C8.4 | Manual rubric + offline scorer + weekly job + per-dimension human-label calibration summary; calibration still requires ≥10 matched human-scored sessions |
 | **C9** | §3.6.3 Human review | Ops flag on distress / repeated fail (support queue) | ✅ C9.1 flag generation + C9.2 internal admin review list; **not** a parent app |
 | **C10** | §3.2.4 Optional email alerts | Extra “stuck N sessions” email to the **same** student-configured digest address | ✅ C10.1–C10.2 | Daily threshold rule uses the A5 digest opt-in and recipient; gentle copy, seven-day cooldown |
@@ -621,6 +621,7 @@ Escalation: “More help” while active; session escalates after lighter levels
 | C7.2 | Second thin pack (science or writing) if >40% sessions leave math | ✅ Added a data-backed science pack after the local 53-session sample showed 39 sessions outside Math/Math Foundations; science selected because Chemistry appeared in the sample |
 | C7.3 | Consistency checks via C8 samples | ✅ C8.1/weekly reports surface representation, step sequence, understanding-check, and fade/transfer cues for math sessions; C8.3 exports include the same reviewer hints |
 | C7.4 | Add science playbook spot-check cues to C8 samples | ✅ C8.1, weekly reports, and C8.3 exports now surface non-scoring cues for scientific representation, evidence/reasoning, investigation sequence, understanding checks, and prediction/transfer |
+| C7.5 | Add a thin writing scaffold pack with authorship-preserving revision guidance | ✅ Six topic-matched planning, claim, paragraph, evidence, and revision scaffolds are injected into tutor guidance; C8 adds non-scoring writing cues for human review |
 
 #### C8 — Eval harness
 | Step | Work | Status |
@@ -746,7 +747,7 @@ Apply to every phase:
 | 3.1 | Assessment modes | **C6** ✅ v1 / ⬜ depth |
 | 3.1 | Practical how-to teaching | ✅ (CS literacy guides + prompt contract) |
 | 3.1 | Learning intelligence L1–L4 | ✅ LearnerState, policy, ADI, independence |
-| 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⚡ Partial (C7.1 math/algebra + C7.2 science packs and C7.3/C7.4 sample cues shipped; expansion remains) |
+| 3.1 | Teacher/tutor playbooks | **Wave 2 · Phase 3 · C7** ⚡ Partial (math/algebra, science, and writing packs plus C7.3–C7.5 human-review cues shipped; expansion remains) |
 | 3.2 Intervention | Richer struggle signals | Phase 2 · B1 ✅ |
 | 3.2 | Graduated interventions | Phase 2 · B2 ✅ |
 | 3.2 | Affective check-ins | Phase 2 · B3 ✅; session-start Phase 2.5 · B7 ✅ |
@@ -839,9 +840,9 @@ Maps to: CAPABILITIES §3.1.4 depth, §3.1.7–3.1.8, §3.6.5
 
 | ID | Work | PLAN epic | Status |
 |----|------|-----------|--------|
-| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⚡ Partial — cross-subject list, reasons, snooze, bounded intervals, B8/week-focus ranking, rolling review recall, and first-lesson D7/D14/D30 return cohorts shipped; sustained review lift validation remains |
-| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ⚡ Offline timed v1 + Math Foundations and 8 science-area banks with applied transfer items + optional alternate-form checks in both domains; aggregate skill/band calibration with paired sample size, gain spread, and confidence interval added; wider coverage and empirical cohort calibration remain |
-| P.3 | Domain playbook #2 + how-to pack expansion | **C7** | ⚡ Math/algebra and science packs plus C7.3/C7.4 C8 sample audits shipped; further domain and how-to expansion remains |
+| P.1 | Spaced review depth (multi-subject, schedule UX) | **C1+** | ⚡ Partial — cross-subject list, reasons, snooze, bounded intervals, B8/week-focus ranking, rolling recall, first-lesson return cohorts, and a within-learner pre-due vs post-review return comparison shipped; real-cohort follow-up remains |
+| P.2 | Assessment modes (end-of-topic / low-stakes quiz) | **C6** | ⚡ Offline timed v1 + Math Foundations and 8 science-area banks with applied transfer items + randomized counterbalanced alternate-form checks in both domains; report compares first-per-learner A/B scores by phase and summarizes paired gain; wider coverage and empirical cohort validation remain |
+| P.3 | Domain playbook #2 + how-to pack expansion | **C7** | ⚡ Math/algebra, science, and writing scaffolds plus C7.3–C7.5 C8 human-review cues shipped; further domain depth and how-to expansion remain |
 | P.4 | Eval harness v1 (or manual rubric bridge) | **C8** | ⚡ C8.1–C8.4 calibration tooling shipped; heuristic validation on ≥10 matched human labels remains |
 | P.5 | Expand skill graph / standards codes beyond pilot as needed for C4/C6 | A1 expand | ⚡ CS pilot live; multi-domain still open |
 | P.6 | Practical how-to library depth (more skills/OS paths) | how-to | ⚡ P.6.1 adds a cross-device download-and-find procedure; more skills and OS-specific paths remain |
@@ -1045,6 +1046,9 @@ Track as features land:
 | 2026-10-13 | **D.7 support + legal + restore readiness (partial):** added a student support form, throttled API, staff-only Django admin queue, configurable reference/category email notification, triage guidance, linked beta-draft Terms/Privacy pages with current data-handling disclosures, and an isolated database/media restore drill record. Monitored inbox setup, legal review/risk acceptance, and a real signed-off restore exercise remain deployment tasks. |
 | 2026-10-13 | **C1+ retention measurement (partial):** the learning outcome report now groups learners by week of first recorded lesson and reports mature D7, D14 (days 8–14), and D30 (days 22–30) return windows with eligible denominators. These descriptive cohorts support retention monitoring; review-caused lift still requires longitudinal comparison. |
 | 2026-10-13 | **C6 alternate-form cohort calibration (partial):** the learning outcome report now groups paired pre/post checks by subject, skill, and learner grade band, with sample count, before/after means, gain standard deviation, and a 95% confidence interval. It rejects inconsistent paired-gain payloads and labels results descriptive; wider item coverage and actual beta-cohort calibration remain. |
+| 2026-10-13 | **C1+ review-return evidence (partial):** the learning outcome report compares each learner's first completed review in the reporting window with lesson returns in equal-length 7/14/30-day windows before the scheduled due date and after review completion. It excludes immature follow-up and accounts without a full baseline; the comparison is observational and has no non-review control group. |
+| 2026-10-13 | **C6 alternate-form evidence (partial):** pre/post checks now randomly assign the baseline to form A or B and use the opposite form for follow-up. The report compares the first recorded A/B score per learner, subject, skill, and phase, with group sizes, mean differences, and confidence intervals; actual cohort data is still needed to assess equivalence and gain reliability. |
+| 2026-10-13 | **C7.5 writing playbook (partial):** added six topic-matched writing scaffolds for unpacking a task, planning, claims, paragraph structure, evidence, and revision. Tutor guidance explicitly preserves learner authorship; C8 exports and reports surface heuristic writing cues for human review, not as a quality score. |
 | 2026-10-13 | **Global / age adaptation foundation:** added an optional preferred tutoring language to the student profile and tutor prompts; adult learners now receive an autonomy-respecting, non-childish teaching frame. Full UI localization and broader curriculum paths remain open. |
 | 2026-10-04 | **C6.8 science assessment depth:** added two explained offline questions in each of the eight C7.2 science scaffold areas, bringing each pilot area to three questions; broader science coverage and cohort calibration remain open. |
 | 2026-10-04 | **C6.9 science learning-gain pilot:** added parallel science question forms and enabled optional before/after checks for science topics with at least two items per form; gain is still an informal within-learner signal requiring cohort calibration. |

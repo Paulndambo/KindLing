@@ -4271,8 +4271,11 @@
   .lesson-mobile-tabs { display: flex; }
   .lesson-shell,
   .lesson-shell.path-collapsed {
+    --lesson-mobile-header-height: 69px;
+    --lesson-mobile-tabs-height: calc(57px + env(safe-area-inset-bottom, 0px));
     grid-template-columns: 1fr;
-    height: calc(100vh - 65px - 57px);
+    height: calc(100vh - var(--lesson-mobile-header-height) - var(--lesson-mobile-tabs-height));
+    height: calc(100dvh - var(--lesson-mobile-header-height) - var(--lesson-mobile-tabs-height));
     overflow: hidden;
   }
   .lesson-shell.path-collapsed .lesson-side {
@@ -4290,11 +4293,28 @@
   .lesson-shell[data-mobile-panel="chat"] .lesson-main,
   .lesson-shell[data-mobile-panel="tools"] .lesson-tools {
     display: flex;
-    height: calc(100vh - 65px - 57px);
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
   }
   .lesson-shell[data-mobile-panel="path"] .lesson-side,
   .lesson-shell[data-mobile-panel="tools"] .lesson-tools { overflow-y: auto; }
-  .lesson-shell[data-mobile-panel="chat"] .lesson-main { overflow: hidden; }
+  .lesson-shell[data-mobile-panel="chat"] .lesson-main {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .lesson-shell[data-mobile-panel="chat"] .chat-area {
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .lesson-shell,
+  .lesson-shell.path-collapsed {
+    --lesson-mobile-header-height: 65px;
+  }
 }
 
 @media (max-width: 640px) {

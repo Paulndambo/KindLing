@@ -56,8 +56,9 @@ import IndependencePanel, {
   IndependenceOfferCard,
 } from "./IndependencePanel";
 import "../../styles/lesson.css";
+import "../../styles/lesson-polish.css";
 
-export default function Lesson({ activeLesson, student, subjects }) {
+export default function Lesson({ activeLesson, student, subjects, onNavigate }) {
   const [accessibility, setAccessibility] = useState(() => {
     try {
       const saved = JSON.parse(
@@ -85,7 +86,14 @@ export default function Lesson({ activeLesson, student, subjects }) {
       [key]: !current[key],
     }));
   const [focusMode, setFocusMode] = useState(false);
-  const subjectName = activeLesson?.subject || "Computer Science";
+  const subjectObj = useMemo(
+    () =>
+      subjects?.find((s) => s.name === activeLesson?.subject) ||
+      subjects?.[0] ||
+      null,
+    [subjects, activeLesson?.subject]
+  );
+  const subjectName = subjectObj?.name || activeLesson?.subject || "";
   const requestedHomeworkWindow = Number(activeLesson?.homeworkWindowMinutes);
   const homeworkWindowMinutes = [15, 25, 40].includes(requestedHomeworkWindow)
     ? requestedHomeworkWindow
@@ -124,11 +132,6 @@ export default function Lesson({ activeLesson, student, subjects }) {
     activeLesson?.challengeSkill ||
     null;
   const challengeTarget = activeLesson?.challengeTarget || 3;
-
-  const subjectObj = useMemo(
-    () => subjects?.find((s) => s.name === subjectName) || null,
-    [subjects, subjectName]
-  );
 
   /** Parent topics (units) with nested subtopics (lessons). */
   const unitRecords = useMemo(() => {
@@ -553,6 +556,8 @@ export default function Lesson({ activeLesson, student, subjects }) {
     viewingArchiveId,
     isArchiveView,
     hasAi,
+    dailyCapReached,
+    dailyAiUsage,
     chatError,
     clearChatError,
     retryLastFailed,
@@ -868,6 +873,10 @@ export default function Lesson({ activeLesson, student, subjects }) {
         setHomeworkError("AI is not configured — I can't read this attachment yet.");
         return;
       }
+      if (dailyCapReached) {
+        setHomeworkError("Today's platform AI allowance is used up — resets at midnight UTC.");
+        return;
+      }
 
       setHomeworkBusy(true);
       try {
@@ -972,9 +981,16 @@ export default function Lesson({ activeLesson, student, subjects }) {
         });
       } catch (err) {
         console.error(err);
-        setHomeworkError(
-          err?.message || "Could not read that photo. Try again with better light."
-        );
+        if (
+          err?.code === "daily_ai_cap_reached" ||
+          /platform ai allowance is used up/i.test(err?.message || "")
+        ) {
+          setHomeworkError("");
+        } else {
+          setHomeworkError(
+            err?.message || "Could not read that photo. Try again with better light."
+          );
+        }
         reportError({
           kind: "lesson",
           code: "HOMEWORK_FLOW_FAIL",
@@ -988,6 +1004,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
     },
     [
       hasAi,
+      dailyCapReached,
       subjectName,
       topicName,
       conversationId,
@@ -1271,6 +1288,11 @@ export default function Lesson({ activeLesson, student, subjects }) {
           isLoadingVoice={isLoadingVoice}
           isListening={isListening}
           hasAi={hasAi}
+          dailyCapReached={dailyCapReached}
+          dailyAiUsage={dailyAiUsage}
+          onOpenAiSettings={
+            onNavigate ? () => onNavigate("settings") : undefined
+          }
           inputVal={inputVal}
           setInputVal={(v) => {
             lastInputWasVoiceRef.current = false;
@@ -1434,7 +1456,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
                 open
                 onExit={handleExitMultiStep}
                 onHint={handleMultiStepHint}
-                disabled={isStreaming || isSummarizing}
+                disabled={isStreaming || isSummarizing || dailyCapReached}
               />
             ) : null
           }
@@ -1463,13 +1485,17 @@ export default function Lesson({ activeLesson, student, subjects }) {
                 }}
                 tutorPulse={tutorPulse}
                 disabled={isStreaming || isSummarizing}
-                onShareWithTutor={async ({ text, type, num, den }) => {
-                  logManipulative("share", { type, num, den });
-                  noteInputModality("text");
-                  await sendMessage(
-                    `${text} What do you notice about this model?`
-                  );
-                }}
+                onShareWithTutor={
+                  dailyCapReached
+                    ? undefined
+                    : async ({ text, type, num, den }) => {
+                        logManipulative("share", { type, num, den });
+                        noteInputModality("text");
+                        await sendMessage(
+                          `${text} What do you notice about this model?`
+                        );
+                      }
+                }
               />
             ) : null
           }
@@ -1485,6 +1511,7 @@ export default function Lesson({ activeLesson, student, subjects }) {
           diffLabel={diffLabel}
           isStreaming={isStreaming || isSummarizing}
           hasAi={hasAi}
+          dailyCapReached={dailyCapReached}
           student={student}
           lessonGoals={lessonGoals}
           hasManipulatives={availableManipulatives.length > 0}

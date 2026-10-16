@@ -64,6 +64,8 @@ export async function probeApiHealth() {
 export function classifyFailure(err, { offline } = {}) {
   const raw = String(err?.message || err || "");
   const lower = raw.toLowerCase();
+  const errCode = String(err?.code || err?.data?.code || "").toLowerCase();
+  const usage = err?.usage || err?.data?.usage || null;
 
   if (offline || (typeof navigator !== "undefined" && navigator.onLine === false)) {
     return {
@@ -72,6 +74,26 @@ export function classifyFailure(err, { offline } = {}) {
       message:
         "Kindling can't reach the internet right now. Your chat is saved on this device — reconnect and try again.",
       recoverable: true,
+    };
+  }
+  if (
+    errCode === "daily_ai_cap_reached" ||
+    lower.includes("daily_ai_cap_reached") ||
+    lower.includes("platform ai allowance is used up")
+  ) {
+    const resetsAt = usage?.resetsAt || "midnight UTC";
+    const detail =
+      err?.data?.detail ||
+      (raw && !raw.startsWith("[object") ? raw : "") ||
+      `Today's platform AI allowance is used up. It resets at ${resetsAt}.`;
+    return {
+      code: "DAILY_AI_CAP_REACHED",
+      apiCode: "daily_ai_cap_reached",
+      title: "Today's AI allowance is used up",
+      message: detail,
+      usage,
+      resetsAt,
+      recoverable: false,
     };
   }
   if (

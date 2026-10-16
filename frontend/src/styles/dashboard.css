@@ -1,0 +1,1179 @@
+/* ==========================================================================
+   Dashboard polish layer
+   Scoped under #dashboard so it overrides index.css regardless of load order.
+   ========================================================================== */
+
+#dashboard {
+  --dash-radius: 20px;
+  --dash-radius-sm: 14px;
+  --dash-border: 1px solid rgba(31, 58, 52, 0.08);
+  --dash-shadow: 0 1px 2px rgba(31, 58, 52, 0.04), 0 8px 24px rgba(31, 58, 52, 0.05);
+  --dash-shadow-hover: 0 2px 4px rgba(31, 58, 52, 0.05), 0 16px 36px rgba(31, 58, 52, 0.1);
+  --tone-teal: #286b6d;
+  --tone-teal-bg: #e1efee;
+  --tone-pine: #1f3a34;
+  --tone-pine-bg: #e4ece8;
+  --tone-marigold: #b9791a;
+  --tone-marigold-bg: #fbf0d6;
+  --tone-berry: #c7484a;
+  --tone-berry-bg: #fbe8e7;
+}
+
+#dashboard .dash-wrap {
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: 32px clamp(16px, 3vw, 32px) 72px;
+}
+
+/* ---------- Entrance animation ---------- */
+@keyframes dash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+#dashboard .dash-wrap > *,
+#dashboard .snap-grid > *,
+#dashboard .dash-practice-grid > * {
+  animation: dash-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+#dashboard .dash-wrap > :nth-child(2) { animation-delay: 0.04s; }
+#dashboard .dash-wrap > :nth-child(3) { animation-delay: 0.08s; }
+#dashboard .dash-wrap > :nth-child(4) { animation-delay: 0.12s; }
+#dashboard .dash-wrap > :nth-child(5) { animation-delay: 0.16s; }
+#dashboard .snap-grid > :nth-child(2) { animation-delay: 0.08s; }
+#dashboard .snap-grid > :nth-child(3) { animation-delay: 0.14s; }
+#dashboard .snap-grid > :nth-child(4) { animation-delay: 0.2s; }
+
+/* ---------- Hero ---------- */
+#dashboard .dash-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 30px 32px;
+  margin-bottom: 20px;
+  color: #fff;
+  border: 0;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(243, 200, 104, 0.35), transparent 34%),
+    radial-gradient(circle at 8% 120%, rgba(62, 138, 143, 0.55), transparent 45%),
+    linear-gradient(125deg, #1f3a34 0%, #25483f 55%, #2c5048 100%);
+  box-shadow: 0 18px 44px rgba(31, 58, 52, 0.22);
+}
+
+#dashboard .dash-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(110deg, transparent 35%, #000 100%);
+  -webkit-mask-image: linear-gradient(110deg, transparent 35%, #000 100%);
+}
+
+#dashboard .dash-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+#dashboard .dash-hero-main {
+  min-width: 0;
+  align-items: center;
+  gap: 18px;
+}
+
+#dashboard .dash-hero h1,
+#dashboard .dash-hero h2 {
+  color: #fff;
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 2px 0 8px;
+}
+
+#dashboard .dash-hero .eyebrow {
+  color: var(--marigold-light);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+#dashboard .dash-hero-sub {
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 52ch;
+}
+
+#dashboard .dash-hero-sub strong {
+  color: #fff;
+}
+
+#dashboard .dash-avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  color: var(--pine);
+  border-radius: 20px;
+  background: linear-gradient(145deg, var(--marigold-light), var(--marigold));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+#dashboard .dash-hero-meta {
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+#dashboard .dash-goal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12.5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+}
+
+#dashboard .dash-goal-chip svg {
+  flex: none;
+  color: var(--marigold-light);
+}
+
+#dashboard .dash-goal-chip strong {
+  color: #fff;
+}
+
+#dashboard .dash-hero-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#dashboard .dash-hero-controls > .btn-ghost {
+  color: #fff;
+  padding: 8px 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.15s;
+}
+
+#dashboard .dash-hero-controls > .btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+#dashboard .dash-hero .week-pick {
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: none;
+}
+
+#dashboard .dash-hero .week-pick button {
+  color: rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+}
+
+#dashboard .dash-hero .week-pick button.active {
+  color: var(--pine);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+#dashboard .dash-hero .week-pick button:not(.active):hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- Next best action ---------- */
+#dashboard .nba-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: var(--dash-border);
+  border-left: 5px solid var(--marigold);
+  border-radius: var(--dash-radius);
+  background: linear-gradient(105deg, #fff8e6 0%, #fff 60%);
+  box-shadow: var(--dash-shadow);
+}
+
+#dashboard .nba-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  border-radius: 15px;
+  background: linear-gradient(145deg, var(--marigold), #d4861a);
+  box-shadow: 0 6px 14px rgba(228, 163, 42, 0.4);
+}
+
+#dashboard .nba-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+#dashboard .nba-card .eyebrow {
+  color: var(--tone-marigold);
+}
+
+#dashboard .nba-title {
+  margin: 0 0 3px;
+  font-size: clamp(18px, 2vw, 22px);
+  overflow-wrap: anywhere;
+}
+
+#dashboard .nba-cta {
+  flex: none;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.22);
+}
+
+#dashboard .nba-cta svg {
+  transition: transform 0.15s;
+}
+
+#dashboard .nba-cta:hover svg {
+  transform: translateX(3px);
+}
+
+/* ---------- Stat cards ---------- */
+#dashboard .snap-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+#dashboard .snap-card.dash-stat {
+  --tone: var(--tone-teal);
+  --tone-bg: var(--tone-teal-bg);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 20px 22px 18px;
+  border: var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: #fff;
+  box-shadow: var(--dash-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#dashboard .snap-card.dash-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--tone);
+  opacity: 0.85;
+}
+
+#dashboard .dash-stat--pine { --tone: var(--tone-pine); --tone-bg: var(--tone-pine-bg); }
+#dashboard .dash-stat--marigold { --tone: var(--tone-marigold); --tone-bg: var(--tone-marigold-bg); }
+#dashboard .dash-stat--berry { --tone: var(--tone-berry); --tone-bg: var(--tone-berry-bg); }
+
+#dashboard .snap-card.dash-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--dash-shadow-hover);
+}
+
+#dashboard .dash-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+#dashboard .dash-stat-top .eyebrow {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+#dashboard .dash-stat-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--tone);
+  border-radius: 11px;
+  background: var(--tone-bg);
+}
+
+#dashboard .snap-card.dash-stat .val {
+  font-size: clamp(24px, 2.4vw, 31px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+#dashboard .snap-card.dash-stat .cap {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* ---------- Status banner ---------- */
+#dashboard .dash-live-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 11px 16px;
+  color: var(--teal);
+  font-size: 13px;
+  border: 1px solid rgba(62, 138, 143, 0.16);
+  border-radius: 999px;
+  background: var(--teal-pale);
+}
+
+#dashboard .dash-live-banner::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3aa572;
+  box-shadow: 0 0 0 4px rgba(58, 165, 114, 0.22);
+}
+
+/* ---------- Cards / panels ---------- */
+#dashboard .panel,
+#dashboard .academic-card,
+#dashboard .dash-plan-panel {
+  padding: clamp(18px, 2.4vw, 28px);
+  border: var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: #fff;
+  box-shadow: var(--dash-shadow);
+}
+
+#dashboard .panel h2,
+#dashboard .academic-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+#dashboard .dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+  align-items: start;
+}
+
+#dashboard .dash-grid-equal {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#dashboard .dash-grid > .panel {
+  min-width: 0;
+}
+
+#dashboard .dash-practice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+#dashboard .dash-practice-grid > * {
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#dashboard .dash-practice-grid > *:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--dash-shadow-hover);
+}
+
+#dashboard .dash-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: 16px;
+}
+
+#dashboard .dash-panel-head h2 {
+  margin: 0;
+}
+
+#dashboard .dash-panel-head > div {
+  flex-wrap: wrap;
+}
+
+#dashboard .dash-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+/* ---------- Learning profile ---------- */
+#dashboard .academic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+#dashboard .academic-item {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 58, 52, 0.06);
+  border-radius: var(--dash-radius-sm);
+  background: linear-gradient(160deg, #fafcfb, #f3f7f5);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+#dashboard .academic-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(62, 138, 143, 0.35);
+}
+
+#dashboard .academic-item b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--teal);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#dashboard .academic-item span {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Mastery ---------- */
+#dashboard .mastery-map {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+#dashboard .dash-mastery-row {
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 58, 52, 0.06);
+  border-radius: var(--dash-radius-sm);
+  background: #fafcfb;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+#dashboard .dash-mastery-row:hover {
+  background: #fff;
+  border-color: rgba(62, 138, 143, 0.3);
+}
+
+#dashboard .dash-mastery-row .lbl {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+#dashboard .dash-level-track {
+  height: 8px;
+  margin-top: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--pine-pale);
+}
+
+#dashboard .dash-level-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), #3aa572);
+  transition: width 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+#dashboard .note-card {
+  border-radius: var(--dash-radius-sm);
+  line-height: 1.55;
+}
+
+/* ---------- Insights / activity ---------- */
+#dashboard .dash-insight-list li {
+  padding: 12px 14px;
+  border-radius: var(--dash-radius-sm);
+  transition: background 0.15s;
+}
+
+#dashboard .dash-insight-list li:hover {
+  background: #f6faf8;
+}
+
+#dashboard .dash-activity-item {
+  border-radius: var(--dash-radius-sm);
+}
+
+#dashboard .dash-plan-item {
+  border-radius: var(--dash-radius-sm);
+  transition: background 0.15s, transform 0.15s;
+}
+
+#dashboard .dash-plan-item:hover {
+  background: #f6faf8;
+  transform: translateX(3px);
+}
+
+#dashboard .dash-plan-item:hover .dash-plan-arrow {
+  color: var(--teal);
+  transform: translateX(3px);
+}
+
+#dashboard .dash-plan-arrow {
+  transition: transform 0.15s, color 0.15s;
+}
+
+#dashboard .dash-error {
+  border-radius: var(--dash-radius-sm);
+}
+
+/* ---------- Focus visibility ---------- */
+#dashboard button:focus-visible,
+#dashboard a:focus-visible {
+  outline: 3px solid rgba(40, 107, 109, 0.45);
+  outline-offset: 2px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1080px) {
+  #dashboard .snap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #dashboard .dash-hero {
+    grid-template-columns: 1fr;
+  }
+
+  #dashboard .dash-hero-meta {
+    max-width: none;
+    align-items: flex-start;
+  }
+
+  #dashboard .dash-hero-controls {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  #dashboard .dash-grid,
+  #dashboard .dash-grid-equal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  #dashboard .dash-wrap {
+    padding-top: 20px;
+    padding-bottom: 56px;
+  }
+
+  #dashboard .dash-hero {
+    padding: 22px 20px;
+    border-radius: 22px;
+  }
+
+  #dashboard .dash-practice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #dashboard .nba-card {
+    flex-wrap: wrap;
+    padding: 18px;
+  }
+
+  #dashboard .nba-card-main {
+    flex-basis: calc(100% - 70px);
+  }
+
+  #dashboard .nba-cta {
+    width: 100%;
+  }
+
+  #dashboard .dash-live-banner {
+    border-radius: var(--dash-radius-sm);
+    align-items: flex-start;
+  }
+
+  #dashboard .dash-live-banner::before {
+    margin-top: 5px;
+  }
+}
+
+@media (max-width: 520px) {
+  #dashboard .snap-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  #dashboard .dash-hero-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  #dashboard .dash-hero-controls,
+  #dashboard .dash-hero-controls .week-pick {
+    width: 100%;
+  }
+
+  #dashboard .dash-hero .week-pick button {
+    flex: 1;
+  }
+
+  #dashboard .academic-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dashboard .dash-wrap > *,
+  #dashboard .snap-grid > *,
+  #dashboard .dash-practice-grid > * {
+    animation: none;
+  }
+
+  #dashboard * {
+    transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   Dashboard cards: review spark, spark challenge, week focus, homework,
+   family digest. Each gets its own accent so the practice grid scans quickly.
+   ========================================================================== */
+
+#dashboard .review-spark-card,
+#dashboard .spark-challenge-card,
+#dashboard .week-focus-card,
+#dashboard .dash-digest-panel {
+  --accent: var(--tone-teal);
+  --accent-bg: var(--tone-teal-bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 24px;
+  border: var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: #fff;
+}
+
+/* Colored top rail */
+#dashboard .review-spark-card::before,
+#dashboard .week-focus-card::before,
+#dashboard .dash-digest-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--accent);
+}
+
+#dashboard .review-spark-card { --accent: var(--marigold); --accent-bg: var(--tone-marigold-bg); }
+#dashboard .week-focus-card { --accent: var(--tone-teal); --accent-bg: var(--tone-teal-bg); }
+#dashboard .homework-window-card { --accent: var(--tone-pine); --accent-bg: var(--tone-pine-bg); }
+#dashboard .dash-digest-panel { --accent: var(--tone-berry); --accent-bg: var(--tone-berry-bg); }
+
+/* Shared card headings + icon chips */
+#dashboard .review-spark-icon,
+#dashboard .week-focus-icon,
+#dashboard .spark-challenge-icon {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent-bg);
+}
+
+#dashboard .review-spark-head,
+#dashboard .week-focus-head,
+#dashboard .spark-challenge-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+}
+
+#dashboard .review-spark-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+#dashboard .review-spark-card .eyebrow,
+#dashboard .week-focus-head .eyebrow,
+#dashboard .spark-challenge-card .eyebrow {
+  margin: 0 0 3px;
+  color: var(--accent);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+}
+
+#dashboard .review-spark-card h3,
+#dashboard .week-focus-head h3,
+#dashboard .spark-challenge-card h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+#dashboard .review-spark-sub,
+#dashboard .week-focus-hint,
+#dashboard .spark-challenge-body,
+#dashboard .review-spark-empty {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#dashboard .week-focus-hint {
+  margin: 0;
+}
+
+/* ---------- Review spark ---------- */
+#dashboard .review-spark-refresh {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  border: 1px solid rgba(31, 58, 52, 0.1);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#dashboard .review-spark-refresh:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+#dashboard .review-spark-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#dashboard .review-spark-row {
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid rgba(31, 58, 52, 0.07);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--dash-radius-sm);
+  background: #fffdf8;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#dashboard .review-spark-row:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 14px rgba(31, 58, 52, 0.07);
+}
+
+#dashboard .review-spark-row.upcoming {
+  border-left-color: rgba(31, 58, 52, 0.18);
+  background: #fafcfb;
+}
+
+#dashboard .review-spark-row-main strong,
+#dashboard .review-spark-meta {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#dashboard .review-spark-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  box-shadow: 0 3px 8px rgba(31, 58, 52, 0.18);
+}
+
+#dashboard .review-spark-start svg {
+  transition: transform 0.15s;
+}
+
+#dashboard .review-spark-start:hover svg {
+  transform: translateX(3px);
+}
+
+#dashboard .review-spark-upcoming {
+  padding-top: 4px;
+}
+
+#dashboard .review-spark-upcoming-tag {
+  border-radius: 999px;
+}
+
+/* ---------- Spark challenge (dark accent card) ---------- */
+#dashboard .spark-challenge-card {
+  --accent: var(--marigold-light);
+  --accent-bg: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(243, 200, 104, 0.3), transparent 45%),
+    linear-gradient(140deg, #286b6d 0%, #1f4f55 100%);
+}
+
+#dashboard .spark-challenge-card h3,
+#dashboard .spark-challenge-meta strong {
+  color: #fff;
+}
+
+#dashboard .spark-challenge-body,
+#dashboard .spark-challenge-meta span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+#dashboard .spark-challenge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--dash-radius-sm);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+#dashboard .spark-challenge-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--marigold-light);
+}
+
+#dashboard .spark-challenge-meta > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#dashboard .spark-challenge-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  color: var(--pine);
+  font-weight: 700;
+  border: 0;
+  border-radius: 999px;
+  background: var(--marigold-light);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+
+#dashboard .spark-challenge-start:hover {
+  transform: translateY(-1px);
+  background: #fff;
+}
+
+/* ---------- Week focus + homework + inputs ---------- */
+#dashboard .week-focus-label,
+#dashboard .homework-window-field,
+#dashboard .homework-window-label {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#dashboard .week-focus-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#dashboard .week-focus-row .week-focus-input {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+#dashboard .week-focus-input,
+#dashboard .dash-digest-email-row input {
+  padding: 11px 14px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  border: 1.5px solid rgba(31, 58, 52, 0.14);
+  border-radius: 12px;
+  background: #fafcfb;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+#dashboard .week-focus-input:focus,
+#dashboard .dash-digest-email-row input:focus {
+  outline: none;
+  border-color: var(--teal);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(62, 138, 143, 0.15);
+}
+
+#dashboard .week-focus-save {
+  padding: 10px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+#dashboard .target-date-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(31, 58, 52, 0.16);
+}
+
+#dashboard .target-date-row {
+  align-items: flex-end;
+}
+
+#dashboard .target-countdown {
+  margin: 0;
+  padding: 10px 14px;
+  color: var(--tone-teal);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 12px;
+  background: var(--tone-teal-bg);
+}
+
+#dashboard .week-focus-error {
+  margin: 0;
+  color: var(--berry);
+  font-size: 12.5px;
+}
+
+#dashboard .homework-window-card {
+  gap: 14px;
+}
+
+#dashboard .homework-window-field {
+  display: grid;
+  gap: 6px;
+}
+
+#dashboard .homework-window-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+#dashboard .homework-window-option {
+  padding: 11px 8px;
+  color: var(--ink-soft);
+  border: 1.5px solid rgba(31, 58, 52, 0.12);
+  border-radius: 12px;
+  background: #fafcfb;
+  transition: all 0.15s;
+}
+
+#dashboard .homework-window-option:hover {
+  border-color: var(--teal);
+}
+
+#dashboard .homework-window-option.selected {
+  color: #fff;
+  border-color: var(--pine);
+  background: var(--pine);
+  box-shadow: 0 4px 10px rgba(31, 58, 52, 0.25);
+}
+
+#dashboard .homework-window-start {
+  padding: 13px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--pine-light), var(--pine));
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.25);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#dashboard .homework-window-start:hover {
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(31, 58, 52, 0.3);
+}
+
+/* ---------- Family digest ---------- */
+#dashboard .dash-digest-panel {
+  display: block;
+  margin-top: 18px;
+}
+
+#dashboard .dash-digest-panel > p {
+  max-width: 78ch;
+}
+
+#dashboard .dash-digest-prefs {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  padding: 16px;
+  border-radius: var(--dash-radius-sm);
+  background: #f7faf8;
+  border: 1px solid rgba(31, 58, 52, 0.06);
+}
+
+#dashboard .dash-digest-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  border: 1px solid rgba(31, 58, 52, 0.12);
+  border-radius: 999px;
+  background: #fff;
+}
+
+#dashboard .dash-digest-email-row {
+  display: flex;
+  align-items: flex-end;
+  flex: 1 1 280px;
+  gap: 10px;
+  min-width: 0;
+}
+
+#dashboard .dash-digest-email-row label {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#dashboard .dash-digest-email-row input {
+  width: 100%;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+#dashboard .dash-digest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+#dashboard .dash-digest-actions .btn-primary {
+  border-radius: 999px;
+}
+
+#dashboard .dash-digest-body {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#dashboard .dash-digest-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+#dashboard .dash-digest-stats li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--tone-teal-bg);
+}
+
+@media (max-width: 720px) {
+  #dashboard .review-spark-card,
+  #dashboard .spark-challenge-card,
+  #dashboard .week-focus-card,
+  #dashboard .dash-digest-panel {
+    padding: 18px;
+  }
+
+  #dashboard .spark-challenge-row,
+  #dashboard .spark-challenge-start,
+  #dashboard .week-focus-save {
+    width: 100%;
+  }
+
+  #dashboard .spark-challenge-start,
+  #dashboard .week-focus-save {
+    justify-content: center;
+  }
+
+  #dashboard .review-spark-start {
+    margin-left: auto;
+  }
+
+  #dashboard .dash-digest-email-row {
+    flex-wrap: wrap;
+  }
+
+  #dashboard .dash-digest-prefs {
+    padding: 12px;
+  }
+}

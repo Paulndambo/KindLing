@@ -5359,11 +5359,12 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
+  height: calc(57px + env(safe-area-inset-bottom, 0px));
   background: rgba(246, 242, 233, 0.97);
   backdrop-filter: blur(12px);
   border-top: 1px solid rgba(31, 58, 52, .1);
   z-index: 50;
-  padding: env(safe-area-inset-bottom, 0) 0 0;
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
 }
 
 .lesson-mobile-tabs button {
@@ -5373,7 +5374,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 10px 8px 12px;
+  padding: 8px;
   font-size: 11px;
   font-weight: 700;
   color: var(--ink-soft);

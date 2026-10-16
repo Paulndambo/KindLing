@@ -12,7 +12,11 @@ from django.db.models import Min
 from django.utils import timezone
 
 from curriculum.models import TopicSkillLink
-from learning.models import LearningEvent, LessonSession, SkillReviewAttempt
+from learning.models import (
+    LearningEvent,
+    LessonSession,
+    SkillReviewAttempt,
+)
 
 
 def grade_band(value: str | None) -> str:
@@ -130,17 +134,88 @@ def _build_activation_retention(*, start, now) -> list[dict[str, Any]]:
     return result
 
 
+def _build_review_return_association(*, start, now) -> list[dict[str, Any]]:
+    """Compare mature post-review return windows with the same learners' prior windows."""
+    windows = (7, 14, 30)
+    first_attempt_by_student = {}
+    attempts = (
+        SkillReviewAttempt.objects.filter(
+            profile__student__isnull=False,
+            completed_at__gte=start,
+            completed_at__lte=now,
+        )
+        .select_related("profile__student")
+        .order_by("completed_at", "id")
+    )
+    for attempt in attempts.iterator():
+        student_id = attempt.profile.student_id
+        first_attempt_by_student.setdefault(student_id, attempt)
+    if not first_attempt_by_student:
+        return []
+
+    earliest_window_start = min(
+        attempt.scheduled_due_at - timedelta(days=max(windows))
+        for attempt in first_attempt_by_student.values()
+    )
+    sessions_by_student: dict[int, list] = defaultdict(list)
+    for student_id, started_at in LessonSession.objects.filter(
+        student_id__in=first_attempt_by_student,
+        started_at__gte=earliest_window_start,
+        started_at__lte=now,
+    ).values_list("student_id", "started_at").iterator():
+        sessions_by_student[student_id].append(started_at)
+
+    results = []
+    for days in windows:
+        eligible = before_returned = after_returned = 0
+        for student_id, attempt in first_attempt_by_student.items():
+            student = attempt.profile.student
+            baseline_start = attempt.scheduled_due_at - timedelta(days=days)
+            followup_end = attempt.completed_at + timedelta(days=days)
+            if student.created_at > baseline_start or now < followup_end:
+                continue
+            eligible += 1
+            learner_sessions = sessions_by_student.get(student_id, ())
+            before_returned += int(
+                any(baseline_start <= session_at < attempt.scheduled_due_at for session_at in learner_sessions)
+            )
+            after_returned += int(
+                any(attempt.completed_at < session_at <= followup_end for session_at in learner_sessions)
+            )
+        before_rate = round(100 * before_returned / eligible, 1) if eligible else None
+        after_rate = round(100 * after_returned / eligible, 1) if eligible else None
+        results.append(
+            {
+                "windowDays": days,
+                "eligibleLearners": eligible,
+                "returnedBefore": before_returned,
+                "returnedAfter": after_returned,
+                "returnRateBeforePct": before_rate,
+                "returnRateAfterPct": after_rate,
+                "changePoints": (
+                    round(after_rate - before_rate, 1)
+                    if before_rate is not None and after_rate is not None
+                    else None
+                ),
+            }
+        )
+    return results
+
+
 def build_learning_outcome_report(*, days: int = 90, now=None) -> dict[str, Any]:
     """Summarize outcomes by subject and grade band, without learner identifiers."""
     now = now or timezone.now()
     start = now - timedelta(days=max(1, int(days)))
     rows: dict = {}
     gain_rows: dict[tuple[str, str, str], list[tuple[float, float]]] = defaultdict(list)
+    first_form_score_by_learner: dict[
+        tuple[int, str, str, str, str], tuple[str, float]
+    ] = {}
     events = LearningEvent.objects.filter(
         student__isnull=False,
         timestamp__gte=start,
         event_type__in=("assessment.completed", "independence.completed"),
-    ).select_related("student")
+    ).select_related("student").order_by("timestamp", "id")
     session_ids = set(events.values_list("session_id", flat=True))
     session_subjects = dict(
         LessonSession.objects.filter(session_id__in=session_ids)
@@ -165,6 +240,17 @@ def build_learning_outcome_report(*, days: int = 90, now=None) -> dict[str, Any]
                 percent = None
             if percent is not None and 0 <= percent <= 100:
                 row["assessmentPercents"].append(percent)
+                phase = str(payload.get("purpose") or "")
+                form = str(payload.get("form") or "").upper()
+                if phase in ("pre", "post") and form in ("A", "B"):
+                    form_key = (
+                        event.student_id,
+                        band,
+                        subject or "Unspecified",
+                        str(payload.get("skillSlug") or "unspecified"),
+                        phase,
+                    )
+                    first_form_score_by_learner.setdefault(form_key, (form, percent))
             try:
                 gain = float(payload.get("gainPoints"))
             except (TypeError, ValueError):
@@ -286,6 +372,43 @@ def build_learning_outcome_report(*, days: int = 90, now=None) -> dict[str, Any]
             }
         )
 
+    form_groups: dict[tuple[str, str, str, str], dict[str, list[float]]] = defaultdict(
+        lambda: {"A": [], "B": []}
+    )
+    for (_, band, subject, skill, phase), (form, score) in first_form_score_by_learner.items():
+        form_groups[(band, subject, skill, phase)][form].append(score)
+
+    form_balance = []
+    for (band, subject, skill, phase), scores_by_form in sorted(form_groups.items()):
+        scores_a = scores_by_form["A"]
+        scores_b = scores_by_form["B"]
+        mean_a = sum(scores_a) / len(scores_a) if scores_a else None
+        mean_b = sum(scores_b) / len(scores_b) if scores_b else None
+        margin = None
+        if len(scores_a) > 1 and len(scores_b) > 1:
+            variance_a = sum((score - mean_a) ** 2 for score in scores_a) / (len(scores_a) - 1)
+            variance_b = sum((score - mean_b) ** 2 for score in scores_b) / (len(scores_b) - 1)
+            margin = 1.96 * sqrt(variance_a / len(scores_a) + variance_b / len(scores_b))
+        difference = mean_b - mean_a if mean_a is not None and mean_b is not None else None
+        form_balance.append(
+            {
+                "gradeBand": band,
+                "subject": subject,
+                "skillSlug": skill,
+                "phase": phase,
+                "formACount": len(scores_a),
+                "formBCount": len(scores_b),
+                "formAMeanPct": round(mean_a, 1) if mean_a is not None else None,
+                "formBMeanPct": round(mean_b, 1) if mean_b is not None else None,
+                "formBDifferencePoints": round(difference, 1) if difference is not None else None,
+                "differenceCi95Points": (
+                    [round(difference - margin, 1), round(difference + margin, 1)]
+                    if difference is not None and margin is not None
+                    else None
+                ),
+            }
+        )
+
     pre_post_calibration = []
     for (band, subject, skill), pairs in sorted(gain_rows.items()):
         count = len(pairs)
@@ -323,6 +446,10 @@ def build_learning_outcome_report(*, days: int = 90, now=None) -> dict[str, Any]
         "through": now.isoformat(),
         "gradeBandNote": "Grade bands are broad proxies from the learner's self-reported grade, not verified ages.",
         "activationRetention": _build_activation_retention(start=start, now=now),
+        "reviewReturnAssociation": _build_review_return_association(
+            start=start, now=now
+        ),
+        "formBalance": form_balance,
         "prePostCalibration": pre_post_calibration,
         "groups": summaries,
     }
@@ -406,6 +533,56 @@ def render_learning_outcome_report(report: dict[str, Any]) -> str:
         )
     if not report["prePostCalibration"]:
         lines.append("| No alternate-form pre/post pairs in this report window | — | — | — | — | — | — | — | — |")
+    lines.append("")
+    lines.extend(
+        [
+            "## Counterbalanced A/B form comparison",
+            "",
+            "Baseline form assignment is randomized and the follow-up uses the opposite form. This table compares A and B score means separately at pre and post phase, grouped by subject, skill, and learner band. The 95% interval is a normal-approximation interval for the difference in means; small samples and item differences still limit equivalence claims.",
+            "",
+            "| Grade band | Subject | Skill | Phase | Form A (n, mean) | Form B (n, mean) | B − A points | 95% CI |",
+            "|---|---|---|---|---:|---:|---:|---:|",
+        ]
+    )
+    for row in report["formBalance"]:
+        mean_a = f"{row['formAMeanPct']}%" if row["formAMeanPct"] is not None else "—"
+        mean_b = f"{row['formBMeanPct']}%" if row["formBMeanPct"] is not None else "—"
+        difference = row["formBDifferencePoints"]
+        ci = row["differenceCi95Points"]
+        ci_text = f"[{ci[0]}, {ci[1]}]" if ci is not None else "—"
+        difference_text = f"{difference:+.1f}" if difference is not None else "—"
+        lines.append(
+            f"| {row['gradeBand']} | {row['subject']} | {row['skillSlug']} | {row['phase']} | "
+            f"{row['formACount']}, {mean_a} | {row['formBCount']}, {mean_b} | "
+            f"{difference_text} | {ci_text} |"
+        )
+    if not report["formBalance"]:
+        lines.append("| No counterbalanced form scores in this report window | — | — | — | — | — | — | — |")
+    lines.append("")
+    lines.extend(
+        [
+            "## Return after a completed spaced review",
+            "",
+            "For each learner's first completed review in this report window, this compares whether they started another lesson in the N days before the scheduled due time with whether they started one in the N days after completing the review. Only learners whose account existed for the full baseline and whose follow-up window is complete are included. This within-learner association is observational: it has no non-review control group and cannot show that the review caused a return.",
+            "",
+            "| Window | Learners | Returned before due | Before rate | Returned after review | After rate | Change (points) |",
+            "|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for row in report["reviewReturnAssociation"]:
+        before = row["returnRateBeforePct"]
+        after = row["returnRateAfterPct"]
+        change = row["changePoints"]
+        lines.append(
+            f"| {row['windowDays']} days | {row['eligibleLearners']} | "
+            f"{row['returnedBefore']} | {f'{before}%' if before is not None else '—'} | "
+            f"{row['returnedAfter']} | {f'{after}%' if after is not None else '—'} | "
+            f"{f'{change:+.1f}' if change is not None else '—'} |"
+        )
+    if not report["reviewReturnAssociation"] or not any(
+        row["eligibleLearners"] for row in report["reviewReturnAssociation"]
+    ):
+        lines.append("| No review-return windows have complete observation yet | — | — | — | — | — | — |")
     lines.append("")
     lines.extend(["", "## Review recall by planned interval", ""])
     for group in report["groups"]:

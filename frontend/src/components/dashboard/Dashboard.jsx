@@ -31,15 +31,16 @@ import WeekFocusCard from "./WeekFocusCard";
 import SparkChallengeCard from "./SparkChallengeCard";
 import HomeworkWindowCard from "./HomeworkWindowCard";
 import { pickSparkChallengeCandidate } from "../../services/learning/sparkChallenge";
+import "../../styles/dashboard.css";
 
-function StatCard({ eyebrow, value, cap, icon: Icon }) {
+function StatCard({ eyebrow, value, cap, icon: Icon, tone = "teal" }) {
   return (
-    <div className="snap-card dash-stat">
+    <div className={`snap-card dash-stat dash-stat--${tone}`}>
       <div className="dash-stat-top">
         <span className="eyebrow">{eyebrow}</span>
         {Icon && (
           <span className="dash-stat-icon">
-            <Icon size={15} strokeWidth={2} />
+            <Icon size={16} strokeWidth={2} />
           </span>
         )}
       </div>
@@ -543,9 +544,12 @@ export default function Dashboard({
             role="region"
             aria-label="Suggested next step"
           >
+            <span className="nba-icon" aria-hidden="true">
+              <Flame size={22} />
+            </span>
             <div className="nba-card-main">
               <p className="eyebrow">A good next step</p>
-          <h2 className="nba-title">{topNba.label}</h2>
+              <h2 className="nba-title">{topNba.label}</h2>
               <p className="nba-reason">{topNba.reason}</p>
             </div>
             <button
@@ -577,6 +581,7 @@ export default function Dashboard({
                 : stats.sessions?.cap || "—"
             }
             icon={BookOpen}
+            tone="teal"
           />
           <StatCard
             eyebrow={
@@ -597,6 +602,7 @@ export default function Dashboard({
             icon={
               hasData && insights?.stats?.accuracy != null ? TrendingUp : Clock
             }
+            tone="pine"
           />
           <StatCard
             eyebrow={
@@ -617,6 +623,7 @@ export default function Dashboard({
             icon={
               hasData && profile?.behavior?.hintRate != null ? Sparkles : Flame
             }
+            tone="marigold"
           />
           <StatCard
             eyebrow="Focus skill"
@@ -631,6 +638,7 @@ export default function Dashboard({
               "Start a lesson"
             }
             icon={Target}
+            tone="berry"
           />
         </div>
 

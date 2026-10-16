@@ -7,6 +7,7 @@ import { buildAgeAwarePolicyBlock } from "./safety";
 import { buildVisualPromptHint } from "./learning/manipulatives";
 import { buildMathScaffoldPromptBlock } from "./learning/mathScaffoldPacks";
 import { buildScienceScaffoldPromptBlock } from "./learning/scienceScaffoldPacks";
+import { buildWritingScaffoldPromptBlock } from "./learning/writingScaffoldPacks";
 import {
   buildLadderTutorBlock,
   buildLadderEnterMessage,
@@ -287,6 +288,10 @@ export function buildSystemPrompt(
     subject: subjectName,
     topic: topicName,
   });
+  const writingScaffoldBlock = buildWritingScaffoldPromptBlock({
+    subject: subjectName,
+    topic: topicName,
+  });
   const homeworkWindowBlock = [15, 25, 40].includes(Number(options.homeworkWindowMinutes))
     ? `Focused homework window (${Number(options.homeworkWindowMinutes)} minutes):
 - Help the learner make useful progress on the homework they describe or attach. Start with one manageable next step and keep the exchange focused.
@@ -514,6 +519,7 @@ ${goalStr ? `- Primary learning goal: ${goalStr}.` : ""}
 ${topicIntentBlock}
 ${mathScaffoldBlock}
 ${scienceScaffoldBlock}
+${writingScaffoldBlock}
 ${homeworkWindowBlock}
 
 Regional & Curriculum Adaptation Instructions:

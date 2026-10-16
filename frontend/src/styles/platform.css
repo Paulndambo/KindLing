@@ -1,0 +1,727 @@
+/* ==========================================================================
+   Platform-wide UI/UX polish layer
+   Scoped under .kdl so it overrides index.css regardless of async chunk order.
+   Covers: global shell, TopNav, mobile drawer, Overview landing, Settings,
+   Support, LegalPage, AuthModal, NewSubjectModal, and OnboardingModal.
+   ========================================================================== */
+
+.kdl {
+  --p-radius: 20px;
+  --p-radius-sm: 14px;
+  --p-border: 1px solid rgba(31, 58, 52, 0.08);
+  --p-shadow: 0 1px 2px rgba(31, 58, 52, 0.04), 0 8px 24px rgba(31, 58, 52, 0.05);
+  --p-shadow-hover: 0 2px 4px rgba(31, 58, 52, 0.05), 0 18px 40px rgba(31, 58, 52, 0.11);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -15%, rgba(228, 163, 42, 0.1), transparent 70%),
+    var(--parchment);
+}
+
+@keyframes kdl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes kdl-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Global buttons ---------- */
+.kdl .btn-primary,
+.kdl .btn-ghost,
+.kdl .cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.18s, box-shadow 0.18s, background 0.18s, border-color 0.18s;
+}
+
+.kdl .btn-primary {
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.2);
+}
+
+.kdl .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(31, 58, 52, 0.28);
+}
+
+.kdl .cta-btn {
+  box-shadow: 0 6px 16px rgba(228, 163, 42, 0.35);
+}
+
+.kdl .cta-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(228, 163, 42, 0.45);
+}
+
+/* ---------- Top navigation ---------- */
+.kdl .topnav {
+  padding: 12px clamp(16px, 3vw, 36px);
+  background: rgba(246, 242, 233, 0.88);
+  backdrop-filter: saturate(140%) blur(16px);
+  -webkit-backdrop-filter: saturate(140%) blur(16px);
+  border-bottom: 1px solid rgba(31, 58, 52, 0.08);
+  box-shadow: 0 4px 20px rgba(31, 58, 52, 0.035);
+}
+
+.kdl .navtabs {
+  padding: 4px;
+  border: 1px solid rgba(31, 58, 52, 0.07);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 2px rgba(31, 58, 52, 0.04);
+}
+
+.kdl .navtabs button.active {
+  box-shadow: 0 4px 12px rgba(31, 58, 52, 0.22);
+}
+
+.kdl .navtabs button:not(.active):not(:disabled):hover {
+  background: rgba(31, 58, 52, 0.06);
+}
+
+.kdl .navtabs button:disabled,
+.kdl .navtabs button.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kdl .cta-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+.kdl .student-badge {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(31, 58, 52, 0.1);
+  box-shadow: 0 2px 8px rgba(31, 58, 52, 0.04);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.kdl .student-badge:hover {
+  transform: translateY(-1px);
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(31, 58, 52, 0.08);
+}
+
+.kdl .student-badge .avatar-icon {
+  background: linear-gradient(145deg, var(--marigold-light), var(--marigold));
+  color: var(--pine);
+}
+
+/* Mobile drawer */
+.kdl .mobile-drawer-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.kdl .mobile-drawer {
+  border-left: 1px solid rgba(31, 58, 52, 0.1);
+  box-shadow: -20px 0 50px rgba(31, 58, 52, 0.22);
+}
+
+.kdl .mobile-nav-item {
+  border-radius: 12px;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.kdl .mobile-nav-item:disabled,
+.kdl .mobile-nav-item.is-locked {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.kdl .mobile-nav-item.active {
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.2);
+}
+
+/* ==========================================================================
+   Overview (landing) screen
+   ========================================================================== */
+
+#overview > * {
+  animation: kdl-fade-up 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+#overview > :nth-child(2) { animation-delay: 0.06s; }
+#overview > :nth-child(3) { animation-delay: 0.12s; }
+#overview > :nth-child(4) { animation-delay: 0.16s; }
+
+#overview .hero {
+  gap: clamp(28px, 4vw, 56px);
+  padding: clamp(36px, 6vw, 76px) clamp(18px, 4vw, 40px) 44px;
+}
+
+#overview .hero h1 {
+  letter-spacing: -0.025em;
+}
+
+#overview .hero h1 em {
+  position: relative;
+  display: inline-block;
+  padding-inline: 2px;
+  background: linear-gradient(180deg, transparent 62%, rgba(228, 163, 42, 0.26) 62%);
+  border-radius: 4px;
+}
+
+#overview .hero-note {
+  display: inline-flex;
+  padding: 8px 14px;
+  border: 1px solid rgba(31, 58, 52, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+#overview .hero-note .dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: #3aa572;
+  box-shadow: 0 0 0 4px rgba(58, 165, 114, 0.2);
+}
+
+#overview .path-card {
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 95% 5%, rgba(243, 200, 104, 0.28), transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(62, 138, 143, 0.45), transparent 50%),
+    linear-gradient(135deg, #1f3a34 0%, #26483f 100%);
+  box-shadow: 0 24px 56px rgba(31, 58, 52, 0.24);
+}
+
+/* Stat strip as elevated 3-card row */
+#overview .stat-strip {
+  padding: 16px clamp(18px, 4vw, 40px);
+  gap: 18px;
+  border: 0;
+}
+
+#overview .stat-strip > div {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 26px;
+  border: var(--p-border);
+  border-radius: var(--p-radius);
+  background: #fff;
+  box-shadow: var(--p-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#overview .stat-strip > div::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--teal);
+}
+#overview .stat-strip > div:nth-child(2)::before { background: var(--marigold); }
+#overview .stat-strip > div:nth-child(3)::before { background: var(--pine); }
+
+#overview .stat-strip > div:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--p-shadow-hover);
+}
+
+#overview .section {
+  padding: clamp(48px, 7vw, 84px) clamp(18px, 4vw, 40px);
+}
+
+/* How-it-works flow cards */
+#overview .flow {
+  gap: 20px;
+}
+
+#overview .flow::before {
+  display: none;
+}
+
+#overview .flow-step {
+  padding: 28px 26px;
+  border: var(--p-border);
+  border-radius: var(--p-radius);
+  background: #fff;
+  box-shadow: var(--p-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#overview .flow-step:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--p-shadow-hover);
+}
+
+#overview .flow-num {
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--teal-pale), var(--pine-pale));
+  box-shadow: none;
+}
+
+/* Subject cards */
+#overview .subject-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+#overview .subject-card {
+  position: relative;
+  overflow: hidden;
+  border: var(--p-border);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+#overview .subject-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(62, 138, 143, 0.35);
+  box-shadow: var(--p-shadow-hover);
+}
+
+#overview .subject-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  transition: transform 0.2s;
+}
+
+#overview .subject-card:hover .subject-icon {
+  transform: rotate(-6deg) scale(1.06);
+}
+
+/* Preview banner */
+#overview .preview-banner {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 52px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(243, 200, 104, 0.32), transparent 36%),
+    radial-gradient(circle at 8% 120%, rgba(62, 138, 143, 0.55), transparent 45%),
+    linear-gradient(125deg, #1f3a34 0%, #26483f 60%, #2c5048 100%);
+  box-shadow: 0 22px 52px rgba(31, 58, 52, 0.22);
+}
+
+#overview .preview-banner .open-lesson-btn {
+  background: var(--marigold-light) !important;
+  color: var(--pine) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+#overview .preview-banner .open-lesson-btn:hover {
+  background: #fff !important;
+}
+
+#overview .preview-frame {
+  border-radius: 20px;
+  padding: 20px;
+}
+
+/* Quotes */
+#overview .quote-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+#overview .quote-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: var(--p-border);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#overview .quote-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--p-shadow-hover);
+}
+
+/* Footer CTA */
+#overview .footer-cta {
+  padding: clamp(32px, 5vw, 56px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.45), transparent 45%),
+    linear-gradient(135deg, var(--marigold-light), var(--marigold));
+  box-shadow: 0 18px 44px rgba(228, 163, 42, 0.28);
+}
+
+#overview .footer-cta .hero-actions {
+  justify-content: center;
+}
+
+/* ==========================================================================
+   Settings + Support
+   ========================================================================== */
+
+.kdl .settings-page {
+  max-width: 1200px;
+  padding: 32px clamp(16px, 3vw, 36px) 80px;
+}
+
+.kdl .settings-page > * {
+  animation: kdl-fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.kdl .settings-hero {
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  padding: 30px 32px;
+  margin-bottom: 22px;
+  color: #fff;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(243, 200, 104, 0.35), transparent 34%),
+    radial-gradient(circle at 6% 120%, rgba(62, 138, 143, 0.55), transparent 45%),
+    linear-gradient(125deg, #1f3a34 0%, #25483f 55%, #2c5048 100%);
+  box-shadow: 0 18px 44px rgba(31, 58, 52, 0.22);
+}
+
+.kdl .settings-hero .eyebrow {
+  color: var(--marigold-light);
+  letter-spacing: 0.14em;
+}
+
+.kdl .settings-hero h1 {
+  color: #fff;
+  font-size: clamp(26px, 3.2vw, 36px);
+  letter-spacing: -0.025em;
+}
+
+.kdl .settings-hero-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.kdl .settings-runtime-chip {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.kdl .settings-runtime-chip strong {
+  color: var(--marigold-light);
+}
+
+.kdl .settings-runtime-chip span {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Segmented settings tabs */
+.kdl .settings-tabs {
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border: var(--p-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--p-shadow);
+}
+
+.kdl .settings-tab {
+  margin: 0;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 12px;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.kdl .settings-tab:hover:not(.active) {
+  color: var(--pine);
+  background: var(--pine-pale);
+}
+
+.kdl .settings-tab.active {
+  color: #fff;
+  background: var(--pine);
+  box-shadow: 0 4px 12px rgba(31, 58, 52, 0.22);
+}
+
+.kdl .plan-card,
+.kdl .provider-card,
+.kdl .settings-mode-card,
+.kdl .settings-page .panel {
+  border: var(--p-border);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow);
+}
+
+.kdl .plan-card {
+  overflow: hidden;
+  padding: 26px 24px 22px;
+}
+
+.kdl .plan-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--teal);
+}
+
+.kdl .plan-card.highlight::before {
+  background: linear-gradient(90deg, var(--marigold), var(--teal));
+}
+
+.kdl .plan-card:hover,
+.kdl .provider-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--p-shadow-hover);
+}
+
+.kdl .plan-cta {
+  border-radius: 999px;
+}
+
+.kdl .settings-mode-card {
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.kdl .settings-mode-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--p-shadow-hover);
+}
+
+.kdl .settings-mode-card.active {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(62, 138, 143, 0.2), var(--p-shadow);
+}
+
+.kdl .settings-primary-row select,
+.kdl .provider-field input,
+.kdl .provider-field select,
+.kdl .settings-task-row select,
+.kdl .support-field input,
+.kdl .support-field select,
+.kdl .support-field textarea {
+  border: 1.5px solid rgba(31, 58, 52, 0.14);
+  border-radius: 12px;
+  background: #fafcfb;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.kdl .settings-primary-row select:focus,
+.kdl .provider-field input:focus,
+.kdl .provider-field select:focus,
+.kdl .settings-task-row select:focus,
+.kdl .support-field input:focus,
+.kdl .support-field select:focus,
+.kdl .support-field textarea:focus {
+  outline: none;
+  border-color: var(--teal);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(62, 138, 143, 0.15);
+}
+
+.kdl .provider-actions .btn-primary,
+.kdl .provider-actions .btn-ghost {
+  border-radius: 999px;
+  padding: 9px 16px;
+}
+
+/* ==========================================================================
+   Legal page & Footer
+   ========================================================================== */
+
+.kdl .legal-page {
+  max-width: 820px;
+  margin: 32px auto 72px;
+  padding: clamp(24px, 4vw, 44px);
+  border: var(--p-border);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--p-shadow);
+  animation: kdl-fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.kdl .legal-draft-note {
+  border-left: 4px solid var(--marigold);
+  border-radius: var(--p-radius-sm);
+}
+
+.kdl .app-legal-footer {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px clamp(18px, 3vw, 36px) 36px;
+  border-top: 1px solid rgba(31, 58, 52, 0.08);
+}
+
+/* ==========================================================================
+   Modals (Auth, New Subject, Onboarding Wizard)
+   ========================================================================== */
+
+.kdl .modal-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.kdl .modal-card,
+.kdl .wizard-card {
+  border: var(--p-border);
+  border-radius: 26px;
+  box-shadow: 0 28px 70px rgba(31, 58, 52, 0.26);
+  animation: kdl-pop 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.kdl .modal-input {
+  border-radius: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.kdl .modal-input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(62, 138, 143, 0.15);
+}
+
+.kdl .grade-pill,
+.kdl .avatar-btn {
+  border-radius: 14px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.kdl .grade-pill:hover,
+.kdl .avatar-btn:hover {
+  transform: translateY(-2px);
+}
+
+.kdl .grade-pill.selected,
+.kdl .avatar-btn.selected {
+  box-shadow: 0 6px 14px rgba(31, 58, 52, 0.15);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 960px) {
+  #overview .hero,
+  #overview .preview-banner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #overview .stat-strip,
+  #overview .flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kdl .settings-runtime-chip {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .kdl .settings-hero {
+    padding: 22px 20px;
+    border-radius: 22px;
+  }
+
+  .kdl .settings-tab {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  #overview .hero-actions > button {
+    flex: 1 1 100%;
+  }
+
+  .kdl .legal-page {
+    margin: 16px 14px 48px;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #overview > *,
+  .kdl .settings-page > *,
+  .kdl .legal-page,
+  .kdl .modal-card,
+  .kdl .wizard-card {
+    animation: none;
+  }
+}
+
+/* ---------- Lean 2-step onboarding wizard ---------- */
+.kdl .wizard-card--lean {
+  max-width: 620px;
+}
+
+.kdl .wizard-step-dots--lean {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 22px;
+}
+
+.kdl .wizard-step-dots--lean .wizard-step-dot {
+  flex-direction: row;
+  min-height: 46px;
+  padding: 8px 14px;
+  gap: 10px;
+}
+
+.kdl .onboard-more-wrap {
+  margin-top: 14px;
+  border: 1px solid rgba(31, 58, 52, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+}
+
+.kdl .onboard-more-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.kdl .onboard-more-toggle:hover {
+  background: rgba(62, 138, 143, 0.08);
+}
+
+.kdl .onboard-more-body {
+  padding: 4px 16px 16px;
+  border-top: 1px dashed rgba(31, 58, 52, 0.12);
+}
+
+.kdl .onboard-more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.kdl .onboard-more-grid .field-block {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .kdl .onboard-more-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

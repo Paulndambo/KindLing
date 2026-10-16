@@ -35,7 +35,7 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
             "prioritySupport": False,
             "dailyLessonSoftCap": 4,
             "dailyPlatformAiRequests": 30,
-            "dailyPlatformAiTokens": 60000,
+            "dailyPlatformAiTokens": 1000000,
         },
     },
     PlanId.FORGE: {
@@ -85,7 +85,7 @@ PLAN_CATALOG: Dict[str, Dict[str, Any]] = {
             "prioritySupport": True,
             "dailyLessonSoftCap": None,
             "dailyPlatformAiRequests": 120,
-            "dailyPlatformAiTokens": 300000,
+            "dailyPlatformAiTokens": 1000000,
         },
     },
 }

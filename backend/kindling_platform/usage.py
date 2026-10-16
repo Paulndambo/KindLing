@@ -64,7 +64,7 @@ def reserve_daily_ai_request(user, subscription, estimated_tokens):
             defaults={"request_count": 0},
         )
         row = PlatformAiDailyUsage.objects.select_for_update().get(pk=row.pk)
-        if row.request_count >= cap or row.estimated_tokens + estimated_tokens > token_cap:
+        if row.request_count >= cap or row.estimated_tokens >= token_cap:
             usage = row.request_count
             tokens_used = row.estimated_tokens
             return {

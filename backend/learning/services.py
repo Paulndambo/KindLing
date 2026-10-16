@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime
-from typing import Any
+from typing import List, Dict, Any
 
 from django.db import transaction
 from django.utils import timezone
@@ -34,7 +34,7 @@ from .signal_quality import (
     learner_confidence_value,
 )
 
-DEFAULT_TOTALS = {
+DEFAULT_TOTALS: Dict[str, Any] = {
     "sessions": 0,
     "exchanges": 0,
     "correct": 0,
@@ -46,14 +46,14 @@ DEFAULT_TOTALS = {
     "responseSamples": 0,
 }
 
-DEFAULT_DELIVERY = {
+DEFAULT_DELIVERY: Dict[str, Any] = {
     "visual": 0,
     "story": 0,
     "step_by_step": 0,
     "energetic": 0,
 }
 
-DEFAULT_BEHAVIOR = {
+DEFAULT_BEHAVIOR: Dict[str, Any] = {
     "hintRate": 0,
     "avgResponseMs": None,
     "shortAnswerRate": 0,
@@ -64,7 +64,7 @@ DEFAULT_BEHAVIOR = {
 ROLLING_MAX = 40
 
 
-def empty_profile_dict(student_id: str = "anonymous") -> dict:
+def empty_profile_dict(student_id: str = "anonymous") -> Dict[str, Any]:
     return {
         "version": 1,
         "studentId": student_id,
@@ -88,12 +88,12 @@ def topic_key(subject: str | None, topic: str | None) -> str:
     return f"{subject or 'General'}::{topic or 'General'}"
 
 
-def push_rolling(arr: list, value: Any, max_len: int = ROLLING_MAX) -> list:
+def push_rolling(arr: List[Any], value: Any, max_len: int = ROLLING_MAX) -> List[Any]:
     next_arr = list(arr or []) + [value]
     return next_arr[-max_len:] if len(next_arr) > max_len else next_arr
 
 
-def parse_ts(value) -> datetime:
+def parse_ts(value: str | datetime | None) -> datetime:
     if isinstance(value, datetime):
         if timezone.is_naive(value):
             return timezone.make_aware(value, timezone.utc)
@@ -159,12 +159,12 @@ def apply_exchange_to_profile_model(
     profile: LearningProfile,
     subject: str,
     topic: str,
-    signals: dict,
+    signals: Dict[str, Any],
 ) -> LearningProfile:
     """Fold one analyzed exchange into LearningProfile + related models."""
-    totals = {**DEFAULT_TOTALS, **(profile.totals or {})}
-    behavior = {**DEFAULT_BEHAVIOR, **(profile.behavior or {})}
-    delivery = {**DEFAULT_DELIVERY, **(profile.delivery_preferences or {})}
+    totals: Dict[str, Any] = {**DEFAULT_TOTALS, **(profile.totals or {})}
+    behavior: Dict[str, Any] = {**DEFAULT_BEHAVIOR, **(profile.behavior or {})}
+    delivery: Dict[str, Any] = {**DEFAULT_DELIVERY, **(profile.delivery_preferences or {})}
 
     totals["exchanges"] = totals.get("exchanges", 0) + 1
     correctness = (signals or {}).get("correctness") or Correctness.UNKNOWN
@@ -351,9 +351,9 @@ def apply_session_end(profile: LearningProfile, summary: dict) -> LearningProfil
 
 def build_personalization_insights(
     profile: LearningProfile, subject: str = "", topic: str = ""
-) -> dict:
-    totals = profile.totals or {}
-    exchanges = totals.get("exchanges") or 0
+) -> Dict[str, Any]:
+    totals: Dict[str, Any] = profile.totals or {}
+    exchanges: int | None = totals.get("exchanges") or 0
     if exchanges < 1:
         return {
             "summary": (
@@ -518,9 +518,9 @@ def build_personalization_insights(
         },
     }
 
-def profile_to_api_dict(profile: LearningProfile) -> dict:
+def profile_to_api_dict(profile: LearningProfile) -> Dict[str, Any]:
     """Serialize LearningProfile to the frontend profile shape."""
-    mastery = {}
+    mastery: Dict[str, Any] = {}
     for m in profile.mastery_entries.all():
         mastery[m.topic_key] = {
             "subject": m.subject,
@@ -534,7 +534,7 @@ def profile_to_api_dict(profile: LearningProfile) -> dict:
             "updatedAt": m.updated_at.isoformat() if m.updated_at else None,
         }
 
-    misconceptions = {}
+    misconceptions: Dict[str, Any] = {}
     for mc in profile.misconceptions.all():
         misconceptions[mc.misconception_id] = {
             "id": mc.misconception_id,
@@ -549,7 +549,7 @@ def profile_to_api_dict(profile: LearningProfile) -> dict:
         or (profile.student.name.lower().replace(" ", "_") if profile.student else "anonymous")
     )
 
-    skills = {}
+    skills: Dict[str, Any] = {}
     try:
         from learning.mastery_engine import all_skill_masteries_dict
 
@@ -581,19 +581,19 @@ def profile_to_api_dict(profile: LearningProfile) -> dict:
 
 @transaction.atomic
 def ingest_events(
-    events: list[dict],
+    events: List[Dict[str, Any]] = [],
     *,
     user=None,
     source: str = "kindling-web",
     schema_version: int = 1,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Persist a batch of learning events and update sessions/profiles.
     Returns counts for the API response.
     """
     created = 0
     skipped = 0
-    errors: list[str] = []
+    errors: List[str] = []
 
     for raw in events:
         try:
@@ -963,7 +963,7 @@ def ingest_events(
     return {"created": created, "skipped": skipped, "errors": errors}
 
 
-def build_dashboard(student: StudentProfile | None) -> dict:
+def build_dashboard(student: StudentProfile | None) -> Dict[str, Any]:
     """Aggregate dashboard stats for the student view."""
     if not student:
         return {
@@ -991,7 +991,7 @@ def build_dashboard(student: StudentProfile | None) -> dict:
         student=student, started_at__gte=two_weeks_ago, started_at__lt=week_ago
     )
 
-    def week_block(qs):
+    def week_block(qs)-> Dict[str, Any]:
         count = qs.count()
         duration = sum(s.duration_ms or 0 for s in qs)
         turns = sum(s.turn_count or 0 for s in qs)
@@ -1247,10 +1247,10 @@ def _pad_series(values: list, length: int, default: int = 40) -> list:
     return series[-length:]
 
 
-def _build_week_plan(student, focus_areas: list, mastery_map: list) -> list[dict]:
+def _build_week_plan(student, focus_areas: list, mastery_map: list) -> List[Dict[str, Any]]:
     """Suggest next lessons from focus areas, low mastery, or curriculum topics."""
     days = ["Mon", "Wed", "Fri"]
-    candidates: list[dict] = []
+    candidates: List[Dict[str, Any]] = []
 
     for f in focus_areas or []:
         topic = f.get("topic")

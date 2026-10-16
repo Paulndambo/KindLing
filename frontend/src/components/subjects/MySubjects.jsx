@@ -31,6 +31,7 @@ import TranscriptSearch from "./TranscriptSearch";
 import SubjectDetail from "./SubjectDetail";
 import ReviewSparkCard from "../dashboard/ReviewSparkCard";
 import { snoozeReviewSpark } from "../../services/api";
+import "../../styles/subjects.css";
 
 function countLessons(topics = []) {
   return topics.reduce(

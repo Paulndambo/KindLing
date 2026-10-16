@@ -163,6 +163,11 @@ export {
   listScienceScaffoldPacks,
 } from "./scienceScaffoldPacks";
 export {
+  findWritingScaffoldPack,
+  buildWritingScaffoldPromptBlock,
+  listWritingScaffoldPacks,
+} from "./writingScaffoldPacks";
+export {
   createMultiStepSession,
   startMultiStepForTopic,
   applyStepAttempt,

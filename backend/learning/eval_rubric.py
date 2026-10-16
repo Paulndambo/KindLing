@@ -532,6 +532,7 @@ def summarize_cohort(evals: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     math_playbook_audit = summarize_playbook_audit("math")
     science_playbook_audit = summarize_playbook_audit("science")
+    writing_playbook_audit = summarize_playbook_audit("writing")
 
     return {
         "rubricVersion": RUBRIC_VERSION,
@@ -542,6 +543,7 @@ def summarize_cohort(evals: List[Dict[str, Any]]) -> Dict[str, Any]:
         "dimensions": dim_stats,
         "mathPlaybookAudit": math_playbook_audit,
         "sciencePlaybookAudit": science_playbook_audit,
+        "writingPlaybookAudit": writing_playbook_audit,
         "weakest": [
             {"id": k, "label": v["label"], "mean": v["mean"]} for k, v in weakest
         ],
@@ -589,7 +591,7 @@ def render_report_markdown(summary: Dict[str, Any], *, title: str = "C8.3 eval r
         lines += ["", "## Strongest", ""]
         for w in summary["strongest"]:
             lines.append(f"- **{w['label']}**: mean {w['mean']}")
-    for domain in ("math", "science"):
+    for domain in ("math", "science", "writing"):
         audit = summary.get(f"{domain}PlaybookAudit")
         if not audit:
             continue

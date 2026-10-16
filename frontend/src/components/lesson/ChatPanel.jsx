@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Plus,
   Mic,
@@ -119,6 +119,9 @@ export default function ChatPanel({
   onOpenJournal,
   onExitArchiveView,
   archiveCount = 0,
+  dailyCapReached = false,
+  dailyAiUsage = null,
+  onOpenAiSettings = null,
   chatError = null,
   onRetryChatError,
   onDismissChatError,
@@ -152,6 +155,7 @@ export default function ChatPanel({
   const [codeLanguage, setCodeLanguage] = useState("python");
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [activeModeIndex, setActiveModeIndex] = useState(0);
+  const [softWarningDismissed, setSoftWarningDismissed] = useState(false);
   const selectedComposerMode =
     COMPOSER_MODES.find((mode) => mode.id === composerMode) || COMPOSER_MODES[0];
   const ModeIcon = selectedComposerMode.Icon;
@@ -170,6 +174,7 @@ export default function ChatPanel({
   const focusModeRunning = assessmentRunning || independenceRunning;
   const showSoftNudge =
     Boolean(softNudge) &&
+    !dailyCapReached &&
     !interventionOffered &&
     !interventionActive &&
     !focusModeRunning &&
@@ -177,6 +182,7 @@ export default function ChatPanel({
     !conversationEnded;
   const showAffectCheckIn =
     Boolean(affectCheckIn) &&
+    !dailyCapReached &&
     !sessionReflection &&
     !interventionOffered &&
     !showSoftNudge &&
@@ -201,6 +207,7 @@ export default function ChatPanel({
   const inputDisabled =
     isStreaming ||
     !hasAi ||
+    dailyCapReached ||
     isArchiveView ||
     conversationEnded ||
     isSummarizing ||
@@ -210,6 +217,20 @@ export default function ChatPanel({
     safetyActive ||
     safetyPaused ||
     homeworkBusy;
+
+  const effectiveChatError =
+    chatError ||
+    (dailyCapReached
+      ? {
+          code: "DAILY_AI_CAP_REACHED",
+          apiCode: "daily_ai_cap_reached",
+          title: "Today's AI allowance is used up",
+          message: `Today's platform AI allowance is used up. It resets at ${dailyAiUsage?.resetsAt || "midnight UTC"}.`,
+          usage: dailyAiUsage,
+          resetsAt: dailyAiUsage?.resetsAt || "midnight UTC",
+          recoverable: false,
+        }
+      : null);
 
   // Latest completed tutor turn gets 3–5 one-tap follow-ups (supportive, low-typing)
   let lastTutorIdx = -1;
@@ -228,12 +249,45 @@ export default function ChatPanel({
   };
   const chipsDisabled =
     inputDisabled ||
+    dailyCapReached ||
     isStreaming ||
     showSoftNudge ||
     showAffectCheckIn ||
     showSessionReflection ||
     interventionOffered ||
     interventionActive;
+
+  // Keep end-of-chat cards (e.g. "Before we dive in" affect check-in, reflection,
+  // intervention prompts, or daily cap banner) fully visible when they mount.
+  useEffect(() => {
+    if (
+      !showAffectCheckIn &&
+      !showSessionReflection &&
+      !showSoftNudge &&
+      !interventionOffered &&
+      !showAssessmentOffer &&
+      !safetyEscalation &&
+      !dailyCapReached
+    ) {
+      return undefined;
+    }
+    const id = requestAnimationFrame(() => {
+      const el = chatAreaRef?.current;
+      if (el) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [
+    chatAreaRef,
+    showAffectCheckIn,
+    showSessionReflection,
+    showSoftNudge,
+    interventionOffered,
+    showAssessmentOffer,
+    safetyEscalation,
+    dailyCapReached,
+  ]);
 
   const chooseComposerMode = (mode) => {
     setComposerMode(mode.id);
@@ -412,28 +466,30 @@ export default function ChatPanel({
           <div
             className={`adapt-badge${interventionActive ? " intervention" : ""}${
               isArchiveView ? " archive" : ""
-            }`}
+            }${dailyCapReached ? " cap-reached" : ""}`}
           >
             <span className="pulse" />{" "}
             {isSummarizing
               ? "Saving journal…"
               : safetyActive || safetyPaused
                 ? "Lesson paused for safety"
-                : isStreaming
-                  ? "Thinking…"
-                  : chatError
-                    ? "Paused — try again"
-                    : offline
-                      ? "Offline"
-                      : isArchiveView
-                        ? "Reading past chat"
-                        : conversationEnded
-                          ? "Conversation ended"
-                          : interventionActive
-                            ? intervention?.context?.levelLabel ||
-                              intervention?.context?.activeTitle ||
-                              "Help mode"
-                            : "Kindling is live"}
+                : dailyCapReached
+                  ? `Daily limit reached · Resets ${dailyAiUsage?.resetsAt || "midnight UTC"}`
+                  : isStreaming
+                    ? "Thinking…"
+                    : chatError
+                      ? "Paused — try again"
+                      : offline
+                        ? "Offline"
+                        : isArchiveView
+                          ? "Reading past chat"
+                          : conversationEnded
+                            ? "Conversation ended"
+                            : interventionActive
+                              ? intervention?.context?.levelLabel ||
+                                intervention?.context?.activeTitle ||
+                                "Help mode"
+                              : "Kindling is live"}
           </div>
         </div>
       </div>
@@ -449,6 +505,32 @@ export default function ChatPanel({
           onSyncLearning={connectivity.syncLearning}
         />
       )}
+
+      {!dailyCapReached &&
+        dailyAiUsage?.softWarning &&
+        !softWarningDismissed &&
+        !isArchiveView &&
+        !conversationEnded && (
+          <div className="daily-cap-soft-warning" role="status">
+            <Clock3 size={15} aria-hidden />
+            <span>
+              <strong>Nearing today&apos;s AI allowance:</strong>{" "}
+              {Number.isFinite(Number(dailyAiUsage.estimatedTokensUsed)) &&
+              Number(dailyAiUsage.estimatedTokenLimit) > 0
+                ? `${Number(dailyAiUsage.estimatedTokensUsed).toLocaleString()} of ${Number(dailyAiUsage.estimatedTokenLimit).toLocaleString()} est. tokens`
+                : `${dailyAiUsage.used} of ${dailyAiUsage.limit} requests`}{" "}
+              used · Resets at {dailyAiUsage.resetsAt || "midnight UTC"}.
+            </span>
+            <button
+              type="button"
+              className="daily-cap-soft-dismiss"
+              onClick={() => setSoftWarningDismissed(true)}
+              aria-label="Dismiss allowance notice"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
       {homeworkWindowMinutes && !isArchiveView && !conversationEnded && (
         homeworkWindowSecondsLeft > 0 ? (
@@ -738,7 +820,7 @@ export default function ChatPanel({
           />
         )}
 
-        {interventionOffered && !isArchiveView && !conversationEnded && (
+        {interventionOffered && !dailyCapReached && !isArchiveView && !conversationEnded && (
           <InterventionBanner
             status="offered"
             context={{
@@ -768,11 +850,12 @@ export default function ChatPanel({
           />
         )}
 
-        {chatError && !isArchiveView && !safetyEscalation && (
+        {effectiveChatError && !isArchiveView && !safetyEscalation && (
           <ChatErrorBanner
-            error={chatError}
+            error={effectiveChatError}
             onRetry={onRetryChatError}
-            onDismiss={onDismissChatError}
+            onDismiss={dailyCapReached ? undefined : onDismissChatError}
+            onOpenSettings={onOpenAiSettings}
             isStreaming={isStreaming}
           />
         )}
@@ -832,7 +915,11 @@ export default function ChatPanel({
           <p className="lesson-mode-menu-foot">↑ ↓ to browse · Enter to choose · Esc to close</p>
         </div>
       )}
-      <div className={`lesson-input${composerMode === "code" ? " is-code-mode" : ""}`}>
+      <div
+        className={`lesson-input${composerMode === "code" ? " is-code-mode" : ""}${
+          dailyCapReached ? " is-cap-locked" : ""
+        }`}
+      >
         <button
           type="button"
           className={`lesson-mode-trigger${composerMode !== "text" ? " is-selected" : ""}`}
@@ -914,25 +1001,27 @@ export default function ChatPanel({
               ? "Read-only — return to the live lesson to chat"
               : conversationEnded
                 ? "Conversation ended — start a new one to continue"
-                : offline
-                  ? "You're offline — reconnect to chat"
-                  : safetyActive || safetyPaused
-                    ? "Lesson paused — use the buttons above when you're ready"
-                    : chatError
-                      ? "Tap Try again above, or type a new message…"
-                      : isListening
-                        ? "🎙 Listening — speak now…"
-                        : isStreaming || isSummarizing
-                          ? "Kindling is thinking…"
-                          : interventionActive
-                            ? `Ask a question or try the next step, ${studentName}…`
-                          : composerMode === "code"
-                            ? `Paste or write ${codeLanguage} code… (Enter for a new line)`
-                            : composerMode === "math"
-                              ? "Type an equation, expression, or question…"
-                              : composerMode === "working"
-                                ? "Write your steps here…"
-                                : `Answer Kindling, ${studentName}…`
+                : dailyCapReached
+                  ? `Chat disabled — today's AI allowance is used up (resets at ${dailyAiUsage?.resetsAt || "midnight UTC"})`
+                  : offline
+                    ? "You're offline — reconnect to chat"
+                    : safetyActive || safetyPaused
+                      ? "Lesson paused — use the buttons above when you're ready"
+                      : chatError
+                        ? "Tap Try again above, or type a new message…"
+                        : isListening
+                          ? "🎙 Listening — speak now…"
+                          : isStreaming || isSummarizing
+                            ? "Kindling is thinking…"
+                            : interventionActive
+                              ? `Ask a question or try the next step, ${studentName}…`
+                            : composerMode === "code"
+                              ? `Paste or write ${codeLanguage} code… (Enter for a new line)`
+                              : composerMode === "math"
+                                ? "Type an equation, expression, or question…"
+                                : composerMode === "working"
+                                  ? "Write your steps here…"
+                                  : `Answer Kindling, ${studentName}…`
           }
           value={inputVal}
           disabled={inputDisabled}
@@ -983,11 +1072,13 @@ export default function ChatPanel({
         </button>
       </div>
       <div className="lesson-composer-hint" aria-live="polite">
-        {composerMode === "code"
-          ? `Code mode · ${codeLanguage} · Enter for a new line, Ctrl+Enter to send`
-          : composerMode === "text"
-            ? "Type / to switch modes"
-            : `${selectedComposerMode.label} mode · Type / to switch modes`}
+        {dailyCapReached
+          ? `Today's platform AI allowance is used up · Resets at ${dailyAiUsage?.resetsAt || "midnight UTC"}`
+          : composerMode === "code"
+            ? `Code mode · ${codeLanguage} · Enter for a new line, Ctrl+Enter to send`
+            : composerMode === "text"
+              ? "Type / to switch modes"
+              : `${selectedComposerMode.label} mode · Type / to switch modes`}
       </div>
       </div>
     </main>

@@ -35,7 +35,7 @@ def job_heartbeat(**kwargs) -> Dict[str, Any]:
     now = timezone.now()
     since = now - timedelta(hours=24)
 
-    payload = {
+    payload: Dict[str, Any] = {
         "ok": True,
         "job": "heartbeat",
         "ts": now.isoformat(),

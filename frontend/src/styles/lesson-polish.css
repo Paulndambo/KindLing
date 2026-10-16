@@ -1,0 +1,1042 @@
+/* ==========================================================================
+   Lesson screen polish layer
+   Scoped under #lesson. Layout / grid / mobile-panel logic is untouched.
+   Anything that sets colors is limited to the default light theme so the
+   dark-theme and high-contrast accessibility modes keep working as designed.
+   ========================================================================== */
+
+#lesson {
+  --l-radius: 18px;
+  --l-shadow: 0 1px 2px rgba(31, 58, 52, 0.05), 0 6px 18px rgba(31, 58, 52, 0.06);
+  --l-shadow-lift: 0 2px 4px rgba(31, 58, 52, 0.06), 0 14px 30px rgba(31, 58, 52, 0.1);
+}
+
+/* ---------- Motion ---------- */
+@keyframes lesson-msg-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+#lesson .chat-area > .msg,
+#lesson .chat-area > .tutor-msg-stack {
+  animation: lesson-msg-in 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* ---------- Header ---------- */
+#lesson .lesson-header {
+  position: relative;
+  z-index: 2;
+  padding: 14px clamp(16px, 2.4vw, 28px);
+  box-shadow: 0 4px 16px rgba(31, 58, 52, 0.04);
+}
+
+#lesson .lesson-header h1 {
+  font-size: clamp(16px, 1.6vw, 19px);
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+#lesson .lesson-header-actions .journal-header-btn,
+#lesson .lesson-header-actions .icon-btn {
+  border-radius: 999px;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+#lesson .lesson-header-actions .journal-header-btn:hover,
+#lesson .lesson-header-actions .icon-btn:hover {
+  transform: translateY(-1px);
+}
+
+#lesson .resume-pill {
+  gap: 6px;
+}
+
+#lesson .resume-pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3aa572;
+  box-shadow: 0 0 0 3px rgba(58, 165, 114, 0.22);
+}
+
+/* ---------- Chat transcript ---------- */
+#lesson .chat-area {
+  gap: 18px;
+  padding: 28px clamp(16px, 4vw, 48px);
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 58, 52, 0.22) transparent;
+}
+
+#lesson .chat-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+#lesson .chat-area::-webkit-scrollbar-thumb {
+  background: rgba(31, 58, 52, 0.2);
+  border-radius: 999px;
+}
+
+#lesson .chat-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#lesson .msg {
+  position: relative;
+  padding: 16px 20px;
+  border-radius: var(--l-radius);
+  box-shadow: var(--l-shadow);
+  overflow-wrap: anywhere;
+}
+
+#lesson .msg.tutor {
+  border-top-left-radius: 6px;
+  border-left: 4px solid var(--teal);
+}
+
+#lesson .msg.tutor .tname {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#lesson .msg.tutor .tname::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--marigold-light), var(--marigold));
+  box-shadow: 0 0 0 3px rgba(228, 163, 42, 0.2);
+}
+
+/* Learner bubbles hug the right edge so the conversation reads as two sides */
+#lesson .msg.child {
+  align-self: flex-end;
+  width: auto;
+  max-width: min(88%, 760px);
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: var(--l-radius);
+}
+
+#lesson .lesson-shell:not([data-theme="dark"]):not([data-contrast="high"]) .msg.child {
+  background: linear-gradient(140deg, #2c5048, var(--pine));
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.2);
+}
+
+#lesson .lesson-shell:not([data-theme="dark"]):not([data-contrast="high"]) .msg.tutor {
+  background: linear-gradient(180deg, #fff, #fcfdfc);
+}
+
+#lesson .toast,
+#lesson .day-boundary-label {
+  box-shadow: var(--l-shadow);
+}
+
+/* ---------- Mode banners ---------- */
+#lesson .review-mode-banner,
+#lesson .homework-window-banner,
+#lesson .archive-banner {
+  border-radius: 0 0 var(--l-radius) var(--l-radius);
+}
+
+/* ---------- Composer ---------- */
+#lesson .lesson-input {
+  align-items: flex-end;
+  padding: 14px clamp(16px, 3vw, 32px) 8px;
+}
+
+#lesson .lesson-input .lesson-composer-input {
+  border-radius: 24px;
+  box-shadow: var(--l-shadow);
+  transition: border-color 0.15s, box-shadow 0.2s;
+}
+
+#lesson .lesson-input .lesson-composer-input:focus {
+  box-shadow: 0 0 0 4px rgba(62, 138, 143, 0.18), var(--l-shadow);
+}
+
+#lesson .lesson-input .icon-btn {
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+#lesson .lesson-input .icon-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+#lesson .lesson-input .send-btn {
+  box-shadow: 0 6px 14px rgba(31, 58, 52, 0.28);
+}
+
+#lesson .lesson-input .send-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 10px 20px rgba(31, 58, 52, 0.32);
+}
+
+#lesson .lesson-mode-trigger {
+  transition: background 0.15s, border-color 0.15s;
+}
+
+#lesson .lesson-mode-menu {
+  border-radius: 16px;
+  box-shadow: var(--l-shadow-lift);
+}
+
+/* ---------- Left path rail ---------- */
+#lesson .lesson-side {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 163, 42, 0.14), transparent 40%),
+    linear-gradient(180deg, #1f3a34 0%, #1a322d 100%);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+#lesson .lesson-side-collapse,
+#lesson .lesson-unit-select {
+  border-radius: 12px;
+}
+
+#lesson .lesson-subtopic-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 242, 233, 0.25) transparent;
+}
+
+#lesson .lesson-subtopic-list > * {
+  transition: transform 0.15s, background 0.15s;
+}
+
+#lesson .lesson-subtopic-list > *:hover {
+  transform: translateX(3px);
+}
+
+/* ---------- Right tools rail ---------- */
+#lesson .lesson-tools {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 58, 52, 0.2) transparent;
+}
+
+#lesson .lesson-tools h4 {
+  letter-spacing: 0.08em;
+}
+
+#lesson .accessibility-tools,
+#lesson .offline-practice-pack {
+  border-radius: 16px;
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .diff-track {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#lesson .diff-fill {
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), var(--marigold));
+  transition: width 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+#lesson .lesson-tools button {
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+#lesson .lesson-tools button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* ---------- Focus visibility ---------- */
+#lesson button:focus-visible,
+#lesson select:focus-visible,
+#lesson textarea:focus-visible,
+#lesson a:focus-visible {
+  outline: 3px solid rgba(40, 107, 109, 0.5);
+  outline-offset: 2px;
+}
+
+/* ---------- Mobile ---------- */
+.lesson-mobile-tabs {
+  box-shadow: 0 -8px 24px rgba(31, 58, 52, 0.08);
+}
+
+.lesson-mobile-tabs button {
+  position: relative;
+  transition: color 0.15s;
+}
+
+.lesson-mobile-tabs button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28%;
+  right: 28%;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: var(--teal);
+  transform: scaleX(0);
+  transition: transform 0.2s;
+}
+
+.lesson-mobile-tabs button.active::before {
+  transform: scaleX(1);
+}
+
+@media (max-width: 900px) {
+  #lesson .chat-area {
+    padding: 18px 14px;
+    gap: 14px;
+  }
+
+  #lesson .msg {
+    padding: 14px 16px;
+  }
+
+  #lesson .msg.child {
+    max-width: 94%;
+  }
+
+  #lesson .lesson-input {
+    padding-inline: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lesson .chat-area > .msg,
+  #lesson .chat-area > .tutor-msg-stack {
+    animation: none;
+  }
+
+  #lesson .chat-area {
+    scroll-behavior: auto;
+  }
+
+  #lesson *,
+  .lesson-mobile-tabs * {
+    transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   Lesson inner panels: assessment, independence, multi-step, intervention,
+   affect check-in, reflection, safety, banners, suggestion chips, manipulatives,
+   journal. Adds depth, motion and hierarchy; state colors (correct/incorrect,
+   ladder levels, tones) from lesson.css are intentionally left alone.
+   ========================================================================== */
+
+/* Shared panel entrance + depth */
+@keyframes lesson-panel-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+#lesson .assessment-panel,
+#lesson .independence-panel,
+#lesson .multistep-panel,
+#lesson .affect-checkin,
+#lesson .intervention-offer,
+#lesson .intervention-active-bar,
+#lesson .safety-escalation-card,
+#lesson .conv-ended-card,
+#lesson .manip-panel,
+#lesson .persistence-chip,
+#lesson .connection-banner {
+  animation: lesson-panel-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+#lesson .assessment-panel,
+#lesson .independence-panel,
+#lesson .affect-checkin,
+#lesson .intervention-offer,
+#lesson .safety-escalation-card,
+#lesson .conv-ended-card,
+#lesson .manip-panel {
+  border-radius: var(--l-radius);
+  box-shadow: var(--l-shadow);
+}
+
+/* ---------- Assessment / independence ---------- */
+#lesson .assessment-panel,
+#lesson .independence-panel {
+  position: relative;
+  overflow: clip;
+}
+
+#lesson .assessment-panel::before,
+#lesson .independence-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--teal), var(--marigold));
+}
+
+#lesson .independence-panel::before {
+  background: linear-gradient(90deg, #3d5a8a, var(--teal));
+}
+
+#lesson .assessment-title {
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+#lesson .assessment-eyebrow,
+#lesson .multistep-eyebrow {
+  letter-spacing: 0.12em;
+}
+
+#lesson .assessment-progress,
+#lesson .multistep-progress {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#lesson .assessment-progress-fill,
+#lesson .multistep-progress-fill {
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), #3aa572);
+  transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+#lesson .assessment-prompt,
+#lesson .multistep-prompt {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+#lesson .assessment-timer {
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px;
+}
+
+#lesson .assessment-timer.is-low {
+  animation: kdlpulse 1s ease-in-out infinite;
+}
+
+#lesson .assessment-options {
+  display: grid;
+  gap: 10px;
+}
+
+#lesson .assessment-option {
+  border-radius: 14px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+}
+
+#lesson .assessment-option:hover:not(:disabled) {
+  transform: translateX(4px);
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .assessment-opt-letter {
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+#lesson .assessment-icon-btn,
+#lesson .multistep-icon-btn {
+  border-radius: 10px;
+  transition: background 0.15s, transform 0.15s;
+}
+
+#lesson .assessment-icon-btn:hover,
+#lesson .multistep-icon-btn:hover {
+  transform: translateY(-1px);
+}
+
+#lesson .assessment-score-list {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+#lesson .assessment-learning-gain,
+#lesson .assessment-credit,
+#lesson .multistep-credit {
+  border-radius: 12px;
+}
+
+/* ---------- Multi-step ---------- */
+#lesson .multistep-panel,
+#lesson .multistep-list {
+  border-radius: var(--l-radius);
+}
+
+#lesson .multistep-list > * {
+  border-radius: 14px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#lesson .multistep-list > *:hover {
+  transform: translateX(3px);
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .ms-icon.cur {
+  animation: kdlpulse 1.6s ease-in-out infinite;
+}
+
+/* ---------- Intervention ---------- */
+#lesson .intervention-offer {
+  border-left-width: 4px;
+}
+
+#lesson .intervention-offer-icon {
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(31, 58, 52, 0.1);
+}
+
+#lesson .intervention-offer-title {
+  letter-spacing: -0.01em;
+}
+
+#lesson .intervention-btn,
+#lesson .intervention-escalate-btn,
+#lesson .intervention-exit-btn,
+#lesson .intervention-level-pill {
+  border-radius: 999px;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+#lesson .intervention-btn:hover:not(:disabled),
+#lesson .intervention-level-pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+#lesson .intervention-btn.primary {
+  box-shadow: 0 4px 12px rgba(31, 58, 52, 0.22);
+}
+
+#lesson .intervention-active-bar {
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.08);
+}
+
+#lesson .intervention-active-dot {
+  animation: kdlpulse 1.6s ease-in-out infinite;
+}
+
+/* ---------- Affect check-in + reflection ---------- */
+#lesson .affect-checkin {
+  position: relative;
+  overflow: clip;
+}
+
+#lesson .affect-checkin-icon {
+  border-radius: 14px;
+}
+
+#lesson .affect-checkin-title {
+  letter-spacing: -0.01em;
+}
+
+#lesson .affect-checkin-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#lesson .affect-checkin-option {
+  border-radius: 999px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+}
+
+#lesson .affect-checkin-option:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .affect-checkin-option.selected {
+  box-shadow: 0 4px 12px rgba(62, 138, 143, 0.25);
+}
+
+#lesson .affect-checkin-emoji {
+  transition: transform 0.2s;
+}
+
+#lesson .affect-checkin-option:hover:not(:disabled) .affect-checkin-emoji {
+  transform: scale(1.25) rotate(-6deg);
+}
+
+#lesson .affect-checkin-dismiss {
+  border-radius: 50%;
+  transition: background 0.15s, transform 0.15s;
+}
+
+#lesson .affect-checkin-dismiss:hover:not(:disabled) {
+  transform: rotate(90deg);
+}
+
+#lesson .session-reflection-note-label,
+#lesson .session-reflection-label {
+  letter-spacing: 0.04em;
+}
+
+#lesson .session-reflection-note {
+  border-radius: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+#lesson .session-reflection-note:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(62, 138, 143, 0.15);
+}
+
+#lesson .session-reflection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#lesson .persistence-chip {
+  border-radius: 999px;
+  box-shadow: var(--l-shadow);
+}
+
+/* ---------- Shared journal / action buttons ---------- */
+#lesson .journal-primary-btn,
+#lesson .journal-secondary-btn,
+.journal-overlay .journal-primary-btn,
+.journal-overlay .journal-secondary-btn {
+  border-radius: 999px;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+#lesson .journal-primary-btn:hover:not(:disabled),
+.journal-overlay .journal-primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(31, 58, 52, 0.25);
+}
+
+#lesson .journal-secondary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* ---------- Conversation ended ---------- */
+#lesson .conv-ended-card {
+  position: relative;
+  overflow: clip;
+  border-top: 4px solid var(--marigold);
+}
+
+#lesson .conv-ended-badge {
+  border-radius: 999px;
+}
+
+#lesson .conv-ended-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- Safety ---------- */
+#lesson .safety-escalation-card {
+  border-left: 5px solid var(--berry);
+}
+
+#lesson .safety-escalation-icon {
+  border-radius: 14px;
+}
+
+#lesson .safety-btn {
+  border-radius: 999px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#lesson .safety-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .safety-escalation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- Banners ---------- */
+#lesson .connection-banner {
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 6px 16px rgba(31, 58, 52, 0.07);
+}
+
+#lesson .connection-banner-icon {
+  border-radius: 50%;
+}
+
+#lesson .connection-banner-action,
+#lesson .chat-error-retry,
+#lesson .chat-error-dismiss {
+  border-radius: 999px;
+}
+
+#lesson .chat-error-banner {
+  border-radius: 14px;
+  box-shadow: var(--l-shadow);
+}
+
+/* ---------- Suggestion chips ---------- */
+#lesson .tutor-suggest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#lesson .tutor-suggest-chip {
+  max-width: 100%;
+  border-radius: 999px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s, border-color 0.15s;
+}
+
+#lesson .tutor-suggest-chip:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--teal);
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .tutor-suggest-label {
+  letter-spacing: 0.08em;
+}
+
+/* ---------- Manipulatives ---------- */
+#lesson .manip-panel-toggle {
+  border-radius: var(--l-radius);
+  transition: background 0.15s;
+}
+
+#lesson .manip-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#lesson .manip-type-tabs button {
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+#lesson .manip-type-tabs button.active {
+  box-shadow: 0 4px 10px rgba(31, 58, 52, 0.2);
+}
+
+#lesson .manip-share-btn {
+  border-radius: 999px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#lesson .manip-share-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--l-shadow);
+}
+
+#lesson .manip-tutor-banner {
+  border-radius: 12px;
+}
+
+/* ---------- Conversation journal drawer (lives outside .lesson-shell) ---------- */
+.journal-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.journal-panel {
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(31, 58, 52, 0.28);
+}
+
+.journal-card {
+  border-radius: 16px;
+  box-shadow: var(--l-shadow, 0 4px 14px rgba(31, 58, 52, 0.06));
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.journal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(31, 58, 52, 0.12);
+}
+
+.journal-close {
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.15s;
+}
+
+.journal-close:hover {
+  transform: rotate(90deg);
+}
+
+.journal-empty {
+  border-radius: 16px;
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 720px) {
+  #lesson .assessment-head,
+  #lesson .multistep-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #lesson .assessment-option:hover:not(:disabled),
+  #lesson .multistep-list > *:hover {
+    transform: none;
+  }
+
+  #lesson .session-reflection-actions > *,
+  #lesson .conv-ended-actions > *,
+  #lesson .safety-escalation-actions > * {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lesson .assessment-panel,
+  #lesson .independence-panel,
+  #lesson .multistep-panel,
+  #lesson .affect-checkin,
+  #lesson .intervention-offer,
+  #lesson .intervention-active-bar,
+  #lesson .safety-escalation-card,
+  #lesson .conv-ended-card,
+  #lesson .manip-panel,
+  #lesson .persistence-chip,
+  #lesson .connection-banner,
+  #lesson .assessment-timer.is-low,
+  #lesson .ms-icon.cur,
+  #lesson .intervention-active-dot {
+    animation: none;
+  }
+
+  .journal-overlay *,
+  .journal-panel,
+  .journal-card {
+    transition: none !important;
+  }
+}
+
+/* ---------- Never let cards shrink inside the scrolling transcript ----------
+   Flex items with overflow other than visible/clip can shrink below their content
+   height, which clipped end-of-chat cards (e.g. the "Before we dive in" check-in). */
+#lesson .chat-area > *,
+#lesson .lesson-main > .assessment-panel,
+#lesson .lesson-main > .multistep-panel,
+#lesson .lesson-main > .manip-panel {
+  flex-shrink: 0;
+}
+
+#lesson .chat-area {
+  min-height: 0;
+  padding-bottom: 36px;
+}
+
+/* ---------- Daily AI Allowance Cap & Soft Warning ---------- */
+#lesson .adapt-badge.cap-reached {
+  background: rgba(232, 93, 63, 0.12);
+  color: #b43e25;
+  border-color: rgba(232, 93, 63, 0.32);
+}
+
+#lesson .adapt-badge.cap-reached .pulse {
+  background: #e85d3f;
+  animation: none;
+}
+
+#lesson .daily-cap-soft-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 24px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(244, 169, 64, 0.14), rgba(232, 93, 63, 0.08));
+  border: 1px solid rgba(244, 169, 64, 0.38);
+  color: var(--l-ink, #1f3a34);
+  font-size: 12.5px;
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+
+#lesson .daily-cap-soft-warning svg {
+  color: #c87a12;
+  flex-shrink: 0;
+}
+
+#lesson .daily-cap-soft-warning span {
+  flex: 1;
+  min-width: 0;
+}
+
+#lesson .daily-cap-soft-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--l-muted, #4f6660);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+#lesson .daily-cap-soft-dismiss:hover {
+  background: rgba(31, 58, 52, 0.08);
+  color: var(--l-ink, #1f3a34);
+}
+
+#lesson .chat-error-banner.is-daily-cap {
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 250, 242, 0.98) 0%,
+    rgba(253, 241, 232, 0.96) 100%
+  );
+  border: 1px solid rgba(232, 93, 63, 0.34);
+  box-shadow: 0 12px 30px rgba(180, 62, 37, 0.08);
+}
+
+#lesson .chat-error-banner-icon.is-cap {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(232, 93, 63, 0.14);
+  color: #c8472c;
+  flex-shrink: 0;
+}
+
+#lesson .daily-cap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+#lesson .daily-cap-head strong {
+  font-size: 14.5px;
+  color: var(--l-ink, #1f3a34);
+}
+
+#lesson .daily-cap-reset-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(232, 93, 63, 0.12);
+  color: #b43e25;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+#lesson .daily-cap-usage {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 58, 52, 0.1);
+}
+
+#lesson .daily-cap-usage-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(31, 58, 52, 0.1);
+  overflow: hidden;
+  margin-bottom: 7px;
+}
+
+#lesson .daily-cap-usage-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f4a940, #e85d3f);
+}
+
+#lesson .daily-cap-usage-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: var(--l-muted, #4f6660);
+}
+
+#lesson .daily-cap-usage-stats strong {
+  color: var(--l-ink, #1f3a34);
+  font-weight: 700;
+}
+
+#lesson .daily-cap-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--l-muted, #4f6660);
+}
+
+#lesson .chat-error-retry.is-settings {
+  background: var(--l-ink, #1f3a34);
+  color: #fff;
+  border-color: transparent;
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+#lesson .chat-error-retry.is-settings:hover {
+  background: var(--terracotta, #e85d3f);
+}
+
+#lesson .lesson-input.is-cap-locked {
+  background: var(--l-surface-2, #f3ede2);
+  border-style: dashed;
+  border-color: rgba(232, 93, 63, 0.35);
+  opacity: 0.78;
+}
+
+#lesson .lesson-input.is-cap-locked .lesson-composer-input {
+  cursor: not-allowed;
+}
+
+#lesson .lesson-shell[data-theme="dark"] .adapt-badge.cap-reached {
+  background: rgba(232, 93, 63, 0.2);
+  color: #ffb4a1;
+  border-color: rgba(232, 93, 63, 0.42);
+}
+
+#lesson .lesson-shell[data-theme="dark"] .daily-cap-soft-warning {
+  background: rgba(244, 169, 64, 0.14);
+  border-color: rgba(244, 169, 64, 0.36);
+  color: var(--l-ink);
+}
+
+#lesson .lesson-shell[data-theme="dark"] .chat-error-banner.is-daily-cap {
+  background: linear-gradient(
+    145deg,
+    rgba(42, 28, 25, 0.94) 0%,
+    rgba(32, 23, 21, 0.96) 100%
+  );
+  border-color: rgba(232, 93, 63, 0.45);
+}
+
+#lesson .lesson-shell[data-theme="dark"] .daily-cap-reset-pill {
+  background: rgba(232, 93, 63, 0.24);
+  color: #ffb4a1;
+}
+
+#lesson .lesson-shell[data-theme="dark"] .daily-cap-usage {
+  background: rgba(15, 26, 23, 0.65);
+  border-color: rgba(236, 244, 240, 0.12);
+}
+

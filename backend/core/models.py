@@ -6,6 +6,7 @@ ingest time (see views / logging_utils).
 """
 
 from django.db import models
+from django.conf import settings
 
 
 class ClientErrorReport(models.Model):

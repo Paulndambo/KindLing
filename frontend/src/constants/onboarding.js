@@ -363,11 +363,8 @@ export const COUNTRY_CURRICULUM_HINTS = {
 };
 
 export const ONBOARDING_STEPS = [
-  { id: 1, label: "You", short: "About you" },
-  { id: 2, label: "Place", short: "Where you learn" },
-  { id: 3, label: "Goals", short: "Goals & subjects" },
-  { id: 4, label: "Style", short: "How you learn" },
-  { id: 5, label: "Ready", short: "Review" },
+  { id: 1, label: "About you", short: "Who's learning" },
+  { id: 2, label: "How you learn", short: "Personalize" },
 ];
 
 export function getSchoolTypeOptions(grade) {
