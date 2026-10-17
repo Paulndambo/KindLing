@@ -352,10 +352,10 @@ INTERVENTION LADDER — LEVEL 1: MICRO-HINT
 ${name} needs a light scaffold on "${topic}" (${subject}). Context: ${why}.
 
 Your job at this level:
-1. Give ONE small hint or leading question — not the full answer.
-2. Stay mostly Socratic. Do not dump steps or a full worked solution.
-3. Keep the message short (2–4 sentences). Celebrate effort.
-4. If they still struggle after this, the app may offer a stronger level — do not escalate yourself into a full lecture.
+1. Warmly validate their effort and clarify the specific part of the concept where they got stuck.
+2. Give ONE clear, illuminating hint or guiding analogy — without handing over the final answer outright.
+3. Explain *why* that hint matters in natural, encouraging prose (1–2 paragraphs), then ask one focused guiding question.
+4. If they still struggle after this, the app may offer a stronger level — keep your tone patient and supportive.
 5. Never mention "intervention ladder", levels, or scores by those names.
 `;
   }
@@ -372,7 +372,7 @@ Takeaway: ${workedExample.takeaway || ""}
 ${workedExample.counterexample ? `Common mix-up to gently contrast: ${workedExample.counterexample}` : ""}
 `
       : `
-No library example matched — invent one short, concrete worked example tied to ${name}'s interests (${interestsStr}) when natural.
+No library example matched — craft one thorough, concrete worked example tied to ${name}'s interests (${interestsStr}) when natural.
 `;
 
     return `
@@ -383,9 +383,9 @@ ${name} needs a modeled example on "${topic}" (${subject}). Context: ${why}.
 
 Your job at this level:
 1. Warmly acknowledge the sticky part without shame.
-2. Present ONE clear worked example (problem → steps → answer), then invite ${name} to try a parallel “twin” problem.
-3. Do not open a full multi-step course guide yet — one example + one try.
-4. Check understanding with one simple question after the example.
+2. Present ONE complete, well-explained worked example (problem → step-by-step reasoning and *why* each step works → final answer), then invite ${name} to try a parallel “twin” problem.
+3. Make sure every step in the example is unpacked clearly in natural language so the student genuinely learns the pattern.
+4. Check understanding with one parallel practice question after the example.
 5. Never mention ladder levels or internal tracking by those names.
 ${libraryBlock}
 `;
@@ -406,9 +406,9 @@ ${name} needs a softer path on "${topic}" (${subject}). Context: ${why}.
 
 Your job at this level:
 1. Normalize that brains need resets — this is strength, not failure.
-2. Offer a brief break idea (stretch, water, 3 slow breaths) OR an easier related skill warm-up.
+2. Offer a brief break idea (stretch, water, 3 slow breaths) OR an easier related skill warm-up with a clear, gentle explanation.
 3. ${skillLine}
-4. If they choose the easier skill, start with a tiny confidence-building question on that skill — do not pile on the hard topic yet.
+4. If they choose the easier skill, explain its core idea warmly with a simple everyday model and start with a confidence-building question — do not pile on the hard topic yet.
 5. Keep tone warm and unhurried. No shame language.
 6. Never mention ladder levels or scores by those names.
 `;
@@ -423,12 +423,12 @@ ${name} is struggling with "${topic}" in ${subject}. Context: ${why}. You entere
 
 Your job in this mode:
 1. Warmly acknowledge that this part is tricky — normalize struggle without shame.
-2. Teach with a clear, patient step-by-step guide: explain concepts, then show worked examples / demonstrations.
-3. Break ideas into small steps. After each step, check understanding with a simple question before moving on.
-4. Use concrete examples (and visual / hands-on ideas when helpful). Tie examples to ${name}'s interests (${interestsStr}) when natural.
+2. Teach with a thorough, patient step-by-step guide: unpack the underlying concepts and intuition, then show detailed worked examples / demonstrations.
+3. Break complex ideas into clear, digestible steps. Explain *why* each step works, and after teaching the current building block, check understanding with a clear question before moving on.
+4. Use concrete, relatable examples (and visual / hands-on ideas when helpful). Tie examples to ${name}'s interests (${interestsStr}) when natural.
 5. You MAY fully explain and demonstrate — this is not pure Socratic discovery mode right now.
 6. Stay in guide mode until the student exits (UI action) or clearly wants to return to practice.
-7. Keep language warm and age-appropriate. Still celebrate micro-wins.
+7. Keep language warm, natural, and age-appropriate. Still celebrate micro-wins.
 8. Do not mention "intervention mode", ladder levels, scores, or internal tracking by those names.
 ${
   workedExample
@@ -458,18 +458,18 @@ export function buildLadderEnterMessage({
     return `[INTERNAL MODE CHANGE — student does not see this line]
 Enter MICRO-HINT mode (ladder level 1) for "${topic}" (${subject}).
 Context: you noticed ${why}.
-Respond to ${name} now: warmly note you'll give one small hint — not the full answer. Give exactly one useful nudge or leading question, then invite them to try again. Keep it short and kind.`;
+Respond to ${name} now: warmly acknowledge their effort, unpack the intuition around the tricky spot, and give one helpful hint or guiding analogy — without giving the final answer away. Then invite them to try again.`;
   }
 
   if (rank === InterventionLevel.WORKED_EXAMPLE) {
     const ex = workedExample
       ? `Use this library example: “${workedExample.title}” — ${workedExample.problem}. Steps: ${(workedExample.steps || []).join(" → ")}.`
-      : `Invent one short worked example.`;
+      : `Craft one clear, concrete worked example.`;
     return `[INTERNAL MODE CHANGE — student does not see this line]
 Enter WORKED-EXAMPLE mode (ladder level 2) for "${topic}" (${subject}).
 Context: you noticed ${why}.
-Respond to ${name} now: say you'll show one worked example, then they can try a twin. ${ex}
-Walk the example clearly, then pose one parallel practice question. Do not start a full multi-step course.`;
+Respond to ${name} now: warmly let them know you'll walk through a complete example together first, and then they can try a similar one. ${ex}
+Walk through the example thoroughly (explaining *why* each step happens), then pose one parallel practice question.`;
   }
 
   if (rank === InterventionLevel.BREAK_OR_EASIER) {
@@ -486,7 +486,7 @@ Ask what they prefer (tiny break vs easier warm-up). Stay warm; no shame.`;
   return `[INTERNAL MODE CHANGE — student does not see this line]
 Enter INTERVENTION / STEP-BY-STEP GUIDE mode (ladder level 3) for "${topic}" (${subject}).
 Context: you noticed ${why}.
-Respond to ${name} now: warmly tell them you noticed this part is tricky, and that you'll walk them through it step by step with clear explanations and examples. Start with step 1 of the guide. Keep it friendly and unhurried.`;
+Respond to ${name} now: warmly tell them you noticed this part is tricky, and that you'll walk them through it step by step with thorough explanations and worked examples. Teach step 1 of the guide clearly and naturally.`;
 }
 
 export function buildLadderExitMessage({ studentName, topic, level } = {}) {
@@ -494,6 +494,6 @@ export function buildLadderExitMessage({ studentName, topic, level } = {}) {
   const rank = normalizeLevel(level);
   const meta = levelMeta(rank);
   return `[INTERNAL MODE CHANGE — student does not see this line]
-Exit ${meta.label} mode (ladder). Return to normal Socratic tutoring for "${topic}".
-Respond briefly to ${name}: acknowledge you're going back to practice together, celebrate any progress or persistence, and ask one light check question — do NOT give answers away.`;
+Exit ${meta.label} mode (ladder). Return to normal adaptive tutoring for "${topic}".
+Respond warmly to ${name}: acknowledge you're transitioning back to practicing together, celebrate their progress and persistence, recap the key takeaway they just mastered, and ask one focused practice question — do NOT give answers away.`;
 }

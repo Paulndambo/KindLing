@@ -28,11 +28,12 @@ def env_list(name: str, default: List[str] | None = None) -> List[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def load_local_env() -> None:
-    """Load backend/.env for local development without overriding host config."""
+def read_local_env_values() -> Dict[str, str]:
+    """Parse key-value pairs from backend/.env if present."""
     env_path = BASE_DIR / ".env"
     if not env_path.is_file():
-        return
+        return {}
+    parsed: Dict[str, str] = {}
     for line in env_path.read_text(encoding="utf-8").splitlines():
         entry = line.strip()
         if not entry or entry.startswith("#"):
@@ -45,7 +46,15 @@ def load_local_env() -> None:
         value = value.strip()
         if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
             value = value[1:-1]
-        os.environ.setdefault(name.strip(), value)
+        parsed[name.strip()] = value
+    return parsed
+
+
+def load_local_env() -> None:
+    """Load backend/.env for local development without overriding non-empty host config."""
+    for key, value in read_local_env_values().items():
+        if not os.environ.get(key, "").strip():
+            os.environ[key] = value
 
 
 load_local_env()

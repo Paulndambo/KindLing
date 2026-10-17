@@ -107,11 +107,26 @@ export function manipulativesForTopic(topicName) {
   const exact = TOPIC_MANIPULATIVES[topicName];
   if (exact) return exact;
   const t = topicName.toLowerCase();
-  if (t.includes("number line")) {
+  if (
+    t.includes("number line") ||
+    t.includes("integer") ||
+    t.includes("negative") ||
+    t.includes("inequalit") ||
+    t.includes("rounding") ||
+    t.includes("decimal")
+  ) {
     return [MANIPULATIVE_TYPES.NUMBER_LINE, MANIPULATIVE_TYPES.FRACTION_BAR];
   }
-  if (t.includes("fraction") || t.includes("math foundation")) {
-    return [MANIPULATIVE_TYPES.FRACTION_BAR];
+  if (
+    t.includes("fraction") ||
+    t.includes("math foundation") ||
+    t.includes("ratio") ||
+    t.includes("percent") ||
+    t.includes("proportion") ||
+    t.includes("probability") ||
+    t.includes("divis")
+  ) {
+    return [MANIPULATIVE_TYPES.FRACTION_BAR, MANIPULATIVE_TYPES.NUMBER_LINE];
   }
   return [];
 }
@@ -136,11 +151,11 @@ export function buildVisualPromptHint(topicName) {
     )
     .join(" or ");
   return `
-Interactive visuals (student has manipulatives open in the lesson UI):
-- When a concrete model helps, ask them to try the on-screen ${names}.
-- To set the model yourself, append a hidden tag at the end of your message (never mention the tag):
+Interactive visuals (student has interactive manipulatives open in the lesson UI):
+- Actively pair your explanations with the on-screen ${names} AND inline visual demonstrations (\`\`\`visual blocks).
+- To set the interactive manipulative model yourself, append a hidden tag at the end of your message (never mention the tag):
   ⟦visual type="fraction-bar" num="3" den="4"⟧
   or ⟦visual type="number-line" num="1" den="2"⟧
-- Prefer small denominators (≤12). Celebrate when their model matches the idea.
+- Prefer small denominators (≤12). Invite the student to adjust the interactive model or compare it with the inline visual diagram, and celebrate when their model matches the idea.
 `.trim();
 }

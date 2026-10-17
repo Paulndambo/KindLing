@@ -174,10 +174,29 @@ class PlatformGeminiView(APIView):
     throttle_classes = [throttling.ScopedRateThrottle]
     throttle_scope = "platform_ai"
     max_body_bytes = 1 * 1024 * 1024
-    max_output_tokens = 2048
+    max_output_tokens = 4096
+
+    @staticmethod
+    def _resolve_platform_gemini_key(force_reload: bool = False) -> str:
+        api_key = str(getattr(settings, "PLATFORM_GEMINI_API_KEY", "") or "").strip()
+        explicit = getattr(getattr(settings, "_wrapped", None), "_explicit_settings", set())
+        if "PLATFORM_GEMINI_API_KEY" in explicit:
+            return api_key
+        # Hot-reload backend/.env in local development or when rotating keys
+        if force_reload or getattr(settings, "DEBUG", False) or not api_key:
+            try:
+                from backend.settings import read_local_env_values
+
+                env_key = read_local_env_values().get("PLATFORM_GEMINI_API_KEY", "").strip()
+                if env_key:
+                    api_key = env_key
+                    settings.PLATFORM_GEMINI_API_KEY = env_key
+            except Exception:
+                pass
+        return api_key
 
     def post(self, request):
-        api_key = settings.PLATFORM_GEMINI_API_KEY
+        api_key = self._resolve_platform_gemini_key()
         if not api_key:
             return Response(
                 {
@@ -270,6 +289,24 @@ class PlatformGeminiView(APIView):
                 upstream = urlopen(upstream_request, timeout=90)
                 break
             except HTTPError as exc:
+                if exc.code in (401, 403) and attempt == 0:
+                    reloaded_key = self._resolve_platform_gemini_key(force_reload=True)
+                    if reloaded_key and reloaded_key != api_key:
+                        api_key = reloaded_key
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:{method}?key={api_key}"
+                        if streaming:
+                            url += "&alt=sse"
+                        upstream_request = Request(
+                            url,
+                            data=request_body,
+                            headers={
+                                "Content-Type": "application/json",
+                                "Accept": "text/event-stream" if streaming else "application/json",
+                            },
+                            method="POST",
+                        )
+                        exc.close()
+                        continue
                 # Gemini can briefly return 503 while capacity is recovering.
                 # Retry transient server failures with bounded exponential
                 # backoff and jitter; never retry malformed requests or auth

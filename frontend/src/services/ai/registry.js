@@ -39,7 +39,7 @@ export const PROVIDERS = [
     name: "Google Gemini",
     description: "Default Kindling tutor. Strong multimodal + native TTS.",
     docsUrl: "https://aistudio.google.com/apikey",
-    keyHint: "AIza… or Google AI Studio key",
+    keyHint: "AQ.… or AIza… (Google AI Studio key)",
     defaultModel: "gemini-3.1-flash-lite",
     capabilities: ["chat", "vision", "tts"],
     color: "#4285F4",

@@ -21,10 +21,21 @@ import {
   openAiCompatibleComplete,
   openAiCompatibleVision,
 } from "./providers/openaiCompatible";
+import { hasPlatformGemini } from "./keyVault";
 import { getProvider } from "./registry";
 import { getRuntimeSnapshot, isAiAvailable, resolveRoute } from "./resolve";
 
 export { isAiAvailable, resolveRoute, getRuntimeSnapshot };
+
+function canFallbackToPlatform(route) {
+  return Boolean(
+    route &&
+      route.provider === "gemini" &&
+      route.source === "byok" &&
+      route.routingMode === "auto" &&
+      hasPlatformGemini()
+  );
+}
 
 /**
  * Create a streaming chat session for the live lesson.
@@ -40,7 +51,9 @@ export function createChatSession(systemInstruction, history = [], options = {})
 
   if (provider === "gemini") {
     const client = createGeminiClient({ apiKey, platformProxy: route.platformProxy });
-    return createGeminiChat(client, model, systemInstruction, history);
+    return createGeminiChat(client, model, systemInstruction, history, {
+      allowPlatformFallback: canFallbackToPlatform(route),
+    });
   }
 
   if (provider === "anthropic") {
@@ -91,7 +104,9 @@ export async function generateText(prompt, options = {}) {
     const contents = system
       ? `${system}\n\n${prompt}`
       : prompt;
-    const response = await geminiGenerateContent(client, model, contents);
+    const response = await geminiGenerateContent(client, model, contents, undefined, {
+      allowPlatformFallback: canFallbackToPlatform(route),
+    });
     return extractTextFromGeminiResponse(response);
   }
 
@@ -136,20 +151,26 @@ export async function generateVision({ prompt, mimeType, base64 }) {
 
   if (provider === "gemini") {
     const client = createGeminiClient({ apiKey, platformProxy: route.platformProxy });
-    const response = await geminiGenerateContent(client, model, [
-      {
-        role: "user",
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: mimeType || "image/jpeg",
-              data: base64,
+    const response = await geminiGenerateContent(
+      client,
+      model,
+      [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: mimeType || "image/jpeg",
+                data: base64,
+              },
             },
-          },
-        ],
-      },
-    ]);
+          ],
+        },
+      ],
+      undefined,
+      { allowPlatformFallback: canFallbackToPlatform(route) }
+    );
     return extractTextFromGeminiResponse(response);
   }
 

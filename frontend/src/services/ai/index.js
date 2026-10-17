@@ -37,6 +37,8 @@ export {
   maskKey,
   getPlatformGeminiKey,
   hasPlatformGemini,
+  validateProviderKey,
+  isValidProviderKeyFormat,
 } from "./keyVault";
 
 export {

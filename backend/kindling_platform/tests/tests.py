@@ -124,3 +124,22 @@ class PlatformApiTests(APITestCase):
         self.assertEqual(res_b["used"], 1)
         self.assertEqual(res_b["estimatedTokensRemaining"], 995000)
 
+    def test_platform_gemini_missing_key_returns_503(self):
+        from django.test import override_settings
+
+        ensure_subscription(self.user)
+        self.client.force_authenticate(self.user)
+        with override_settings(PLATFORM_GEMINI_API_KEY=""):
+            res = self.client.post(
+                "/api/platform/ai/gemini/",
+                {
+                    "model": "gemini-3.1-flash-lite",
+                    "contents": "Hello",
+                },
+                format="json",
+            )
+        self.assertEqual(res.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertIn("PLATFORM_GEMINI_API_KEY", res.data["detail"])
+
+
+

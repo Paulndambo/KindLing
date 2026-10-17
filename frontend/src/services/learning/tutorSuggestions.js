@@ -247,8 +247,8 @@ export function buildSuggestPromptBlock({
 - After your learner-facing message, append ONE hidden machine block with 3 to 5 short clickable continuations ${name} might tap next.
 - Format exactly (pipe-separated, no numbering):
   ⟦suggests: suggestion one | suggestion two | suggestion three | suggestion four⟧
-- Each suggestion: 3–12 words, first-person or short request from the student's side (e.g. "Let me try a similar one", "Why does that work?", "Show another everyday example", "Show me how step by step").
-- Vary the set: mix practice, clarify, real-world, confidence ("I think I get it — check me"), gentle pace control ("Go one step slower"), and hands-on how-to when relevant.
+- Each suggestion: 3–12 words, first-person or short request from the student's side (e.g. "Let me try a similar one", "Show me another visual diagram", "Why does that work?", "Show another everyday example", "Show me how step by step").
+- Vary the set: mix practice, visual exploration ("Show a visual comparison"), clarify, real-world, confidence ("I think I get it — check me"), gentle pace control ("Go one step slower"), and hands-on how-to when relevant.
 ${practicalChipLine}
 - Never put the ⟦suggests…⟧ block in the middle of a sentence. Never explain the block to the student.
 - Skip the block only for pure safety pauses or when you must stop tutoring.`;
@@ -272,10 +272,10 @@ export function buildRealWorldExamplePromptBlock({
       : "Prefer everyday scenes a school-age learner would recognize.";
 
   return `Real-world / relatable examples (mandatory on teaching replies):
-- In every explanation or substantial response, include at least one concrete real-world or everyday example woven into or right after the idea — not a dry definition alone.
+- In every explanation or substantial response, weave in at least one vivid, concrete real-world or everyday example — never leave the student with a dry definition alone.
 - Ground examples in ${name}'s world: interests (${interests || "their hobbies when known"}), home, school, play, or community.
 - ${localHint}
-- Keep the example short (1–3 sentences) and clearly tied to the concept you just taught.
-- If you are only asking a tiny check question, still attach a quick hook ("like splitting mangoes…") so the idea stays concrete.
-- You are a supportive tutor first: clarity + relatability beat jargon.`;
+- Walk through the example clearly (3–5 natural sentences) so the student can see *how* and *why* the everyday scenario maps to the concept or rule you just taught.
+- Even when transitioning into a check question, anchor it in a tangible scenario ("like splitting mangoes at the market…") so the idea stays concrete and alive.
+- You are a dedicated private tutor first: deep clarity + natural relatability beat textbook jargon.`;
 }

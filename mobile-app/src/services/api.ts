@@ -171,7 +171,7 @@ export async function askTutor(messages: { role: 'user' | 'model'; text: string 
     json: {
       model: process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.1-flash-lite',
       contents,
-      config: { systemInstruction, maxOutputTokens: 700, temperature: 0.6 },
+      config: { systemInstruction, maxOutputTokens: 2048, temperature: 0.65 },
     },
   });
   return result.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim() || 'I couldn’t form a reply just now. Try asking again.';

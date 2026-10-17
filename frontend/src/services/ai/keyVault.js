@@ -115,6 +115,34 @@ function persistVault(vault) {
 }
 
 /**
+ * Validate provider API key format before storing or using it.
+ * @param {string} providerId
+ * @param {string} apiKey
+ * @returns {{ valid: boolean, reason?: string }}
+ */
+export function validateProviderKey(providerId, apiKey) {
+  const trimmed = String(apiKey || "").trim();
+  if (!trimmed) {
+    return { valid: false, reason: "API key is empty." };
+  }
+  if (providerId === "gemini") {
+    const validPrefix = trimmed.startsWith("AIza") || trimmed.startsWith("AQ.");
+    if (!validPrefix || trimmed.length < 30) {
+      return {
+        valid: false,
+        reason:
+          "Google AI Studio Gemini API keys must start with 'AQ.' or 'AIza'. Check your key at aistudio.google.com/apikey.",
+      };
+    }
+  }
+  return { valid: true };
+}
+
+export function isValidProviderKeyFormat(providerId, apiKey) {
+  return validateProviderKey(providerId, apiKey).valid;
+}
+
+/**
  * @returns {{ providerId: string, apiKey: string, baseUrl?: string, label?: string, fingerprint?: string, updatedAt?: string } | null}
  */
 export function getKeyEntry(providerId) {
@@ -122,7 +150,7 @@ export function getKeyEntry(providerId) {
   const entry = vault.entries[providerId];
   if (!entry?.sealedKey) return null;
   const apiKey = unseal(entry.sealedKey);
-  if (!apiKey) return null;
+  if (!apiKey || !isValidProviderKeyFormat(providerId, apiKey)) return null;
   return {
     providerId,
     apiKey,
@@ -141,12 +169,15 @@ export function listKeyStatuses() {
   const vault = loadVault();
   return PROVIDERS.map((p) => {
     const entry = vault.entries[p.id];
-    const apiKey = entry?.sealedKey ? unseal(entry.sealedKey) : "";
+    const rawKey = entry?.sealedKey ? unseal(entry.sealedKey) : "";
+    const validation = rawKey ? validateProviderKey(p.id, rawKey) : { valid: false };
+    const apiKey = validation.valid ? rawKey : "";
     return {
       providerId: p.id,
       name: p.name,
       hasKey: Boolean(apiKey),
-      mask: apiKey ? maskKey(apiKey) : "",
+      invalidKeyError: rawKey && !validation.valid ? validation.reason : "",
+      mask: rawKey ? maskKey(rawKey) : "",
       label: entry?.label || "",
       baseUrl: entry?.baseUrl || p.defaultBaseUrl || "",
       fingerprint: entry?.fingerprint || "",
@@ -164,6 +195,10 @@ export async function setKey(providerId, { apiKey, baseUrl, label } = {}) {
   if (!trimmed) {
     removeKey(providerId);
     return null;
+  }
+  const validation = validateProviderKey(providerId, trimmed);
+  if (!validation.valid) {
+    throw new Error(validation.reason || "Invalid API key format.");
   }
   const vault = loadVault();
   const fingerprint = await fingerprintKey(trimmed);

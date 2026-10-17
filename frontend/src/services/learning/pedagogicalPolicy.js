@@ -149,50 +149,50 @@ export function executionBriefForAction(action, params = {}) {
 
   switch (a) {
     case PedagogicalAction.REVIEW:
-      return `Run a short retrieval practice on «${skill}». One prompt, wait for their try, give brief feedback. Do not teach a brand-new concept.`;
+      return `Run a warm retrieval practice on «${skill}»: briefly frame why this skill matters with a relatable hook, pose one clear recall or application prompt, and when responding to their try, give thoughtful feedback that explains why their reasoning works (or gently unpacks any slip). Do not introduce a brand-new topic yet.`;
     case PedagogicalAction.CHALLENGE:
-      return `Offer one fair stretch problem on «${skill}» — slightly richer than last success. Stay Socratic; celebrate solid reasoning.`;
+      return `Offer one fair, engaging stretch problem on «${skill}» — slightly richer than their last success. Celebrate their solid reasoning, set up the scenario clearly in natural prose, and stay Socratic while guiding them through the deeper layer.`;
     case PedagogicalAction.ASSESS:
-      return `Invite a low-stakes quick check (or one clear MC-style question in chat if no panel). Score understanding, not speed. No shame.`;
+      return `Invite a low-stakes quick check (or one well-framed question in chat if no panel). Frame it warmly so it feels like a natural check-in on understanding, not speed. No shame.`;
     case PedagogicalAction.MICRO_HINT:
-      return `Give exactly one small clue. Stay mostly Socratic. Do not give a full solution or multi-step guide.`;
+      return `Acknowledge what the student is trying, explain the underlying intuition around the sticking point in a warm paragraph, and give one clear clue or guiding nudge so they can connect the final step themselves. Do not dump the final answer outright.`;
     case PedagogicalAction.WORKED_EXAMPLE:
-      return `Show one short worked example (everyday hook), then invite a twin try. Do not open a full multi-step course guide.`;
+      return `Show a complete, well-explained worked example with an everyday hook AND an inline visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram) on «${skill}» — walking through not just the steps, but *why* each step makes sense — then invite a parallel "twin" try.`;
     case PedagogicalAction.FULL_GUIDE:
       return params.practicalHowTo
-        ? `Hands-on full guide for «${skill}»: short concept → numbered device how-to (complete short procedure OK) → try-it checklist → confirm what they did. Do not withhold steps.`
-        : `Walk step-by-step: explain → everyday example → tiny check. One step per message. Never dump the whole solution. For practical computer skills, use numbered how-to steps they can do on a device.`;
+        ? `Hands-on full guide for «${skill}»: explain the core concept and why it matters → show a visual workflow or folder/screen diagram → give a complete, detailed numbered device how-to procedure → provide a clear try-it checklist → confirm what they did. Do not withhold steps.`
+        : `Walk step-by-step with real depth and visuals: thoroughly explain the concept and its intuition → include an inline visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram) and walk through a concrete everyday example → ask one clear check question. Teach one major building block per message with substance, without dumping an entire multi-topic syllabus at once. For practical computer skills, use numbered how-to steps they can do on a device.`;
     case PedagogicalAction.EASIER_PATH:
       return params.prereqLabel
-        ? `Warmly shift to foundation skill «${params.prereqLabel}» with a quick visual win, then bridge back later.`
-        : `Offer a softer path or simpler related idea. Normalize the reset. One easy win before returning.`;
+        ? `Warmly shift to foundation skill «${params.prereqLabel}»: unpack the core idea with a vivid, relatable visual model (\`\`\`visual or \`\`\`diagram) so it clicks, get an encouraging win, and bridge back later.`
+        : `Offer a softer path or simpler related idea with a patient, concrete explanation, everyday analogy, and clear visual demonstration. Normalize the reset and build one solid win before returning.`;
     case PedagogicalAction.OFFER_BREAK:
-      return `Normalize needing a pause. Offer a short break or easier warm-up. No pressure to push through.`;
+      return `Warmly normalize needing a pause. Offer a brief breather or a gentle, low-pressure warm-up angle on the idea. No pressure to push through.`;
     case PedagogicalAction.REMEDIATE_MISCONCEPTION:
-      return `Gently rework misconception «${mc}». Use the playbook check question if available. Do not shame. Confirm with one targeted check.`;
+      return `Gently rework misconception «${mc}»: affirm what made their line of thinking tempting, clearly contrast it with how the concept actually works using a concrete example AND a side-by-side visual demonstration (\`\`\`visual or \`\`\`diagram), and confirm with one targeted check question. Never shame.`;
     case PedagogicalAction.REMEDIATE_PREREQUISITE:
-      return `The current skill needs foundation «${skill}». Warmly walk back: quick prereq practice with a concrete model, then return. Do not plow ahead on the hard skill.`;
+      return `The current skill needs foundation «${skill}». Warmly walk back and teach that prerequisite thoroughly with a concrete visual model (\`\`\`visual or \`\`\`diagram) and worked illustration, then check understanding before returning to the harder skill.`;
     case PedagogicalAction.SLOW_DOWN:
-      return `Pace is too fast (guessing). Slow down. Ask them to show one reason or step before the next answer. Short choices OK.`;
+      return `Pace is too fast (guessing). Warmly slow the tempo down, unpack the reasoning behind the current step with a clear visual cue so it feels manageable, and ask them to walk through one reason or step before choosing the next answer.`;
     case PedagogicalAction.AFFECT_SUPPORT:
-      return `Lead with warmth. Normalize struggle. One tiny next step only. Do not pile on difficulty or long lectures.`;
+      return `Lead with genuine warmth and normalize struggle. Re-anchor the idea gently with a reassuring, concrete everyday analogy and a simple visual model, then invite one small, confidence-building next step.`;
     case PedagogicalAction.CHECK_UNDERSTANDING:
-      return `Confidence may outpace evidence. Ask them to show steps / explain why before stretching difficulty.`;
+      return `Confidence may outpace evidence. Affirm their momentum, add a richer angle or visual nuance on the concept, and ask them to explain *why* or walk through their steps in their own words before stretching difficulty.`;
     case PedagogicalAction.CHANGE_REPRESENTATION:
-      return `Try a different representation (story, visual model, or real-world object). Same idea, new packaging.`;
+      return `Re-teach the idea using a fresh, vivid visual representation (an inline \`\`\`visual block, \`\`\`mermaid flowchart, or \`\`\`diagram spatial model paired with a story or everyday object) — unpacking how each part of the visual maps to the concept — then ask one check question.`;
     case PedagogicalAction.CELEBRATE_PERSISTENCE:
-      return `Briefly name their effort or bounce-back, then one clear next question. Keep celebration short and sincere.`;
+      return `Sincerely celebrate their persistence and specific reasoning effort, enrich the takeaway by connecting what they just figured out to the bigger picture, and pose one clear next question.`;
     case PedagogicalAction.INDEPENDENT_PRACTICE:
-      return `Independence is rising. Prefer no-hint or micro-hint only. Let them own the try; affirm solid reasoning.`;
+      return `Independence is rising. Affirm their strong grasp with a thoughtful observation on their reasoning, then set up a meaningful practice problem for them to own with minimal scaffolding.`;
     case PedagogicalAction.EXPLAIN:
       return params.practicalHowTo
-        ? `Practical how-to for «${skill}»: one-line concept, then numbered steps the student can do on their device, then a try-it check. Show the procedure clearly — do not turn "how do I…?" into a riddle.`
-        : `Give a clear mini-explanation with one everyday example, then one check question. Still do not dump a full solution dump. If the skill is hands-on, prefer numbered how-to steps + try-it.`;
+        ? `Practical how-to for «${skill}»: explain the concept and why it works in clear prose, include a visual diagram of the workflow/screen, then give detailed numbered steps the student can do on their device, followed by a try-it check. Show the procedure clearly — do not turn "how do I…?" into a riddle.`
+        : `Give a thorough, articulate explanation of «${skill}» (unpacking the what, the underlying why, and how it works in 2–4 natural paragraphs) complemented by a concrete everyday example AND an inline visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram), then end with one focused check question. If the skill is hands-on, prefer numbered how-to steps + try-it.`;
     case PedagogicalAction.CONTINUE_SOCRATIC:
     default:
       return params.practicalHowTo
-        ? `Practical skill default: after any brief check-in, prioritize a hands-on how-to for «${skill}» (numbered steps + try-it). Guide discovery on reasoning checks, but never withhold procedures.`
-        : `Continue adaptive Socratic tutoring: one question at a time, guide before giving, real-world hook when teaching. For hands-on skills, switch to numbered how-to + try-it.`;
+        ? `Practical skill default: engage thoughtfully with the student's reply, then provide a rich hands-on how-to for «${skill}» (clear conceptual context + visual workflow/diagram + numbered steps + try-it). Guide discovery on reasoning checks, but never withhold procedures.`
+        : `Continue high-depth adaptive tutoring: engage thoughtfully with the student's answer, teach and unpack the next conceptual layer with real depth (explaining the 'why', walking through a concrete everyday example, and including an inline visual demonstration via \`\`\`visual, \`\`\`mermaid, or \`\`\`diagram), and finish with one purposeful Socratic or check-in question. For hands-on skills, switch to numbered how-to + try-it.`;
   }
 }
 
@@ -822,7 +822,8 @@ export function buildPedagogyPromptBlock(decision) {
 - Why (internal — never read aloud as scores): ${(decision.reasons || []).join(", ") || "policy"}
 ${gap ? `- Control gap: ${gap}` : ""}
 - **Your job this turn:** ${decision.executionBrief}
-- Do **not** freestyle a different major move (no unsolicited full solutions, topic jumps, or unrelated quizzes).
+- **Depth, visual demonstration & voice reminder:** Execute this move with the warmth, articulateness, and substantive depth of a dedicated private tutor — unpacking the *why*, giving a concrete example, complementing your prose with **one or more inline visual demonstrations** (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram — use one focused visual when a single model suffices, or interleave multiple visuals in between paragraphs when walking through multiple stages, comparisons, or a concept + worked example), and ending with one focused question (never a clipped 1–2 sentence reply).
+- Do **not** freestyle a different major move (no topic jumps or unrelated quizzes).
 - You may still be warm, use real-world hooks, and attach 3–5 suggestion chips.
 - Allowed micro-flex only if safety requires it; otherwise stay on **${decision.action}**.
 - Other candidates considered (do not switch unless student clearly needs safety): ${alts}

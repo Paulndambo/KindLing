@@ -1,22 +1,32 @@
 import { Fragment, type ReactNode } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 
-type Block = { type: 'paragraph' | 'heading' | 'list' | 'code'; text: string; ordered?: boolean; number?: string; level?: number };
+type Block = { type: 'paragraph' | 'heading' | 'list' | 'code' | 'visual'; text: string; lang?: string; ordered?: boolean; number?: string; level?: number };
+
+const VISUAL_FENCE_LANGS = new Set(['visual', 'visual-demo', 'diagram', 'mermaid', 'flowchart', 'ascii', 'chart', 'text']);
 
 function parseBlocks(markdown: string): Block[] {
   const blocks: Block[] = [];
   let paragraph: string[] = [];
   let code: string[] = [];
   let inCode = false;
+  let fenceLang = '';
   const flushParagraph = () => {
     if (paragraph.length) blocks.push({ type: 'paragraph', text: paragraph.join('\n') });
     paragraph = [];
   };
 
   for (const line of markdown.replace(/\r\n?/g, '\n').split('\n')) {
-    if (/^\s*```/.test(line)) {
+    const fenceMatch = /^\s*```([\w-]*)/.exec(line);
+    if (fenceMatch) {
       flushParagraph();
-      if (inCode) blocks.push({ type: 'code', text: code.join('\n') });
+      if (inCode) {
+        const isVisual = VISUAL_FENCE_LANGS.has(fenceLang.toLowerCase());
+        blocks.push({ type: isVisual ? 'visual' : 'code', text: code.join('\n'), lang: fenceLang });
+        fenceLang = '';
+      } else {
+        fenceLang = (fenceMatch[1] || '').trim();
+      }
       code = [];
       inCode = !inCode;
       continue;
@@ -49,7 +59,10 @@ function parseBlocks(markdown: string): Block[] {
   }
 
   flushParagraph();
-  if (inCode) blocks.push({ type: 'code', text: code.join('\n') });
+  if (inCode) {
+    const isVisual = VISUAL_FENCE_LANGS.has(fenceLang.toLowerCase());
+    blocks.push({ type: isVisual ? 'visual' : 'code', text: code.join('\n'), lang: fenceLang });
+  }
   return blocks;
 }
 
@@ -79,6 +92,14 @@ export function LessonMessageContent({ text, textStyle }: { text: string; textSt
             </View>
           );
         }
+        if (block.type === 'visual') {
+          return (
+            <View key={index} style={styles.visualCard}>
+              <Text style={styles.visualBadge}>VISUAL DEMONSTRATION</Text>
+              <Text selectable style={[textStyle, styles.visualText]}>{block.text}</Text>
+            </View>
+          );
+        }
         if (block.type === 'code') {
           return <Text key={index} selectable style={[textStyle, styles.codeBlock]}>{block.text}</Text>;
         }
@@ -100,6 +121,9 @@ const styles = StyleSheet.create({
   strike: { textDecorationLine: 'line-through' },
   inlineCode: { fontFamily: 'monospace', backgroundColor: '#EEF0EC' },
   codeBlock: { fontFamily: 'monospace', fontSize: 14, lineHeight: 20, backgroundColor: '#EEF0EC', padding: 10, borderRadius: 8 },
+  visualCard: { backgroundColor: '#F3FAF9', borderColor: '#286B6D', borderWidth: 1, borderRadius: 12, padding: 12, gap: 6 },
+  visualBadge: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8, color: '#286B6D' },
+  visualText: { fontFamily: 'monospace', fontSize: 13.5, lineHeight: 20, color: '#1F3A34' },
   heading: { fontSize: 18, lineHeight: 24, fontWeight: '800' },
   smallHeading: { fontSize: 16, lineHeight: 22 },
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },

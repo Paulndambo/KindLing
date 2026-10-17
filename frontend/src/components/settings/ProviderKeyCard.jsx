@@ -27,6 +27,8 @@ export default function ProviderKeyCard({
   const [message, setMessage] = useState("");
 
   const hasKey = Boolean(status?.hasKey);
+  const hasInvalidKey = Boolean(status?.invalidKeyError);
+  const canRemove = hasKey || hasInvalidKey;
 
   const handleSaveFull = async (e) => {
     e.preventDefault();
@@ -90,6 +92,10 @@ export default function ProviderKeyCard({
           <span className="provider-status ok">
             <Check size={13} /> Key on device · {status.mask}
           </span>
+        ) : hasInvalidKey ? (
+          <span className="provider-status">
+            Invalid key ignored ({status.mask}) — using Platform AI
+          </span>
         ) : platformGemini ? (
           <span className="provider-status platform">
             Platform Gemini available
@@ -117,7 +123,7 @@ export default function ProviderKeyCard({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={
-                hasKey
+                hasKey || hasInvalidKey
                   ? "Paste a new key to replace…"
                   : provider.keyHint || "Paste API key"
               }
@@ -173,7 +179,7 @@ export default function ProviderKeyCard({
               Make primary
             </button>
           )}
-          {hasKey && (
+          {canRemove && (
             <button
               type="button"
               className="btn-ghost provider-remove"
@@ -185,7 +191,9 @@ export default function ProviderKeyCard({
             </button>
           )}
         </div>
-        {message && <p className="provider-message">{message}</p>}
+        {(message || status?.invalidKeyError) && (
+          <p className="provider-message">{message || status?.invalidKeyError}</p>
+        )}
       </form>
     </article>
   );

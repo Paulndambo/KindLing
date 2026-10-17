@@ -591,3 +591,289 @@
     font-size: 11.5px;
   }
 }
+
+/* ── Rich Visual Demonstrations (.tutor-visual-demo) ── */
+.tutor-visual-demo {
+  margin: 0.85em 0 1em;
+  padding: 13px 15px 14px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(40, 107, 109, 0.22);
+  background: linear-gradient(180deg, #f5fbfa 0%, #ffffff 100%);
+  box-shadow: 0 3px 12px rgba(31, 58, 52, 0.05);
+}
+
+.tutor-visual-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+
+.tutor-visual-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(40, 107, 109, 0.12);
+  color: var(--teal, #286b6d);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tutor-visual-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--pine, #1f3a34);
+}
+
+.tutor-visual-caption {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(31, 58, 52, 0.12);
+  font-size: 12px;
+  color: var(--ink-soft, #5a6b66);
+  line-height: 1.45;
+}
+
+.tutor-visual-formula {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #fdf3dc;
+  border: 1px solid rgba(228, 163, 42, 0.4);
+  color: #1f3a34;
+  font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Fraction bars */
+.tutor-fraction-demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutor-fraction-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tutor-fraction-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.tutor-fraction-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1.5px solid #286b6d;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.tutor-fraction-label {
+  font-weight: 600;
+  color: var(--ink, #1f3a34);
+  flex: 1;
+}
+
+.tutor-fraction-pct {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft, #5a6b66);
+}
+
+.tutor-fraction-bar-track {
+  display: flex;
+  width: 100%;
+  height: 26px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid rgba(31, 58, 52, 0.25);
+  background: #f0f4f2;
+}
+
+.tutor-fraction-seg {
+  flex: 1;
+  border-right: 1.5px solid rgba(31, 58, 52, 0.18);
+  background: rgba(255, 255, 255, 0.75);
+  transition: background 0.2s ease;
+}
+
+.tutor-fraction-seg:last-child {
+  border-right: none;
+}
+
+.tutor-fraction-note {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-soft, #5a6b66);
+}
+
+/* Bar chart */
+.tutor-barchart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tutor-barchart-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tutor-barchart-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+
+.tutor-barchart-label {
+  font-weight: 600;
+  color: var(--ink, #1f3a34);
+}
+
+.tutor-barchart-val {
+  font-weight: 700;
+  color: var(--pine, #1f3a34);
+}
+
+.tutor-barchart-track {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: #e9efed;
+  overflow: hidden;
+}
+
+.tutor-barchart-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.tutor-barchart-note {
+  font-size: 11px;
+  color: var(--ink-soft, #5a6b66);
+}
+
+/* Side-by-side comparison grid */
+.tutor-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tutor-comparison-col-head {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #e6f2f2;
+  color: #1f3a34;
+  font-weight: 700;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.tutor-comparison-col-head.is-alt {
+  background: #fdf1d9;
+}
+
+.tutor-comparison-pair {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tutor-comparison-aspect {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--teal, #286b6d);
+  margin-top: 2px;
+}
+
+.tutor-comparison-cell {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(31, 58, 52, 0.1);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.tutor-comparison-cell.is-alt {
+  background: #fffcf5;
+  border-color: rgba(228, 163, 42, 0.3);
+}
+
+/* Process / Cycle / Layers cards */
+.tutor-process-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tutor-process-step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(31, 58, 52, 0.1);
+}
+
+.tutor-process-steps.is-layers .tutor-process-step-card {
+  background: linear-gradient(90deg, #edf7f6 0%, #ffffff 100%);
+  border-left: 4px solid #286b6d;
+}
+
+.tutor-process-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #286b6d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.tutor-process-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.tutor-process-step-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pine, #1f3a34);
+}
+
+.tutor-process-step-detail {
+  font-size: 12.5px;
+  color: var(--ink-soft, #4a5d58);
+  line-height: 1.45;
+}
+
