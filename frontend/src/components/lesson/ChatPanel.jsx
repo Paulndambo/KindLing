@@ -64,6 +64,7 @@ export default function ChatPanel({
   subjectName,
   /** Parent topic unit name (Subject → Topic → Subtopic) */
   unitName = "",
+  nextTopicName = "",
   studentName,
   student = null,
   curriculum,
@@ -232,7 +233,7 @@ export default function ChatPanel({
         }
       : null);
 
-  // Latest completed tutor turn gets 3–5 one-tap follow-ups (supportive, low-typing)
+  // Latest completed tutor turn gets 0–5 strictly on-topic follow-ups based on necessity
   let lastTutorIdx = -1;
   for (let i = (messages || []).length - 1; i >= 0; i -= 1) {
     const m = messages[i];
@@ -244,6 +245,7 @@ export default function ChatPanel({
   const suggestCtx = {
     topic: topicName,
     subject: subjectName,
+    nextTopic: nextTopicName,
     country: student?.country || "",
     interests: student?.interests || [],
   };

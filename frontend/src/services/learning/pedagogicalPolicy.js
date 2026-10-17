@@ -153,7 +153,7 @@ export function executionBriefForAction(action, params = {}) {
     case PedagogicalAction.CHALLENGE:
       return `Offer one fair, engaging stretch problem on «${skill}» — slightly richer than their last success. Celebrate their solid reasoning, set up the scenario clearly in natural prose, and stay Socratic while guiding them through the deeper layer.`;
     case PedagogicalAction.ASSESS:
-      return `Invite a low-stakes quick check (or one well-framed question in chat if no panel). Frame it warmly so it feels like a natural check-in on understanding, not speed. No shame.`;
+      return `Wind-down & Quick Assessment on «${skill}»: if the student has not yet confirmed, warmly congratulate them on covering the core milestones of «${skill}» and ask for their confirmation to take a Quick Assessment (offering 1–2 confirmation chips). Once they confirm, present a focused 2–3 question Quick Assessment on «${skill}» (with ⟦suggests: none⟧ while they answer), and after they answer, review their work warmly and point them to concrete Next Steps.`;
     case PedagogicalAction.MICRO_HINT:
       return `Acknowledge what the student is trying, explain the underlying intuition around the sticking point in a warm paragraph, and give one clear clue or guiding nudge so they can connect the final step themselves. Do not dump the final answer outright.`;
     case PedagogicalAction.WORKED_EXAMPLE:
@@ -191,8 +191,8 @@ export function executionBriefForAction(action, params = {}) {
     case PedagogicalAction.CONTINUE_SOCRATIC:
     default:
       return params.practicalHowTo
-        ? `Practical skill default: engage thoughtfully with the student's reply, then provide a rich hands-on how-to for «${skill}» (clear conceptual context + visual workflow/diagram + numbered steps + try-it). Guide discovery on reasoning checks, but never withhold procedures.`
-        : `Continue high-depth adaptive tutoring: engage thoughtfully with the student's answer, teach and unpack the next conceptual layer with real depth (explaining the 'why', walking through a concrete everyday example, and including an inline visual demonstration via \`\`\`visual, \`\`\`mermaid, or \`\`\`diagram), and finish with one purposeful Socratic or check-in question. For hands-on skills, switch to numbered how-to + try-it.`;
+        ? `Practical skill default: engage thoughtfully with the student's reply, then provide a rich hands-on how-to for «${skill}» (clear conceptual context + visual workflow/diagram + numbered steps + try-it), guiding the student forward toward completing the topic and a wind-down quick assessment.`
+        : `Continue high-depth adaptive tutoring toward topic completion: engage thoughtfully with the student's answer, teach and unpack the next milestone of «${skill}» with real depth (explaining the 'why', walking through a concrete everyday example, and including an inline visual demonstration via \`\`\`visual, \`\`\`mermaid, or \`\`\`diagram), and move purposefully toward the wind-down Quick Assessment (after student confirmation) and Next Steps.`;
   }
 }
 
@@ -824,8 +824,8 @@ ${gap ? `- Control gap: ${gap}` : ""}
 - **Your job this turn:** ${decision.executionBrief}
 - **Depth, visual demonstration & voice reminder:** Execute this move with the warmth, articulateness, and substantive depth of a dedicated private tutor — unpacking the *why*, giving a concrete example, complementing your prose with **one or more inline visual demonstrations** (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram — use one focused visual when a single model suffices, or interleave multiple visuals in between paragraphs when walking through multiple stages, comparisons, or a concept + worked example), and ending with one focused question (never a clipped 1–2 sentence reply).
 - Do **not** freestyle a different major move (no topic jumps or unrelated quizzes).
-- You may still be warm, use real-world hooks, and attach 3–5 suggestion chips.
-- Allowed micro-flex only if safety requires it; otherwise stay on **${decision.action}**.
+- You may still be warm, use real-world hooks, and attach 0–5 strictly on-topic navigation suggestion chips based on necessity (or \`⟦suggests: none⟧\` when presenting a Quick Assessment or direct solo question).
+- Allowed micro-flex only if safety requires it or when following the active Wind-Down / Quick Assessment protocol; otherwise stay on **${decision.action}**.
 - Other candidates considered (do not switch unless student clearly needs safety): ${alts}
 `.trim();
 }

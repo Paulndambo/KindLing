@@ -213,6 +213,29 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
     "Lesson";
   const unitName = activeUnit?.name || "";
 
+  const nextLessonStep = useMemo(() => {
+    if (activeSubtopicIdx + 1 < subtopicRecords.length) {
+      const nextSub = subtopicRecords[activeSubtopicIdx + 1];
+      return {
+        unitIdx: activeUnitIdx,
+        subIdx: activeSubtopicIdx + 1,
+        name: nextSub?.name || "",
+        unitName: activeUnit?.name || "",
+      };
+    }
+    if (activeUnitIdx + 1 < unitRecords.length) {
+      const nextUnit = unitRecords[activeUnitIdx + 1];
+      const firstSub = nextUnit?.subtopics?.[0] || null;
+      return {
+        unitIdx: activeUnitIdx + 1,
+        subIdx: 0,
+        name: firstSub?.name || nextUnit?.name || "",
+        unitName: nextUnit?.name || "",
+      };
+    }
+    return null;
+  }, [activeSubtopicIdx, subtopicRecords, activeUnitIdx, unitRecords, activeUnit]);
+
   const lessonGoals = useMemo(
     () =>
       resolveLessonGoals({
@@ -226,8 +249,14 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
   );
 
   const topicContext = useMemo(
-    () => goalsToTopicContext(lessonGoals),
-    [lessonGoals]
+    () => ({
+      ...goalsToTopicContext(lessonGoals),
+      nextTopicName: nextLessonStep?.name || "",
+      nextUnitName: nextLessonStep?.unitName || "",
+      subtopicIndex: activeSubtopicIdx + 1,
+      subtopicTotal: Math.max(1, subtopicRecords.length),
+    }),
+    [lessonGoals, nextLessonStep, activeSubtopicIdx, subtopicRecords.length]
   );
 
   const [tools, setTools] = useState({
@@ -825,6 +854,20 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
       if (connectivity.online === false) return;
       if (tools.voiceOutput) prepareAudio();
 
+      // If the student taps a post-assessment "Next topic: <name>" chip, advance to that subtopic
+      if (
+        nextLessonStep &&
+        /^(?:next\s+topic|start\s+next\s+topic|move\s+to\s+next\s+topic)\s*:/i.test(
+          text
+        )
+      ) {
+        setInputVal("");
+        setActiveUnitIdx(nextLessonStep.unitIdx);
+        setActiveSubtopicIdx(nextLessonStep.subIdx);
+        setMobilePanel("chat");
+        return;
+      }
+
       // Chip taps are always text; free-typed may still be voice-dictated
       if (
         typeof overrideText === "string" &&
@@ -850,6 +893,7 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
       prepareAudio,
       noteInputModality,
       connectivity.online,
+      nextLessonStep,
     ]
   );
 
@@ -1274,6 +1318,7 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
           topicName={topicName}
           subjectName={subjectName}
           unitName={unitName}
+          nextTopicName={nextLessonStep?.name || ""}
           studentName={studentName}
           student={student}
           curriculum={student?.curriculum}

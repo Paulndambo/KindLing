@@ -426,13 +426,22 @@ export function useChatSession({
   );
 
   const rebuildChatWithHistory = useCallback(
-    (activeIntervention, context, multiStep) => {
+    (activeIntervention, context, multiStep, latestStudentText = "") => {
       const currentStudent = studentRef.current;
       // undefined → keep ref; null → clear multi-step from prompt
       const msForPrompt =
         multiStep === undefined
           ? multiStepSessionRef.current
           : multiStep;
+      const history = historyRef.current
+        .filter((h) => h.text?.trim())
+        .map((h) => ({ role: h.role, text: h.text }));
+      const modelTurns = history.filter((h) => h.role === "model");
+      const firstTutorText = modelTurns.length > 0 ? modelTurns[0].text : "";
+      const lastTutorText =
+        modelTurns.length > 0 ? modelTurns[modelTurns.length - 1].text : "";
+      const exchangeCount = Math.floor(history.length / 2);
+
       const systemPrompt = buildSystemPrompt(
         subjectName,
         topicName,
@@ -446,15 +455,20 @@ export function useChatSession({
           interventionContext: context,
           multiStepSession: msForPrompt,
           homeworkWindowMinutes,
+          lessonProgress: {
+            exchangeCount,
+            firstTutorText,
+            lastTutorText,
+            latestStudentText: String(
+              latestStudentText || pendingStudentRef.current?.text || ""
+            ).trim(),
+          },
           topicContext: {
             ...normalizeTopicContext(topicContextRef.current),
             isFirstSession: false,
           },
         }
       );
-      const history = historyRef.current
-        .filter((h) => h.text?.trim())
-        .map((h) => ({ role: h.role, text: h.text }));
       try {
         const rebuilt = createChatSession(systemPrompt, history);
         chatRef.current = rebuilt;
@@ -466,7 +480,7 @@ export function useChatSession({
         return chat;
       }
     },
-    [subjectName, topicName]
+    [subjectName, topicName, homeworkWindowMinutes]
   );
 
   // Keep tutor checklist in sync as multi-step advances
@@ -939,7 +953,9 @@ export function useChatSession({
         // learner state and policy decision, while preserving the transcript.
         const chat = rebuildChatWithHistory(
           interventionActiveRef.current,
-          interventionContextRef.current
+          interventionContextRef.current,
+          undefined,
+          apiMessage
         );
         if (!chat || !stillCurrent()) {
           throw new Error("Chat session unavailable");

@@ -106,6 +106,10 @@ const VISUAL_DEMO_LANGS = new Set([
   "number-line",
   "plot",
   "geometry",
+  "study-plan",
+  "studyplan",
+  "lesson-plan",
+  "roadmap",
 ]);
 
 const DIAGRAM_LANGS = new Set([
@@ -945,6 +949,78 @@ function TutorVisualDemo({ spec }) {
             </div>
           ))}
         </div>
+        {spec.caption ? (
+          <figcaption className="tutor-visual-caption">{spec.caption}</figcaption>
+        ) : null}
+      </figure>
+    );
+  }
+
+  if (spec.kind === "study-plan") {
+    return (
+      <figure
+        className="tutor-visual-demo tutor-study-plan-card"
+        aria-label={spec.title}
+      >
+        <div className="tutor-visual-header">
+          <span className="tutor-visual-badge is-study-plan">
+            <Eye size={12} /> Topic Study Plan
+          </span>
+          <strong className="tutor-visual-title">{spec.title}</strong>
+        </div>
+        {spec.objectives?.length ? (
+          <div className="tutor-study-plan-group">
+            <span className="tutor-study-plan-kicker">
+              Learning Objectives &amp; Goals
+            </span>
+            <ul className="tutor-study-plan-objectives">
+              {spec.objectives.map((obj, idx) => (
+                <li key={idx}>
+                  <span className="tutor-study-plan-check" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span>{obj}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {spec.concepts?.length ? (
+          <div className="tutor-study-plan-group">
+            <span className="tutor-study-plan-kicker">Key Concepts Covered</span>
+            <div className="tutor-study-plan-concepts">
+              {spec.concepts.map((concept, idx) => (
+                <span key={idx} className="tutor-study-plan-concept-pill">
+                  {concept}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {spec.sections?.length ? (
+          <div className="tutor-study-plan-group">
+            <span className="tutor-study-plan-kicker">
+              Tutoring Sections &amp; Roadmap
+            </span>
+            <div className="tutor-process-steps is-study-plan">
+              {spec.sections.map((sec, idx) => (
+                <div key={idx} className="tutor-process-step-card">
+                  <span className="tutor-process-step-num">{sec.step}</span>
+                  <div className="tutor-process-step-body">
+                    <strong className="tutor-process-step-title">
+                      {sec.title}
+                    </strong>
+                    {sec.detail ? (
+                      <span className="tutor-process-step-detail">
+                        {sec.detail}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {spec.caption ? (
           <figcaption className="tutor-visual-caption">{spec.caption}</figcaption>
         ) : null}

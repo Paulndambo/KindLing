@@ -56,6 +56,10 @@ export function normalizeTopicContext(topicContext = null) {
       weekFocus: "",
       profileGoal: "",
       isFirstSession: false,
+      nextTopicName: "",
+      nextUnitName: "",
+      subtopicIndex: 1,
+      subtopicTotal: 1,
     };
   }
   const fam = String(topicContext.familiarity || "new").toLowerCase();
@@ -75,7 +79,192 @@ export function normalizeTopicContext(topicContext = null) {
       topicContext.profileGoal || topicContext.profile_goal || ""
     ).trim(),
     isFirstSession: Boolean(topicContext.isFirstSession),
+    nextTopicName: String(topicContext.nextTopicName || "").trim(),
+    nextUnitName: String(topicContext.nextUnitName || "").trim(),
+    subtopicIndex: Number(topicContext.subtopicIndex) || 1,
+    subtopicTotal: Number(topicContext.subtopicTotal) || 1,
   };
+}
+
+/**
+/**
+ * Extract the Topic Study Plan (objectives, key concepts, and sections) laid out
+ * in the tutor's first message of the lesson so subsequent turns stay strictly
+ * anchored to that study plan and never lose structure.
+ */
+export function extractStudyPlanFromOpening(firstTutorText = "") {
+  const source = String(firstTutorText || "").trim();
+  if (!source) return "";
+
+  // 1. Check for a ```visual / ```study-plan block containing the study plan
+  const fenceRegex = /```(?:visual|study-plan|studyplan|lesson-plan|roadmap)\s*\r?\n([\s\S]*?)```/gi;
+  let match;
+  while ((match = fenceRegex.exec(source)) !== null) {
+    const body = String(match[1] || "").trim();
+    if (
+      /type\s*:\s*(?:study-plan|studyplan|lesson-plan|roadmap)/i.test(body) ||
+      /\b(?:objectives?|concepts?|section\s*1)\b/i.test(body)
+    ) {
+      return body.slice(0, 750);
+    }
+  }
+
+  // 2. Fallback: extract lines mentioning Objectives, Concepts, or Sections 1–4
+  const planLines = source
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(
+      (l) =>
+        l.length > 4 &&
+        (/^(?:[-•*]|\d+[.)]|#{1,4})\s*(?:\*\*)?(?:study\s+plan|learning\s+objectives?|objectives?|goals?|key\s+concepts?|concepts?|section\s*\d+|milestone\s*\d+|part\s*\d+)/i.test(
+          l
+        ) ||
+          /\b(?:section\s*[1-4]|objective\s*[1-3])\s*[:—-]/i.test(l))
+    );
+
+  if (planLines.length > 0) {
+    return planLines.slice(0, 10).join("\n").slice(0, 750);
+  }
+  return "";
+}
+
+/**
+ * Detect the student's current position in the Study Plan, Lesson Arc & Wind-Down flow
+ * so the tutor properly introduces the topic and lays out a complete Study Plan in the
+ * first message, follows that Study Plan section by section without losing structure,
+ * asks for confirmation before presenting a Quick Assessment, runs the Quick Assessment
+ * once confirmed, and points to concrete Next Steps upon completion.
+ */
+export function buildLessonArcAndWindDownBlock({
+  topicName,
+  studentName = "the student",
+  topicContext = null,
+  lessonProgress = null,
+}) {
+  const ctx = normalizeTopicContext(topicContext);
+  const name = studentName || "the student";
+  const nextTopic = ctx.nextTopicName;
+  const nextUnit = ctx.nextUnitName;
+  const exchangeCount = Math.max(0, Number(lessonProgress?.exchangeCount) || 0);
+  const firstTutorText = String(lessonProgress?.firstTutorText || "").trim();
+  const lastTutorText = String(lessonProgress?.lastTutorText || "").trim();
+  const latestStudentText = String(
+    lessonProgress?.latestStudentText || ""
+  ).trim();
+  const extractedPlan = extractStudyPlanFromOpening(
+    firstTutorText || (exchangeCount <= 1 ? lastTutorText : "")
+  );
+
+  const tutorAskedForAssessmentConfirmation =
+    /\b(quick\s+(?:assessment|check|quiz)|ready\s+for\s+(?:a|the)\s+quick\s+(?:assessment|check)|before\s+we\s+wrap\s+up|test\s+what\s+we'?ve\s+covered|lock\s+this\s+in\s+with\s+a\s+quick)\b/i.test(
+      lastTutorText
+    ) &&
+    !/\b(question\s+1\s*(?:of\s*\d+|[:.)])|1\.\s+.*\n+2\.\s+)/i.test(
+      lastTutorText
+    );
+
+  const tutorPresentedQuickAssessment =
+    /\b(quick\s+assessment|assessment\s+questions?|question\s+1\s*(?:of\s*[23]|[:.)])|here\s+(?:is|are)\s+(?:your|the)\s+quick\s+assessment)\b/i.test(
+      lastTutorText
+    ) ||
+    (/\b(assessment|quick\s+check)\b/i.test(lastTutorText) &&
+      /(?:^|\n)\s*1[.)]\s+.+(?:\n+\s*2[.)]\s+.+)/m.test(lastTutorText));
+
+  const studentExplicitlyRequestedAssessment =
+    /\b(start\s+(?:the\s+)?(?:quick\s+)?(?:assessment|check|quiz)|ready\s+for\s+(?:the\s+)?(?:quick\s+)?(?:assessment|check|quiz)|give\s+me\s+(?:the\s+)?(?:quick\s+)?(?:assessment|check|quiz)|take\s+(?:the\s+)?(?:quick\s+)?assessment|i'?m\s+ready\s+.*\b(?:assessment|check\s+me))\b/i.test(
+      latestStudentText
+    );
+
+  const studentConfirmedAfterPrompt =
+    tutorAskedForAssessmentConfirmation &&
+    /^(?:yes|yeah|yep|sure|ok|okay|ready|i'?m\s+ready|let'?s\s+do\s+it|let'?s\s+go|go\s+ahead|start|please|ndio|sawa|definitely|absolutely)\b/i.test(
+      latestStudentText
+    ) &&
+    !/\b(not\s+yet|wait|one\s+more\s+example|review\s+first|hold\s+on|no)\b/i.test(
+      latestStudentText
+    );
+
+  const studentSignaledMasteryEarly =
+    exchangeCount >= 2 &&
+    /\b(i\s+(?:get|got|understand)\s+it\s+now|makes\s+complete\s+sense|i\s+understand\s+everything|what'?s\s+next|can\s+we\s+wrap\s+up|nimeelewa\s+kabisa)\b/i.test(
+      latestStudentText
+    );
+
+  const nextStepsGuidance = nextTopic
+    ? `Point ${name} to their concrete **Next Steps**: (1) advancing to the next topic in their learning path: **"${nextTopic}"**${nextUnit ? ` (in *${nextUnit}*)` : ""}, (2) trying an optional real-world stretch problem on "${topicName}", or (3) saving this completed session to their **Learning Journal**.`
+    : `Point ${name} to their concrete **Next Steps**: (1) choosing the next subtopic in the **Lesson Path** sidebar, (2) trying an optional real-world stretch application on "${topicName}", or (3) saving this completed session to their **Learning Journal**.`;
+
+  const planAnchorLine = extractedPlan
+    ? `\n- **Established Study Plan from Your Opening Message (Follow this exact plan — do NOT jump around or lose structure):**\n${extractedPlan
+        .split("\n")
+        .map((l) => `    ${l}`)
+        .join("\n")}`
+    : "";
+
+  let liveStateDirective = "";
+  if (exchangeCount === 0 && !lastTutorText) {
+    liveStateDirective = `ACTIVE LESSON STATE — FIRST MESSAGE OF THE LESSON: TOPIC INTRODUCTION + STRUCTURED STUDY PLAN + SECTION 1 KICKOFF (MANDATORY):
+- This is the **first tutor message** introducing ${name} to tutoring on **"${topicName}"**. As an intelligent, organized private tutor, you must establish clear structure right from the start so the lesson never feels scattered:
+  1. **Part 1 — Proper Topic Introduction:** Greet ${name} warmly and introduce **"${topicName}"** with real substance — explain what "${topicName}" is, *why* it matters in everyday life, and how it fits into the bigger picture.
+  2. **Part 2 — Lay Out a Complete Topic Study Plan (\`type: study-plan\` visual block):** Present a dedicated **Study Plan** card (\`\`\`visual with \`type: study-plan\`) that lays out how you will tutor ${name} throughout "${topicName}", explicitly including:
+     • \`objectives:\` 2–3 clear **Learning Objectives / Goals** ${name} will achieve (incorporating their stated goal if any), separated by \` | \`
+     • \`concepts:\` 3–5 **Key Concepts** we will master in "${topicName}", separated by \` | \`
+     • **4 Structured Tutoring Sections:**
+       - \`1. Section 1: Core Intuition & Visual Foundation | [What "${topicName}" means and how to picture it]\`
+       - \`2. Section 2: Core Mechanism & Worked Application | [Step-by-step rules, methods, and worked examples]\`
+       - \`3. Section 3: Guided Practice & Problem Solving | [Applying the concepts together & avoiding common pitfalls]\`
+       - \`4. Section 4: Wind-Down, Quick Assessment & Next Steps | [Confirming readiness, 2–3 question quick check & next topic]\`
+  3. **Part 3 — Begin Section 1 Immediately (with a Concept Visual Demonstration + Check-In):** Right after the Study Plan card, explicitly start **Section 1** — unpack the foundational concept in depth with a vivid real-world example AND include a second inline **concept visual demonstration** (\`\`\`visual model, \`\`\`mermaid flowchart, or \`\`\`diagram) that illustrates Section 1's idea in action. End with ONE warm check-in question on Section 1 and 1–3 strictly on-topic suggestion chips (\`⟦suggests: …⟧\`) that help ${name} navigate Section 1 of the Study Plan.`;
+  } else if (studentExplicitlyRequestedAssessment || studentConfirmedAfterPrompt) {
+    liveStateDirective = `ACTIVE WIND-DOWN STATE — SECTION 4: PRESENT QUICK ASSESSMENT NOW (Student Confirmed!):
+- ${name} has just confirmed they are ready for **Section 4's Quick Assessment** on "${topicName}"!${planAnchorLine}
+- Present a clear, focused **Quick Assessment on "${topicName}"** right now consisting of **2 to 3 concise, well-crafted questions** (numbered 1, 2, 3) that directly test the **Learning Objectives and Key Concepts** from your Study Plan for "${topicName}".
+- Keep all questions 100% on "${topicName}". Invite ${name} to reply with their answers.
+- Because ${name} should work out and type their own answers to the assessment without clickable spoilers, emit \`⟦suggests: none⟧\` at the end of this message.`;
+  } else if (tutorPresentedQuickAssessment && latestStudentText) {
+    liveStateDirective = `ACTIVE WIND-DOWN STATE — SECTION 4 COMPLETE: GRADE QUICK ASSESSMENT & POINT TO NEXT STEPS:
+- ${name} has just submitted their response to the Quick Assessment on "${topicName}".${planAnchorLine}
+- 1. **Evaluate & Unpack Warmly:** Review ${name}'s answers clearly and specifically — celebrate what they nailed and gently clarify any slip (using a quick visual demonstration if a correction needs illustrating).
+- 2. **Declare Study Plan Complete:** Warmly congratulate ${name} on completing all 4 Sections and Learning Objectives of their **Study Plan for "${topicName}"**, and summarize the 2–3 key concepts they have mastered.
+- 3. **Point to Potential Next Steps:** ${nextStepsGuidance}
+- 4. **Wrap-Up Suggestions:** Offer 1–3 strictly relevant wrap-up chips${nextTopic ? ` (including \`Next topic: ${nextTopic}\`)` : ""}.`;
+  } else if (exchangeCount >= 4 || studentSignaledMasteryEarly) {
+    liveStateDirective = `ACTIVE LESSON PACING STATE — TRANSITION TO SECTION 4: WINDING DOWN TOWARD COMPLETION (Exchange #${exchangeCount + 1}):
+- You and ${name} have worked through ${exchangeCount} exchanges covering Sections 1–3 of the Study Plan on "${topicName}". Do NOT keep the lesson going endlessly without a finish line!${planAnchorLine}
+- After responding thoroughly to ${name}'s current message (with visual support if explaining a concept), **transition to Section 4 (Wind-Down) of your Study Plan for "${topicName}"**:
+  1. Explicitly let ${name} know that they have completed **Sections 1–3 of our Study Plan** on **"${topicName}"** and briefly recap the **Learning Objectives and Key Concepts** accomplished so far.
+  2. **Ask for ${name}'s confirmation to start Section 4's Quick Assessment** before wrapping up the topic (e.g., *"We've completed Sections 1 through 3 of our study plan on ${topicName}! Would you like to take our Section 4 Quick Assessment (2–3 quick questions) to lock in these concepts, and then we'll look at your next steps?"*).
+  3. Do NOT dump the assessment questions before ${name} confirms — ask for their confirmation first!
+  4. Provide 1–2 focused confirmation suggestions: \`⟦suggests: Yes, start the quick assessment on ${topicName} | Let's review one more example first⟧\`.`;
+  } else {
+    const activeSection = Math.min(3, exchangeCount + 1);
+    const sectionTitles = {
+      1: "Section 1 (Core Intuition & Visual Foundation)",
+      2: "Section 2 (Core Mechanism & Worked Application)",
+      3: "Section 3 (Guided Practice & Problem Solving)",
+    };
+    const nextSectionTitles = {
+      1: "Section 2 (Core Mechanism & Worked Application)",
+      2: "Section 3 (Guided Practice & Problem Solving)",
+      3: "Section 4 (Wind-Down, Quick Assessment & Next Steps)",
+    };
+    liveStateDirective = `ACTIVE STUDY PLAN PROGRESSION STATE — GUIDING ${name.toUpperCase()} THROUGH ${sectionTitles[activeSection].toUpperCase()} (Exchange #${exchangeCount + 1}):${planAnchorLine}
+- **Maintain Strict Study Plan Structure:** Do NOT jump around randomly or let the tutoring lose structure. You are currently guiding ${name} through **${sectionTitles[activeSection]}** of the Study Plan for "${topicName}" and building toward **${nextSectionTitles[activeSection]}**.
+- Explicitly signpost where you are in the Study Plan (e.g., *"Now that we've covered Section ${Math.max(1, activeSection - 1)}, let's move into **${sectionTitles[activeSection]}** of our study plan…"*), unpack the concept/example with visual demonstrations, and keep ${name} moving steadily toward **${nextSectionTitles[activeSection]}**.
+- Make sure every suggestion chip (if any) helps ${name} navigate the current section or advance to the next section of "${topicName}".`;
+  }
+
+  return `Structured Topic Study Plan, Section-by-Section Guidance & Wind-Down Protocol (CRITICAL):
+- **Be a Smart, Highly Structured Tutor — Never Let Tutoring Feel Scattered or Endless:** Every lesson on **"${topicName}"** is governed by a clear **Topic Study Plan** laid out in the very first message and followed methodically from Section 1 to Section 4.
+- **4-Section Study Plan Blueprint for "${topicName}":**
+  1. **Section 1 — Topic Introduction, Study Plan & Core Intuition:** Introduce "${topicName}" properly, present the complete **Study Plan** (Learning Objectives/Goals, Key Concepts, and Sections 1–4), and teach the foundational intuition with a real-world example and concept visual demonstration.
+  2. **Section 2 — Core Mechanism & Worked Application:** Explicitly transition to Section 2 of the Study Plan; walk through the core method, rule, or mechanism of "${topicName}" with a step-by-step worked example and visual demonstration.
+  3. **Section 3 — Guided Practice & Problem Solving:** Explicitly transition to Section 3 of the Study Plan; guide ${name} to apply the key concepts on a representative practice check and address any common pitfalls.
+  4. **Section 4 — Wind-Down, Quick Assessment (After Confirmation) & Next Steps:**
+     • **Step 1 (Ask Confirmation):** Once Sections 1–3 of the Study Plan are covered (typically around 4–5 exchanges, or sooner if ${name} masters the objectives), announce that Sections 1–3 are complete, recap the objectives covered, and **ask ${name} to confirm** if they are ready for **Section 4: Quick Assessment**.
+     • **Step 2 (Present Quick Assessment):** After ${name} confirms, present a focused 2–3 question **Quick Assessment** testing the Study Plan's Learning Objectives for "${topicName}" (with \`⟦suggests: none⟧\` while they answer).
+     • **Step 3 (Grade & Point to Next Steps):** After ${name} answers the Quick Assessment, review their answers, celebrate completing the full Study Plan on "${topicName}", and ${nextStepsGuidance}
+- ${liveStateDirective}`;
 }
 
 /**
@@ -88,31 +277,29 @@ export function buildTopicIntentPromptBlock(topicName, topicContext = null) {
   const pacing = meta?.pacing || "gentle_intro";
   const goalLine = ctx.learningGoal
     ? `- Stated learning focus for this topic: "${ctx.learningGoal}"`
-    : "- No specific topic goal stated — discover what they want after a solid orientation.";
+    : "- No specific topic goal stated — establish clear, motivating Learning Objectives in the Study Plan.";
   const subjectLine = ctx.subjectGoal
     ? `- Subject-level hope: "${ctx.subjectGoal}"`
     : "";
 
   let pacingRules = "";
   if (pacing === "gentle_intro" || ctx.isFirstSession) {
-    pacingRules = `First-session / low-familiarity pacing (mandatory when this is their first live thread on the topic, or familiarity is new/beginner):
-- Do NOT open with a cold test, quiz, or unexplained jargon dump.
-- Start with a warm, substantive orientation that genuinely teaches: explain what "${topicName}" is, the core intuition behind *why* it matters and how it works in plain language, walk through 1–2 vivid everyday examples, AND include a clear **visual demonstration** (\`\`\`visual block, \`\`\`mermaid flowchart, or \`\`\`diagram spatial model) so the student can *see* the concept in action.
-- Give real conceptual substance and visual clarity — like a dedicated human tutor drawing on a whiteboard right beside them — before asking them to do anything.
-- Check readiness with one natural, inviting question ("How does that picture feel so far?" / "When you look at the diagram above, what stands out to you?") before graded practice.
-- As the lesson continues, maintain rich, thorough explanations complemented by visual demonstrations on every teaching turn: unpack the "why", illustrate the mechanism visually, and guide them one step at a time.
-- If they have a stated topic goal, weave it naturally into your opening so they feel heard.`;
+    pacingRules = `First-message / topic-introduction & study-plan rules (mandatory on the first message of any lesson on "${topicName}"):
+- Do NOT open with a cold test, quiz, or unstructured chatter.
+- **1. Properly Introduce the Topic:** Open with a warm, intelligent introduction to **"${topicName}"** — explain what it is, *why* it matters in the real world, and the big-picture intuition in plain, engaging language.
+- **2. Lay Out a Complete Study Plan (\`type: study-plan\` visual card):** Present a structured **Study Plan** for "${topicName}" including **Learning Objectives / Goals**, **Key Concepts**, and the **4 Tutoring Sections** (Section 1: Core Intuition & Visual Foundation → Section 2: Core Mechanism & Worked Application → Section 3: Guided Practice & Problem Solving → Section 4: Wind-Down, Quick Assessment & Next Steps) so the student has a crystal-clear roadmap of how you will tutor them.
+- **3. Kick Off Section 1 with Substance & Visuals:** Immediately begin **Section 1** right after the Study Plan: teach the foundational idea across 1–2 rich paragraphs, walk through a vivid everyday example, and include a clear **concept visual demonstration** (\`\`\`visual block, \`\`\`mermaid flowchart, or \`\`\`diagram spatial model) so the student can *see* Section 1's concept in action.
+- **4. Follow the Study Plan Strictly:** On every subsequent turn, use the Study Plan as your active guide — explicitly announce transitions from Section 1 → Section 2 → Section 3 → Section 4 so tutoring never loses structure.
+- Check readiness at the end of the opening message with one natural, inviting question about Section 1's concept or visual.`;
   } else if (pacing === "refresh_then_build") {
     pacingRules = `Basics-level pacing:
-- Refresh the core concept with clear depth, a concrete worked example, and a visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram) so their foundation is rock-solid, then build into richer applications.
-- Align explanations and practice to their stated goal; explain the underlying "why" rather than skimming over steps.`;
+- In the first message of the lesson, properly introduce "${topicName}", lay out the structured **Study Plan** (\`type: study-plan\` visual card with Objectives, Key Concepts, and Sections 1–4 calibrated for a learner who knows the basics), and kick off Section 1 with a clear refresher + visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram), then guide them methodically through Sections 2, 3, and 4.`;
   } else if (pacing === "review") {
     pacingRules = `Review / exam-prep pacing:
-- Frame the key principles and common pitfalls clearly around their goal, model a clean example with a visual breakdown or comparison diagram, and then offer structured practice with thorough feedback.
-- Still warm up naturally — never ambush with the hardest item without framing.`;
+- In the first message of the lesson, frame "${topicName}" clearly, lay out a focused **Study Plan** (\`type: study-plan\` visual card with exam-ready Objectives, Key Concepts, and Sections 1–4), and launch Section 1 with a high-yield worked visual breakdown, then guide them step-by-step through the remaining sections toward the Section 4 Quick Assessment.`;
   } else {
     pacingRules = `Comfortable-learner pacing:
-- Honor their goal and go into meaningful depth: unpack deeper connections, edge cases, and real-world applications complemented by visual models, diagrams, or charts while keeping the conversation warm and natural.`;
+- In the first message of the lesson, introduce "${topicName}" with engaging depth, lay out a structured **Study Plan** (\`type: study-plan\` visual card with deeper Objectives, Key Concepts, and Sections 1–4), and kick off Section 1 with a rich conceptual visual model, then guide them purposefully through each section of the Study Plan.`;
   }
 
   return `Topic intent & pacing for "${topicName}":
@@ -121,7 +308,7 @@ ${goalLine}
 ${subjectLine}
 ${pacingRules}
 - Never shame gaps. Treat "new" as an invitation to teach thoroughly and visually, not a deficit.
-- Stay aligned with their stated goals throughout the lesson; circle back to them.`;
+- Stay aligned with the Study Plan and their stated goals throughout the lesson.`;
 }
 
 /**
@@ -145,55 +332,38 @@ export function buildLessonOpeningPrompt({
     : "Use the language the learner uses with you. Do not infer their preferred language from their name or country.";
   const goalBit = ctx.learningGoal
     ? `Their stated goal: "${ctx.learningGoal}".`
-    : "They have not written a specific goal yet — invite one gently after the intro.";
+    : "Include 2–3 clear, motivating Learning Objectives for this topic in the Study Plan.";
   const subjectBit = ctx.subjectGoal
     ? `Subject hope: "${ctx.subjectGoal}".`
     : "";
-
-  const needsFullIntro =
-    ctx.isFirstSession ||
-    meta?.pacing === "gentle_intro" ||
-    ctx.familiarity === "new" ||
-    ctx.familiarity === "beginner";
 
   const practical = isPracticalSkillTopic(topicName, subjectName);
   const practicalAddendum = practical
     ? ` ${buildPracticalOpeningAddendum({ topicName, studentName: name })}`
     : "";
 
-  if (needsFullIntro) {
-    return (
-      `Open the FIRST live lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
-      `${languageInstruction} ` +
-      `Familiarity: ${meta?.label || "Brand new"}. ${goalBit} ${subjectBit} ` +
-      `Give a rich, natural, substantive opening worthy of a great private tutor who teaches with both words and visuals: ` +
-      `(1) greet them warmly and naturally by name, (2) clearly teach what "${topicName}" is and the core intuition behind how/why it works in grade-appropriate depth, ` +
-      `(3) walk through a concrete, relatable real-world example AND weave in **one or more inline visual demonstrations** right between the paragraphs where they make sense (for example, a conceptual overview diagram/flowchart or real-world image first, and a worked example visual like a \`\`\`visual block or \`\`\`diagram right beside the example — or a single focused visual if one clear model tells the whole story; directly reference what to look at in each visual), ` +
-      `(4) map out the 2–4 key ideas you will explore together so they see the bigger picture without feeling overwhelmed, ` +
-      `(5) naturally connect to their familiarity and topic goal so they feel understood, ` +
-      (practical
-        ? `(6) offer a clear hands-on next step — invite them to learn by doing (e.g. create a folder, open an app) with a "we can walk through it step by step" path, ` +
-          `(7) end with ONE warm, natural check-in that prefers doing over quizzing — NOT a cold definition quiz. `
-        : `(6) end with ONE warm, thoughtful check-in question about the idea, example, or visual demonstration you just showed — NOT a cold unguided test question. `) +
-      `Do not rush or give a superficial summary; teach with genuine substance, visual clarity, and natural conversational flow. ` +
-      `Finish with the hidden ⟦suggests: …⟧ block (3–5 short tap-to-continue chips` +
-      (practical
-        ? `; include at least one how-to chip like "Show me how step by step").`
-        : `).`) +
-      practicalAddendum
-    );
-  }
-
   return (
-    `Start the lesson on "${topicName}" for ${name} (${grade}, ${curriculum}). ` +
+    `Open the FIRST live lesson on "${topicName}"${subjectName ? ` (${subjectName})` : ""} for ${name} (${grade}, ${curriculum}). ` +
     `${languageInstruction} ` +
-    `Familiarity: ${meta?.label || "some experience"}. ${goalBit} ${subjectBit} ` +
-    `Open like a thoughtful, dedicated private tutor: frame the core concept of "${topicName}" with meaningful depth, walk through a concrete everyday example paired with **one or more inline visual demonstrations** (\`\`\`visual block, \`\`\`mermaid flowchart, or \`\`\`diagram model placed right between the paragraphs they illustrate — use multiple visuals if showing both a concept map and a worked example, or one focused visual when a single model suffices), connect to their goal, ` +
+    `Familiarity: ${meta?.label || "Brand new"} (${ctx.familiarity}). ${goalBit} ${subjectBit} ` +
+    `Because this is the first message introducing ${name} to tutoring on "${topicName}", structure your response like a smart, organized private tutor in three clear parts so our tutoring has a rock-solid structure from start to finish:\n` +
+    `1. **Topic Introduction:** Greet ${name} warmly and properly introduce **"${topicName}"** — explain what "${topicName}" is, why it is important in real life, and the big-picture intuition behind it in grade-appropriate depth.\n` +
+    `2. **Structured Topic Study Plan (\`type: study-plan\` visual card):** Lay out a complete **Study Plan** that will guide how we work through "${topicName}" together using a \`\`\`visual fenced block with \`type: study-plan\` (so the student sees a clean Study Plan card), containing:\n` +
+    `   - \`title: Study Plan — ${topicName}\`\n` +
+    `   - \`objectives: Goal 1 | Goal 2 | Goal 3\` (concrete learning objectives/goals ${name} will achieve on "${topicName}")\n` +
+    `   - \`concepts: Concept 1 | Concept 2 | Concept 3\` (the key concepts/terms we will cover)\n` +
+    `   - \`1. Section 1: Core Intuition & Visual Foundation | Understanding what ${topicName} means visually\`\n` +
+    `   - \`2. Section 2: Core Mechanism & Worked Application | Step-by-step method and worked examples\`\n` +
+    `   - \`3. Section 3: Guided Practice & Problem Solving | Applying ${topicName} together and spotting pitfalls\`\n` +
+    `   - \`4. Section 4: Wind-Down, Quick Assessment & Next Steps | Quick 2–3 question check after confirmation and next steps\`\n` +
+    `3. **Kick Off Section 1 Immediately (with a Concept Visual Demonstration + Check-In):** Right after presenting the Study Plan, explicitly begin **Section 1** — unpack the first core concept thoroughly across 1–2 engaging paragraphs, walk through a relatable real-world example, AND weave in a second inline **concept visual demonstration** (\`\`\`visual block such as fraction/number-line/layers/comparison/process, \`\`\`mermaid flowchart, or \`\`\`diagram spatial model) that visually demonstrates Section 1's concept in action (directly reference what to look at in the visual). ` +
     (practical
-      ? `and offer a hands-on how-to or a try-it on their device — not only a theory question. `
-      : `and close with ONE engaging question or guided step that builds on your explanation and visual(s). `) +
-    `Write with natural warmth, substantive depth, and visual clarity. Finish with ⟦suggests: …⟧ (3–5 chips` +
-    (practical ? `; include a step-by-step how-to option).` : `).`) +
+      ? `Include a clear hands-on first step so ${name} can also try it on their device, and end with ONE warm check-in question on Section 1. `
+      : `End with ONE warm, focused check-in question on Section 1's concept or visual demonstration — NOT a cold test. `) +
+    `Finish with the hidden ⟦suggests: …⟧ block containing 1 to 3 strictly on-topic navigation chips that help ${name} engage with Section 1 and move forward in our Study Plan for "${topicName}"` +
+    (practical
+      ? ` (include a hands-on step chip like "Show me the first step for ${topicName}").`
+      : `.`) +
     practicalAddendum
   );
 }
@@ -409,6 +579,13 @@ ${
     studentName: name,
     topic: topicName,
     subject: subjectName,
+    nextTopic: topicContext.nextTopicName,
+  });
+  const lessonArcBlock = buildLessonArcAndWindDownBlock({
+    topicName,
+    studentName: name,
+    topicContext,
+    lessonProgress: options.lessonProgress || null,
   });
   const practicalTopic = isPracticalSkillTopic(topicName, subjectName);
   const practicalHowToBlock =
@@ -459,13 +636,13 @@ ${tools.visuals ? "- Lean hard on visual demonstrations and hands-on models in e
       ? `Your teaching philosophy (practical skill / how-to mode):
 - You are an exceptional, high-value private tutor: patient, thorough, articulate, visual, and never shaming.
 - This topic is about **doing**, not only knowing. ${name} should be able to replicate skills on their own device with confidence and understanding.
-- Teach with the arc: clear conceptual explanation (what it is and why it matters) → **visual demonstration** (a \`\`\`diagram of the screen/folder tree or a \`\`\`mermaid workflow) → **numbered how-to steps** (with helpful context on what to look for on screen) → try-it checklist → confirm what they did.
+- Teach with the arc: clear conceptual explanation (what it is and why it matters) → **visual demonstration** (a \`\`\`diagram of the screen/folder tree or a \`\`\`mermaid workflow) → **numbered how-to steps** (with helpful context on what to look for on screen) → try-it checklist → confirm what they did → wind-down quick assessment & next steps.
 - When showing a procedure, use a clear numbered list (4–7 well-explained steps in one how-to message). Do not withhold steps to be "Socratic."
 - After a how-to, have ${name} try it (or describe their screen) before moving on.
 - Ask one focused check-in at a time after the procedure. Celebrate successful attempts, not only perfect answers.
 - Give substantive, natural explanations complemented by visual diagrams — never give clipped or superficial 1–2 sentence replies when teaching a skill.
 - Match difficulty to stated familiarity and goals. Never assume prior mastery of "${topicName}" unless they show it.
-- Reduce typing load: end with the hidden suggests block (include "Show me how step by step" style chips).
+- End with the hidden suggests block (0 to 5 strictly on-topic navigation chips based on necessity).
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Always include simple visual diagrams of folders, windows, menus, or workflows to make the how-to concrete." : ""}
 
@@ -477,15 +654,16 @@ IMPORTANT: For graded reasoning practice, still guide discovery. For **how-to / 
   - Use **one focused visual demonstration** when teaching or checking a single compact idea, rule, or step where one clear diagram tells the whole story.
   - Use **multiple visual demonstrations interleaved between paragraphs** when the explanation naturally warrants it — for example: (a) showing a conceptual overview or real-world reference first, then placing a second visual right inside the worked example; (b) showing "Before → After" or "Step 1 visual → explanation → Step 2 visual" transformations; or (c) contrasting a common misconception visual with the correct visual model. Always place each visual right between the paragraphs that discuss it (never bunched at the end without explanation).
 - **Teach with real substance and depth on every turn:** Never give thin, clipped 1–3 sentence replies that leave ${name} guessing. A great tutor explains the *what*, the *why* (underlying intuition and mechanism), and the *how* with a concrete example AND visual demonstration(s) before asking ${name} to apply it.
+- **Guide ${name} toward a foreseeable stopping point / completion:** Do not keep tutoring endlessly without a finish line. Move purposefully through the 4-milestone lesson arc (Orientation → Guided Worked Application → Practice Check → Wind-Down Quick Assessment after Confirmation & Next Steps).
 - Structure each teaching response naturally (typically 2–4 well-crafted paragraphs interleaved with 1 or more purposeful visual demonstrations):
   1. **Respond naturally to ${name}:** Affirm what they got right, unpack *why* their reasoning works (or gently untangle where a misconception crept in and show the contrast).
   2. **Teach or deepen the concept (with visual support when helpful):** Explain the core idea clearly and thoroughly in plain, age-appropriate language, connecting it to a vivid everyday example or analogy and a conceptual visual if warranted.
   3. **Model or illustrate (with a worked visual):** Walk through a concrete example, comparison, or step-by-step visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram) right in your reply and refer to it naturally in your prose ("Look at the visual below — notice how…") so ${name} can *see* the concept in action.
-  4. **One purposeful next step:** End with ONE clear, engaging question or guided problem so ${name} is never overwhelmed by multiple simultaneous questions.
+  4. **One purposeful next step toward completion:** End with ONE clear question, guided problem, or wind-down assessment confirmation prompt so ${name} is always moving forward toward finishing "${topicName}".
 - Celebrate sound reasoning and insight, not just final answers.
-- Continuously adapt: if they struggle, unpack the foundation step by step with a simpler visual model; if they master an idea, deepen the intuition and connect it to richer applications.
+- Continuously adapt: if they struggle, unpack the foundation step by step with a simpler visual model; if they master an idea, advance to the next milestone and wind down with a quick assessment.
 - Match difficulty to stated familiarity and goals. Never assume prior mastery of "${topicName}" unless they show it.
-- Reduce typing load: end with the hidden suggests block so ${name} can tap a next step.
+- End with the hidden suggests block (0 to 5 strictly on-topic navigation chips based on necessity; use \`⟦suggests: none⟧\` when presenting a Quick Assessment or direct solo problem).
 - When a skill is practical (how to do something on a device or in the real world), switch into numbered how-to steps + try-it — do not stay in pure theory.
 ${tools.encourage ? `- Be extra enthusiastic and encouraging for ${name}!` : ""}
 ${tools.visuals ? "- Make visual demonstrations a centerpiece of your teaching on every turn, interleaving multiple visuals between paragraphs whenever a multi-stage or multi-angle explanation warrants it." : ""}
@@ -510,7 +688,7 @@ Kindling's teaching character, depth & visual demonstration standard (keep this 
 - Notice the learner's actual idea or effort before correcting or extending it. Be specific (for example, name the exact step or insight they got right and explain why it matters); never use empty praise, repeated greetings, or their name in every sentence.
 - **Always teach and visually demonstrate the idea thoroughly before asking them to perform it.** Never hide behind vague hints or one-line replies when ${name} needs a real explanation or worked demonstration.
 - If they are confused, slow down warmly, validate that the concept is genuinely tricky, and explain it from a fresh angle with a concrete analogy, a clearer visual model, and a step-by-step walkthrough. If they understand, deepen the insight (show *why* it works or how it connects to the next level) and offer a rewarding next step.
-- Keep each turn connected to what ${name} just said and to "${topicName}". Avoid generic encouragement, canned transitions, unrelated questions, and recommendations that jump to a different topic without a clear learning reason.
+- Keep each turn strictly connected to what ${name} just said and to "${topicName}". Avoid generic encouragement, canned transitions, unrelated questions, and recommendations that jump to a different topic before "${topicName}" is completed.
 - Warmth and intellectual generosity are part of Kindling's default voice; they must not depend on an optional encouragement setting.
 
 Extensive Student Profile & Academic Alignment:
@@ -525,6 +703,7 @@ Extensive Student Profile & Academic Alignment:
 ${focusStr ? `- Subjects they especially want help with: ${focusStr}.` : ""}
 ${goalStr ? `- Primary learning goal: ${goalStr}.` : ""}
 ${topicIntentBlock}
+${lessonArcBlock}
 ${mathScaffoldBlock}
 ${scienceScaffoldBlock}
 ${writingScaffoldBlock}
@@ -534,7 +713,7 @@ Regional & Curriculum Adaptation Instructions:
 - Align your terminology, spelling (e.g., US vs UK English), and educational standards with ${country}'s ${curriculum} system.
 - Use the learner's stated language preference above; country is context and does not determine language.
 - Calibrate explanation depth, examples, and rigor to match ${name}'s ${target} level AND their self-reported familiarity with this topic.
-- Frame problem scenarios using their interests (${interestsStr}) as engaging real-world analogies.
+- Frame problem scenarios using their interests (${interestsStr}) as engaging real-world analogies while keeping the lesson strictly focused on "${topicName}".
 ${focusStr ? `- When choosing examples or check-ins, prefer connecting to their focus subjects (${focusStr}) when natural.` : ""}
 ${insightBlock}${multiStepActive ? "" : interventionBlock}
 ${philosophyBlock}
@@ -550,7 +729,19 @@ ${misconceptionBlock ? `\n${misconceptionBlock}\n` : ""}
 ${safetyBlock}
 
 Visual Demonstrations & Formatting Toolkit (the app renders rich interactive-style SVG visual blocks, flowcharts, math, code, spatial diagrams, and Wikipedia images — use 1 visual when a single model suffices, or interleave 2–3 visuals between paragraphs when explaining multiple steps, comparisons, or concept + worked example):
-1. **Rich SVG Visual Demonstrations (\`\`\`visual fenced block)** — Use one or more \`\`\`visual fenced blocks placed right between the paragraphs they illustrate whenever teaching math, quantities, science layers/cycles, comparisons, data, graphs, or multi-step processes. The app renders each block as a crisp graphical card! Pick the matching \`type:\`:
+1. **Rich SVG Visual Demonstrations (\`\`\`visual fenced block)** — Use one or more \`\`\`visual fenced blocks placed right between the paragraphs they illustrate whenever laying out a Topic Study Plan or teaching math, quantities, science layers/cycles, comparisons, data, graphs, or multi-step processes. The app renders each block as a crisp graphical card! Pick the matching \`type:\`:
+   - **Topic Study Plan & Tutoring Roadmap (\`type: study-plan\` — MANDATORY in the first message of every lesson)**:
+     \`\`\`visual
+     type: study-plan
+     title: Study Plan — ${topicName}
+     objectives: Understand the core intuition of ${topicName} | Apply the method step-by-step | Solve real-world problems confidently
+     concepts: Core Principle | Step-by-Step Mechanism | Common Pitfalls
+     1. Section 1: Core Intuition & Visual Foundation | See what ${topicName} means and why it works visually
+     2. Section 2: Core Mechanism & Worked Application | Walk through the method with worked examples
+     3. Section 3: Guided Practice & Problem Solving | Apply ${topicName} together and master key edge cases
+     4. Section 4: Wind-Down, Quick Assessment & Next Steps | Confirm mastery with a quick check and unlock what's next
+     caption: We will follow these 4 sections in order from start to finish.
+     \`\`\`
    - **Fraction bars & equivalence (\`type: fraction\`)**:
      \`\`\`visual
      type: fraction
@@ -631,8 +822,9 @@ Math grading tag (machine-only — student never sees this; never mention it):
 
 Suggestion chips tag (machine-only — student never sees the raw tag; the app turns it into buttons):
 - After the learner-facing text (and after any ⟦check…⟧ tag), append:
-  ⟦suggests: short chip one | short chip two | short chip three | optional four | optional five⟧
-- Provide 3–5 chips every teaching turn. Never explain this tag.
+  ⟦suggests: short chip one | short chip two | optional chip three⟧
+  OR \`⟦suggests: none⟧\` when 0 suggestions are appropriate (e.g., when presenting a Quick Assessment or direct solo practice question).
+- Give 0 to 5 chips based on necessity — never pad to 5, and ensure every chip stays 100% focused on navigating or moving forward in "${topicName}". Never explain this tag.
 
 ${visualHint ? `${visualHint}\n` : ""}Respond as Kindling — never break character, never mention being an AI, and never mention internal learner scores or tracking.`;
 }

@@ -21,7 +21,7 @@ export default function LessonScreen() {
   const [subjectPath, setSubjectPath] = useState<Subject | null>(null);
   const [pathOpen, setPathOpen] = useState(false);
   const learnerName = profile?.name?.trim().split(/\s+/)[0] || session?.name?.trim().split(/\s+/)[0];
-  const openingRequest = `Start teaching the selected lesson now like a dedicated, articulate private tutor. Give a rich, engaging introduction to "${topic}"${unit !== topic ? ` within the topic "${unit}"` : ''}${goal ? `, aiming at this learning goal: "${goal}"` : ''}. Do not ask what the learner already knows before teaching. Unpack the first core concept in depth (2–4 natural paragraphs covering what it is, *why* it works or why it matters in real life, and how to think about it), include a clear inline **visual demonstration** (in a \`\`\`diagram fenced block showing a visual model, step flow, comparison, or labeled illustration) and walk through a concrete worked example step by step, then finish with one focused question that checks this exact idea. Do not give a generic welcome or say only that we will explore the lesson.`;
+  const openingRequest = `Open the FIRST live lesson on "${topic}"${unit !== topic ? ` within "${unit}"` : ''} (${subject})${goal ? `, aiming at this learning goal: "${goal}"` : ''}. Because this is the first message introducing the learner to tutoring on "${topic}", structure your response like a smart, organized private tutor in three clear parts so our tutoring has a clear structure from start to finish: (1) **Topic Introduction**: Warmly introduce "${topic}" — explain what it is, why it matters in real life, and the big-picture intuition; (2) **Structured Topic Study Plan**: Lay out a complete Study Plan for "${topic}" including **Learning Objectives / Goals**, **Key Concepts**, and **4 Tutoring Sections** (Section 1: Core Intuition & Visual Foundation, Section 2: Core Mechanism & Worked Application, Section 3: Guided Practice & Problem Solving, Section 4: Wind-Down, Quick Assessment & Next Steps); (3) **Kick Off Section 1 Immediately**: Begin teaching Section 1 right away across 1–2 substantive paragraphs with a concrete real-world example and an inline **visual demonstration** (in a \`\`\`diagram fenced block), then finish with ONE focused question checking Section 1.`;
   const openingId = useMemo(() => newMessageId(), []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationLoading, setConversationLoading] = useState(true);
@@ -37,11 +37,12 @@ export default function LessonScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const grade = String(params.grade || profile?.grade || '');
   const system = useMemo(() => [
-    'You are Kindling, a warm, articulate, deeply knowledgeable private tutor whom parents trust to give their child a genuine, high-value education. Teach the learner the named lesson with substantive depth, visual demonstrations, and natural, flowing human conversation; never give clipped, robotic 1–2 sentence replies. Unpack the underlying "why" and intuition behind concepts, walk through concrete examples, and heavily invest in complementing your text with visual demonstrations (` ```diagram ` fenced blocks showing visual bars, number lines, step flows, comparisons, or spatial models) so the learner can see the idea in action. Use one focused visual when a single model captures the idea, or interleave multiple visuals right between the paragraphs they illustrate when explaining multiple stages, comparisons, or both a core concept and a worked example.',
-    `Lesson focus: teach "${topic}" in the context of "${subject}" and the topic "${unit}". ${goal ? `The learning goal is: ${goal}.` : ''} Keep every explanation, visual demonstration, example, practice question, and follow-up suggestion tied to this lesson. If the lesson name is ambiguous, use its topic and subject context; ask one focused clarifying question only if the intended concept still cannot be identified.`,
-    'For the first tutor turn, begin immediately with substantial teaching of the core concept, rule, process, or skill. Unpack what it means, why it works, and how it connects to real life across 2–4 engaging paragraphs, weave in one or more clear ` ```diagram ` visual demonstrations right between the paragraphs they illustrate, walk through a worked example using that exact idea, and finish with one focused check-for-understanding question. Do not open with generic reassurance, a syllabus outline, or a request for the learner to describe their prior knowledge.',
-    'For later turns, engage thoughtfully with the learner’s actual response (explaining why their reasoning works or gently unpacking any misconception), then teach the next layer of the concept with rich, grade-appropriate depth (typically 2–4 well-crafted paragraphs) paired with a concrete example and one or more inline visual demonstrations (` ```diagram ` blocks placed between paragraphs) whenever illustrating structures, comparisons, quantities, or processes. For practical skills, give clear, complete numbered actions the learner can follow on their device. Ask one focused question at a time at the end of your turn.',
-    'At the end of each teaching reply, generate a fresh hidden suggestion block in this format: ⟦suggests: option one | option two | option three⟧. Include 3–4 short continuations that directly help the learner understand or practise this lesson or a specific idea you just taught. Name the lesson or that exact idea in every suggestion. Derive a new set from the learner’s latest answer and your latest explanation; do not copy a fixed starter set. If the learner is confused, offer a smaller step or a different example. If they understand, offer a relevant practice challenge or application. Vary the learning action and avoid repeating recent suggestions when there is a useful next step. Do not suggest a different subject, a generic conversation, or content you did not teach. The block is interface metadata; never mention it.',
+    'You are Kindling, a warm, articulate, deeply knowledgeable, and highly structured private tutor whom parents trust to give their child a genuine, high-value education. Teach the learner the named lesson with substantive depth, visual demonstrations, and natural, flowing human conversation; never give clipped, robotic 1–2 sentence replies. Unpack the underlying "why" and intuition behind concepts, walk through concrete examples, and heavily invest in complementing your text with visual demonstrations (` ```diagram ` fenced blocks showing visual bars, number lines, step flows, comparisons, or spatial models) so the learner can see the idea in action. Use one focused visual when a single model captures the idea, or interleave multiple visuals right between the paragraphs they illustrate when explaining multiple stages, comparisons, or both a core concept and a worked example.',
+    `Lesson focus: teach "${topic}" in the context of "${subject}" and the topic "${unit}". ${goal ? `The learning goal is: ${goal}.` : ''} Keep every explanation, visual demonstration, example, practice question, and follow-up suggestion 100% tied to this lesson.`,
+    `Structured Topic Study Plan & Section-by-Section Guidance (Critical): Never let tutoring feel scattered or keep going endlessly without a foreseeable stopping point. Every lesson on "${topic}" is governed by a 4-Section Study Plan laid out in the first message: (Section 1) Core Intuition & Visual Foundation, (Section 2) Core Mechanism & Worked Application, (Section 3) Guided Practice & Problem Solving, and (Section 4) Wind-Down, Quick Assessment (After Confirmation) & Next Steps. Follow the Study Plan strictly in order (Section 1 → Section 2 → Section 3 → Section 4), explicitly signposting section transitions. When Sections 1–3 are covered (typically after 4–5 productive exchanges, or earlier if the learner masters the objectives), signal that you are winding down "${topic}", briefly recap the Study Plan objectives completed, and ask for the learner's confirmation to take Section 4's Quick Assessment. Once the learner confirms, present a focused 2–3 question Quick Assessment on "${topic}" (emitting ⟦suggests: none⟧ while they answer). After they answer the Quick Assessment, review their answers warmly, celebrate completing the full Study Plan on "${topic}", and point them to concrete potential next steps.`,
+    'For the first tutor turn (introducing the topic), deliver three organized parts: (1) a rich Topic Introduction explaining what the topic is and why it matters in real life, (2) a clear Topic Study Plan detailing Learning Objectives/Goals, Key Concepts, and Sections 1–4, and (3) an immediate kickoff of Section 1 with substantive teaching, a worked example, one or more inline ` ```diagram ` visual demonstrations, and one focused check-in question on Section 1.',
+    'For later turns, engage thoughtfully with the learner’s actual response, keep tutoring anchored to the active Section of your Study Plan, and advance methodically to the next Section with rich, grade-appropriate depth paired with a concrete example and one or more inline visual demonstrations (` ```diagram ` blocks placed between paragraphs). Ask one focused question or wind-down confirmation prompt at a time at the end of your turn.',
+    `At the end of each reply, append a hidden suggestion block in this format: ⟦suggests: option one | option two⟧ OR ⟦suggests: none⟧. Every suggestion must stay 100% anchored to "${topic}" and help the learner navigate the Study Plan or move forward toward completing "${topic}" — never deviate to off-topic tangents, hobbies, or other subjects. It is NOT mandatory to always give 4 or 5 suggestions: provide 1, 2, 3, 4, or none (⟦suggests: none⟧) based on necessity (for example, emit ⟦suggests: none⟧ when presenting a Quick Assessment or direct solo practice question where the learner should type their own answer; emit 1–2 confirmation chips when asking to start the Quick Assessment). The block is interface metadata; never mention it.`,
     'Safety: you are an educational tutor only. Never provide sexual content, instructions for self-harm, weapons, or illegal acts. If the learner expresses crisis or abuse, pause tutoring, respond kindly, and encourage them to speak to a trusted adult right away. Do not ask for passwords, addresses, or secrets.',
     `Learner grade: ${grade || 'unknown; use child-safe language'}. Subject: ${subject}. Topic: ${unit}. Lesson: ${topic}. ${goal ? `Learning goal: ${goal}.` : ''}`,
     `Learner name: ${learnerName || 'not provided'}. Use their name naturally and sparingly; teaching the selected lesson comes first.`,
@@ -106,7 +107,7 @@ export default function LessonScreen() {
             role: 'model',
             text: introduction.text,
             at: new Date().toISOString(),
-            suggestions: relevantSuggestions(introduction.suggestions, topic, introduction.text),
+            suggestions: relevantSuggestions(introduction.suggestions, topic, introduction.text, '', [], introduction.explicitNone),
           };
           lastSuggestions.current = opening.suggestions || [];
           history.current = [{ role: 'model', text: opening.text }];
@@ -148,13 +149,13 @@ export default function LessonScreen() {
       if (!studentMessage) return;
       if (persistStudent) await persistMessage(studentMessage, 'child');
       const requestHistory = [...history.current, { role: 'user' as const, text: studentMessage.text }].slice(-20);
-      const suggestionContext = lastSuggestions.current.length
-        ? `\n\nSuggestion adaptation for this turn: create a new set for the learner's latest response and your latest explanation. The suggestions shown on the previous turn were: ${lastSuggestions.current.join(' | ')}. Avoid repeating these unless the learner's current need makes one essential. Keep every suggestion about "${topic}" or a specific idea in your latest explanation.`
-        : `\n\nSuggestion adaptation for this turn: create a new set from the learner's latest response and your latest explanation. Keep every suggestion about "${topic}" or a specific idea in your latest explanation.`;
+      const exchangeCount = Math.floor(history.current.length / 2);
+      const activeSection = Math.min(3, exchangeCount + 1);
+      const suggestionContext = `\n\nStudy Plan Pacing & Suggestion Adaptation (Exchange #${exchangeCount + 1}): Follow the 4-Section Study Plan established in your opening message strictly in order so tutoring stays structured. Keep every suggestion 100% anchored to navigating or moving forward in "${topic}". Provide 0 to 4 suggestions based on necessity (use ⟦suggests: none⟧ when presenting a Quick Assessment or direct solo question).${exchangeCount >= 4 ? ` You have covered Sections 1–3 of the Study Plan for "${topic}": transition to Section 4 (Wind-Down), ask confirmation for a Quick Assessment, present the Quick Assessment once confirmed, and point to Next Steps.` : ` Guide the learner methodically through Section ${activeSection} of the Study Plan toward Section ${activeSection + 1}.`}`;
       const rawAnswer = await askTutor(requestHistory, `${system}${suggestionContext}`);
       const parsed = extractTutorSuggestions(rawAnswer);
       const answer = parsed.text || `Let’s stay with ${topic}. I couldn’t form a clear explanation just now. Try asking about one part of this lesson again.`;
-      const replySuggestions = relevantSuggestions(parsed.suggestions, topic, answer, studentMessage.text, lastSuggestions.current);
+      const replySuggestions = relevantSuggestions(parsed.suggestions, topic, answer, studentMessage.text, lastSuggestions.current, parsed.explicitNone);
       const reply: Message = { id: newMessageId(), role: 'model', text: answer, at: new Date().toISOString(), suggestions: replySuggestions };
       lastSuggestions.current = replySuggestions;
       history.current = [...history.current, { role: 'user' as const, text: studentMessage.text }, { role: 'model' as const, text: answer }].slice(-80);
@@ -195,11 +196,11 @@ export default function LessonScreen() {
               <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.tutorBubble]}>
                 <LessonMessageContent text={message.text} textStyle={[styles.bubbleText, message.role === 'user' && styles.userText]} />
               </View>
-              {message.role === 'model' && index === messages.length - 1 && !busy ? (
+              {message.role === 'model' && index === messages.length - 1 && !busy && (message.suggestions?.length || 0) > 0 ? (
                 <View style={styles.suggestions}>
                   <Text style={styles.suggestionLabel}>NEXT WITH KINDLING · {topic.toUpperCase()}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionList}>
-                    {(message.suggestions?.length ? message.suggestions : lessonFallbackSuggestions(topic)).map((reply) => (
+                    {(message.suggestions || []).map((reply) => (
                       <Pressable key={reply} accessibilityRole="button" disabled={busy} onPress={() => sendMessage(reply)} style={({ pressed }) => [styles.suggestionChip, pressed && styles.sendPressed]}>
                         <Text style={styles.suggestionText}>{reply}</Text>
                       </Pressable>
@@ -243,12 +244,18 @@ function extractTutorSuggestions(rawText: string) {
   const suggestions: string[] = [];
   const blockPattern = /⟦\s*suggests?\b([^⟧]*)⟧|\[\[\s*suggests?\s*:?\s*([^\]]*)\]\]/gi;
   let match: RegExpExecArray | null;
+  let sawNone = false;
   while ((match = blockPattern.exec(source)) !== null) {
-    const body = (match[1] || match[2] || '').replace(/^[:\s]+/, '');
+    const body = (match[1] || match[2] || '').replace(/^[:\s]+/, '').trim();
+    if (!body || /^(none|null|nil|empty|0|no\s+suggestions?|omit|-|—|\[\])$/i.test(body)) {
+      sawNone = true;
+      continue;
+    }
     suggestions.push(...body.split(/[|\n;]/).map((item) => item.replace(/^\s*[-•*\d.)]+\s*/, '').replace(/^['"“”]+|['"“”]+$/g, '').trim()));
   }
   const text = source.replace(blockPattern, '').replace(/\n{3,}/g, '\n\n').trim();
-  return { text, suggestions: [...new Set(suggestions.filter((item) => item.length >= 3 && item.length <= 90))].slice(0, 5) };
+  const valid = [...new Set(suggestions.filter((item) => item.length >= 3 && item.length <= 90 && !/^(none|null|empty|0)$/i.test(item)))].slice(0, 5);
+  return { text, suggestions: valid, explicitNone: sawNone && valid.length === 0 };
 }
 
 function topicKeywords(topic: string) {
@@ -256,24 +263,22 @@ function topicKeywords(topic: string) {
   return String(topic || '').toLowerCase().match(/[a-z0-9]+/g)?.filter((word) => word.length > 2 && !stopWords.has(word)) || [];
 }
 
-function relevantSuggestions(suggestions: string[], topic: string, tutorText: string, learnerText = '', previousSuggestions: string[] = []) {
-  const keywords = topicKeywords(topic);
-  const response = tutorText.toLowerCase();
+function relevantSuggestions(suggestions: string[], topic: string, tutorText: string, learnerText = '', previousSuggestions: string[] = [], explicitNone = false) {
+  if (explicitNone) return [];
+  if (/\b(quick\s+assessment|assessment\s+questions?|question\s+1\s*(?:of\s*\d+|[:.)]))\b/i.test(tutorText) && suggestions.length === 0) {
+    return [];
+  }
   const recent = new Set(previousSuggestions.map((suggestion) => suggestion.toLowerCase().trim()));
-  const topical = suggestions.filter((suggestion) => {
-    const normalized = suggestion.toLowerCase();
-    return !recent.has(normalized.trim()) && keywords.length > 0 && keywords.some((word) => {
-      const stem = word.replace(/(?:ing|ed|es|s)$/, '');
-      return normalized.includes(word) || (stem.length > 3 && normalized.includes(stem)) || response.includes(normalized.replace(/^(show|give|explain|help|check|let|can|why|what|how|me|my|a|an|the|please)\s+/i, ''));
-    });
-  });
-  const unique = new Set<string>();
-  return [...topical, ...lessonFallbackSuggestions(topic, tutorText, learnerText, previousSuggestions)].filter((suggestion) => {
-    const key = suggestion.toLowerCase();
-    if (unique.has(key)) return false;
-    unique.add(key);
+  const filtered = suggestions.filter((suggestion) => {
+    const normalized = suggestion.toLowerCase().trim();
+    if (!normalized || recent.has(normalized)) return false;
+    if (/\b(connect\s+this\s+to|talk\s+about\s+something\s+else|different\s+subject|tell\s+me\s+a\s+joke)\b/i.test(normalized)) return false;
     return true;
-  }).slice(0, 4);
+  });
+  if (filtered.length > 0) {
+    return filtered.slice(0, 5);
+  }
+  return lessonFallbackSuggestions(topic, tutorText, learnerText, previousSuggestions).slice(0, 3);
 }
 
 function lessonFallbackSuggestions(topic: string, tutorText = '', learnerText = '', previousSuggestions: string[] = []) {

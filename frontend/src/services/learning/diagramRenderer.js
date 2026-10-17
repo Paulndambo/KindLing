@@ -276,13 +276,87 @@ function normalizeVisualSpec(raw) {
   // Auto-detect type if omitted
   let type = rawType;
   if (!type) {
-    if (raw.num != null && raw.den != null) type = "fraction";
+    if (raw.objectives || raw.goals || raw.concepts || raw.key_concepts || /study\s*plan|lesson\s*plan|roadmap/i.test(title)) {
+      type = "study-plan";
+    } else if (raw.num != null && raw.den != null) type = "fraction";
     else if (raw.bars || items.some((i) => /^\d+\s*\/\s*\d+/.test(i))) type = "fraction";
     else if (raw.min != null && raw.max != null) type = "number-line";
     else if (raw.shape) type = "geometry";
     else if (raw.slope != null || raw.line || raw.points?.includes("(")) type = "coordinate-plane";
     else if (items.some((i) => /^[^:|]+:\s*-?\d+(\.\d+)?(\s*%|\s*\|.*)?$/.test(i))) type = "bar-chart";
     else type = "process";
+  }
+
+  // 0. Topic Study Plan / Lesson Roadmap
+  if (
+    type === "study-plan" ||
+    type === "studyplan" ||
+    type === "lesson-plan" ||
+    type === "lessonplan" ||
+    type === "roadmap"
+  ) {
+    const splitList = (val) =>
+      String(val || "")
+        .split(/[|;]/)
+        .map((s) => cleanLabel(s.replace(/^\s*[-•*]\s*/, "")))
+        .filter(Boolean);
+
+    const objectives = [
+      ...splitList(raw.objectives || raw.objective || raw.goals || raw.goal),
+    ];
+    const concepts = [
+      ...splitList(raw.concepts || raw.key_concepts || raw.keyconcepts || raw.topics),
+    ];
+
+    const sections = [];
+    for (let sIdx = 1; sIdx <= 6; sIdx += 1) {
+      const explicitSec = raw[`section_${sIdx}`] || raw[`section${sIdx}`];
+      if (explicitSec) {
+        const parts = String(explicitSec).split("|").map((s) => cleanLabel(s));
+        sections.push({
+          step: sections.length + 1,
+          title: parts[0] || `Section ${sIdx}`,
+          detail: parts.slice(1).join(" · ") || "",
+        });
+      }
+    }
+
+    for (const item of items) {
+      const cleaned = String(item || "").trim();
+      if (!cleaned) continue;
+      if (/^(?:objectives?|goals?)\s*[:|]/i.test(cleaned)) {
+        objectives.push(
+          ...splitList(cleaned.replace(/^(?:objectives?|goals?)\s*[:|]\s*/i, ""))
+        );
+        continue;
+      }
+      if (/^(?:key\s+concepts?|concepts?)\s*[:|]/i.test(cleaned)) {
+        concepts.push(
+          ...splitList(cleaned.replace(/^(?:key\s+concepts?|concepts?)\s*[:|]\s*/i, ""))
+        );
+        continue;
+      }
+      const stepCleaned = cleaned.replace(/^(?:section\s*\d+\s*[:.-]\s*|\d+[.)]\s*)/i, "").trim();
+      const parts = stepCleaned.split("|").map((s) => cleanLabel(s));
+      if (parts[0]) {
+        sections.push({
+          step: sections.length + 1,
+          title: parts[0],
+          detail: parts.slice(1).join(" · ") || "",
+        });
+      }
+    }
+
+    if (sections.length || objectives.length || concepts.length) {
+      return {
+        kind: "study-plan",
+        title: title || "Topic Study Plan & Tutoring Roadmap",
+        caption,
+        objectives: [...new Set(objectives)].slice(0, 5),
+        concepts: [...new Set(concepts)].slice(0, 8),
+        sections: sections.slice(0, 6),
+      };
+    }
   }
 
   // 1. Fraction bars / comparison
