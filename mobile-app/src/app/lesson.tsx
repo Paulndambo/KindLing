@@ -194,7 +194,7 @@ export default function LessonScreen() {
             <View key={`${index}-${message.role}`} style={styles.messageGroup}>
               {message.role === 'model' ? <View style={styles.tutorAttribution}><BrandMark size={19} /><Text style={styles.tutorName}>Kindling</Text></View> : null}
               <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.tutorBubble]}>
-                <LessonMessageContent text={message.text} textStyle={[styles.bubbleText, message.role === 'user' && styles.userText]} />
+                <LessonMessageContent text={message.text} isUser={message.role === 'user'} textStyle={[styles.bubbleText, message.role === 'user' && styles.userText]} />
               </View>
               {message.role === 'model' && index === messages.length - 1 && !busy && (message.suggestions?.length || 0) > 0 ? (
                 <View style={styles.suggestions}>
@@ -355,9 +355,9 @@ const styles = StyleSheet.create({
   messageGroup: { alignSelf: 'stretch', gap: 8 },
   tutorAttribution: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   tutorName: { color: Brand.teal, fontSize: 12, fontWeight: '700' },
-  bubble: { maxWidth: '88%', paddingHorizontal: 16, paddingVertical: 13, borderRadius: 18 },
-  tutorBubble: { alignSelf: 'flex-start', backgroundColor: '#fff', borderWidth: 1, borderColor: Brand.line, borderBottomLeftRadius: 5 },
-  userBubble: { alignSelf: 'flex-end', backgroundColor: Brand.pine, borderBottomRightRadius: 5 },
+  bubble: { width: '100%', maxWidth: '100%', alignSelf: 'stretch', paddingHorizontal: 16, paddingVertical: 13, borderRadius: 18 },
+  tutorBubble: { alignSelf: 'stretch', backgroundColor: '#fff', borderWidth: 1, borderColor: Brand.line },
+  userBubble: { alignSelf: 'stretch', backgroundColor: Brand.pine },
   bubbleText: { color: Brand.ink, fontSize: 16, lineHeight: 23 },
   userText: { color: '#fff' },
   suggestions: { gap: 7, paddingLeft: 4 },

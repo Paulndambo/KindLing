@@ -114,6 +114,7 @@ class PlatformApiTests(APITestCase):
         third = reserve_daily_ai_request(self.user, sub_a, 1000)
         self.assertFalse(third["allowed"])
         self.assertEqual(third["estimatedTokensRemaining"], 0)
+        self.assertEqual(third["limitReason"], "tokens")
 
         # User B is completely unaffected by User A exhausting their cap
         usage_b = daily_ai_usage(other_user, sub_b)
@@ -123,6 +124,31 @@ class PlatformApiTests(APITestCase):
         self.assertTrue(res_b["allowed"])
         self.assertEqual(res_b["used"], 1)
         self.assertEqual(res_b["estimatedTokensRemaining"], 995000)
+
+    def test_release_and_reconcile_daily_ai_usage(self):
+        from ..usage import reconcile_daily_ai_tokens, release_daily_ai_request
+
+        sub = ensure_subscription(self.user)
+        reserved = reserve_daily_ai_request(self.user, sub, 12000)
+        self.assertTrue(reserved["allowed"])
+        self.assertEqual(reserved["used"], 1)
+        self.assertEqual(reserved["estimatedTokensUsed"], 12000)
+
+        # Reconcile down to actual 3,200 tokens used
+        reconcile_daily_ai_tokens(self.user, 12000, 3200)
+        after_reconcile = daily_ai_usage(self.user, sub)
+        self.assertEqual(after_reconcile["used"], 1)
+        self.assertEqual(after_reconcile["estimatedTokensUsed"], 3200)
+
+        # Reserve a second request that then fails upstream -> release rolls it back
+        second = reserve_daily_ai_request(self.user, sub, 9000)
+        self.assertTrue(second["allowed"])
+        self.assertEqual(second["used"], 2)
+        release_daily_ai_request(self.user, 9000)
+
+        after_release = daily_ai_usage(self.user, sub)
+        self.assertEqual(after_release["used"], 1)
+        self.assertEqual(after_release["estimatedTokensUsed"], 3200)
 
     def test_platform_gemini_missing_key_returns_503(self):
         from django.test import override_settings
@@ -140,6 +166,7 @@ class PlatformApiTests(APITestCase):
             )
         self.assertEqual(res.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertIn("PLATFORM_GEMINI_API_KEY", res.data["detail"])
+
 
 
 

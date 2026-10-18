@@ -79,7 +79,9 @@ export function classifyFailure(err, { offline } = {}) {
   if (
     errCode === "daily_ai_cap_reached" ||
     lower.includes("daily_ai_cap_reached") ||
-    lower.includes("platform ai allowance is used up")
+    lower.includes("platform ai allowance") ||
+    lower.includes("platform ai token allowance") ||
+    lower.includes("platform ai requests")
   ) {
     const resetsAt = usage?.resetsAt || "midnight UTC";
     const detail =

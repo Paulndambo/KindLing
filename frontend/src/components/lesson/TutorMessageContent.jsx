@@ -19,6 +19,11 @@ import {
   parseLessonFlowchart,
   parseVisualDemo,
 } from "../../services/learning/diagramRenderer";
+import {
+  languageDisplayName,
+  tokenizeCode,
+  tokensToLines,
+} from "../../utils/codeHighlight";
 
 const LESSON_IMAGE_MARKER = /^\[\[lesson-image:\s*(.{2,100}?)\s*\]\]$/i;
 
@@ -1145,14 +1150,50 @@ function CodeBlock({ className, children, streaming = false }) {
     );
   }
 
+  return <HighlightedCode code={code} lang={lang} className={className} />;
+}
+
+function HighlightedCode({ code, lang, className }) {
+  const lines = useMemo(
+    () => tokensToLines(tokenizeCode(code, lang)),
+    [code, lang]
+  );
+  const showNumbers = lines.length > 1;
+  const displayName = languageDisplayName(lang);
+
   return (
     <div className="tutor-code-wrap">
       <div className="tutor-code-toolbar">
-        <span className="tutor-code-lang">{lang}</span>
+        <span className="tutor-code-lang">
+          <span className="tutor-code-dots" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
+          {displayName}
+        </span>
         <CopyButton text={code} />
       </div>
-      <pre className={`tutor-code language-${lang}`}>
-        <code className={className}>{code}</code>
+      <pre
+        className={`tutor-code language-${lang}${showNumbers ? " has-line-numbers" : ""}`}
+      >
+        <code className={className}>
+          {lines.map((lineTokens, lineIdx) => (
+            <span className="tutor-code-line" key={lineIdx}>
+              {lineTokens.length
+                ? lineTokens.map((tok, tokIdx) =>
+                    tok.type === "plain" ? (
+                      tok.text
+                    ) : (
+                      <span key={tokIdx} className={`tok-${tok.type}`}>
+                        {tok.text}
+                      </span>
+                    )
+                  )
+                : "\u200b"}
+            </span>
+          ))}
+        </code>
       </pre>
     </div>
   );

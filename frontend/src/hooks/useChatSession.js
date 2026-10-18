@@ -255,9 +255,10 @@ export function useChatSession({
             code: "daily_ai_cap_reached",
             usage,
           });
-        } else if (getPlatformAiCap()) {
-          clearPlatformAiCap();
         } else {
+          if (getPlatformAiCap()) {
+            clearPlatformAiCap();
+          }
           setChatError((prev) =>
             prev?.code === "DAILY_AI_CAP_REACHED" ? null : prev
           );

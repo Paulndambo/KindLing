@@ -20,7 +20,7 @@
 .tutor-md {
   color: var(--ink);
   font-size: 14.5px;
-  line-height: 1.6;
+  line-height: 1.68;
   word-wrap: break-word;
   overflow-wrap: anywhere;
 }
@@ -40,7 +40,7 @@
 
 /* ── Typography ── */
 .tutor-p {
-  margin: 0 0 0.7em;
+  margin: 0 0 0.85em;
 }
 
 .tutor-p:last-child {
@@ -207,25 +207,28 @@
 
 /* ── Inline code ── */
 .tutor-inline-code {
-  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", Menlo, Consolas,
-    monospace;
-  font-size: 0.88em;
-  background: var(--pine-pale);
-  color: var(--pine);
-  padding: 0.12em 0.4em;
-  border-radius: 5px;
-  border: 1px solid rgba(31, 58, 52, 0.08);
+  font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", "Segoe UI Mono",
+    Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: rgba(40, 107, 109, 0.09);
+  color: #1d4f50;
+  padding: 0.1em 0.42em;
+  border-radius: 6px;
+  border: 1px solid rgba(40, 107, 109, 0.14);
   white-space: break-spaces;
+  font-weight: 550;
 }
 
 /* ── Code blocks ── */
 .tutor-code-wrap {
-  margin: 0.7em 0 0.85em;
-  border-radius: 12px;
+  margin: 0.85em 0 1em;
+  border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(31, 58, 52, 0.12);
-  background: #1a2a26;
-  box-shadow: 0 2px 8px rgba(31, 58, 52, 0.08);
+  border: 1px solid rgba(15, 30, 26, 0.5);
+  background: #16241f;
+  box-shadow:
+    0 1px 2px rgba(31, 58, 52, 0.08),
+    0 8px 22px rgba(31, 58, 52, 0.12);
 }
 
 .tutor-code-toolbar {
@@ -233,53 +236,78 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.22);
+  padding: 8px 10px 8px 12px;
+  background: #1d2f29;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .tutor-code-lang {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(246, 242, 233, 0.55);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: rgba(246, 242, 233, 0.72);
 }
 
+.tutor-code-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.tutor-code-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(246, 242, 233, 0.16);
+}
+
+.tutor-code-dots i:nth-child(1) { background: #e27a6b; }
+.tutor-code-dots i:nth-child(2) { background: #e4b04a; }
+.tutor-code-dots i:nth-child(3) { background: #5fb38a; }
+
+.kdl .tutor-code-copy,
 .tutor-code-copy {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   color: rgba(246, 242, 233, 0.85);
   font-size: 11px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
+.kdl .tutor-code-copy:hover,
 .tutor-code-copy:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .tutor-code {
   margin: 0;
-  padding: 12px 14px 14px;
+  padding: 14px 16px 16px;
   overflow-x: auto;
-  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", Menlo, Consolas,
-    monospace;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: #e8efe9;
+  font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", "Segoe UI Mono",
+    Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #e6ede8;
   background: transparent;
-  tab-size: 2;
+  tab-size: 4;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 242, 233, 0.2) transparent;
 }
 
 .tutor-code code {
+  display: block;
+  min-width: max-content;
   font-family: inherit;
   font-size: inherit;
   background: none;
@@ -288,6 +316,45 @@
   color: inherit;
   white-space: pre;
 }
+
+.tutor-code-line {
+  display: block;
+  white-space: pre;
+}
+
+/* Line-number gutter (pseudo-element, so it is never copied) */
+.tutor-code.has-line-numbers {
+  padding-left: 0;
+  counter-reset: tutor-line;
+}
+
+.tutor-code.has-line-numbers .tutor-code-line {
+  counter-increment: tutor-line;
+  padding-left: 3.4em;
+  position: relative;
+}
+
+.tutor-code.has-line-numbers .tutor-code-line::before {
+  content: counter(tutor-line);
+  position: absolute;
+  left: 0;
+  width: 2.4em;
+  text-align: right;
+  color: rgba(246, 242, 233, 0.26);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Token colors — soft, high-contrast palette on the pine background */
+.tutor-code .tok-comment { color: #7f978d; font-style: italic; }
+.tutor-code .tok-string { color: #a8d8a0; }
+.tutor-code .tok-number { color: #f2b56b; }
+.tutor-code .tok-keyword { color: #f08fb0; font-weight: 600; }
+.tutor-code .tok-literal { color: #f2b56b; }
+.tutor-code .tok-function { color: #7fc8e8; }
+.tutor-code .tok-type { color: #e8d07a; }
+.tutor-code .tok-tag { color: #f08fb0; }
+.tutor-code .tok-attr { color: #b9a6f2; }
 
 /* ASCII / text diagrams — light surface so box drawings read clearly */
 .tutor-ascii-wrap {
@@ -588,7 +655,23 @@
 
   .tutor-code,
   .tutor-ascii {
-    font-size: 11.5px;
+    font-size: 12px;
+  }
+
+  .tutor-code {
+    padding: 12px 12px 14px;
+  }
+
+  .tutor-code.has-line-numbers {
+    padding-left: 0;
+  }
+
+  .tutor-code.has-line-numbers .tutor-code-line {
+    padding-left: 2.9em;
+  }
+
+  .tutor-code.has-line-numbers .tutor-code-line::before {
+    width: 2em;
   }
 }
 

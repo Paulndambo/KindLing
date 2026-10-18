@@ -114,13 +114,11 @@
   box-shadow: 0 0 0 3px rgba(228, 163, 42, 0.2);
 }
 
-/* Learner bubbles hug the right edge so the conversation reads as two sides */
 #lesson .msg.child {
-  align-self: flex-end;
-  width: auto;
-  max-width: min(88%, 760px);
-  border-bottom-right-radius: 6px;
-  border-bottom-left-radius: var(--l-radius);
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  border-radius: var(--l-radius);
 }
 
 #lesson .lesson-shell:not([data-theme="dark"]):not([data-contrast="high"]) .msg.child {
@@ -773,6 +771,18 @@
 }
 
 /* ---------- Small screens ---------- */
+@media (max-width: 900px) {
+  #lesson .msg,
+  #lesson .msg.tutor,
+  #lesson .msg.child,
+  #lesson .tutor-msg-stack {
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    border-radius: var(--l-radius);
+  }
+}
+
 @media (max-width: 720px) {
   #lesson .assessment-head,
   #lesson .multistep-head {

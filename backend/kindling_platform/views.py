@@ -27,7 +27,12 @@ from .serializers import (
     ensure_ai_routing,
     ensure_subscription,
 )
-from .usage import daily_ai_usage, reserve_daily_ai_request
+from .usage import (
+    daily_ai_usage,
+    reconcile_daily_ai_tokens,
+    release_daily_ai_request,
+    reserve_daily_ai_request,
+)
 
 
 class PlanCatalogView(APIView):
@@ -179,8 +184,8 @@ class PlatformGeminiView(APIView):
     @staticmethod
     def _resolve_platform_gemini_key(force_reload: bool = False) -> str:
         api_key = str(getattr(settings, "PLATFORM_GEMINI_API_KEY", "") or "").strip()
-        explicit = getattr(getattr(settings, "_wrapped", None), "_explicit_settings", set())
-        if "PLATFORM_GEMINI_API_KEY" in explicit:
+        wrapped = getattr(settings, "_wrapped", None)
+        if not force_reload and wrapped is not None and wrapped.__class__.__name__ == "UserSettingsHolder":
             return api_key
         # Hot-reload backend/.env in local development or when rotating keys
         if force_reload or getattr(settings, "DEBUG", False) or not api_key:
@@ -254,14 +259,27 @@ class PlatformGeminiView(APIView):
         request_body = json.dumps(payload).encode("utf-8")
         if len(request_body) > self.max_body_bytes:
             return Response({"detail": "AI request is too large."}, status=413)
-        # Byte-based estimate is deliberately conservative and also reserves the
-        # requested maximum output, preventing large prompts from bypassing the cap.
-        estimated_tokens = max(1, (len(request_body) + 2) // 3) + config["maxOutputTokens"]
+        input_tokens_est = max(1, (len(request_body) + 3) // 4)
+        estimated_tokens = input_tokens_est + min(config["maxOutputTokens"], 1024)
         usage = reserve_daily_ai_request(request.user, sub, estimated_tokens)
         if not usage["allowed"]:
+            limit_reason = usage.get("limitReason")
+            if limit_reason == "requests":
+                detail_msg = (
+                    f"You've reached today's limit of {usage['limit']} platform AI requests. "
+                    f"Your allowance resets at {usage.get('resetsAt', 'midnight UTC')}."
+                )
+            elif limit_reason == "tokens":
+                detail_msg = (
+                    f"You've used today's platform AI token allowance "
+                    f"({usage['estimatedTokenLimit']:,} tokens). "
+                    f"Your allowance resets at {usage.get('resetsAt', 'midnight UTC')}."
+                )
+            else:
+                detail_msg = "Today's platform AI allowance is used up. It resets at midnight UTC."
             return Response(
                 {
-                    "detail": "Today's platform AI allowance is used up. It resets at midnight UTC.",
+                    "detail": detail_msg,
                     "code": "daily_ai_cap_reached",
                     "usage": {key: value for key, value in usage.items() if key != "allowed"},
                 },
@@ -322,12 +340,14 @@ class PlatformGeminiView(APIView):
                 exc.close()
                 time.sleep(retry_delay + random.uniform(0.0, 0.25))
             except (URLError, TimeoutError):
+                release_daily_ai_request(request.user, estimated_tokens)
                 return Response(
                     {"detail": "Gemini service is temporarily unavailable. Please try again shortly."},
                     status=502,
                 )
 
         if upstream_error is not None:
+            release_daily_ai_request(request.user, estimated_tokens)
             exc = upstream_error
             # Do not pass raw provider bodies to clients; report actionable
             # configuration/quota failures without leaking request details.
@@ -367,15 +387,39 @@ class PlatformGeminiView(APIView):
             )
 
         if streaming:
+            user_obj = request.user
+            reserved_tok = estimated_tokens
+            in_tok = input_tokens_est
+
             def relay():
+                out_bytes = 0
+                reported_total = None
                 try:
                     while True:
                         chunk = upstream.read(4096)
                         if not chunk:
                             break
+                        out_bytes += len(chunk)
+                        if b"totalTokenCount" in chunk:
+                            m = re.search(rb'"totalTokenCount"\s*:\s*(\d+)', chunk)
+                            if m:
+                                try:
+                                    reported_total = int(m.group(1))
+                                except ValueError:
+                                    pass
                         yield chunk
                 finally:
                     upstream.close()
+                    actual_tok = (
+                        reported_total
+                        if reported_total and reported_total > 0
+                        else in_tok + max(1, out_bytes // 6)
+                    )
+                    try:
+                        reconcile_daily_ai_tokens(user_obj, reserved_tok, actual_tok)
+                    except Exception:
+                        pass
+
             response = StreamingHttpResponse(relay(), content_type="text/event-stream")
             response["Cache-Control"] = "no-cache, no-transform"
             response["X-Accel-Buffering"] = "no"
@@ -386,11 +430,25 @@ class PlatformGeminiView(APIView):
             return response
 
         try:
-            result = json.loads(upstream.read(self.max_body_bytes + 1))
+            raw_response = upstream.read(self.max_body_bytes + 1)
+            result = json.loads(raw_response)
+        except Exception:
+            release_daily_ai_request(request.user, estimated_tokens)
+            raise
         finally:
             upstream.close()
-        if len(json.dumps(result).encode("utf-8")) > self.max_body_bytes:
+        if len(raw_response) > self.max_body_bytes:
+            release_daily_ai_request(request.user, estimated_tokens)
             return Response({"detail": "Gemini response is too large."}, status=502)
+
+        usage_meta = result.get("usageMetadata") if isinstance(result, dict) else None
+        actual_tokens = (
+            int(usage_meta.get("totalTokenCount"))
+            if isinstance(usage_meta, dict) and usage_meta.get("totalTokenCount")
+            else input_tokens_est + max(1, len(raw_response) // 4)
+        )
+        reconcile_daily_ai_tokens(request.user, estimated_tokens, actual_tokens)
+
         response = Response(result)
         response["X-Kindling-AI-Daily-Remaining"] = str(usage["remaining"])
         response["X-Kindling-AI-Daily-Limit"] = str(usage["limit"])

@@ -26,6 +26,18 @@ export default function ChatErrorBanner({
       usage &&
       Number.isFinite(Number(usage.estimatedTokensUsed)) &&
       Number(usage.estimatedTokenLimit) > 0;
+
+    const reqExhausted =
+      hasRequests && Number(usage.used) >= Number(usage.limit);
+    const tokExhausted =
+      hasTokens &&
+      Number(usage.estimatedTokensUsed) >= Number(usage.estimatedTokenLimit);
+
+    // Show the metric(s) that actually triggered the cap so we never display an
+    // unexhausted secondary counter (e.g. 431k / 1M tokens) under a "used up" banner.
+    const showTokens = tokExhausted || (!reqExhausted && hasTokens);
+    const showRequests = reqExhausted || (!tokExhausted && hasRequests);
+
     const tokenPct = hasTokens
       ? Math.min(
           100,
@@ -42,7 +54,27 @@ export default function ChatErrorBanner({
           Math.round((Number(usage.used) / Number(usage.limit)) * 100)
         )
       : null;
-    const fillPct = Math.max(tokenPct ?? 0, reqPct ?? 0, 100);
+    const fillPct = showTokens && showRequests
+      ? Math.max(tokenPct ?? 0, reqPct ?? 0)
+      : showRequests
+        ? (reqPct ?? 100)
+        : showTokens
+          ? (tokenPct ?? 100)
+          : 100;
+
+    const headingTitle =
+      reqExhausted && !tokExhausted
+        ? "Today's AI request limit reached"
+        : tokExhausted && !reqExhausted
+          ? "Today's AI token allowance is used up"
+          : error.title || "Today's AI allowance is used up";
+
+    const bodyExplanation =
+      reqExhausted && !tokExhausted
+        ? `You've used all ${Number(usage.limit).toLocaleString()} daily platform AI requests included with your plan.`
+        : tokExhausted && !reqExhausted
+          ? `You've used your daily platform AI allowance of ${Number(usage.estimatedTokenLimit).toLocaleString()} tokens.`
+          : "You've reached today's included platform AI allowance.";
 
     return (
       <div
@@ -55,20 +87,18 @@ export default function ChatErrorBanner({
         </div>
         <div className="chat-error-banner-copy">
           <div className="daily-cap-head">
-            <strong>{error.title || "Today's AI allowance is used up"}</strong>
+            <strong>{headingTitle}</strong>
             <span className="daily-cap-reset-pill">
               <Clock3 size={12} aria-hidden />
               Resets at {resetsAt}
             </span>
           </div>
           <span>
-            {error.message ||
-              `Today's platform AI allowance is used up. It resets at ${resetsAt}.`}{" "}
-            Live AI chatting is paused until the reset, or you can connect your
-            own API key in Settings to continue right away.
+            {bodyExplanation} Live AI chatting is paused until {resetsAt}, or
+            you can connect your own API key in Settings to continue right away.
           </span>
 
-          {(hasRequests || hasTokens) && (
+          {(showRequests || showTokens) && (
             <div className="daily-cap-usage" aria-label="Daily AI allowance usage">
               <div
                 className="daily-cap-usage-bar"
@@ -80,7 +110,7 @@ export default function ChatErrorBanner({
                 <span style={{ width: `${fillPct}%` }} />
               </div>
               <div className="daily-cap-usage-stats">
-                {hasTokens && (
+                {showTokens && (
                   <span>
                     <strong>
                       {Number(usage.estimatedTokensUsed).toLocaleString()}
@@ -89,9 +119,10 @@ export default function ChatErrorBanner({
                     tokens used
                   </span>
                 )}
-                {hasRequests && (
+                {showRequests && (
                   <span>
-                    <strong>{usage.used}</strong> / {usage.limit} requests used
+                    <strong>{Number(usage.used).toLocaleString()}</strong> /{" "}
+                    {Number(usage.limit).toLocaleString()} requests used
                   </span>
                 )}
               </div>

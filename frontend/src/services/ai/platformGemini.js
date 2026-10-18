@@ -5,7 +5,8 @@ const ENDPOINT = "/api/platform/ai/gemini/";
 
 export const PLATFORM_AI_CAP_EVENT = "kindling:platform-ai-cap";
 const LEGACY_CAP_STORAGE_KEY = "kindling.platformAiCap.v1";
-const PLATFORM_AI_CAP_STORAGE_PREFIX = "kindling.platformAiCap.v2:";
+const LEGACY_CAP_PREFIX_V2 = "kindling.platformAiCap.v2:";
+const PLATFORM_AI_CAP_STORAGE_PREFIX = "kindling.platformAiCap.v3:";
 
 const memoryCapByUser = new Map();
 
@@ -62,6 +63,12 @@ function purgeLegacyGlobalCap() {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(LEGACY_CAP_STORAGE_KEY);
+    for (let i = window.sessionStorage.length - 1; i >= 0; i -= 1) {
+      const k = window.sessionStorage.key(i);
+      if (k && k.startsWith(LEGACY_CAP_PREFIX_V2)) {
+        window.sessionStorage.removeItem(k);
+      }
+    }
   } catch {
     /* ignore */
   }
@@ -175,7 +182,7 @@ function enrichPlatformError(err, fallbackStatus = null, fallbackData = null) {
 
   if (
     enriched.code === "daily_ai_cap_reached" ||
-    /platform ai allowance is used up/i.test(enriched.message)
+    /platform ai (allowance|token allowance|requests)/i.test(enriched.message)
   ) {
     enriched.code = "daily_ai_cap_reached";
     recordPlatformAiCap({
