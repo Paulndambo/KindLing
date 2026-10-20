@@ -4,6 +4,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useStudentProfile } from "./hooks/useStudentProfile";
 import { useSubjects } from "./hooks/useSubjects";
 import TopNav from "./components/layout/TopNav";
+import WorkspaceSidebar from "./components/layout/WorkspaceSidebar";
 import AuthModal from "./components/auth/AuthModal";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import LegalPage from "./components/legal/LegalPage";
@@ -29,6 +30,8 @@ export default function App() {
   const [activeLesson, setActiveLesson] = useState(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [workspaceSidebarCollapsed, setWorkspaceSidebarCollapsed] = useState(false);
+  const [dashboardPage, setDashboardPage] = useState("overview");
 
   // Scroll to top + close mobile nav when the primary screen changes
   useEffect(() => {
@@ -209,6 +212,12 @@ export default function App() {
     ]
   );
 
+  const handleWorkspaceNavigate = useCallback((tabId, page) => {
+    if (tabId === "dashboard" && page) setDashboardPage(page);
+    handleNavigate(tabId);
+  }, [handleNavigate]);
+  const hasWorkspaceSidebar = ["dashboard", "subjects", "settings"].includes(screen);
+
   const startLesson = useCallback(
     (subjectName, topicName, opts = null) => {
       if (!isLoggedIn) {
@@ -270,7 +279,9 @@ export default function App() {
         onMobileOpenChange={setMobileNavOpen}
       />
 
-      <main id="main-content" className="app-main" tabIndex={-1}>
+      <main id="main-content" className={`app-main${hasWorkspaceSidebar ? " has-workspace-sidebar" : ""}${workspaceSidebarCollapsed ? " sidebar-collapsed" : ""}`} tabIndex={-1}>
+        {hasWorkspaceSidebar && <WorkspaceSidebar collapsed={workspaceSidebarCollapsed} onToggle={() => setWorkspaceSidebarCollapsed((v) => !v)} screen={screen} dashboardPage={dashboardPage} onDashboardPageChange={setDashboardPage} onNavigate={handleWorkspaceNavigate} />}
+        <div className="workspace-page">
         <Suspense fallback={<ScreenFallback />}>
           {(screen === "privacy" || screen === "terms") && (
             <LegalPage
@@ -349,6 +360,7 @@ export default function App() {
               subjects={subjects}
               onStartLesson={startLesson}
               onStudentUpdate={applyProfileUpdate}
+              activePage={dashboardPage}
             />
           )}
           {screen === "settings" && (
@@ -360,6 +372,7 @@ export default function App() {
             />
           )}
         </Suspense>
+        </div>
       </main>
 
       <footer className="app-legal-footer">

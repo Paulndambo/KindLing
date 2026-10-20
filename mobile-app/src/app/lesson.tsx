@@ -215,7 +215,21 @@ export default function LessonScreen() {
         </ScrollView>
 
         <View style={styles.composer}>
-          <TextInput value={draft} onChangeText={setDraft} editable={!conversationLoading} style={styles.input} placeholder={conversationLoading ? 'Opening saved lesson…' : 'Ask or share your thinking…'} placeholderTextColor="#718079" multiline maxLength={1200} accessibilityLabel="Your message to Kindling" returnKeyType="send" onSubmitEditing={send} blurOnSubmit />
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            editable={!conversationLoading}
+            style={styles.input}
+            placeholder={conversationLoading ? 'Opening saved lesson…' : 'Ask or share your thinking…'}
+            placeholderTextColor="#718079"
+            multiline
+            blurOnSubmit={false}
+            submitBehavior="newline"
+            textAlignVertical="top"
+            numberOfLines={Platform.OS === 'web' ? Math.min(5, Math.max(1, draft.split('\n').length)) : undefined}
+            maxLength={1200}
+            accessibilityLabel="Your message to Kindling"
+          />
           <Pressable accessibilityRole="button" accessibilityLabel="Send message" disabled={!draft.trim() || busy || conversationLoading} onPress={send} style={({ pressed }) => [styles.send, (!draft.trim() || busy || conversationLoading) && styles.sendDisabled, pressed && styles.sendPressed]}><Text style={styles.sendGlyph}>↑</Text></Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -376,7 +390,7 @@ const styles = StyleSheet.create({
   errorText: { color: Brand.error, fontSize: 14, lineHeight: 20 },
   retry: { color: Brand.pine, fontSize: 14, fontWeight: '700' },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, borderTopWidth: 1, borderTopColor: Brand.line, padding: 12, paddingBottom: 10, backgroundColor: '#fff' },
-  input: { flex: 1, minHeight: 48, maxHeight: 124, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, backgroundColor: Brand.parchment, color: Brand.ink, fontSize: 16, lineHeight: 21 },
+  input: { flex: 1, minHeight: 48, maxHeight: 140, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, backgroundColor: Brand.parchment, color: Brand.ink, fontSize: 16, lineHeight: 21, textAlignVertical: 'top' },
   send: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.pine },
   sendDisabled: { backgroundColor: '#A9B2AD' },
   sendPressed: { opacity: 0.7 },

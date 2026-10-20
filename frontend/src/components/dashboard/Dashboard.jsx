@@ -112,6 +112,7 @@ export default function Dashboard({
   subjects = [],
   onStartLesson,
   onStudentUpdate,
+  activePage = "overview",
 }) {
   const [week, setWeek] = useState("this");
   const [data, setData] = useState(null);
@@ -407,7 +408,7 @@ export default function Dashboard({
 
   if (loading) {
     return (
-      <section id="dashboard" aria-busy="true">
+    <section id="dashboard" aria-busy="true">
         <div className="dash-wrap dash-loading-wrap">
           <div className="dash-skeleton-hero" aria-hidden>
             <div className="skel skel-avatar" />
@@ -537,6 +538,7 @@ export default function Dashboard({
           </div>
         )}
 
+        {activePage === "overview" && <>
         {/* Put the most useful action directly beneath the page heading. */}
         {topNba && onStartLesson && (
           <div
@@ -666,7 +668,9 @@ export default function Dashboard({
             <HomeworkWindowCard subjects={subjects} onStartLesson={onStartLesson} />
           )}
         </div>
+        </>}
 
+        {activePage === "progress" && <>
         {/* Profile strip (student from API / onboarding) */}
         <div className="academic-card dash-profile-card">
           <h2>
@@ -824,6 +828,9 @@ export default function Dashboard({
           </div>
         </div>
 
+        </>}
+
+        {activePage === "insights" && <>
         {/* Strengths / focus + activity */}
         <div className="dash-grid dash-grid-equal">
           <div className="panel">
@@ -896,6 +903,9 @@ export default function Dashboard({
           </div>
         </div>
 
+        </>}
+
+        {activePage === "plan" && <>
         {/* Upcoming plan from backend suggestions */}
         <div className="panel dash-plan-panel">
           <div className="dash-panel-head">
@@ -938,7 +948,9 @@ export default function Dashboard({
 
         {/* Epic A5 — family digests */}
         <FamilyDigestCard student={student} onStudentUpdate={onStudentUpdate} />
+        </>}
       </div>
     </section>
   );
 }
+

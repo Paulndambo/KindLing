@@ -19,10 +19,55 @@
   --tone-berry-bg: #fbe8e7;
 }
 
+/* Shared workspace shell used by dashboard, subjects, and settings. */
+.app-main.has-workspace-sidebar { --dash-sidebar-width: 248px; display: grid; grid-template-columns: var(--dash-sidebar-width) minmax(0, 1fr); align-items: stretch; transition: grid-template-columns 180ms ease; }
+.app-main.has-workspace-sidebar.sidebar-collapsed { --dash-sidebar-width: 76px; }
+.app-main.has-workspace-sidebar .workspace-page { min-width: 0; }
+.app-main.has-workspace-sidebar .workspace-page #subjects .subj-wrap,
+.app-main.has-workspace-sidebar .workspace-page .settings-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: clamp(12px, 1.25vw, 20px);
+}
+.app-main.has-workspace-sidebar .workspace-page #subjects .subj-wrap { padding-top: 28px; padding-bottom: 64px; }
+.app-main.has-workspace-sidebar .workspace-page .settings-page { padding-top: 28px; padding-bottom: 64px; }
+.app-main .dash-sidebar { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; min-height: calc(100vh - 72px); padding: 24px 14px 18px; color: #eaf2ee; background: linear-gradient(180deg, #1f3a34, #18312c); }
+.app-main .dash-sidebar-brand { display: flex; align-items: center; gap: 11px; min-height: 42px; padding: 0 10px; margin-bottom: 34px; font-size: 18px; font-weight: 750; letter-spacing: -.03em; white-space: nowrap; }
+.app-main .dash-sidebar-mark { display: grid; place-items: center; width: 32px; height: 32px; flex: none; color: #253d34; border-radius: 11px; background: #f3c868; }
+.app-main .dash-sidebar-section { padding: 0 12px; margin-bottom: 10px; color: #99b5a9; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.app-main .dash-sidebar-nav { display: grid; gap: 5px; }
+.app-main .dash-sidebar-link { position: relative; display: flex; align-items: center; gap: 13px; min-height: 46px; width: 100%; padding: 0 12px; color: #c1d2c9; text-align: left; white-space: nowrap; border: 0; border-radius: 12px; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
+.app-main .dash-sidebar-link:hover { color: #fff; background: rgba(255,255,255,.08); }
+.app-main .dash-sidebar-link.active { color: #fff; background: rgba(255,255,255,.13); box-shadow: inset 3px 0 #f3c868; }
+.app-main .dash-sidebar-link.active svg { color: #f3c868; }
+.app-main .dash-sidebar-link span { overflow: hidden; text-overflow: ellipsis; font-size: 13px; font-weight: 600; }
+.app-main .dash-sidebar-link i { width: 6px; height: 6px; margin-left: auto; border-radius: 50%; background: #f3c868; }
+.app-main .dash-sidebar-bottom { display: grid; gap: 15px; margin-top: auto; }
+.app-main .dash-sidebar-note { display: flex; align-items: flex-start; gap: 10px; padding: 13px 11px; color: #bfd2c8; font-size: 11px; line-height: 1.5; border: 1px solid rgba(255,255,255,.1); border-radius: 13px; background: rgba(255,255,255,.05); }
+.app-main .dash-sidebar-note svg { flex: none; color: #f3c868; }
+.app-main .dash-sidebar-note strong { color: #fff; }
+.app-main .dash-sidebar-toggle { display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; color: #a9c0b5; font-size: 12px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; }
+.app-main .dash-sidebar-toggle:hover { color: #fff; background: rgba(255,255,255,.08); }
+.app-main.sidebar-collapsed .dash-sidebar-brand-name, .app-main.sidebar-collapsed .dash-sidebar-section, .app-main.sidebar-collapsed .dash-sidebar-link span, .app-main.sidebar-collapsed .dash-sidebar-link i, .app-main.sidebar-collapsed .dash-sidebar-note, .app-main.sidebar-collapsed .dash-sidebar-toggle span { display: none; }
+.app-main.sidebar-collapsed .dash-sidebar-brand { justify-content: center; padding: 0; }
+.app-main.sidebar-collapsed .dash-sidebar-link, .app-main.sidebar-collapsed .dash-sidebar-toggle { justify-content: center; padding: 0; }
+@media (max-width: 760px) {
+  .app-main.has-workspace-sidebar { --dash-sidebar-width: 60px; }
+  .app-main.has-workspace-sidebar.sidebar-collapsed { --dash-sidebar-width: 60px; }
+  .app-main .dash-sidebar { min-height: calc(100vh - 64px); padding: 14px 7px; }
+  .app-main .dash-sidebar-brand { justify-content: center; padding: 0; margin-bottom: 22px; }
+  .app-main .dash-sidebar-brand-name, .app-main .dash-sidebar-section, .app-main .dash-sidebar-link span, .app-main .dash-sidebar-link i, .app-main .dash-sidebar-note, .app-main .dash-sidebar-toggle span { display: none; }
+  .app-main .dash-sidebar-link, .app-main .dash-sidebar-toggle { justify-content: center; padding: 0; }
+}
+
 #dashboard .dash-wrap {
-  max-width: 1240px;
-  margin-inline: auto;
-  padding: 32px clamp(16px, 3vw, 32px) 72px;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 24px clamp(12px, 1.25vw, 20px) 64px;
 }
 
 /* ---------- Entrance animation ---------- */
@@ -604,8 +649,7 @@
 
 @media (max-width: 720px) {
   #dashboard .dash-wrap {
-    padding-top: 20px;
-    padding-bottom: 56px;
+    padding: 18px 10px 48px;
   }
 
   #dashboard .dash-hero {
