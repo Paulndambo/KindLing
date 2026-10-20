@@ -251,6 +251,29 @@ export function inferCorrectness(studentText, tutorText) {
   return Correctness.UNKNOWN;
 }
 
+/** A bare Python function signature (or pass/ellipsis stub) is an attempt, not proof of competence. */
+export function isIncompletePythonStub(studentText) {
+  const source = String(studentText || "")
+    .trim()
+    .replace(/^```(?:python|py)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+  if (!source || source.length > 240) return false;
+  const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const isSignature = /^(?:async\s+)?def\s+[A-Za-z_]\w*\s*\([^\n]*\)\s*(?:->\s*[^:]+)?\s*:$/.test(lines[0] || "");
+  return isSignature && (lines.length === 1 || (lines.length === 2 && /^(?:pass|\.\.\.)$/.test(lines[1])));
+}
+
+export function classifyAttemptEvidence({ correctness, isHintRequest = false, incomplete = false } = {}) {
+  if (incomplete) return "incomplete_attempt";
+  if (correctness === Correctness.CORRECT) {
+    return isHintRequest ? "correct_after_current_turn_hint" : "correct_without_current_turn_hint";
+  }
+  if (correctness === Correctness.PARTIAL) return "partially_correct";
+  if (correctness === Correctness.INCORRECT) return "attempted_incorrectly";
+  return correctness === Correctness.EXPLORING ? "exploring" : "ungraded_attempt";
+}
+
 export function inferAffect(studentText) {
   const s = (studentText || "").trim();
   if (!s) return Affect.NEUTRAL;
@@ -352,14 +375,15 @@ export function analyzeExchange({
     verification,
     preferChecker: true,
   });
-  const correctness = graded.correctness;
+  const incompleteCodeStub = isIncompletePythonStub(studentText);
+  const correctness = incompleteCodeStub ? Correctness.UNKNOWN : graded.correctness;
   const directFeedback =
     matchAny(tutorClean, DIRECT_CORRECTNESS_PATTERNS) ||
     matchAny(tutorClean, PARTIAL_PATTERNS);
   const conflictingFeedback =
     matchAny(tutorClean, CORRECT_PATTERNS) &&
     matchAny(tutorClean, INCORRECT_PATTERNS);
-  const correctnessReliability = verification?.checked
+  const correctnessReliability = incompleteCodeStub ? 0 : verification?.checked
     ? clamp(Number(verification.confidence) || 0, 0, 1)
     : conflictingFeedback
       ? 0.2
@@ -449,6 +473,8 @@ export function analyzeExchange({
 
   return {
     correctness,
+    attemptEvidence: classifyAttemptEvidence({ correctness, isHintRequest: isHint, incomplete: incompleteCodeStub }),
+    incompleteCodeStub,
     linguisticCorrectness: linguistic,
     gradeSource: graded.source,
     verification,
