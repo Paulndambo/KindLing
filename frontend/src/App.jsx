@@ -8,7 +8,6 @@ import WorkspaceSidebar from "./components/layout/WorkspaceSidebar";
 import AuthModal from "./components/auth/AuthModal";
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import LegalPage from "./components/legal/LegalPage";
-import "./styles/platform.css";
 
 const Overview = lazy(() => import("./components/overview/Overview"));
 const MySubjects = lazy(() => import("./components/subjects/MySubjects"));
@@ -52,7 +51,7 @@ export default function App() {
         }
       }
     }
-  }, [screen]);
+  }, [screen, dashboardPage]);
 
   const {
     isLoggedIn,
@@ -279,7 +278,7 @@ export default function App() {
         onMobileOpenChange={setMobileNavOpen}
       />
 
-      <main id="main-content" className={`app-main${hasWorkspaceSidebar ? " has-workspace-sidebar" : ""}${workspaceSidebarCollapsed ? " sidebar-collapsed" : ""}`} tabIndex={-1}>
+      <main id="main-content" className={`app-main${screen === "dashboard" ? " is-dashboard" : ""}${hasWorkspaceSidebar ? " has-workspace-sidebar" : ""}${workspaceSidebarCollapsed ? " sidebar-collapsed" : ""}`} tabIndex={-1}>
         {hasWorkspaceSidebar && <WorkspaceSidebar collapsed={workspaceSidebarCollapsed} onToggle={() => setWorkspaceSidebarCollapsed((v) => !v)} screen={screen} dashboardPage={dashboardPage} onDashboardPageChange={setDashboardPage} onNavigate={handleWorkspaceNavigate} />}
         <div className="workspace-page">
         <Suspense fallback={<ScreenFallback />}>
@@ -361,6 +360,8 @@ export default function App() {
               onStartLesson={startLesson}
               onStudentUpdate={applyProfileUpdate}
               activePage={dashboardPage}
+              onPageChange={setDashboardPage}
+              onOpenSubjects={() => handleNavigate("subjects")}
             />
           )}
           {screen === "settings" && (

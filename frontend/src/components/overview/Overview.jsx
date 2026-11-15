@@ -1,179 +1,219 @@
 import { useState } from "react";
 import {
-  Edit3,
   ArrowRight,
-  Sparkles,
-  LogIn,
+  ArrowUpRight,
+  BookOpen,
+  Check,
   CheckCircle2,
-  XCircle,
-  BrainCircuit,
-  LifeBuoy,
-  Layers,
-  Volume2,
   ChevronDown,
-  ChevronUp,
-  Flame,
-  Award,
-  Zap,
-  Compass,
+  Code2,
+  FlaskConical,
+  GraduationCap,
+  Layers3,
+  Lightbulb,
+  MessageSquare,
+  Plus,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
 } from "lucide-react";
-import {
-  HERO_PATHS,
-  CONTRAST_ITEMS,
-  LADDER_STAGES,
-  FLOW,
-  MARKETING_SUBJECTS,
-  PLATFORM_PILLARS,
-  QUOTES,
-  OVERVIEW_FAQS,
-} from "../../constants/overview";
 import { PLAN_CATALOG } from "../../constants/subscription";
-import MasteryPathSvg from "../charts/MasteryPathSvg";
-import "../../styles/overview.css";
+import "../../styles/overview-rebuilt.css";
 
-function LadderVisualPreview({ visualType, caption }) {
+const DEMOS = [
+  {
+    id: "math",
+    label: "Mathematics",
+    Icon: Plus,
+    topic: "Making sense of fractions",
+    unit: "Fractions & proportions",
+    question: "Why is ⅓ bigger than ¼ if 4 is the bigger number?",
+    reply:
+      "A bigger denominator means more pieces, but each piece is smaller. Let’s look at the same whole, shared two different ways.",
+    hint: "Imagine sharing one pizza between 3 friends, then between 4. Which group gets a larger slice?",
+    takeaway: "More pieces. Smaller shares.",
+  },
+  {
+    id: "science",
+    label: "Science",
+    Icon: FlaskConical,
+    topic: "Understanding motion",
+    unit: "Forces & motion",
+    question: "Does a puck need a force to keep sliding on ice?",
+    reply:
+      "A force changes motion. Without friction, a moving puck keeps its speed and direction. Let’s separate motion from a change in motion.",
+    hint: "Once the stick stops touching the puck, what is still pushing it? Think about what would make it slow down.",
+    takeaway: "A force changes motion.",
+  },
+  {
+    id: "code",
+    label: "Computer science",
+    Icon: Code2,
+    topic: "Thinking through a loop",
+    unit: "Python fundamentals",
+    question: "Why does my while loop keep running forever?",
+    reply:
+      "Let’s trace the value of count. The loop checks the same condition each time, so count needs to change inside the loop.",
+    hint: "What is the value of count after the first pass? If it is still 1, will count < 4 ever become false?",
+    takeaway: "Small changes. Clearer logic.",
+  },
+];
+const FAQS = [
+  [
+    "What can I study with Kindling?",
+    "Start with mathematics, science, computing, writing, or a subject of your own. Add your topics and learning goals so the tutor can work at your level.",
+  ],
+  [
+    "What happens when I get stuck?",
+    "Ask for a hint, explore a worked example, or break the problem into smaller steps. Kindling adjusts its support so you can work toward solving a similar problem independently.",
+  ],
+  [
+    "Can I bring my own homework?",
+    "Yes. You can upload a photo or PDF of a problem and work through it with the tutor. The focus is on understanding the steps and the ideas behind them.",
+  ],
+  [
+    "How does the free trial work?",
+    "Spark includes 30 days of the adaptive tutor with platform AI, subject to daily usage limits. After the trial, choose Forge with your own AI keys or Ember with platform AI included. Each account is for one learner.",
+  ],
+];
+
+function LessonPreview({ onStartLesson }) {
+  const [selected, setSelected] = useState("math");
+  const [hint, setHint] = useState(false);
+  const demo = DEMOS.find((item) => item.id === selected);
   return (
-    <div className="ladder-visual-box">
-      <div className="ladder-visual-caption">
-        <Layers size={14} aria-hidden />
-        <span>{caption}</span>
+    <div className="rl-preview-stage">
+      <div className="rl-preview-caption">
+        <span className="rl-status-dot" /> A little clarity, in real time{" "}
+        <span>PRODUCT PREVIEW</span>
       </div>
-      {visualType === "fraction-bars" && (
-        <div className="fraction-bar-demo" aria-label="Fraction bar comparison">
-          <div className="fraction-bar-row">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="fraction-cell filled">
-                1/4
-              </div>
+      <div className="rl-workspace">
+        <div className="rl-window-bar">
+          <div className="rl-window-dots">
+            <i />
+            <i />
+            <i />
+          </div>
+          <span>kindling / learning space</span>
+          <ShieldCheck size={13} />
+        </div>
+        <div className="rl-preview-body">
+          <aside className="rl-preview-rail" aria-label="Preview subjects">
+            <div className="rl-rail-label">YOUR SUBJECTS</div>
+            {DEMOS.map(({ id, label, Icon }) => (
+              <button
+                type="button"
+                key={id}
+                aria-pressed={selected === id}
+                className={selected === id ? "selected" : ""}
+                onClick={() => {
+                  setSelected(id);
+                  setHint(false);
+                }}
+              >
+                <Icon size={15} />
+                <span>{label}</span>
+              </button>
             ))}
-            <div className="fraction-cell" />
-            <div className="fraction-cell" />
-          </div>
-          <div className="fraction-bar-row">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="fraction-cell filled-gold">
-                1/8
-              </div>
-            ))}
-            <div className="fraction-cell">1/8</div>
-            <div className="fraction-cell">1/8</div>
-          </div>
-        </div>
-      )}
-      {visualType === "hint-callout" && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
-            flexWrap: "wrap",
-            fontSize: 12.5,
-            color: "var(--pine)",
-            background: "var(--pine-pale)",
-            padding: "9px 12px",
-            borderRadius: 10,
-          }}
-        >
-          <span>
-            <strong>1 whole</strong> = 6 sixths (<code>6/6</code>)
-          </span>
-          <span>→</span>
-          <span>
-            <strong>2/3 of a whole</strong> = <code>?</code> sixths
-          </span>
-        </div>
-      )}
-      {visualType === "worked-card" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
-            fontSize: 12,
-          }}
-        >
-          <div
-            style={{
-              background: "var(--parchment)",
-              padding: "8px 10px",
-              borderRadius: 9,
-            }}
-          >
-            <strong style={{ color: "var(--pine)", display: "block" }}>
-              Meaning (Groups)
-            </strong>
-            <code>4/5 = 12/15 → 12 ÷ 2 = 6</code>
-          </div>
-          <div
-            style={{
-              background: "var(--teal-pale)",
-              padding: "8px 10px",
-              borderRadius: 9,
-            }}
-          >
-            <strong style={{ color: "var(--pine)", display: "block" }}>
-              Reciprocal Shortcut
-            </strong>
-            <code>4/5 × 15/2 = 60/10 = 6</code>
-          </div>
-        </div>
-      )}
-      {visualType === "multistep-check" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--pine)" }}>
-            <CheckCircle2 size={14} color="var(--teal)" aria-hidden />
-            <span>
-              <code>Step 1:</code> Keep <strong>2/3</strong>
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--pine)" }}>
-            <CheckCircle2 size={14} color="var(--teal)" aria-hidden />
-            <span>
-              <code>Step 2:</code> Flip divisor <code>1/6 → 6/1</code>
-            </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              color: "var(--pine)",
-              fontWeight: 600,
-            }}
-          >
-            <Sparkles size={14} color="var(--marigold)" aria-hidden />
-            <span>
-              <code>Step 3:</code> Compute <code>(2 × 6) / 3 = 4</code>
-            </span>
+            <div className="rl-rail-bottom">
+              <span className="rl-small-avatar">A</span>
+              <span>
+                Your learning space<small>One step at a time</small>
+              </span>
+            </div>
+          </aside>
+          <div className="rl-preview-lesson" aria-live="polite">
+            <div className="rl-lesson-breadcrumb">
+              {demo.label}
+              <span>/</span>Guided practice
+            </div>
+            <div className="rl-lesson-title">
+              <h3>{demo.topic}</h3>
+              <span>
+                <i /> In progress
+              </span>
+            </div>
+            <div className="rl-student-message">{demo.question}</div>
+            <div className="rl-tutor-identity">
+              <span>
+                <Sparkles size={13} />
+              </span>
+              Kindling <small>Your personal tutor</small>
+            </div>
+            <p className="rl-tutor-reply">{hint ? demo.hint : demo.reply}</p>
+            <div className="rl-concept-visual">
+              {selected === "math" ? (
+                <>
+                  <div className="rl-fraction-row">
+                    <span>⅓</span>
+                    <div>
+                      {[0, 1, 2].map((n) => (
+                        <i className={n === 0 ? "filled" : ""} key={n} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rl-fraction-row">
+                    <span>¼</span>
+                    <div>
+                      {[0, 1, 2, 3].map((n) => (
+                        <i className={n === 0 ? "filled" : ""} key={n} />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : selected === "code" ? (
+                <pre>
+                  <code>
+                    <span>count = 1</span>
+                    {"\n"}while count &lt; 4:{"\n"} print(count){"\n"}
+                    <b> count += 1</b>
+                  </code>
+                </pre>
+              ) : (
+                <div className="rl-force-visual">
+                  <span className="rl-puck" />
+                  <span className="rl-motion-line" />
+                  <ArrowRight size={30} />
+                  <span>
+                    Constant velocity
+                    <br />
+                    <strong>Net force = 0</strong>
+                  </span>
+                </div>
+              )}
+              <p>
+                <Lightbulb size={13} />
+                {demo.takeaway}
+              </p>
+            </div>
+            <div className="rl-demo-actions">
+              <button type="button" onClick={() => setHint(!hint)}>
+                <Lightbulb size={13} />
+                {hint ? "Back to explanation" : "Give me a hint"}
+              </button>
+              <button type="button" onClick={onStartLesson}>
+                Let me try <ArrowUpRight size={13} />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="rl-preview-composer"
+              onClick={onStartLesson}
+            >
+              <span>Ask a question, explore an idea…</span>
+              <span>
+                <Send size={14} />
+              </span>
+            </button>
           </div>
         </div>
-      )}
-      {visualType === "spark-award" && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
-            flexWrap: "wrap",
-            background: "rgba(228, 163, 42, 0.16)",
-            padding: "9px 12px",
-            borderRadius: 10,
-            fontSize: 12.5,
-            color: "var(--pine)",
-            fontWeight: 600,
-          }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Award size={15} color="var(--pine)" aria-hidden />
-            Solo Transfer Verified (No Scaffolds)
-          </span>
-          <span style={{ color: "var(--teal)", fontWeight: 700 }}>
-            SM-2 Review Spark Scheduled ✓
-          </span>
-        </div>
-      )}
+      </div>
+      <div className="rl-preview-footnote">
+        <CheckCircle2 size={14} /> Built for the moment it starts to click.
+        <span>Illustrative lesson</span>
+      </div>
     </div>
   );
 }
@@ -184,824 +224,432 @@ export default function Overview({
   isLoggedIn = false,
   onOpenOnboarding,
   onGetStarted,
-  onOpenLogin,
   onStartLesson,
 }) {
-  const isOnboarded = Boolean(student?.isOnboarded);
-  const studentName = isOnboarded && student?.name ? student.name : "you";
-  const possessive = studentName === "you" ? "your" : `${studentName}'s`;
-
-  const [heroPathId, setHeroPathId] = useState(HERO_PATHS[0].id);
-  const [activeLadderId, setActiveLadderId] = useState(LADDER_STAGES[0].id);
-  const [billingCycle, setBillingCycle] = useState("monthly");
-  const [openFaqIndex, setOpenFaqIndex] = useState(0);
-
-  const currentHeroPath =
-    HERO_PATHS.find((p) => p.id === heroPathId) || HERO_PATHS[0];
-  const currentLadder =
-    LADDER_STAGES.find((s) => s.id === activeLadderId) || LADDER_STAGES[0];
-  const currentLadderIdx = LADDER_STAGES.findIndex(
-    (s) => s.id === currentLadder.id
-  );
-
-  const scrollToLadderDemo = () => {
-    const el = document.getElementById("live-ladder-demo");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
+  const [annual, setAnnual] = useState(false);
+  const start = isLoggedIn ? onStartLesson : onGetStarted;
   return (
-    <section id="overview">
-      {/* ── 1. HERO SECTION ── */}
-      <div className="hero">
-        <div>
-          <div className="hero-pill">
-            <span className="hero-pill-dot" aria-hidden />
-            <span className="hero-pill-text">
-              Adaptive 1-on-1 AI Tutor
-              <span className="hero-pill-sep"> · </span>
-              <span className="hero-pill-accent">Learning Intelligence</span>
-            </span>
+    <section id="overview" className="rl-landing">
+      <div className="rl-hero rl-container">
+        <div className="rl-hero-copy">
+          <div className="rl-kicker">
+            <span /> A more thoughtful way to learn
           </div>
-
           <h1>
-            The tutor that stays when learning gets hard —{" "}
-            <em>tuned</em> to {studentName}.
+            Big ideas.
+            <br />
+            Small steps.
+            <br />
+            <span>Real understanding.</span>
           </h1>
-
-          <p className="hero-sub">
-            Generic AI dumps the final answer. Kindling listens to how{" "}
-            {studentName === "you" ? "you think" : `${studentName} thinks`},
-            notices where you hesitate or breeze through, and steps onto a{" "}
-            <strong>4-rung help ladder</strong> in real time
-            {isOnboarded && student?.schoolName
-              ? ` — calibrated to ${student.schoolName}${
-                  student.country ? ` (${student.country})` : ""
-                }.`
-              : " — calibrated to your grade, school, and curriculum."}
-          </p>
-
-          <div className="hero-actions">
-            {isLoggedIn ? (
-              <>
-                <button className="btn-primary" onClick={onStartLesson}>
-                  <Sparkles size={15} aria-hidden />
-                  {isOnboarded ? "Continue learning" : "Complete setup"}
-                </button>
-                <button className="btn-ghost" onClick={onOpenOnboarding}>
-                  <Edit3 size={15} aria-hidden />
-                  {isOnboarded ? "Edit your profile" : "Complete your profile"}
-                </button>
-                {isOnboarded && (
-                  <button
-                    className="btn-ghost"
-                    onClick={() => goTo?.("dashboard")}
-                  >
-                    View dashboard
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <button className="btn-primary" onClick={onGetStarted}>
-                  <Sparkles size={15} aria-hidden />
-                  Start 30-day free trial
-                </button>
-                <button className="btn-ghost" onClick={scrollToLadderDemo}>
-                  See how a lesson works
-                </button>
-                <button className="btn-ghost" onClick={onOpenLogin}>
-                  <LogIn size={15} aria-hidden />
-                  Log in
-                </button>
-              </>
-            )}
-          </div>
-
-          <div className="hero-note">
-            <span className="dot" aria-hidden />
-            {isLoggedIn
-              ? isOnboarded
-                ? "Pick a subject or resume a lesson — Kindling adapts every turn."
-                : "Finish your profile so lessons match your grade and curriculum."
-              : "Free 30-day Spark trial · One account = one learner · No credit card required to start."}
-          </div>
-
-          <div className="hero-trust-grid" aria-label="Core platform capabilities">
-            <div className="hero-trust-item">
-              <CheckCircle2 size={15} aria-hidden />
-              <span>
-                <strong>Socratic by default</strong> — guides reasoning, never spoils answers
-              </span>
-            </div>
-            <div className="hero-trust-item">
-              <LifeBuoy size={15} aria-hidden />
-              <span>
-                <strong>4-rung help ladder</strong> — micro-hint to step-by-step guide
-              </span>
-            </div>
-            <div className="hero-trust-item">
-              <Compass size={15} aria-hidden />
-              <span>
-                <strong>Any subject + photo help</strong> — Math, CS, Science & custom topics
-              </span>
-            </div>
-            <div className="hero-trust-item">
-              <Volume2 size={15} aria-hidden />
-              <span>
-                <strong>Voice & manipulatives</strong> — Read-aloud TTS, LaTeX & visual bars
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Interactive Right Studio Card */}
-        <div className="path-card">
-          <div className="path-card-top">
-            <div className="path-head">
-              <p className="eyebrow">Live learning pulse · Interactive preview</p>
-              <h2>
-                {possessive.charAt(0).toUpperCase() + possessive.slice(1)} mastery
-                path — {currentHeroPath.topicTitle}
-              </h2>
-            </div>
-            <span className="path-live-badge">
-              <span aria-hidden /> L1–L4 Active
-            </span>
-          </div>
-
-          <div
-            className="path-subject-tabs"
-            role="tablist"
-            aria-label="Preview subject path"
-          >
-            {HERO_PATHS.map((path) => (
-              <button
-                key={path.id}
-                type="button"
-                role="tab"
-                aria-selected={currentHeroPath.id === path.id}
-                className={`path-subject-tab${
-                  currentHeroPath.id === path.id ? " active" : ""
-                }`}
-                onClick={() => setHeroPathId(path.id)}
-              >
-                {path.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="path-svg-wrap">
-            <MasteryPathSvg nodes={currentHeroPath.nodes} />
-          </div>
-
-          <div className="path-pulse-strip" aria-label="Live learner state metrics">
-            <div className="path-pulse-pill">
-              <span className="path-pulse-label">Skill Mastery</span>
-              <span className="path-pulse-val">{currentHeroPath.pulse.mastery}</span>
-            </div>
-            <div className="path-pulse-pill">
-              <span className="path-pulse-label">Learner Pulse</span>
-              <span className="path-pulse-val">{currentHeroPath.pulse.confidence}</span>
-            </div>
-            <div className="path-pulse-pill">
-              <span className="path-pulse-label">Independence (ADI)</span>
-              <span className="path-pulse-val">{currentHeroPath.pulse.adi}</span>
-            </div>
-          </div>
-
-          <div className="path-mini-turn">
-            <div className="path-mini-student">
-              <strong>Student:</strong> &ldquo;{currentHeroPath.studentTurn}&rdquo;
-            </div>
-            <div className="path-mini-tutor">
-              <strong>Kindling:</strong> {currentHeroPath.tutorTurn}
-            </div>
-            <div className="path-mini-chips">
-              {currentHeroPath.chips.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  className="path-mini-chip"
-                  onClick={onStartLesson}
-                  title="Try this in a live lesson"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 2. VALUE STRIP ── */}
-      <div className="stat-strip">
-        <div>
-          <div className="stat-strip-icon" aria-hidden>
-            <Zap size={18} />
-          </div>
-          <p className="stat-title">Adjusts mid-sentence</p>
-          <p className="stat-body">
-            Solve a problem quickly and Kindling raises the challenge before
-            boredom sets in. Hesitate, and it slows down to check the
-            prerequisite step.
-          </p>
-        </div>
-        <div>
-          <div className="stat-strip-icon" aria-hidden>
-            <Layers size={18} />
-          </div>
-          <p className="stat-title">Explains it a new way</p>
-          <p className="stat-body">
-            When an abstract rule doesn&apos;t land, the tutor pivots to a
-            visual fraction bar, a real-world story, or a hands-on code trace —
-            until it clicks.
-          </p>
-        </div>
-        <div>
-          <div className="stat-strip-icon" aria-hidden>
-            <BrainCircuit size={18} />
-          </div>
-          <p className="stat-title">Remembers everything</p>
-          <p className="stat-body">
-            A persistent learner model tracks mastery, misconceptions, and
-            independence across sessions — so you never re-explain what you
-            already know.
-          </p>
-        </div>
-      </div>
-
-      {/* ── 3. THE 9:40 PM HOMEWORK MOMENT (CONTRAST SECTION) ── */}
-      <div className="section">
-        <div className="section-head">
-          <p className="eyebrow">Why generic AI falls short</p>
-          <h2>Giving the answer is cheap. Teaching through the stuck moment is everything.</h2>
           <p>
-            It&apos;s 9:40 PM and a learner is stuck on a tough problem. Here is
-            the difference between an answer engine, a static drill app, and a
-            Learning Intelligence Platform.
+            A personal AI tutor that meets you where you are. Work through the
+            hard parts, connect the dots, and build the confidence to do it
+            yourself.
           </p>
-        </div>
-
-        <div className="contrast-grid">
-          {CONTRAST_ITEMS.map((item) => {
-            const isFeatured = item.tone === "featured";
-            return (
-              <div
-                key={item.tag}
-                className={`contrast-card${isFeatured ? " featured" : ""}`}
-              >
-                <div>
-                  <span className="contrast-tag">{item.tag}</span>
-                  <h3>{item.title}</h3>
-                  <p className="contrast-verdict">{item.verdict}</p>
-                </div>
-                <ul className="contrast-list">
-                  {item.points.map((pt) => (
-                    <li key={pt}>
-                      {isFeatured ? (
-                        <CheckCircle2
-                          size={16}
-                          color="#F3C868"
-                          aria-hidden
-                        />
-                      ) : (
-                        <XCircle
-                          size={16}
-                          color="var(--berry)"
-                          aria-hidden
-                        />
-                      )}
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 4. INTERACTIVE 4-RUNG HELP LADDER WALKTHROUGH ── */}
-      <div className="section" id="live-ladder-demo" style={{ paddingTop: 0 }}>
-        <div className="ladder-showcase">
-          <div className="ladder-showcase-head">
-            <div>
-              <p className="eyebrow">Interactive Lesson Walkthrough · L1–L4 Engine</p>
-              <h2>When you get stuck, Kindling has a 4-rung rescue plan.</h2>
-              <p>
-                Click through each rung below to see how Kindling shifts from
-                Socratic discovery to graduated scaffolding — and how it proves
-                solo mastery before moving on.
-              </p>
-            </div>
+          <div className="rl-hero-actions">
             <button
               type="button"
-              className="btn-marigold"
-              onClick={onStartLesson}
+              className="rl-button rl-button-dark"
+              onClick={start}
             >
-              {isLoggedIn ? "Open a live lesson" : "Try it live free"}
-              <ArrowRight size={16} aria-hidden />
+              {isLoggedIn
+                ? `Keep learning${student?.name ? `, ${student.name}` : ""}`
+                : "Start learning free"}
+              <ArrowRight size={17} />
             </button>
+            <a className="rl-text-link" href="#learning-method">
+              Explore how it works <ArrowUpRight size={16} />
+            </a>
           </div>
-
-          <div
-            className="ladder-tabs"
-            role="tablist"
-            aria-label="Graduated help ladder stages"
-          >
-            {LADDER_STAGES.map((stage) => {
-              const active = stage.id === currentLadder.id;
-              return (
-                <button
-                  key={stage.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  className={`ladder-tab${active ? " active" : ""}`}
-                  onClick={() => setActiveLadderId(stage.id)}
-                >
-                  <span className="ladder-tab-rung">{stage.rung}</span>
-                  <span className="ladder-tab-badge">{stage.badge}</span>
-                </button>
-              );
-            })}
+          <div className="rl-trial-note">
+            <Check size={14} />
+            30-day free trial<span>·</span>No credit card needed
           </div>
-
-          <div className="ladder-stage-body">
-            {/* Left: Simulated Live Lesson Window */}
-            <div className="ladder-chat-window">
-              <div>
-                <div className="ladder-window-bar">
-                  <div className="mini-topbar" style={{ marginBottom: 0 }}>
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                  <span className="ladder-window-status">
-                    {currentLadder.rung} · {currentLadder.badge}
-                  </span>
-                </div>
-
-                <div className="ladder-bubble-student">
-                  <strong style={{ color: "var(--pine)", display: "block", fontSize: 11, marginBottom: 3 }}>
-                    Student
-                  </strong>
-                  &ldquo;{currentLadder.studentMsg}&rdquo;
-                </div>
-
-                <div className="ladder-bubble-tutor">
-                  <strong style={{ color: "var(--marigold-light)", display: "block", fontSize: 11, marginBottom: 4 }}>
-                    Kindling Tutor
-                  </strong>
-                  {currentLadder.tutorMsg}
-                </div>
-
-                <LadderVisualPreview
-                  visualType={currentLadder.visualType}
-                  caption={currentLadder.visualCaption}
-                />
-              </div>
-
-              <div className="path-mini-chips" style={{ marginTop: 14 }}>
-                {currentLadder.chips.map((chip, idx) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    className="path-mini-chip"
-                    onClick={() => {
-                      if (idx === 0 && currentLadderIdx < LADDER_STAGES.length - 1) {
-                        setActiveLadderId(LADDER_STAGES[currentLadderIdx + 1].id);
-                      } else {
-                        onStartLesson();
-                      }
-                    }}
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
+          {isLoggedIn && (
+            <div className="rl-account-links">
+              <button type="button" onClick={() => goTo("dashboard")}>
+                Open dashboard <ArrowRight size={13} />
+              </button>
+              <button type="button" onClick={onOpenOnboarding}>
+                Your learning profile
+              </button>
             </div>
+          )}
+        </div>
+        <LessonPreview onStartLesson={onStartLesson} />
+      </div>
 
-            {/* Right: Under-the-Hood Learning Intelligence Inspector */}
-            <div className="ladder-inspector">
-              <div>
-                <p className="eyebrow" style={{ color: "var(--marigold-light)" }}>
-                  Under the hood · Learning Intelligence
-                </p>
-                <h3>{currentLadder.title}</h3>
-                <p>{currentLadder.desc}</p>
-              </div>
-
-              <div className="telemetry-stack" aria-label="Engine telemetry for this turn">
-                <div className="telemetry-row">
-                  <span className="telemetry-label">L1 · LearnerState Snapshot</span>
-                  <span className="telemetry-val">{currentLadder.telemetry.state}</span>
-                </div>
-                <div className="telemetry-row">
-                  <span className="telemetry-label">Misconception Diagnosis</span>
-                  <span className="telemetry-val">
-                    {currentLadder.telemetry.misconception}
-                  </span>
-                </div>
-                <div className="telemetry-row">
-                  <span className="telemetry-label">L2 · Pedagogical Policy Decision</span>
-                  <span className="telemetry-val">{currentLadder.telemetry.policy}</span>
-                </div>
-                <div className="telemetry-row">
-                  <span className="telemetry-label">L3–L4 · Independence & Transfer</span>
-                  <span className="telemetry-val">{currentLadder.telemetry.adi}</span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 10,
-                  flexWrap: "wrap",
-                }}
-              >
-                <span style={{ fontSize: 12, color: "rgba(246,242,233,0.68)" }}>
-                  Stage {currentLadderIdx + 1} of {LADDER_STAGES.length} · Learner can exit help anytime
-                </span>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  style={{
-                    padding: "8px 14px",
-                    fontSize: 12.5,
-                    color: "#F6F2E9",
-                    borderColor: "rgba(246,242,233,0.35)",
-                  }}
-                  onClick={() => {
-                    const nextIdx = (currentLadderIdx + 1) % LADDER_STAGES.length;
-                    setActiveLadderId(LADDER_STAGES[nextIdx].id);
-                  }}
-                >
-                  Next stage <ArrowRight size={14} aria-hidden />
-                </button>
-              </div>
-            </div>
+      <div className="rl-subject-band">
+        <div className="rl-container">
+          <span>ROOM FOR EVERY KIND OF CURIOSITY</span>
+          <div>
+            <span>
+              <Plus size={17} /> Mathematics
+            </span>
+            <span>
+              <FlaskConical size={17} /> Science
+            </span>
+            <span>
+              <Code2 size={17} /> Computing
+            </span>
+            <span>
+              <BookOpen size={17} /> Writing
+            </span>
+            <span>
+              <Sparkles size={17} /> Your next big interest
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ── 5. HOW THE CLOSED LEARNING LOOP WORKS (4 STEPS) ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div className="section-head">
-          <p className="eyebrow">A closed learning system</p>
-          <h2>Not a script. A conversation backed by learning science.</h2>
+      <div className="rl-container rl-section" id="learning-method">
+        <div className="rl-section-heading">
+          <div>
+            <p className="rl-overline">BUILT FOR THE WAY YOU THINK</p>
+            <h2>
+              Less “here’s the answer.”
+              <br />
+              More “now I get it.”
+            </h2>
+          </div>
           <p>
-            Every turn runs through a four-part intelligence loop — estimating
-            what you know, selecting the best pedagogical move, adapting live,
-            and verifying long-term retention.
+            Good learning isn’t a straight line. Kindling gives you structure,
+            room to ask questions, and support that changes with you.
           </p>
         </div>
-
-        <div className="flow">
-          {FLOW.map(({ Icon, badge, title, body }) => (
-            <div className="flow-step" key={title}>
-              <div className="flow-step-top">
-                <div className="flow-num" style={{ marginBottom: 0 }}>
-                  <Icon size={24} color="#1F3A34" strokeWidth={1.7} />
+        <div className="rl-bento">
+          <article className="rl-feature rl-feature-dark">
+            <div className="rl-feature-top">
+              <span className="rl-icon-box">
+                <Layers3 size={20} />
+              </span>
+              <span>01 / ADAPTIVE SUPPORT</span>
+            </div>
+            <h3>
+              The right nudge.
+              <br />
+              At the right moment.
+            </h3>
+            <p>
+              A hint when you’re close. A new explanation when you’re stuck. A
+              step back when you need a stronger foundation.
+            </p>
+            <div className="rl-support-ladder">
+              {[
+                "A focused hint",
+                "A worked example",
+                "A step-by-step guide",
+              ].map((label, i) => (
+                <div key={label}>
+                  <span>0{i + 1}</span>
+                  {label}
+                  <Check size={14} />
                 </div>
-                {badge && <span className="flow-badge">{badge}</span>}
+              ))}
+            </div>
+          </article>
+          <article className="rl-feature rl-feature-progress">
+            <div className="rl-feature-top">
+              <span className="rl-icon-box">
+                <TrendingUp size={20} />
+              </span>
+              <span>02 / MEANINGFUL PROGRESS</span>
+            </div>
+            <h3>See the bigger picture.</h3>
+            <p>
+              Your subjects, sessions, and growing understanding. A clear view
+              of where you are and what comes next.
+            </p>
+            <div
+              className="rl-progress-art"
+              aria-label="Illustration of a learning path"
+            >
+              <div>
+                <Check size={14} />
+                <span>Explore</span>
+              </div>
+              <i />
+              <div>
+                <Check size={14} />
+                <span>Practice</span>
+              </div>
+              <i />
+              <div className="current">
+                <Target size={16} />
+                <span>Understand</span>
+              </div>
+            </div>
+            <span className="rl-art-caption">
+              Every small step has a place.
+            </span>
+          </article>
+          <article className="rl-feature rl-feature-question">
+            <div className="rl-feature-top">
+              <span className="rl-icon-box">
+                <MessageSquare size={20} />
+              </span>
+              <span>03 / SPACE TO ASK</span>
+            </div>
+            <h3>Every question belongs here.</h3>
+            <p>
+              Bring your homework, an unfinished thought, or the question you
+              didn’t ask in class. Start there.
+            </p>
+            <div className="rl-question-art">
+              <span>“Can you explain that another way?”</span>
+              <span>
+                <Sparkles size={14} /> Of course. Let’s try something visual.
+              </span>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div className="rl-method-section">
+        <div className="rl-container rl-method-grid">
+          <div>
+            <p className="rl-overline">FROM CURIOUS TO CONFIDENT</p>
+            <h2>
+              Your next breakthrough
+              <br />
+              starts with one question.
+            </h2>
+            <p className="rl-method-intro">
+              No perfect starting point required. Just something you want to
+              understand.
+            </p>
+            <button type="button" className="rl-text-link" onClick={start}>
+              Find your starting point <ArrowRight size={17} />
+            </button>
+          </div>
+          <ol className="rl-steps">
+            {[
+              [
+                "Make it yours",
+                "Choose a subject, add a topic, or bring a homework problem. Set your level and tell Kindling what you’re working toward.",
+              ],
+              [
+                "Think it through together",
+                "Ask questions, try an approach, and explore explanations. Your tutor adjusts the pace and support as you go.",
+              ],
+              [
+                "Take the next step",
+                "Put the idea into practice. Revisit what needs work and follow your progress in your learning dashboard.",
+              ],
+            ].map(([title, body], i) => (
+              <li key={title}>
+                <span>0{i + 1}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+
+      <div className="rl-container rl-section" id="explore-subjects">
+        <div className="rl-section-heading">
+          <div>
+            <p className="rl-overline">FOLLOW YOUR CURIOSITY</p>
+            <h2>
+              One learning space.
+              <br />A world of possibilities.
+            </h2>
+          </div>
+          <button
+            type="button"
+            className="rl-text-link"
+            onClick={() => goTo("subjects")}
+          >
+            Explore your subjects <ArrowUpRight size={17} />
+          </button>
+        </div>
+        <div className="rl-subject-grid">
+          {[
+            [
+              Plus,
+              "01",
+              "Mathematics",
+              "Find the logic behind the numbers.",
+              "Fractions · Algebra · Geometry",
+            ],
+            [
+              FlaskConical,
+              "02",
+              "Science",
+              "Make sense of how the world works.",
+              "Physics · Chemistry · Biology",
+            ],
+            [
+              Code2,
+              "03",
+              "Computer science",
+              "Build the thinking behind the code.",
+              "Programming · Logic · Algorithms",
+            ],
+            [
+              BookOpen,
+              "04",
+              "Writing & more",
+              "Find your voice. Explore a new idea.",
+              "Writing · Languages · Custom topics",
+            ],
+          ].map(([Icon, num, title, body, topics]) => (
+            <button
+              type="button"
+              key={title}
+              className="rl-subject-tile"
+              onClick={() => goTo("subjects")}
+            >
+              <div>
+                <Icon size={26} strokeWidth={1.5} />
+                <span>{num}</span>
               </div>
               <h3>{title}</h3>
               <p>{body}</p>
-            </div>
+              <footer>
+                <span>{topics}</span>
+                <ArrowUpRight size={18} />
+              </footer>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* ── 6. SUBJECTS & CUSTOM CURRICULUM ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div
-          className="section-head"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            gap: 20,
-            flexWrap: "wrap",
-            maxWidth: "none",
-          }}
-        >
+      <div className="rl-pricing-section" id="learning-plans">
+        <div className="rl-container rl-section">
+          <div className="rl-section-heading">
+            <div>
+              <p className="rl-overline">INVEST IN YOUR UNDERSTANDING</p>
+              <h2>
+                A small start.
+                <br />
+                Room to grow.
+              </h2>
+            </div>
+            <div>
+              <p>
+                Start with 30 days to find your rhythm.
+                <br />
+                Then choose the setup that works for you.
+              </p>
+              <div className="rl-billing" aria-label="Billing period">
+                <button
+                  type="button"
+                  aria-pressed={!annual}
+                  onClick={() => setAnnual(false)}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={annual}
+                  onClick={() => setAnnual(true)}
+                >
+                  Yearly <span>Save 2 months</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="rl-plan-grid">
+            {PLAN_CATALOG.map((plan) => (
+              <article
+                key={plan.id}
+                className={`rl-plan${plan.highlight ? " rl-plan-featured" : ""}`}
+              >
+                <div className="rl-plan-title">
+                  <h3>{plan.name}</h3>
+                  {plan.highlight && <span>AI included</span>}
+                </div>
+                <p className="rl-plan-description">
+                  {plan.id === "spark"
+                    ? "Your first step toward something clicking."
+                    : plan.id === "forge"
+                      ? "Your tutor. Your choice of AI provider."
+                      : "A complete learning space, ready for you."}
+                </p>
+                <div className="rl-price">
+                  ${annual ? plan.priceYearly : plan.priceMonthly}
+                  <span>
+                    {plan.id === "spark"
+                      ? "/ 30 days"
+                      : annual
+                        ? "/ year"
+                        : "/ month"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={`rl-button ${plan.highlight ? "rl-button-dark" : "rl-button-outline"}`}
+                  onClick={isLoggedIn ? () => goTo("settings") : onGetStarted}
+                >
+                  {plan.id === "spark"
+                    ? "Start your free trial"
+                    : `Explore ${plan.name}`}
+                  <ArrowRight size={15} />
+                </button>
+                <ul>
+                  {plan.features.map((feature) => (
+                    <li key={feature}>
+                      <Check size={14} />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="rl-pricing-note">
+            <ShieldCheck size={14} />
+            One account per learner. Platform AI is subject to daily usage
+            limits.
+          </p>
+        </div>
+      </div>
+
+      <div className="rl-container rl-section rl-faq-section">
+        <div>
+          <p className="rl-overline">A LITTLE MORE CLARITY</p>
+          <h2>
+            Good questions.
+            <br />
+            Straight answers.
+          </h2>
+          <p>Getting started should feel simple.</p>
+        </div>
+        <div className="rl-faq-list">
+          {FAQS.map(([question, answer]) => (
+            <details key={question}>
+              <summary>
+                {question}
+                <ChevronDown size={17} />
+              </summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+      <div className="rl-container">
+        <div className="rl-final-cta">
           <div>
-            <p className="eyebrow">Every core subject + your own</p>
-            <h2>One tutor for the whole curriculum.</h2>
-            <p style={{ maxWidth: 620 }}>
-              Start with our seeded Computer Science pilot, dive into Math,
-              Science, Writing, or Languages, or build your own custom subject
-              in seconds.
-            </p>
+            <span className="rl-cta-icon">
+              <GraduationCap size={27} strokeWidth={1.5} />
+            </span>
+            <p className="rl-overline">THERE’S A NEXT STEP FOR EVERY LEARNER</p>
+            <h2>Let’s make it click.</h2>
+            <p>Your questions. Your pace. Your next breakthrough.</p>
           </div>
           <button
-            className="btn-ghost"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              whiteSpace: "nowrap",
-            }}
-            onClick={() => goTo("subjects")}
+            type="button"
+            className="rl-button rl-button-light"
+            onClick={start}
           >
-            Build your own subjects <ArrowRight size={15} />
+            {isLoggedIn ? "Continue learning" : "Start learning free"}
+            <ArrowRight size={17} />
           </button>
-        </div>
-
-        <div className="subject-grid">
-          {MARKETING_SUBJECTS.map(({ Icon, bg, tag, title, body, highlights }) => (
-            <div className="subject-card" key={title}>
-              <div>
-                <div className="subject-card-top">
-                  <div className="subject-icon" style={{ background: bg }}>
-                    <Icon size={20} color="#1F3A34" strokeWidth={1.75} />
-                  </div>
-                  {tag && <span className="subject-tag">{tag}</span>}
-                </div>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </div>
-              {Array.isArray(highlights) && highlights.length > 0 && (
-                <ul className="subject-highlights">
-                  {highlights.map((h) => (
-                    <li key={h}>
-                      <CheckCircle2 size={13} aria-hidden />
-                      <span>{h}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="custom-subject-callout">
-          <div>
-            <p className="eyebrow" style={{ marginBottom: 4 }}>
-              Studying something specific tonight?
-            </p>
-            <h3>Bring any syllabus, unit topic, or homework photo.</h3>
-            <p>
-              Set your familiarity level (&ldquo;Brand new&rdquo; to &ldquo;Exam
-              review&rdquo;) and learning goal — Kindling shapes the path on the
-              spot.
-            </p>
-          </div>
-          <button className="btn-primary" onClick={() => goTo("subjects")}>
-            Explore My Subjects <ArrowRight size={15} aria-hidden />
-          </button>
-        </div>
-      </div>
-
-      {/* ── 7. PLATFORM PILLARS (HOMEWORK PHOTO, VOICE, FAMILY DIGEST, SAFETY) ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div className="section-head">
-          <p className="eyebrow">Built for real study nights</p>
-          <h2>Everything a learner needs. Everything a family trusts.</h2>
-          <p>
-            From multimodal voice and visual manipulatives to opt-in parent
-            digests and age-aware safety guardrails.
-          </p>
-        </div>
-
-        <div className="pillars-grid">
-          {PLATFORM_PILLARS.map(({ Icon, eyebrow, title, body }) => (
-            <div className="pillar-card" key={title}>
-              <div className="pillar-icon" aria-hidden>
-                <Icon size={22} strokeWidth={1.75} />
-              </div>
-              <div>
-                <p className="eyebrow">{eyebrow}</p>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 8. TRANSPARENT PLANS PREVIEW (SPARK · FORGE · EMBER) ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div className="landing-plans-head">
-          <div>
-            <p className="eyebrow">Simple, honest seat pricing</p>
-            <h2>Rent the teaching engine. Bring your keys or use ours.</h2>
-            <p style={{ color: "var(--ink-soft)", marginTop: 10, maxWidth: 620, fontSize: 15.5, lineHeight: 1.6 }}>
-              Every seat is for one individual learner. Start with a 30-day
-              free Spark trial, then pick BYOK (<strong>Forge</strong>) or
-              all-inclusive platform AI (<strong>Ember</strong> — about the cost
-              of a single hour with a private tutor).
-            </p>
-          </div>
-
-          <div
-            className="billing-toggle"
-            role="group"
-            aria-label="Billing interval"
-          >
-            <button
-              type="button"
-              className={billingCycle === "monthly" ? "active" : ""}
-              onClick={() => setBillingCycle("monthly")}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              className={billingCycle === "yearly" ? "active" : ""}
-              onClick={() => setBillingCycle("yearly")}
-            >
-              Yearly (2 months free)
-            </button>
-          </div>
-        </div>
-
-        <div className="plan-grid">
-          {PLAN_CATALOG.map((plan) => {
-            const isYearly = billingCycle === "yearly";
-            const priceDisplay =
-              plan.priceMonthly === 0
-                ? "$0"
-                : isYearly
-                ? `$${plan.priceYearly}`
-                : `$${plan.priceMonthly}`;
-            const priceSub =
-              plan.priceMonthly === 0
-                ? `${plan.trialDays}-day full trial · no card required`
-                : isYearly
-                ? `per year ($${(plan.priceYearly / 12).toFixed(
-                    plan.priceYearly % 12 === 0 ? 0 : 2
-                  )}/mo effective)`
-                : "per learner seat / month";
-
-            return (
-              <div
-                key={plan.id}
-                className={`plan-card${plan.highlight ? " highlight" : ""}`}
-              >
-                {plan.highlight && (
-                  <span className="plan-badge">Most popular</span>
-                )}
-                <div className="plan-card-top">
-                  <div className="plan-icon" aria-hidden>
-                    <Flame size={18} />
-                  </div>
-                  <div>
-                    <h3>{plan.name}</h3>
-                    <p className="plan-tagline">{plan.tagline}</p>
-                  </div>
-                </div>
-
-                <div className="plan-price">
-                  <span className="plan-price-main">{priceDisplay}</span>
-                  <span className="plan-price-sub">{priceSub}</span>
-                </div>
-
-                <ul className="plan-features">
-                  {plan.features.map((feat) => (
-                    <li key={feat}>
-                      <CheckCircle2 size={15} aria-hidden />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  type="button"
-                  className={
-                    plan.highlight
-                      ? "btn-primary plan-cta"
-                      : "btn-ghost plan-cta"
-                  }
-                  onClick={() => {
-                    if (isLoggedIn) {
-                      goTo?.("settings");
-                    } else {
-                      onGetStarted?.();
-                    }
-                  }}
-                >
-                  {plan.priceMonthly === 0
-                    ? isLoggedIn
-                      ? "Manage trial in Settings"
-                      : "Start 30-day free trial"
-                    : isLoggedIn
-                    ? `Choose ${plan.name}`
-                    : `Start with ${plan.name}`}
-                  <ArrowRight size={14} aria-hidden />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 9. STUDENT & PARENT VOICES ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div className="section-head">
-          <p className="eyebrow">Students & families using Kindling</p>
-          <h2>What changes when the tutor doesn&apos;t give up on you.</h2>
-        </div>
-        <div className="quote-grid">
-          {QUOTES.map(({ q, attr, tag, metric }) => (
-            <div className="quote-card" key={attr}>
-              <div>
-                {tag && (
-                  <p
-                    className="eyebrow"
-                    style={{ marginBottom: 10, fontSize: 11 }}
-                  >
-                    {tag}
-                  </p>
-                )}
-                <p className="q">&ldquo;{q}&rdquo;</p>
-              </div>
-              <div className="quote-card-meta">
-                <p className="quote-attr" style={{ marginTop: 0 }}>
-                  {attr}
-                </p>
-                {metric && <span className="quote-metric">{metric}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 10. FAQ ACCORDION ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div className="section-head">
-          <p className="eyebrow">Questions & answers</p>
-          <h2>Everything you might wonder before your first lesson.</h2>
-        </div>
-
-        <div className="faq-list">
-          {OVERVIEW_FAQS.map((item, idx) => {
-            const isOpen = openFaqIndex === idx;
-            return (
-              <div className="faq-item" key={item.q}>
-                <button
-                  type="button"
-                  className="faq-trigger"
-                  aria-expanded={isOpen}
-                  onClick={() => setOpenFaqIndex(isOpen ? -1 : idx)}
-                >
-                  <span>{item.q}</span>
-                  {isOpen ? (
-                    <ChevronUp size={18} aria-hidden />
-                  ) : (
-                    <ChevronDown size={18} aria-hidden />
-                  )}
-                </button>
-                {isOpen && <div className="faq-answer">{item.a}</div>}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 11. FINAL CTA BANNER ── */}
-      <div className="section" style={{ paddingTop: 0 }}>
-        <div className="footer-cta">
-          <p className="eyebrow" style={{ color: "var(--pine)", opacity: 0.78 }}>
-            Start tonight
-          </p>
-          <h2>A patient 1-on-1 tutor who never gets tired of explaining it a new way.</h2>
-          <p>
-            Create your student account in 60 seconds, calibrate your grade and
-            curriculum, and open your first adaptive lesson.
-          </p>
-          <div className="hero-actions">
-            {isLoggedIn ? (
-              <>
-                <button className="btn-primary" onClick={onStartLesson}>
-                  <Sparkles size={15} aria-hidden />
-                  {isOnboarded ? "Open a live lesson" : "Complete profile setup"}
-                </button>
-                <button
-                  className="btn-ghost"
-                  onClick={() => goTo?.("subjects")}
-                >
-                  Browse My Subjects
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="btn-primary" onClick={onGetStarted}>
-                  <Sparkles size={15} aria-hidden />
-                  Start 30-day free trial
-                </button>
-                <button className="btn-ghost" onClick={onOpenLogin}>
-                  <LogIn size={15} aria-hidden />
-                  Log in
-                </button>
-              </>
-            )}
-          </div>
         </div>
       </div>
     </section>

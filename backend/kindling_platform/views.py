@@ -235,6 +235,13 @@ class PlatformGeminiView(APIView):
         contents = data.get("contents")
         if not isinstance(contents, (str, list, dict)):
             return Response({"detail": "Invalid Gemini contents."}, status=400)
+        # The browser GenAI SDK accepts a string and normally converts it to a
+        # user Content object. The platform proxy bypasses that SDK, so normalize
+        # shorthand inputs here before sending the raw REST request to Google.
+        if isinstance(contents, str):
+            contents = [{"role": "user", "parts": [{"text": contents}]}]
+        elif isinstance(contents, dict):
+            contents = [contents]
         config = data.get("config") or {}
         if not isinstance(config, dict):
             return Response({"detail": "Invalid Gemini config."}, status=400)

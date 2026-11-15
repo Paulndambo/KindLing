@@ -12,9 +12,18 @@ from .models import (
     SessionTurn,
     SkillMastery,
     SkillReviewItem,
+    StudentAssessment,
     TopicConversation,
     TopicMastery,
 )
+
+
+@admin.register(StudentAssessment)
+class StudentAssessmentAdmin(admin.ModelAdmin):
+    list_display = ("topic", "student", "question_type", "status", "created_at", "completed_at")
+    list_filter = ("question_type", "status", "created_at")
+    search_fields = ("topic", "title", "student__name", "student__user__email")
+    readonly_fields = ("created_at", "updated_at", "completed_at")
 
 
 @admin.register(LearningEvent)

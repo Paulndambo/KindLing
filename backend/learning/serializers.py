@@ -5,8 +5,142 @@ from .models import (
     LearningEvent,
     LessonSession,
     SessionTurn,
+    StudentAssessment,
     TopicConversation,
 )
+from curriculum.models import Subject, Topic, Subtopic
+
+
+class StudentAssessmentSerializer(serializers.ModelSerializer):
+    questionType = serializers.ChoiceField(source="question_type", choices=StudentAssessment.QuestionType.choices)
+    revisionMessages = serializers.ListField(source="revision_messages", child=serializers.DictField(), required=False)
+    createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+    updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
+    completedAt = serializers.DateTimeField(source="completed_at", read_only=True)
+    subjectId = serializers.IntegerField(source="subject_id", required=False, allow_null=True)
+    topicId = serializers.IntegerField(source="topic_id", required=False, allow_null=True)
+    subtopicId = serializers.IntegerField(source="subtopic_id", required=False, allow_null=True)
+    subjectName = serializers.CharField(source="subject_name", required=False, allow_blank=True)
+    topicName = serializers.CharField(source="topic_name", required=False, allow_blank=True)
+    subtopicName = serializers.CharField(source="subtopic_name", required=False, allow_blank=True)
+
+    class Meta:
+        model = StudentAssessment
+        fields = (
+            "id", "title", "topic", "description", "subjectId", "topicId", "subtopicId",
+            "subjectName", "topicName", "subtopicName", "questionType", "questions",
+            "answers", "result", "revisionMessages", "status", "createdAt",
+            "updatedAt", "completedAt",
+        )
+        read_only_fields = ("id", "createdAt", "updatedAt", "completedAt")
+
+    def validate_questions(self, value):
+        if not isinstance(value, list) or not 5 <= len(value) <= 15:
+            raise serializers.ValidationError("An assessment must contain between 5 and 15 questions.")
+        return value
+
+    def validate(self, attrs):
+        subject_id = attrs.get("subject_id", getattr(self.instance, "subject_id", None))
+        topic_id = attrs.get("topic_id", getattr(self.instance, "topic_id", None))
+        subtopic_id = attrs.get("subtopic_id", getattr(self.instance, "subtopic_id", None))
+        if subject_id and topic_id and subtopic_id:
+            request = self.context.get("request")
+            from students.models import StudentProfile
+            student = StudentProfile.objects.filter(user=request.user).first() if request else None
+            subject = Subject.objects.filter(id=subject_id, student=student).first()
+            topic = Topic.objects.filter(id=topic_id, subject=subject).first() if subject else None
+            subtopic = Subtopic.objects.filter(id=subtopic_id, topic=topic).first() if topic else None
+            if not (subject and topic and subtopic):
+                raise serializers.ValidationError("The selected curriculum path is not available in your subjects.")
+            attrs.update({
+                "subject_name": subject.name,
+                "topic_name": topic.name,
+                "subtopic_name": subtopic.name,
+                "topic": subtopic.name,
+            })
+        elif subject_id and topic_id:
+            request = self.context.get("request")
+            from students.models import StudentProfile
+            student = StudentProfile.objects.filter(user=request.user).first() if request else None
+            subject = Subject.objects.filter(id=subject_id, student=student).first()
+            topic = Topic.objects.filter(id=topic_id, subject=subject).first() if subject else None
+            if not (subject and topic):
+                raise serializers.ValidationError("The selected curriculum path is not available in your subjects.")
+            attrs.update({
+                "subject_name": subject.name,
+                "topic_name": topic.name,
+                "subtopic_name": attrs.get("subtopic_name") or topic.name,
+                "topic": attrs.get("subtopic_name") or topic.name,
+            })
+        else:
+            topic_text = (attrs.get("topic") or getattr(self.instance, "topic", "")).strip()
+            if not topic_text:
+                raise serializers.ValidationError("Choose a topic or select a curriculum path from your subjects.")
+        return attrs
+
+    def validate_answers(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Answers must be an object keyed by question id.")
+        return value
+
+    def validate_result(self, value):
+        if value is not None and not isinstance(value, dict):
+            raise serializers.ValidationError("Assessment result must be an object.")
+        return value
+
+    def validate_revisionMessages(self, value):
+        if len(value) > 200:
+            raise serializers.ValidationError("Revision history is too long.")
+        for message in value:
+            if message.get("role") not in {"user", "model"} or not isinstance(message.get("text"), str):
+                raise serializers.ValidationError("Revision messages must have a user/model role and text.")
+            if len(message["text"]) > 10000:
+                raise serializers.ValidationError("A revision message is too long.")
+        return value
+
+    def update(self, instance, validated_data):
+        finishing = validated_data.get("status") == StudentAssessment.Status.COMPLETED and instance.completed_at is None
+        if finishing:
+            from django.utils import timezone
+
+            validated_data["completed_at"] = timezone.now()
+        assessment = super().update(instance, validated_data)
+        if finishing and assessment.result:
+            self._record_assessment_mastery(assessment)
+        return assessment
+
+    @staticmethod
+    def _record_assessment_mastery(assessment):
+        from django.db import transaction
+        from learning.models import TopicMastery
+        from learning.services import get_or_create_profile
+        from learning.services import topic_key
+
+        student = assessment.student
+        if not student:
+            return
+        profile = get_or_create_profile(student=student)
+        result = assessment.result or {}
+        score = result.get("score")
+        try:
+            score = max(0.0, min(100.0, float(score)))
+        except (TypeError, ValueError):
+            return
+        key = topic_key(assessment.subject_name, assessment.subtopic_name or assessment.topic)
+        with transaction.atomic():
+            mastery, _ = TopicMastery.objects.select_for_update().get_or_create(
+                profile=profile,
+                topic_key=key,
+                defaults={"subject": assessment.subject_name, "topic": assessment.subtopic_name or assessment.topic, "score": 40.0},
+            )
+            question_count = len(assessment.questions or [])
+            old_count = mastery.attempts
+            mastery.score = round(((mastery.score * old_count) + (score * question_count)) / max(1, old_count + question_count), 2)
+            mastery.attempts = old_count + question_count
+            mastery.correct += int(result.get("correct") or 0)
+            mastery.incorrect += max(0, question_count - int(result.get("correct") or 0))
+            mastery.last_correctness = "correct" if score >= 80 else "partial" if score >= 50 else "incorrect"
+            mastery.save()
 
 
 class LearningEventItemSerializer(serializers.Serializer):

@@ -15,6 +15,7 @@ from learning.models import (
     LearningEvent,
     LearningProfile,
     LessonSession,
+    StudentAssessment,
     TopicConversation,
 )
 from students.models import get_student_profile
@@ -43,6 +44,7 @@ def build_user_export(user) -> Dict[str, Any]:
         "learning_profile": None,
         "sessions": [],
         "learning_events": [],
+        "assessments": [],
         "conversations": [],
         "notes": [
             "This export includes account and learning data stored by Kindling.",
@@ -130,6 +132,26 @@ def build_user_export(user) -> Dict[str, Any]:
             "payload": e.payload,
         }
         for e in events
+    ]
+
+    assessments = StudentAssessment.objects.filter(student=profile).order_by("-created_at")[:200]
+    payload["assessments"] = [
+        {
+            "id": assessment.pk,
+            "title": assessment.title,
+            "topic": assessment.topic,
+            "description": assessment.description,
+            "question_type": assessment.question_type,
+            "questions": assessment.questions,
+            "answers": assessment.answers,
+            "result": assessment.result,
+            "revision_messages": assessment.revision_messages,
+            "status": assessment.status,
+            "created_at": assessment.created_at.isoformat() if assessment.created_at else None,
+            "updated_at": assessment.updated_at.isoformat() if assessment.updated_at else None,
+            "completed_at": assessment.completed_at.isoformat() if assessment.completed_at else None,
+        }
+        for assessment in assessments
     ]
 
     convos = TopicConversation.objects.filter(student=profile).order_by(

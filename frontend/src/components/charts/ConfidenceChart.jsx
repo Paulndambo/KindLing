@@ -1,52 +1,95 @@
-/**
- * Simple confidence sparkline. Pass `points` as 0–100 values for the week.
- */
-export default function ConfidenceChart({ points = [40, 48, 45, 58, 66, 74, 82] }) {
-  const width = 320;
-  const height = 160;
-  const padX = 8;
-  const padY = 16;
-  const bottom = height - 28;
-
-  const min = 0;
-  const max = 100;
-  const n = Math.max(points.length, 2);
-
-  const coords = points.map((p, i) => {
-    const x = padX + (i / (n - 1)) * (width - padX * 2);
-    const y = padY + (1 - (p - min) / (max - min)) * (bottom - padY);
-    return [x, y];
-  });
-
-  const line = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
-  const area = `${line} L ${coords[coords.length - 1][0]} ${bottom} L ${coords[0][0]} ${bottom} Z`;
+/** Confidence cues across recent exchanges, scaled consistently from 0–100. */
+export default function ConfidenceChart({ points = [] }) {
+  const values = points
+    .filter((value) => typeof value === "number" && Number.isFinite(value))
+    .map((value) => Math.max(0, Math.min(100, value)));
+  if (!values.length) return null;
+  const width = 360;
+  const height = 200;
+  const left = 33;
+  const right = width - 14;
+  const top = 20;
+  const bottom = height - 35;
+  const coords = values.map((value, index) => [
+    values.length === 1
+      ? (left + right) / 2
+      : left + (index / (values.length - 1)) * (right - left),
+    bottom - (value / 100) * (bottom - top),
+  ]);
+  const line = coords
+    .map(([x, y], i) => `${i ? "L" : "M"} ${x} ${y}`)
+    .join(" ");
   const [lastX, lastY] = coords[coords.length - 1];
-
+  const area = `${line} L ${lastX} ${bottom} L ${coords[0][0]} ${bottom} Z`;
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       width="100%"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
+      role="img"
+      aria-label={`Confidence across ${values.length} recent exchanges: ${values.join(", ")} percent. Latest: ${values[values.length - 1]} percent.`}
     >
-      <line x1="0" y1="130" x2={width} y2="130" stroke="#EDE6D4" strokeWidth="1" />
-      <line x1="0" y1="90" x2={width} y2="90" stroke="#EDE6D4" strokeWidth="1" />
-      <line x1="0" y1="50" x2={width} y2="50" stroke="#EDE6D4" strokeWidth="1" />
-      <path d={area} fill="#3E8A8F" opacity="0.08" />
+      {[0, 50, 100].map((value) => {
+        const y = bottom - (value / 100) * (bottom - top);
+        return (
+          <g key={value}>
+            <line
+              x1={left}
+              y1={y}
+              x2={right}
+              y2={y}
+              stroke="#e3eadb"
+              strokeDasharray="3 4"
+            />
+            <text
+              x="1"
+              y={y + 3}
+              fontSize="9"
+              fill="#7c8e70"
+              fontFamily="inherit"
+            >
+              {value}%
+            </text>
+          </g>
+        );
+      })}
+      <path d={area} fill="#89a873" opacity=".1" />
       <path
         d={line}
         fill="none"
-        stroke="#3E8A8F"
+        stroke="#71935b"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={lastX} cy={lastY} r="4.5" fill="#E4A32A" />
-      <text x="0" y="148" fontSize="9" fill="#5C6B63" fontFamily="Inter">
-        Start
+      {coords.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="2.5" fill="#71935b" />
+      ))}
+      <circle
+        cx={lastX}
+        cy={lastY}
+        r="5"
+        fill="#71935b"
+        stroke="#fff"
+        strokeWidth="2"
+      />
+      <text
+        x={left}
+        y={height - 10}
+        fontSize="9"
+        fill="#7c8e70"
+        fontFamily="inherit"
+      >
+        Earlier
       </text>
-      <text x={width - 28} y="148" fontSize="9" fill="#5C6B63" fontFamily="Inter">
-        Now
+      <text
+        x={right}
+        y={height - 10}
+        textAnchor="end"
+        fontSize="9"
+        fill="#7c8e70"
+        fontFamily="inherit"
+      >
+        Latest exchange
       </text>
     </svg>
   );

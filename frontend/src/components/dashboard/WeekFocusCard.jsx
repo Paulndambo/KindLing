@@ -31,10 +31,10 @@ function countdownCopy(days, label) {
 export default function WeekFocusCard({ student, onStudentUpdate }) {
   const remote = String(student?.weekFocus || student?.week_focus || "");
   const remoteTargetDate = String(
-    student?.targetDate || student?.target_date || ""
+    student?.targetDate || student?.target_date || "",
   ).slice(0, 10);
   const remoteTargetLabel = String(
-    student?.targetLabel || student?.target_label || ""
+    student?.targetLabel || student?.target_label || "",
   );
   const [draft, setDraft] = useState(remote);
   const [targetDateDraft, setTargetDateDraft] = useState(remoteTargetDate);
@@ -73,7 +73,7 @@ export default function WeekFocusCard({ student, onStudentUpdate }) {
       window.setTimeout(() => setSavedFlash(false), 1600);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "Could not save week focus."
+        err instanceof ApiError ? err.message : "Could not save week focus.",
       );
     } finally {
       setBusy(false);
@@ -96,7 +96,9 @@ export default function WeekFocusCard({ student, onStudentUpdate }) {
       window.setTimeout(() => setTargetSavedFlash(false), 1600);
     } catch (err) {
       setTargetError(
-        err instanceof ApiError ? err.message : "Could not save your target date."
+        err instanceof ApiError
+          ? err.message
+          : "Could not save your target date.",
       );
     } finally {
       setTargetBusy(false);
@@ -121,7 +123,8 @@ export default function WeekFocusCard({ student, onStudentUpdate }) {
         </div>
       </div>
       <p className="week-focus-hint">
-        One line Kindling can remember in lessons — not a full plan.
+        Choose one thing to work on. Your tutor will keep it in mind during
+        lessons.
       </p>
       <label className="week-focus-label" htmlFor="week-focus-input">
         Week focus
@@ -176,8 +179,8 @@ export default function WeekFocusCard({ student, onStudentUpdate }) {
           </div>
         </div>
         <p className="week-focus-hint">
-          An exam, project, or personal goal. You choose it; it won’t change your
-          lessons automatically.
+          An exam, project, or personal goal. You choose it; it won’t change
+          your lessons automatically.
         </p>
         <label className="week-focus-label" htmlFor="target-label-input">
           Target name

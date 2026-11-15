@@ -1,5 +1,6 @@
 export { API_BASE_URL, getAccessToken, getStoredTokens, setStoredTokens } from "./config";
 export { apiRequest, ApiError } from "./client";
+export { listAssessments, createAssessment, updateAssessment } from "./assessments";
 export {
   loginWithPassword,
   loginWithDemo,

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import StudentProfile
+from .models import StudentProfile, StudentPushDevice
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -50,6 +50,19 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     targetDate = serializers.DateField(
         source="target_date", required=False, allow_null=True
     )
+    pushEnabled = serializers.BooleanField(source="push_enabled", required=False)
+    dailyReminderEnabled = serializers.BooleanField(
+        source="daily_reminder_enabled", required=False
+    )
+    streakReminderEnabled = serializers.BooleanField(
+        source="streak_reminder_enabled", required=False
+    )
+    reminderHour = serializers.IntegerField(
+        source="reminder_hour", required=False, min_value=0, max_value=23
+    )
+    reminderMinute = serializers.IntegerField(
+        source="reminder_minute", required=False, min_value=0, max_value=59
+    )
 
     class Meta:
         model = StudentProfile
@@ -75,6 +88,11 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "isOnboarded",
             "digestOptIn",
             "familyEmail",
+            "pushEnabled",
+            "dailyReminderEnabled",
+            "streakReminderEnabled",
+            "reminderHour",
+            "reminderMinute",
             "created_at",
             "updated_at",
         )
@@ -87,3 +105,33 @@ class StudentProfileSerializer(serializers.ModelSerializer):
                 {"detail": "This account already has a student profile."}
             )
         return StudentProfile.objects.create(user=user, **validated_data)
+
+
+class StudentPushDeviceSerializer(serializers.ModelSerializer):
+    expoPushToken = serializers.CharField(source="expo_push_token")
+    deviceName = serializers.CharField(source="device_name", required=False, allow_blank=True)
+    isActive = serializers.BooleanField(source="is_active", read_only=True)
+    lastSeenAt = serializers.DateTimeField(source="last_seen_at", read_only=True)
+
+    class Meta:
+        model = StudentPushDevice
+        fields = (
+            "id",
+            "expoPushToken",
+            "platform",
+            "deviceName",
+            "isActive",
+            "lastSeenAt",
+        )
+        read_only_fields = ("id", "isActive", "lastSeenAt")
+
+
+class StudentPushSettingsInputSerializer(serializers.Serializer):
+    expoPushToken = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    platform = serializers.CharField(required=False, allow_blank=True, max_length=32)
+    deviceName = serializers.CharField(required=False, allow_blank=True, max_length=120)
+    pushEnabled = serializers.BooleanField(required=False)
+    dailyReminderEnabled = serializers.BooleanField(required=False)
+    streakReminderEnabled = serializers.BooleanField(required=False)
+    reminderHour = serializers.IntegerField(required=False, min_value=0, max_value=23)
+    reminderMinute = serializers.IntegerField(required=False, min_value=0, max_value=59)

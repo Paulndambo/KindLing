@@ -11,6 +11,7 @@
       "icon": "./assets/images/icon.png"
     },
     "android": {
+      "package": "com.kindling.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#F6F2E9",
@@ -26,6 +27,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Kindling to use the microphone for voice input.",
+          "speechRecognitionPermission": "Allow Kindling to convert your speech to text."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#F6F2E9",
@@ -33,11 +41,34 @@
           "imageWidth": 148
         }
       ],
-      "expo-secure-store"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1F3A34"
+        }
+      ],
+      "expo-secure-store",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5e3bbe52-59de-4739-a52f-450ff49945f5"
+      }
+    },
+    "owner": "paulndambo",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5e3bbe52-59de-4739-a52f-450ff49945f5"
     }
   }
 }

@@ -22,6 +22,8 @@ from .views import (
     ReviewSnoozeView,
     SessionDetailView,
     SessionListView,
+    StudentAssessmentDetailView,
+    StudentAssessmentListCreateView,
     SkillCatalogView,
     SkillPathView,
     SkillRecommendView,
@@ -40,6 +42,8 @@ urlpatterns = [
     path("health/", HealthView.as_view(), name="learning-health"),
     path("events/", LearningEventIngestView.as_view(), name="learning-events-ingest"),
     path("events/list/", LearningEventListView.as_view(), name="learning-events-list"),
+    path("assessments/", StudentAssessmentListCreateView.as_view(), name="learning-assessments"),
+    path("assessments/<int:pk>/", StudentAssessmentDetailView.as_view(), name="learning-assessment-detail"),
     path("profile/", LearningProfileView.as_view(), name="learning-profile"),
     path(
         "personalization/",

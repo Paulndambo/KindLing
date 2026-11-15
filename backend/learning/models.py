@@ -57,6 +57,48 @@ class LearningEventType(models.TextChoices):
     INDEPENDENCE_SKIPPED = "independence.skipped", "Independence twin skipped"
 
 
+class StudentAssessment(models.Model):
+    """Durable assessment created and completed by an authenticated student."""
+
+    class QuestionType(models.TextChoices):
+        MULTIPLE_CHOICE = "multiple_choice", "Multiple choice"
+        OPEN_ENDED = "open_ended", "Open ended"
+        HYBRID = "hybrid", "Hybrid"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "In progress"
+        COMPLETED = "completed", "Completed"
+
+    student = models.ForeignKey(
+        StudentProfile, on_delete=models.CASCADE, related_name="assessments"
+    )
+    title = models.CharField(max_length=240)
+    topic = models.CharField(max_length=200)
+    subject_id = models.PositiveIntegerField(null=True, blank=True)
+    topic_id = models.PositiveIntegerField(null=True, blank=True)
+    subtopic_id = models.PositiveIntegerField(null=True, blank=True)
+    subject_name = models.CharField(max_length=160, blank=True, default="")
+    topic_name = models.CharField(max_length=200, blank=True, default="")
+    subtopic_name = models.CharField(max_length=200, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    question_type = models.CharField(max_length=24, choices=QuestionType.choices)
+    questions = models.JSONField(default=list)
+    answers = models.JSONField(default=dict, blank=True)
+    result = models.JSONField(null=True, blank=True)
+    revision_messages = models.JSONField(default=list, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["student", "-created_at"])]
+
+    def __str__(self):
+        return f"{self.topic} assessment for {self.student}"
+
+
 class Correctness(models.TextChoices):
     CORRECT = "correct", "Correct"
     PARTIAL = "partial", "Partial"

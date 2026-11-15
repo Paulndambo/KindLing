@@ -8,23 +8,66 @@ export type StudentProfile = {
   id: number;
   name: string;
   grade: string;
-  curriculum?: string;
+  avatar: string;
+  country: string;
+  countryFlag: string;
+  preferredLanguage: string;
+  schoolName: string;
+  schoolType: string;
+  curriculum: string;
+  academicTarget: string;
+  learningStyle: string;
+  interests: string[];
+  focusSubjects: string[];
+  goal: string;
+  weekFocus: string;
+  targetLabel: string;
+  targetDate: string | null;
   isOnboarded: boolean;
+  digestOptIn: boolean;
+  familyEmail: string;
+  pushEnabled?: boolean;
+  dailyReminderEnabled?: boolean;
+  streakReminderEnabled?: boolean;
+  reminderHour?: number;
+  reminderMinute?: number;
 };
+export type StudentProfileInput = Omit<StudentProfile, 'id'>;
 export type LessonItem = { id: number | null; name: string; learningGoal?: string; unitName?: string };
 export type Subject = { id: number; name: string; learningGoal?: string; topics: { id: number | null; name: string; subtopics: LessonItem[] }[] };
 export type LearningDashboard = {
   hasData?: boolean;
-  weekStats?: { this?: { sessions?: { value?: string; cap?: string }; time?: { value?: string; cap?: string }; questions?: string; masteryDelta?: string } } | null;
-  masteryMap?: { subject?: string; skill?: string; level?: number; status?: string }[];
-  recentActivity?: { id?: string; when?: string; subject?: string; title?: string; detail?: string }[];
-  totals?: { exchanges?: number };
+  weekStats?: Record<string, { sessions?: { value?: string; cap?: string }; time?: { value?: string; cap?: string }; streak?: { value?: string; cap?: string }; focus?: { value?: string; cap?: string }; questions?: string; masteryDelta?: string }> | null;
+  masteryMap?: { subject?: string; skill?: string; level?: number; status?: string; slug?: string; segs?: string[] }[];
+  recentActivity?: { id?: string; when?: string; subject?: string; title?: string; detail?: string; tone?: string }[];
+  strengths?: { label?: string; hint?: string }[];
+  focusAreas?: { label?: string; hint?: string }[];
+  confidenceHistory?: Record<string, number[]>;
+  weekPlan?: { day?: string; title?: string; tag?: string; duration?: string; text?: string }[];
+  profile?: { behavior?: { hintRate?: number }; confidenceEvidenceHistory?: number[] } | null;
+  insights?: { summary?: string; directives?: string[]; stats?: { accuracy?: number } | null } | null;
+  nextBestActions?: { label?: string; reason?: string; cta?: string; kind?: string; skillSlug?: string }[];
+  totals?: { exchanges?: number; correct?: number; incorrect?: number; partial?: number };
 };
 export type LessonConversation = {
   id: string;
   status: string;
   messages: { id: string; role: 'tutor' | 'child' | 'system'; text: string; at?: string | null }[];
   apiHistory: { role: 'user' | 'model'; text: string }[];
+};
+export type ContinuableConversation = {
+  id: string;
+  status: string;
+  subject: string;
+  topic: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  title?: string | null;
+  summary?: string | null;
+  nextStep?: string | null;
+  messageCount?: number;
+  previewText?: string | null;
+  canContinue?: boolean;
 };
 
 export class ApiError extends Error {
@@ -80,6 +123,24 @@ export async function getLearningDashboard() {
   return apiRequest<LearningDashboard>('/api/learning/dashboard/');
 }
 
+export async function trackLearningEvent(type: string, payload: Record<string, unknown>, sessionId: string) {
+  return apiRequest<{ ok: boolean; delivered: number }>('/api/learning/events/', {
+    method: 'POST',
+    json: {
+      schemaVersion: 1,
+      source: 'kindling-mobile',
+      sentAt: new Date().toISOString(),
+      events: [{
+        id: `mobile_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`,
+        type,
+        timestamp: new Date().toISOString(),
+        context: { app: 'kindling', client: 'mobile', sessionId },
+        payload: { ...payload, sessionId },
+      }],
+    },
+  });
+}
+
 export async function deleteAccount() {
   return apiRequest<{ detail?: string }>('/api/auth/account/', { method: 'DELETE', json: { confirm: true } });
 }
@@ -132,17 +193,26 @@ export async function listSubjects(): Promise<Subject[]> {
   });
 }
 
-export async function createSubject(name: string, firstTopic: string) {
+export async function createSubject(name: string, firstTopic: string, learningGoal = '') {
   const topics = firstTopic.trim() ? [{ name: firstTopic.trim(), familiarity: 'new', learning_goal: '', subtopics: [] }] : [];
-  return apiRequest('/api/subjects/', { method: 'POST', json: { name, learning_goal: '', topics } });
+  return apiRequest('/api/subjects/', { method: 'POST', json: { name: name.trim(), learning_goal: learningGoal.trim(), topics } });
 }
 
-export async function createTopic(subjectId: number, name: string) {
-  return apiRequest(`/api/subjects/${subjectId}/topics/`, { method: 'POST', json: { name: name.trim(), familiarity: 'new', learning_goal: '' } });
+export async function createTopic(subjectId: number, name: string, learningGoal = '') {
+  return apiRequest(`/api/subjects/${subjectId}/topics/`, { method: 'POST', json: { name: name.trim(), familiarity: 'new', learning_goal: learningGoal.trim() } });
 }
 
-export async function createSubtopic(topicId: number, name: string) {
-  return apiRequest(`/api/subjects/topics/${topicId}/subtopics/`, { method: 'POST', json: { name: name.trim(), familiarity: 'new', learning_goal: '' } });
+export async function createSubtopic(topicId: number, name: string, learningGoal = '') {
+  return apiRequest(`/api/subjects/topics/${topicId}/subtopics/`, { method: 'POST', json: { name: name.trim(), familiarity: 'new', learning_goal: learningGoal.trim() } });
+}
+
+export async function listContinuableConversations(limit = 12): Promise<ContinuableConversation[]> {
+  try {
+    const result = await apiRequest<{ items?: ContinuableConversation[] }>(`/api/learning/conversations/continue/?limit=${limit}`);
+    return Array.isArray(result?.items) ? result.items : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function ensureLessonConversation(subject: string, topic: string) {
@@ -163,7 +233,7 @@ export async function appendLessonMessage(
   });
 }
 
-export async function askTutor(messages: { role: 'user' | 'model'; text: string }[], systemInstruction: string) {
+export async function askTutor(messages: { role: 'user' | 'model'; text: string }[], systemInstruction: string, options: { maxOutputTokens?: number } = {}) {
   await apiRequest('/api/platform/subscription/');
   const contents = messages.map((message) => ({ role: message.role, parts: [{ text: message.text }] }));
   const result = await apiRequest<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>('/api/platform/ai/gemini/', {
@@ -171,8 +241,201 @@ export async function askTutor(messages: { role: 'user' | 'model'; text: string 
     json: {
       model: process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.1-flash-lite',
       contents,
-      config: { systemInstruction, maxOutputTokens: 2048, temperature: 0.65 },
+      // Let Gemini use its model default sampling configuration. In particular,
+      // Gemini 3.x recommends default temperature settings and newer 3.x models
+      // are beginning to reject explicit sampling parameters.
+      config: { systemInstruction, maxOutputTokens: options.maxOutputTokens || 2048 },
     },
   });
   return result.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim() || 'I couldn’t form a reply just now. Try asking again.';
+}
+
+export type StudentAssessmentRecord = {
+  id: number;
+  title: string;
+  topic: string;
+  subjectId: number | null;
+  topicId: number | null;
+  subtopicId: number | null;
+  subjectName: string;
+  topicName: string;
+  subtopicName: string;
+  description: string;
+  questionType: 'multiple_choice' | 'open_ended' | 'hybrid';
+  questions: Record<string, unknown>[];
+  answers: Record<string, string>;
+  result: Record<string, unknown> | null;
+  revisionMessages: { role: 'user' | 'model'; text: string }[];
+  status: 'active' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+};
+
+export async function listAssessments() {
+  return apiRequest<StudentAssessmentRecord[]>('/api/learning/assessments/');
+}
+
+export async function createAssessment(assessment: Record<string, unknown>) {
+  return apiRequest<StudentAssessmentRecord>('/api/learning/assessments/', { method: 'POST', json: assessment });
+}
+
+export async function updateAssessment(id: number, updates: Record<string, unknown>) {
+  return apiRequest<StudentAssessmentRecord>(`/api/learning/assessments/${encodeURIComponent(id)}/`, { method: 'PATCH', json: updates });
+}
+
+export type PlanEntitlements = {
+  platformAi?: boolean;
+  byok?: boolean;
+  multiProvider?: boolean;
+  advancedRouting?: boolean;
+  familyDigest?: boolean;
+  prioritySupport?: boolean;
+  dailyLessonSoftCap?: number | null;
+  dailyPlatformAiRequests?: number;
+  dailyPlatformAiTokens?: number;
+};
+
+export type PlanCatalogItem = {
+  id: 'spark' | 'forge' | 'ember' | string;
+  name: string;
+  tagline: string;
+  priceMonthly: number;
+  priceYearly: number;
+  highlight?: boolean;
+  trialDays?: number;
+  features: string[];
+  entitlements: PlanEntitlements;
+};
+
+export type DailyAiUsage = {
+  used: number;
+  limit: number;
+  remaining: number;
+  estimatedTokensUsed: number;
+  estimatedTokenLimit: number;
+  estimatedTokensRemaining: number;
+  limitReason: string | null;
+  resetsAt: string;
+  softWarning: boolean;
+};
+
+export type PlatformSubscription = {
+  plan: 'spark' | 'forge' | 'ember' | string;
+  planName: string;
+  planDetail: PlanCatalogItem;
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | string;
+  billing_cycle: 'monthly' | 'yearly' | string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  entitlements: PlanEntitlements;
+  updated_at?: string;
+  platform_ai_daily_usage?: DailyAiUsage;
+};
+
+export type BillingInvoiceItem = {
+  id: number;
+  invoice_number: string;
+  plan: string;
+  plan_name: string;
+  billing_cycle: 'monthly' | 'yearly' | string;
+  amount: string | number;
+  currency: string;
+  status: 'requested' | 'paid' | 'void' | string;
+  payment_reference?: string;
+  created_at: string;
+  paid_at?: string | null;
+};
+
+export async function getPlatformSubscription() {
+  return apiRequest<PlatformSubscription>('/api/platform/subscription/');
+}
+
+export async function listPlatformPlans(): Promise<PlanCatalogItem[]> {
+  const res = await apiRequest<{ plans?: PlanCatalogItem[] }>('/api/platform/plans/', { auth: false });
+  return Array.isArray(res?.plans) ? res.plans : [];
+}
+
+export async function listBillingInvoices(): Promise<BillingInvoiceItem[]> {
+  try {
+    const res = await apiRequest<BillingInvoiceItem[]>('/api/platform/invoices/');
+    return Array.isArray(res) ? res : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function requestPlanInvoice(plan: 'forge' | 'ember', billingCycle: 'monthly' | 'yearly') {
+  return apiRequest<BillingInvoiceItem>('/api/platform/invoices/', {
+    method: 'POST',
+    json: { plan, billing_cycle: billingCycle },
+  });
+}
+
+export type PushDeviceItem = {
+  id: number;
+  expoPushToken: string;
+  platform: string;
+  deviceName: string;
+  isActive: boolean;
+  lastSeenAt?: string;
+};
+
+export type PushNotificationSettings = {
+  pushEnabled: boolean;
+  dailyReminderEnabled: boolean;
+  streakReminderEnabled: boolean;
+  reminderHour: number;
+  reminderMinute: number;
+  devices: PushDeviceItem[];
+};
+
+export type PushSettingsInput = Partial<{
+  expoPushToken: string;
+  platform: string;
+  deviceName: string;
+  pushEnabled: boolean;
+  dailyReminderEnabled: boolean;
+  streakReminderEnabled: boolean;
+  reminderHour: number;
+  reminderMinute: number;
+}>;
+
+export type TestPushResult = {
+  ok: boolean;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  delivery?: {
+    sent: number;
+    failed: number;
+    devices: number;
+    detail?: string;
+  };
+};
+
+export async function getPushSettings() {
+  return apiRequest<PushNotificationSettings>('/api/students/me/push/');
+}
+
+export async function savePushSettings(payload: PushSettingsInput) {
+  return apiRequest<PushNotificationSettings>('/api/students/me/push/', {
+    method: 'POST',
+    json: payload,
+  });
+}
+
+export async function unregisterPushDevice(expoPushToken?: string) {
+  const query = expoPushToken ? `?token=${encodeURIComponent(expoPushToken)}` : '';
+  return apiRequest<PushNotificationSettings>(`/api/students/me/push/${query}`, {
+    method: 'DELETE',
+    json: expoPushToken ? { expoPushToken } : undefined,
+  });
+}
+
+export async function sendTestPushNotification() {
+  return apiRequest<TestPushResult>('/api/students/me/push/test/', {
+    method: 'POST',
+  });
 }

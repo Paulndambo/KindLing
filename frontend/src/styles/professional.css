@@ -1,0 +1,818 @@
+/* Shared visual system. Root + screen specificity keeps lazy-loaded styles
+   from changing the design depending on navigation order. */
+.kdl {
+  --font-ui: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --pine: #183e35;
+  --pine-light: #245748;
+  --pine-pale: #eaf1ee;
+  --parchment: #f7f8fa;
+  --parchment-dim: #eceff2;
+  --teal: #27675b;
+  --teal-pale: #edf5f2;
+  --ink: #202a35;
+  --ink-soft: #586575;
+  --p-radius: 12px;
+  --p-radius-sm: 8px;
+  --p-border: 1px solid #e1e6eb;
+  --p-shadow: 0 1px 3px rgb(20 34 49 / 4%);
+  --p-shadow-hover: 0 4px 12px rgb(20 34 49 / 7%);
+  font-family: var(--font-ui);
+  background: var(--parchment);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.kdl
+  :is(
+    h1,
+    h2,
+    h3,
+    h4,
+    .display,
+    .brand span,
+    .stat-title,
+    .q,
+    .val,
+    .nba-title,
+    .assess-score-ring strong
+  ) {
+  font-family: var(--font-ui);
+  font-style: normal;
+  letter-spacing: -0.025em;
+}
+
+.kdl :is(input, textarea, select) {
+  font-family: inherit;
+}
+.kdl .eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 650;
+}
+.kdl ::selection {
+  background: #d9e9e2;
+  color: #183e35;
+}
+.kdl .topnav {
+  min-height: 72px;
+  background: #fff;
+  border-bottom: 1px solid #e1e6eb;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.kdl .brand span {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+.kdl .navtabs {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  gap: 4px;
+  border-radius: 8px;
+}
+.kdl .navtabs button {
+  border-radius: 6px;
+  font-weight: 550;
+}
+.kdl .navtabs button.active {
+  background: #edf3f0;
+  color: var(--pine);
+  box-shadow: none;
+}
+.kdl .navtabs button:not(.active):not(:disabled):hover {
+  background: #f3f5f7;
+}
+.kdl .student-badge {
+  border-radius: 8px;
+  box-shadow: none;
+}
+.kdl .student-badge .avatar-icon {
+  background: var(--pine-pale);
+  color: var(--pine);
+  border-radius: 6px;
+}
+.kdl .mobile-drawer:not(.open) {
+  visibility: hidden;
+  box-shadow: none;
+}
+.kdl .mobile-drawer.open {
+  visibility: visible;
+  background: #fff;
+}
+
+/* Controls stay quiet until they need attention. */
+.kdl :is(.btn-primary, .cta-btn, .btn-ghost, .plan-cta, .new-subj-btn) {
+  border-radius: 7px;
+  min-height: 42px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+  transition:
+    background 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.kdl :is(.btn-primary, .cta-btn),
+.kdl #overview .preview-banner .open-lesson-btn {
+  background: var(--pine) !important;
+  color: #fff !important;
+}
+.kdl :is(.btn-primary, .cta-btn):hover:not(:disabled),
+.kdl #overview .btn-marigold:hover,
+.kdl #overview .preview-banner .open-lesson-btn:hover {
+  background: var(--pine-light) !important;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+.kdl .btn-ghost {
+  color: var(--ink) !important;
+  background: #fff !important;
+  border: 1px solid #d5dce3 !important;
+}
+.kdl .btn-ghost:hover:not(:disabled) {
+  background: #f0f3f5 !important;
+  transform: none;
+  box-shadow: none;
+}
+.kdl :is(.modal-card, .wizard-card) {
+  border-radius: 14px;
+}
+.kdl
+  :is(
+    .modal-input,
+    .provider-field input,
+    .provider-field select,
+    .support-field input,
+    .support-field textarea,
+    .support-field select,
+    .settings-primary-row select,
+    .settings-task-row select
+  ) {
+  border-radius: 7px;
+  border-width: 1px;
+  background: #fff;
+}
+.kdl
+  :is(
+    .settings-tabs,
+    .settings-tab,
+    .settings-mode-card,
+    .provider-card,
+    .plan-card
+  ) {
+  border-radius: 8px;
+}
+.kdl .settings-tab.active {
+  box-shadow: none;
+}
+.kdl :is(.plan-card, .provider-card, .settings-mode-card):hover {
+  transform: none;
+  box-shadow: var(--p-shadow-hover);
+}
+.kdl .settings-hero {
+  background: #183e35;
+  border-radius: 12px;
+  box-shadow: none;
+}
+.kdl .settings-runtime-chip {
+  background: rgb(255 255 255 / 8%);
+  border-radius: 8px;
+}
+
+/* Workspace: neutral canvas and subdued navigation. */
+.kdl #dashboard {
+  --dash-radius: 10px;
+  --dash-radius-sm: 7px;
+  --dash-border: 1px solid #e1e6eb;
+  --dash-shadow: 0 1px 3px rgb(20 34 49 / 4%);
+  --dash-shadow-hover: 0 4px 12px rgb(20 34 49 / 7%);
+  background: var(--parchment);
+}
+.kdl #subjects {
+  --s-radius: 10px;
+  --s-radius-sm: 7px;
+  --s-border: 1px solid #e1e6eb;
+  --s-shadow: 0 1px 3px rgb(20 34 49 / 4%);
+}
+.kdl .app-main.has-workspace-sidebar {
+  background: linear-gradient(
+    90deg,
+    #fff 0 var(--dash-sidebar-width),
+    transparent var(--dash-sidebar-width)
+  );
+}
+.kdl .app-main .dash-sidebar {
+  color: var(--ink);
+  background: #fff;
+  border-right: 1px solid #e1e6eb;
+}
+.kdl .app-main .dash-sidebar-section {
+  color: #6b7785;
+}
+.kdl .app-main .dash-sidebar-link {
+  color: #586575;
+  border-radius: 6px;
+  min-height: 42px;
+}
+.kdl .app-main .dash-sidebar-link:hover {
+  color: var(--ink);
+  background: #f3f5f7;
+}
+.kdl .app-main .dash-sidebar-link.active {
+  color: var(--pine);
+  background: #edf3f0;
+  box-shadow: inset 2px 0 var(--teal);
+}
+.kdl .app-main .dash-sidebar-link.active svg {
+  color: var(--teal);
+}
+.kdl .app-main .dash-sidebar-link i {
+  background: var(--teal);
+}
+.kdl .app-main .dash-sidebar-note {
+  color: var(--ink-soft);
+  background: #f7f9f8;
+  border: 1px solid #e1e6eb;
+  border-radius: 8px;
+}
+.kdl .app-main .dash-sidebar-note strong {
+  color: var(--pine);
+}
+.kdl .app-main .dash-sidebar-note svg {
+  color: var(--teal);
+}
+.kdl .app-main .dash-sidebar-toggle {
+  color: var(--ink-soft);
+}
+.kdl .app-main .dash-sidebar-toggle:hover {
+  color: var(--pine);
+  background: #edf3f0;
+}
+.kdl #dashboard .dash-hero,
+.kdl #subjects .subj-head {
+  background: #183e35;
+  box-shadow: none;
+  border-radius: 12px;
+}
+.kdl #dashboard .dash-hero::before {
+  display: none;
+}
+.kdl
+  #dashboard
+  :is(
+    .snap-card.dash-stat,
+    .nba-card,
+    .dash-digest-panel,
+    .homework-window-card,
+    .dash-plan-panel,
+    .academic-card,
+    .dash-empty
+  ) {
+  border-radius: 10px;
+  box-shadow: none;
+}
+.kdl #dashboard :is(.snap-card.dash-stat, .nba-card, .academic-item):hover {
+  transform: none;
+  box-shadow: var(--dash-shadow-hover);
+}
+.kdl #dashboard .snap-card.dash-stat .val {
+  font-family: var(--font-ui);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+.kdl
+  #dashboard
+  :is(
+    .snap-card.dash-stat,
+    .nba-card,
+    .review-spark-card,
+    .spark-challenge-card,
+    .week-focus-card,
+    .homework-window-card,
+    .dash-digest-panel,
+    .dash-plan-panel,
+    .dash-empty
+  ) {
+  background: #fff;
+  border: 1px solid #e1e6eb;
+  box-shadow: none;
+}
+.kdl
+  #dashboard
+  :is(
+    .snap-card.dash-stat,
+    .nba-card,
+    .review-spark-card,
+    .spark-challenge-card,
+    .week-focus-card,
+    .homework-window-card,
+    .dash-digest-panel
+  )::before {
+  display: none;
+}
+.kdl
+  #dashboard
+  :is(
+    .dash-avatar,
+    .nba-icon,
+    .dash-stat-icon,
+    .week-focus-icon,
+    .dash-h-icon,
+    .dash-empty-icon
+  ) {
+  background: #edf3f0;
+  color: var(--teal);
+  border-radius: 8px;
+  box-shadow: none;
+  transform: none;
+}
+.kdl #dashboard .dash-avatar {
+  background: #e5eee8;
+}
+.kdl #dashboard .dash-live-banner {
+  background: #edf5f2;
+  border: 1px solid #d6e5df;
+  border-radius: 7px;
+}
+.kdl #dashboard .review-spark-empty {
+  background: #f7f9f8;
+  border: 1px dashed #d5dfd9;
+  border-radius: 8px;
+}
+.kdl #dashboard .review-spark-empty::before {
+  box-shadow: none;
+  background: #edf3f0;
+  color: var(--teal);
+}
+.kdl #dashboard .dash-hero .week-pick button.active {
+  background: #e5eee8;
+  color: var(--pine);
+  box-shadow: none;
+}
+.kdl
+  #dashboard
+  :is(
+    .assess-config-card,
+    .assess-question-card,
+    .assess-nav-card,
+    .assess-detail-card,
+    .assess-revision-chat
+  ) {
+  border-radius: 10px;
+  box-shadow: none;
+}
+.kdl
+  #subjects
+  :is(.my-subject-card, .subj-card, .continue-strip, .subject-detail-hero) {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+/* Lesson colors remain owned by its light/dark/high-contrast themes. */
+.kdl #lesson {
+  --l-radius: 10px;
+  --l-shadow: 0 1px 3px rgb(20 34 49 / 4%);
+}
+.kdl #lesson :is(h1, h2, h3, h4) {
+  font-family: var(--font-ui);
+  font-style: normal;
+}
+.kdl #lesson :is(.msg, .lesson-composer-shell) {
+  border-radius: 10px;
+}
+.kdl #lesson .lesson-shell {
+  height: calc(100dvh - 76px);
+}
+
+/* Cohesive app shell for the rebuilt learning experience. */
+.kdl {
+  --pine: #203f34;
+  --pine-light: #345b45;
+  --parchment: #f5f7f2;
+  --parchment-dim: #e8ede3;
+  --pine-pale: #eaf0e4;
+  --ink: #24382f;
+  --ink-soft: #6e7e70;
+  --teal: #4b7452;
+  --teal-pale: #edf3e7;
+  background: #f5f7f2;
+}
+.kdl > header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.kdl .topnav {
+  min-height: 76px;
+  padding-inline: clamp(20px, 4vw, 64px);
+  background: #fdfefb;
+  border-color: #e4e9df;
+}
+.kdl .topnav .brand span {
+  font-size: 23px;
+  letter-spacing: -0.055em;
+}
+.kdl .navtabs {
+  gap: 6px;
+}
+.kdl .navtabs > a {
+  text-decoration: none;
+  color: #65745f;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 9px 15px;
+  border-radius: 5px;
+}
+.kdl .navtabs > a:hover {
+  color: #2f5139;
+  background: #edf2e6;
+}
+.kdl .topnav-marketing .topnav-auth-btn {
+  font-size: 11px !important;
+  padding: 10px 17px !important;
+}
+.kdl .topnav-marketing .btn-ghost {
+  border-color: transparent !important;
+  background: transparent !important;
+}
+.kdl .mobile-drawer .mobile-nav-item {
+  text-decoration: none;
+}
+.kdl .app-main .dash-sidebar {
+  background: #fdfefb;
+  border-color: #e2e8dc;
+  padding-top: 30px;
+}
+.kdl .app-main .dash-sidebar-section {
+  color: #95a18b;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  margin-bottom: 18px;
+}
+.kdl .app-main .dash-sidebar-link {
+  min-height: 44px;
+  gap: 12px;
+  color: #73816b;
+}
+.kdl .app-main .dash-sidebar-link span {
+  font-size: 12px;
+  font-weight: 500;
+}
+.kdl .app-main .dash-sidebar-link.active {
+  box-shadow: none;
+  background: #eaf0e2;
+  color: #3f633f;
+}
+.kdl .app-main .dash-sidebar-link.active i {
+  width: 4px;
+  height: 4px;
+}
+.kdl .app-main .dash-sidebar-note {
+  background: #f1f5eb;
+  border-color: #e2e9d9;
+}
+.kdl .app-main.has-workspace-sidebar {
+  background: linear-gradient(
+    90deg,
+    #fdfefb 0 var(--dash-sidebar-width),
+    transparent var(--dash-sidebar-width)
+  );
+}
+.kdl #dashboard .dash-wrap {
+  padding: 36px clamp(20px, 3vw, 44px) 64px;
+}
+.kdl #dashboard .dash-hero {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 0 27px;
+  box-shadow: none;
+  border-bottom: 1px solid #dfe6d8;
+  margin-bottom: 26px;
+  color: #273b2a;
+}
+.kdl #dashboard .dash-hero::after {
+  display: none;
+}
+.kdl #dashboard .dash-hero h1 {
+  color: #273b2a;
+  font-size: clamp(25px, 2.5vw, 34px);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+.kdl #dashboard .dash-hero .eyebrow {
+  color: #8b9a7f;
+  font-size: 9px;
+}
+.kdl #dashboard .dash-hero-sub {
+  color: #89977f;
+  font-size: 12px;
+}
+.kdl #dashboard .dash-avatar {
+  background: #e6eddb;
+  border: 1px solid #d9e3ce;
+  color: #64824f;
+  width: 44px;
+  height: 44px;
+  box-shadow: none;
+  transform: none;
+}
+.kdl #dashboard .dash-goal-chip {
+  color: #7e8f73;
+  background: transparent;
+  border: none;
+  padding-right: 0;
+  font-size: 10px;
+}
+.kdl #dashboard .dash-goal-chip strong {
+  color: #536a45;
+}
+.kdl #dashboard .dash-goal-chip svg {
+  color: #7b9861;
+}
+.kdl #dashboard .dash-hero-controls > .btn-ghost {
+  color: #647859 !important;
+  background: #fdfefb !important;
+  border: 1px solid #dae3d2 !important;
+  border-radius: 5px;
+  font-size: 10px !important;
+}
+.kdl #dashboard .dash-hero .week-pick {
+  background: #e9eee2;
+  border: 1px solid #dce4d3;
+  border-radius: 5px;
+  padding: 3px;
+}
+.kdl #dashboard .dash-hero .week-pick button {
+  color: #93a086;
+  font-size: 10px;
+  border-radius: 3px;
+}
+.kdl #dashboard .dash-hero .week-pick button.active {
+  color: #45603a;
+  background: #fdfefb;
+  box-shadow: 0 1px 3px #243c2012;
+}
+.kdl #dashboard .nba-card.nba-card {
+  background: #203f34;
+  border: 1px solid #203f34;
+  padding: 25px;
+  border-radius: 8px;
+}
+.kdl #dashboard .nba-title {
+  color: #f1f5e8;
+  font-size: 22px;
+}
+.kdl #dashboard .nba-card .eyebrow {
+  color: #a5bd8b;
+  font-size: 9px;
+}
+.kdl #dashboard .nba-card .nba-sub {
+  color: #b1c0a2;
+}
+.kdl #dashboard .nba-card p {
+  color: #b1c0a2;
+}
+.kdl #dashboard .nba-icon {
+  background: #ffffff0a;
+  color: #c6d6a6;
+  border: 1px solid #ffffff18;
+  box-shadow: none;
+}
+.kdl #dashboard .nba-cta {
+  background: #e4eed6 !important;
+  color: #365437 !important;
+  box-shadow: none;
+  border-radius: 5px;
+}
+.kdl #dashboard .snap-grid {
+  gap: 14px;
+}
+.kdl #dashboard .snap-card.dash-stat {
+  border-color: #e0e7d8;
+  padding: 23px;
+  background: #fdfefb;
+}
+.kdl #dashboard .dash-stat-top .eyebrow {
+  color: #879779;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+.kdl #dashboard .dash-stat-icon {
+  background: #eff4e9;
+  color: #819b6b;
+  width: 30px;
+  height: 30px;
+}
+.kdl #dashboard .snap-card.dash-stat .val {
+  color: #33472d;
+  font-size: 33px;
+  margin-top: 14px;
+}
+.kdl #dashboard .snap-card.dash-stat .cap {
+  color: #91a084;
+  font-size: 10px;
+}
+.kdl #dashboard .dash-live-banner {
+  background: #edf3e7;
+  color: #788e65;
+  border-color: #dee8d4;
+  font-size: 11px;
+}
+.kdl
+  #dashboard
+  :is(
+    .review-spark-card,
+    .week-focus-card,
+    .spark-challenge-card,
+    .homework-window-card,
+    .dash-digest-panel,
+    .dash-plan-panel,
+    .panel
+  ) {
+  border-color: #e0e7d8;
+  background: #fdfefb;
+}
+.kdl #dashboard :is(.review-spark-empty, .dash-empty) {
+  background: #f7f9f3;
+  border-color: #e1e8d8;
+}
+.kdl #dashboard :is(.week-focus-icon, .dash-empty-icon, .dash-h-icon) {
+  color: #7f9969;
+  background: #edf3e5;
+  box-shadow: none;
+}
+.kdl #dashboard .dash-subhead {
+  font-size: 16px;
+  font-weight: 600;
+  color: #45603a;
+}
+.kdl #dashboard .dash-hero-sub strong {
+  color: #607653;
+}
+.kdl #dashboard .review-spark-card .review-spark-icon,
+.kdl #dashboard .week-focus-card .week-focus-icon,
+.kdl #dashboard .target-date-section .week-focus-icon {
+  background: #edf3e5;
+  color: #6e8957;
+  box-shadow: none;
+  border-radius: 7px;
+}
+.kdl #dashboard .review-spark-card .eyebrow,
+.kdl #dashboard .week-focus-card .eyebrow,
+.kdl #dashboard .target-date-section .eyebrow {
+  color: #71875e;
+}
+.kdl #dashboard .review-spark-empty {
+  color: #6b7f5d;
+}
+.kdl #subjects.subjects-page {
+  background: #f5f7f2;
+}
+.kdl #subjects .subj-panel,
+.kdl #subjects .subj-panel--empty,
+.kdl #subjects .subj-empty--inline,
+.kdl #subjects .review-spark-head {
+  background: #fdfefb;
+}
+.kdl #subjects .subj-panel-icon,
+.kdl #subjects .subj-empty-icon {
+  background: #edf3e5;
+  color: #75905f;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.kdl #subjects .subj-head .new-subj-btn,
+.kdl #subjects .new-subj-btn {
+  background: #203f34 !important;
+  color: #f4f8ed !important;
+  border-radius: 6px;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+.kdl #subjects .subj-head .new-subj-btn:hover:not(:disabled),
+.kdl #subjects .new-subj-btn:hover:not(:disabled) {
+  background: #345b45 !important;
+  transform: none;
+}
+.kdl #subjects .subj-stat {
+  color: #78876c;
+  background: #edf3e5;
+  border-color: #dce5d2;
+  border-radius: 5px;
+}
+.kdl #subjects .subj-stat strong {
+  color: #4e6940;
+}
+.kdl #subjects .my-subject-card::before {
+  background: #9bb58a;
+  height: 2px;
+}
+.kdl #subjects .my-subject-card:hover {
+  transform: none;
+  box-shadow: 0 3px 12px #2b46251a;
+}
+.kdl .settings-page :is(.plan-price-main, .settings-section-head h2) {
+  font-family: var(--font-ui);
+  letter-spacing: -0.035em;
+}
+.kdl .settings-runtime-chip svg {
+  color: #62804c;
+}
+.kdl .settings-page .plan-card.highlight::before {
+  background: #8ba674;
+}
+.kdl #subjects .subj-wrap,
+.kdl .settings-page {
+  padding-inline: clamp(20px, 3vw, 44px) !important;
+}
+.kdl #subjects .subj-head,
+.kdl .settings-hero {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid #dfe6d8;
+  padding: 5px 0 28px;
+  margin-bottom: 25px;
+  color: #273b2a;
+}
+.kdl #subjects .subj-head::after {
+  display: none;
+}
+.kdl #subjects .subj-head :is(h1, h2),
+.kdl .settings-hero h1 {
+  color: #273b2a;
+  font-size: 32px;
+  letter-spacing: -0.045em;
+}
+.kdl #subjects .subj-head .eyebrow,
+.kdl .settings-hero .eyebrow {
+  color: #8b9a7f;
+}
+.kdl #subjects .subj-head p:not(.eyebrow),
+.kdl .settings-hero-sub {
+  color: #89977f;
+  font-size: 12px;
+}
+.kdl .settings-runtime-chip {
+  background: #edf3e6;
+  border-color: #dae5ce;
+  border-radius: 6px;
+}
+.kdl .settings-runtime-chip :is(strong, span) {
+  color: #62804c;
+}
+.kdl .app-legal-footer {
+  border-top-color: #e1e7d9;
+  color: #98a18f;
+  background: #f5f7f2;
+  font-size: 10px;
+  max-width: none;
+  padding-inline: max(24px, calc((100vw - 1280px) / 2));
+}
+.kdl .app-legal-footer button {
+  color: #7d8e6e;
+  text-decoration: none;
+}
+.kdl .app-legal-footer button:hover {
+  text-decoration: underline;
+}
+@media (max-width: 760px) {
+  .kdl #lesson .lesson-shell {
+    height: calc(100dvh - 68px);
+  }
+  .kdl .topnav {
+    min-height: 68px;
+    padding-inline: 20px;
+  }
+  .kdl .topnav .brand span {
+    font-size: 22px;
+  }
+  .kdl #dashboard .dash-wrap {
+    padding: 24px 14px 45px;
+  }
+  .kdl #dashboard .dash-hero {
+    padding-bottom: 22px;
+  }
+  .kdl #dashboard .dash-hero h1 {
+    font-size: 26px;
+  }
+  .kdl #dashboard .dash-hero-main {
+    gap: 12px;
+  }
+  .kdl #dashboard .nba-card {
+    padding: 20px;
+  }
+  .kdl #dashboard .snap-card.dash-stat {
+    padding: 18px;
+  }
+  .kdl #subjects .subj-wrap,
+  .kdl .settings-page {
+    padding-inline: 16px !important;
+  }
+}

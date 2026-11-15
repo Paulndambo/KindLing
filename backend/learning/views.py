@@ -3,6 +3,7 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,7 +20,7 @@ from .conversation_service import (
     update_resume_snapshot,
     upsert_conversation,
 )
-from .models import LearningEvent, LessonSession, TopicConversation
+from .models import LearningEvent, LessonSession, StudentAssessment, TopicConversation
 from .serializers import (
     AppendMessageSerializer,
     ArchiveConversationSerializer,
@@ -29,8 +30,37 @@ from .serializers import (
     LessonSessionListSerializer,
     LessonSessionSerializer,
     ResumeSnapshotSerializer,
+    StudentAssessmentSerializer,
     TopicShelfSerializer,
 )
+
+
+class StudentAssessmentListCreateView(generics.ListCreateAPIView):
+    """List or persist assessments belonging to the signed-in student."""
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StudentAssessmentSerializer
+
+    def get_queryset(self):
+        student = get_student_profile(self.request.user)
+        return StudentAssessment.objects.filter(student=student) if student else StudentAssessment.objects.none()
+
+    def perform_create(self, serializer):
+        student = get_student_profile(self.request.user)
+        if not student:
+            raise PermissionDenied("Complete your student profile before saving an assessment.")
+        serializer.save(student=student)
+
+
+class StudentAssessmentDetailView(generics.RetrieveUpdateAPIView):
+    """Read or update one of the signed-in student's assessment records."""
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StudentAssessmentSerializer
+
+    def get_queryset(self):
+        student = get_student_profile(self.request.user)
+        return StudentAssessment.objects.filter(student=student) if student else StudentAssessment.objects.none()
 from .mastery_engine import build_topic_skill_path, recommend_next_skill
 from .review_service import (
     build_reviews_payload,

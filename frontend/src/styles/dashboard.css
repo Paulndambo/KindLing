@@ -9,18 +9,29 @@
   --dash-border: 1px solid rgba(31, 58, 52, 0.08);
   --dash-shadow: 0 1px 2px rgba(31, 58, 52, 0.04), 0 8px 24px rgba(31, 58, 52, 0.05);
   --dash-shadow-hover: 0 2px 4px rgba(31, 58, 52, 0.05), 0 16px 36px rgba(31, 58, 52, 0.1);
-  --tone-teal: #286b6d;
-  --tone-teal-bg: #e1efee;
-  --tone-pine: #1f3a34;
-  --tone-pine-bg: #e4ece8;
-  --tone-marigold: #b9791a;
-  --tone-marigold-bg: #fbf0d6;
-  --tone-berry: #c7484a;
-  --tone-berry-bg: #fbe8e7;
+  --tone-teal: #1f7f82;
+  --tone-teal-bg: #dcf1f0;
+  --tone-pine: #2f8a5f;
+  --tone-pine-bg: #def3e7;
+  --tone-marigold: #c98512;
+  --tone-marigold-bg: #fdefcf;
+  --tone-berry: #d04f52;
+  --tone-berry-bg: #fde5e4;
+  --tone-violet: #6a5acd;
+  --tone-violet-bg: #ebe8fb;
+
+  display: block;
+  min-height: 100%;
+  background:
+    radial-gradient(900px 420px at 100% -5%, rgba(243, 200, 104, 0.22), transparent 62%),
+    radial-gradient(760px 520px at -10% 105%, rgba(31, 127, 130, 0.13), transparent 60%),
+    radial-gradient(600px 380px at 55% 45%, rgba(208, 79, 82, 0.05), transparent 70%);
 }
 
 /* Shared workspace shell used by dashboard, subjects, and settings. */
-.app-main.has-workspace-sidebar { --dash-sidebar-width: 248px; display: grid; grid-template-columns: var(--dash-sidebar-width) minmax(0, 1fr); align-items: stretch; transition: grid-template-columns 180ms ease; }
+.app-main.has-workspace-sidebar { --dash-sidebar-width: 248px; display: grid; grid-template-columns: var(--dash-sidebar-width) minmax(0, 1fr); align-items: stretch; transition: grid-template-columns 180ms ease;
+  /* Paint the sidebar column all the way down, even when the page is taller than the sticky sidebar. */
+  background: linear-gradient(90deg, #18312c 0 var(--dash-sidebar-width), transparent var(--dash-sidebar-width)) no-repeat; }
 .app-main.has-workspace-sidebar.sidebar-collapsed { --dash-sidebar-width: 76px; }
 .app-main.has-workspace-sidebar .workspace-page { min-width: 0; }
 .app-main.has-workspace-sidebar .workspace-page #subjects .subj-wrap,
@@ -335,9 +346,10 @@
   opacity: 0.85;
 }
 
-#dashboard .dash-stat--pine { --tone: var(--tone-pine); --tone-bg: var(--tone-pine-bg); }
-#dashboard .dash-stat--marigold { --tone: var(--tone-marigold); --tone-bg: var(--tone-marigold-bg); }
-#dashboard .dash-stat--berry { --tone: var(--tone-berry); --tone-bg: var(--tone-berry-bg); }
+/* Must match `.snap-card.dash-stat` specificity, otherwise every card falls back to teal. */
+#dashboard .snap-card.dash-stat--pine { --tone: var(--tone-pine); --tone-bg: var(--tone-pine-bg); }
+#dashboard .snap-card.dash-stat--marigold { --tone: var(--tone-marigold); --tone-bg: var(--tone-marigold-bg); }
+#dashboard .snap-card.dash-stat--berry { --tone: var(--tone-berry); --tone-bg: var(--tone-berry-bg); }
 
 #dashboard .snap-card.dash-stat:hover {
   transform: translateY(-3px);
@@ -1219,5 +1231,480 @@
 
   #dashboard .dash-digest-prefs {
     padding: 12px;
+  }
+}
+
+
+/* ==========================================================================
+   Vibrancy layer
+   The base layer read as "pale": white cards on parchment, hairline borders,
+   and one teal accent everywhere. This layer adds tinted surfaces, solid
+   colour chips, stronger typography and richer empty states.
+   ========================================================================== */
+
+/* ---------- Hero ---------- */
+#dashboard .dash-hero {
+  background:
+    radial-gradient(circle at 88% -10%, rgba(243, 200, 104, 0.55), transparent 38%),
+    radial-gradient(circle at 60% 140%, rgba(208, 79, 82, 0.28), transparent 42%),
+    radial-gradient(circle at 0% 100%, rgba(42, 157, 143, 0.6), transparent 48%),
+    linear-gradient(120deg, #173f3b 0%, #1d5753 48%, #23675d 100%);
+  box-shadow: 0 22px 50px -12px rgba(23, 63, 59, 0.45);
+}
+
+#dashboard .dash-hero::before {
+  content: "";
+  position: absolute;
+  right: -70px;
+  bottom: -110px;
+  width: 300px;
+  height: 300px;
+  pointer-events: none;
+  border: 38px solid rgba(243, 200, 104, 0.12);
+  border-radius: 50%;
+}
+
+#dashboard .dash-avatar {
+  box-shadow: 0 10px 26px rgba(201, 133, 18, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: rotate(-4deg);
+}
+
+/* .btn-ghost forces a dark ink colour with !important; undo it on the dark hero. */
+#dashboard .dash-hero-controls > .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  color: #fff !important;
+  font-size: 12.5px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+#dashboard .dash-hero-controls > .btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+#dashboard .dash-hero .week-pick button.active {
+  color: #173f3b;
+  background: var(--marigold-light);
+  box-shadow: 0 3px 10px rgba(201, 133, 18, 0.45);
+}
+
+/* ---------- Next best action ---------- */
+#dashboard .nba-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(228, 163, 42, 0.35);
+  border-left: 0;
+  background:
+    radial-gradient(circle at 100% 50%, rgba(243, 200, 104, 0.45), transparent 45%),
+    linear-gradient(105deg, #fff4da 0%, #fffaf0 55%, #fff3d4 100%);
+  box-shadow: 0 10px 30px -10px rgba(201, 133, 18, 0.35);
+}
+
+#dashboard .nba-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: linear-gradient(180deg, var(--marigold-light), #e07a1f);
+}
+
+#dashboard .nba-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f3b73f, #e07a1f);
+  box-shadow: 0 8px 18px rgba(224, 122, 31, 0.45);
+  animation: dash-flicker 3.2s ease-in-out infinite;
+}
+
+@keyframes dash-flicker {
+  0%, 100% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(-4deg) scale(1.05); }
+}
+
+#dashboard .nba-title {
+  color: #2a2116;
+}
+
+/* ---------- Stat cards ---------- */
+#dashboard .snap-card.dash-stat {
+  border: 1px solid color-mix(in srgb, var(--tone) 20%, transparent);
+  background:
+    radial-gradient(circle at 115% -15%, color-mix(in srgb, var(--tone) 22%, transparent), transparent 55%),
+    linear-gradient(165deg, var(--tone-bg) 0%, #fff 68%);
+  box-shadow: 0 1px 2px rgba(31, 58, 52, 0.04), 0 10px 26px -8px color-mix(in srgb, var(--tone) 30%, transparent);
+}
+
+#dashboard .snap-card.dash-stat::before {
+  height: 5px;
+  opacity: 1;
+  background: linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 45%, #fff));
+}
+
+#dashboard .snap-card.dash-stat:hover {
+  box-shadow: 0 2px 4px rgba(31, 58, 52, 0.05), 0 18px 36px -10px color-mix(in srgb, var(--tone) 45%, transparent);
+}
+
+#dashboard .dash-stat-top .eyebrow {
+  color: color-mix(in srgb, var(--tone) 75%, var(--ink));
+  font-weight: 800;
+}
+
+#dashboard .dash-stat-icon {
+  width: 38px;
+  height: 38px;
+  color: #fff;
+  border-radius: 12px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--tone) 75%, #fff), var(--tone));
+  box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--tone) 70%, transparent);
+}
+
+#dashboard .snap-card.dash-stat .val {
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+#dashboard .snap-card.dash-stat .cap {
+  color: color-mix(in srgb, var(--ink-soft) 85%, var(--tone));
+}
+
+/* ---------- Status banner ---------- */
+#dashboard .dash-live-banner {
+  color: #17605f;
+  font-weight: 600;
+  border: 1px solid rgba(31, 127, 130, 0.22);
+  background: linear-gradient(90deg, #d6efed 0%, #e9f6f4 60%, rgba(233, 246, 244, 0.4) 100%);
+}
+
+#dashboard .dash-live-banner::before {
+  animation: dash-pulse 2s ease-out infinite;
+}
+
+@keyframes dash-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(58, 165, 114, 0.5); }
+  100% { box-shadow: 0 0 0 9px rgba(58, 165, 114, 0); }
+}
+
+/* ---------- Practice cards ---------- */
+#dashboard .review-spark-card,
+#dashboard .week-focus-card,
+#dashboard .dash-digest-panel {
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-bg) 75%, #fff) 0, #fff 150px);
+}
+
+#dashboard .review-spark-card::before,
+#dashboard .week-focus-card::before,
+#dashboard .dash-digest-panel::before {
+  height: 5px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 40%, #fff));
+}
+
+#dashboard .review-spark-card .review-spark-icon,
+#dashboard .week-focus-card .week-focus-icon {
+  color: #fff;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 70%, #fff), var(--accent));
+  box-shadow: 0 6px 14px -4px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+#dashboard .review-spark-card .eyebrow,
+#dashboard .week-focus-head .eyebrow {
+  font-weight: 800;
+}
+
+#dashboard .review-spark-card .eyebrow {
+  color: var(--tone-marigold);
+}
+
+/* Optional-target section inside the week-focus card gets its own violet accent. */
+#dashboard .target-date-section .week-focus-icon {
+  background: linear-gradient(145deg, #8f82e0, var(--tone-violet));
+  box-shadow: 0 6px 14px -4px rgba(106, 90, 205, 0.6);
+}
+
+#dashboard .target-date-section .eyebrow {
+  color: var(--tone-violet);
+}
+
+/* Empty review state fills the card instead of leaving a white void. */
+#dashboard .review-spark-card > div:has(> .review-spark-empty) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#dashboard .review-spark-empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-height: 150px;
+  margin: 0;
+  padding: 24px 22px;
+  color: #6b5a3a;
+  text-align: center;
+  border: 1.5px dashed rgba(201, 133, 18, 0.35);
+  border-radius: var(--dash-radius-sm);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(243, 200, 104, 0.25), transparent 60%),
+    #fffaf0;
+}
+
+#dashboard .review-spark-empty::before {
+  content: "✦";
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  color: var(--tone-marigold);
+  font-size: 22px;
+  border-radius: 50%;
+  background: var(--tone-marigold-bg);
+  box-shadow: 0 0 0 8px rgba(253, 239, 207, 0.55);
+}
+
+/* Inputs: lighter wells with a coloured focus ring */
+#dashboard .week-focus-input {
+  background: #fff;
+  border-color: rgba(31, 58, 52, 0.16);
+}
+
+#dashboard .week-focus-input:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Homework card: when it is the odd card out, span the row and lay out wide. */
+#dashboard .dash-practice-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+#dashboard .dash-practice-grid > .homework-window-card:last-child:nth-child(odd) .homework-window-options,
+#dashboard .dash-practice-grid > .homework-window-card:last-child:nth-child(odd) .homework-window-start {
+  width: 100%;
+  max-width: 620px;
+}
+
+#dashboard .homework-window-card {
+  --accent: #23675d;
+  --accent-bg: #dbefe8;
+}
+
+#dashboard .homework-window-option.selected {
+  border-color: #23675d;
+  background: linear-gradient(145deg, #2a7b6e, #1d5753);
+  box-shadow: 0 6px 14px -4px rgba(29, 87, 83, 0.6);
+}
+
+#dashboard .homework-window-start {
+  background: linear-gradient(135deg, #2a7b6e, #173f3b);
+}
+
+/* ---------- Panels ---------- */
+#dashboard .panel,
+#dashboard .academic-card,
+#dashboard .dash-plan-panel {
+  position: relative;
+  border: 1px solid rgba(31, 58, 52, 0.09);
+  background: linear-gradient(180deg, #fffdf8 0, #fff 120px);
+  box-shadow: 0 1px 2px rgba(31, 58, 52, 0.04), 0 14px 34px -14px rgba(31, 58, 52, 0.18);
+}
+
+#dashboard .dash-h-icon {
+  --tone: var(--tone-teal);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  border-radius: 10px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--tone) 70%, #fff), var(--tone));
+  box-shadow: 0 5px 12px -4px color-mix(in srgb, var(--tone) 70%, transparent);
+}
+
+#dashboard .dash-h-icon.tone-pine { --tone: var(--tone-pine); }
+#dashboard .dash-h-icon.tone-marigold { --tone: var(--tone-marigold); }
+#dashboard .dash-h-icon.tone-berry { --tone: var(--tone-berry); }
+#dashboard .dash-h-icon.tone-violet { --tone: var(--tone-violet); }
+
+#dashboard .panel h2,
+#dashboard .academic-card h2 {
+  gap: 10px;
+}
+
+#dashboard .dash-subhead {
+  margin-top: 26px !important;
+  padding-top: 20px;
+  border-top: 1px dashed rgba(31, 58, 52, 0.14);
+}
+
+/* Compact export buttons in panel headers */
+#dashboard .dash-panel-head .btn-ghost {
+  gap: 6px;
+  padding: 7px 13px !important;
+  font-size: 12.5px !important;
+  border-width: 1px !important;
+  border-color: rgba(31, 58, 52, 0.22) !important;
+  background: #fff !important;
+}
+
+#dashboard .dash-panel-head .btn-ghost:hover:not(:disabled) {
+  border-color: var(--tone-teal) !important;
+  background: var(--tone-teal-bg) !important;
+}
+
+#dashboard .dash-delta {
+  color: var(--tone-pine);
+  background: var(--tone-pine-bg);
+}
+
+#dashboard .dash-delta.muted {
+  color: var(--ink-soft);
+  background: rgba(31, 58, 52, 0.06);
+}
+
+/* Learning-profile tiles, each with its own tint */
+#dashboard .academic-item {
+  --tone: var(--tone-teal);
+  border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 12%, #fff), #fff 85%);
+}
+
+#dashboard .academic-item:nth-child(6n + 2) { --tone: var(--tone-marigold); }
+#dashboard .academic-item:nth-child(6n + 3) { --tone: var(--tone-berry); }
+#dashboard .academic-item:nth-child(6n + 4) { --tone: var(--tone-violet); }
+#dashboard .academic-item:nth-child(6n + 5) { --tone: var(--tone-pine); }
+#dashboard .academic-item:nth-child(6n + 6) { --tone: #c76a1f; }
+
+#dashboard .academic-item b {
+  color: var(--tone);
+}
+
+#dashboard .academic-item:hover {
+  border-color: color-mix(in srgb, var(--tone) 45%, transparent);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--tone) 60%, transparent);
+}
+
+/* Mastery rows */
+#dashboard .dash-level-fill {
+  background: linear-gradient(90deg, var(--tone-teal), #3aa572 60%, var(--marigold-light));
+}
+
+/* Confidence mini stats */
+#dashboard .dash-mini-stats > div {
+  border: 1px solid rgba(31, 127, 130, 0.16);
+  background: linear-gradient(160deg, var(--tone-teal-bg), #fff);
+}
+
+#dashboard .dash-mini-stats > div + div {
+  border-color: rgba(201, 133, 18, 0.2);
+  background: linear-gradient(160deg, var(--tone-marigold-bg), #fff);
+}
+
+#dashboard .dash-mini-stats b {
+  font-size: 22px;
+}
+
+/* Insight lists */
+#dashboard .dash-insight-list li {
+  border: 1px solid transparent;
+}
+
+#dashboard .dash-insight-list li:hover {
+  border-color: rgba(31, 58, 52, 0.08);
+  background: #fbfaf5;
+}
+
+/* ---------- Empty states ---------- */
+#dashboard .dash-empty {
+  --tone: var(--tone-teal);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.5;
+  border: 1.5px dashed color-mix(in srgb, var(--tone) 30%, transparent);
+  border-radius: var(--dash-radius-sm);
+  background: color-mix(in srgb, var(--tone) 6%, #fff);
+}
+
+#dashboard .dash-empty.tone-pine { --tone: var(--tone-pine); }
+#dashboard .dash-empty.tone-marigold { --tone: var(--tone-marigold); }
+#dashboard .dash-empty.tone-berry { --tone: var(--tone-berry); }
+#dashboard .dash-empty.tone-violet { --tone: var(--tone-violet); }
+
+#dashboard .dash-empty-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--tone);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tone) 14%, #fff);
+}
+
+#dashboard .dash-empty strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 720px) {
+  /* Stacked rows: stop the flex-basis turning inputs into tall boxes. */
+  #dashboard .week-focus-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #dashboard .week-focus-row .week-focus-input,
+  #dashboard .week-focus-row .week-focus-save {
+    flex: none;
+    width: 100%;
+  }
+
+  #dashboard .dash-practice-grid > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  #dashboard .snap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  #dashboard .snap-card.dash-stat {
+    padding: 16px 14px 14px;
+  }
+
+  #dashboard .dash-stat-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  #dashboard .dash-stat-top .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  #dashboard .snap-card.dash-stat .val {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dashboard .nba-icon,
+  #dashboard .dash-live-banner::before {
+    animation: none;
   }
 }

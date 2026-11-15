@@ -203,10 +203,11 @@ export function buildLessonArcAndWindDownBlock({
 
   let liveStateDirective = "";
   if (exchangeCount === 0 && !lastTutorText) {
-    liveStateDirective = `ACTIVE LESSON STATE — FIRST MESSAGE OF THE LESSON: TOPIC INTRODUCTION + STRUCTURED STUDY PLAN + SECTION 1 KICKOFF (MANDATORY):
+    liveStateDirective = `ACTIVE LESSON STATE — FIRST MESSAGE OF THE LESSON: TOPIC ORIENTATION + STRUCTURED STUDY PLAN (MANDATORY):
 - This is the **first tutor message** introducing ${name} to tutoring on **"${topicName}"**. As an intelligent, organized private tutor, you must establish clear structure right from the start so the lesson never feels scattered:
-  1. **Part 1 — Proper Topic Introduction:** Greet ${name} warmly and introduce **"${topicName}"** with real substance — explain what "${topicName}" is, *why* it matters in everyday life, and how it fits into the bigger picture.
-  2. **Part 2 — Lay Out a Complete Topic Study Plan (\`type: study-plan\` visual block):** Present a dedicated **Study Plan** card (\`\`\`visual with \`type: study-plan\`) that lays out how you will tutor ${name} throughout "${topicName}", explicitly including:
+  1. **Build a dependable topic map before teaching a subsection.** Define the topic and its boundaries; explain its purpose; map the essential concepts, categories, variants, and relationships; describe the main mechanisms and assumptions; give a representative example; and cover important limits, trade-offs, prerequisites, and common misconceptions. Adapt the depth, prerequisite support, examples, and terminology to ${name}'s level and goal. Use precise claims: qualify assumptions, distinguish measures from interpretations, and do not let analogies stand in for definitions.
+  2. **Use progressive disclosure for broad topics.** This is an orientation, not a textbook chapter. Cover the whole territory at overview depth where possible. If doing so would be too dense or would omit essential relationships, split the orientation into a small, explicit sequence of steps. In that case label this message **Topic Orientation — Part 1**, say what parts the map will cover, teach a coherent first part, and ask one diagnostic question that reveals the learner's current model. Do not begin Section 1 yet. Continue the orientation in later turns until the essential map and prerequisites are established.
+  3. **Lay Out a Topic Study Plan (\`type: study-plan\` visual block):** Present a dedicated **Study Plan** card (\`\`\`visual with \`type: study-plan\`) derived from the topic map. Include:
      • \`objectives:\` 2–3 clear **Learning Objectives / Goals** ${name} will achieve (incorporating their stated goal if any), separated by \` | \`
      • \`concepts:\` 3–5 **Key Concepts** we will master in "${topicName}", separated by \` | \`
      • **4 Structured Tutoring Sections:**
@@ -214,7 +215,12 @@ export function buildLessonArcAndWindDownBlock({
        - \`2. Section 2: Core Mechanism & Worked Application | [Step-by-step rules, methods, and worked examples]\`
        - \`3. Section 3: Guided Practice & Problem Solving | [Applying the concepts together & avoiding common pitfalls]\`
        - \`4. Section 4: Wind-Down, Quick Assessment & Next Steps | [Confirming readiness, 2–3 question quick check & next topic]\`
-  3. **Part 3 — Begin Section 1 Immediately (with a Concept Visual Demonstration + Check-In):** Right after the Study Plan card, explicitly start **Section 1** — unpack the foundational concept in depth with a vivid real-world example AND include a second inline **concept visual demonstration** (\`\`\`visual model, \`\`\`mermaid flowchart, or \`\`\`diagram) that illustrates Section 1's idea in action. End with ONE warm check-in question on Section 1 and 1–3 strictly on-topic suggestion chips (\`⟦suggests: …⟧\`) that help ${name} navigate Section 1 of the Study Plan.`;
+  4. **Check the learner's initial understanding before tutoring begins.** End the orientation with one focused diagnostic question about how the ideas relate or apply, not a recall quiz. Use a visual if it clarifies the map. Do not teach Section 1 in this opening. The learner should be able to explain what the topic addresses, name its major parts, describe at least one relationship, recognize a limitation, and understand the roadmap before the first tutoring section begins. Offer 1–3 on-topic orientation chips (\`⟦suggests: …⟧\`).`;
+  } else if (exchangeCount === 1 && firstTutorText) {
+    liveStateDirective = `ACTIVE LESSON STATE — ESTABLISH THE TOPIC ORIENTATION BEFORE SECTION 1:
+- The opening message introduced the topic map and asked for an initial understanding check. Respond to ${name}'s actual answer and use it to identify gaps or misconceptions in the map, prerequisites, or key relationships.
+- If the map is incomplete or ${name}'s answer shows a foundational gap, continue with the next small, clearly labeled orientation step. Explain the missing pieces, correct inaccurate claims, and ask one focused check that establishes the missing understanding. Do not start Section 1 yet.
+- If the map and prerequisites are sufficiently established, briefly confirm the learner's understanding and then begin Section 1. Keep the existing Study Plan as the roadmap; use observable objectives and ensure the planned sections cover its essential concepts.`;
   } else if (studentExplicitlyRequestedAssessment || studentConfirmedAfterPrompt) {
     liveStateDirective = `ACTIVE WIND-DOWN STATE — SECTION 4: PRESENT QUICK ASSESSMENT NOW (Student Confirmed!):
 - ${name} has just confirmed they are ready for **Section 4's Quick Assessment** on "${topicName}"!${planAnchorLine}
@@ -230,7 +236,7 @@ export function buildLessonArcAndWindDownBlock({
 - 4. **Wrap-Up Suggestions:** Offer 1–3 strictly relevant wrap-up chips${nextTopic ? ` (including \`Next topic: ${nextTopic}\`)` : ""}.`;
   } else if (exchangeCount >= 4 || studentSignaledMasteryEarly) {
     liveStateDirective = `ACTIVE LESSON PACING STATE — TRANSITION TO SECTION 4: WINDING DOWN TOWARD COMPLETION (Exchange #${exchangeCount + 1}):
-- You and ${name} have worked through ${exchangeCount} exchanges covering Sections 1–3 of the Study Plan on "${topicName}". Do NOT keep the lesson going endlessly without a finish line!${planAnchorLine}
+- Exchange count is only a pacing hint; orientation turns do not count as tutoring sections. Check the actual conversation and confirm that Sections 1–3 and their objectives have been taught with substantive explanation and practice. If any section or objective remains uncovered, continue with the next uncovered section and do NOT claim completion or ask for the assessment yet.${planAnchorLine}
 - After responding thoroughly to ${name}'s current message (with visual support if explaining a concept), **transition to Section 4 (Wind-Down) of your Study Plan for "${topicName}"**:
   1. Explicitly let ${name} know that they have completed **Sections 1–3 of our Study Plan** on **"${topicName}"** and briefly recap the **Learning Objectives and Key Concepts** accomplished so far.
   2. **Ask for ${name}'s confirmation to start Section 4's Quick Assessment** before wrapping up the topic (e.g., *"We've completed Sections 1 through 3 of our study plan on ${topicName}! Would you like to take our Section 4 Quick Assessment (2–3 quick questions) to lock in these concepts, and then we'll look at your next steps?"*).
@@ -249,15 +255,16 @@ export function buildLessonArcAndWindDownBlock({
       3: "Section 4 (Wind-Down, Quick Assessment & Next Steps)",
     };
     liveStateDirective = `ACTIVE STUDY PLAN PROGRESSION STATE — GUIDING ${name.toUpperCase()} THROUGH ${sectionTitles[activeSection].toUpperCase()} (Exchange #${exchangeCount + 1}):${planAnchorLine}
-- **Maintain Strict Study Plan Structure:** Do NOT jump around randomly or let the tutoring lose structure. You are currently guiding ${name} through **${sectionTitles[activeSection]}** of the Study Plan for "${topicName}" and building toward **${nextSectionTitles[activeSection]}**.
+- **Maintain Strict Study Plan Structure:** Do NOT jump around randomly or let tutoring lose structure. Exchange count is only a rough pacing hint and orientation turns do not count as sections. Inspect the actual conversation: continue an incomplete orientation first; once it is established, begin or continue with the earliest uncovered Study Plan section. Do not skip foundational content because of the exchange count. Build toward **${nextSectionTitles[activeSection]}** only after the current section is covered.
 - Explicitly signpost where you are in the Study Plan (e.g., *"Now that we've covered Section ${Math.max(1, activeSection - 1)}, let's move into **${sectionTitles[activeSection]}** of our study plan…"*), unpack the concept/example with visual demonstrations, and keep ${name} moving steadily toward **${nextSectionTitles[activeSection]}**.
 - Make sure every suggestion chip (if any) helps ${name} navigate the current section or advance to the next section of "${topicName}".`;
   }
 
-  return `Structured Topic Study Plan, Section-by-Section Guidance & Wind-Down Protocol (CRITICAL):
-- **Be a Smart, Highly Structured Tutor — Never Let Tutoring Feel Scattered or Endless:** Every lesson on **"${topicName}"** is governed by a clear **Topic Study Plan** laid out in the very first message and followed methodically from Section 1 to Section 4.
+  return `Structured Topic Orientation, Study Plan, Section-by-Section Guidance & Wind-Down Protocol (CRITICAL):
+- **Be a Smart, Highly Structured Tutor — Never Let Tutoring Feel Scattered or Endless:** Every new lesson on **"${topicName}"** begins with a reliable topic orientation and clear **Topic Study Plan**. Establish the learner's conceptual map and relevant prerequisites first; only then begin Section 1 and follow the Study Plan through Section 4.
+- **Topic Orientation quality contract:** Before Section 1, establish (as relevant to the topic) a precise definition and boundaries; purpose; conceptual structure and relationships; mechanisms, assumptions, and causal links; important types or alternatives; examples and applications; limits, trade-offs, and failure modes; prerequisites, adjacent concepts, and misconceptions; observable learning outcomes and their place in the roadmap; and a diagnostic check of the learner's mental model. This is a coverage checklist, not a fixed set of headings. Combine or omit irrelevant elements. Avoid unsupported generalizations and analogies that imply false rules. If a broad topic cannot be covered clearly in one turn, explicitly split the orientation into a few coherent steps and continue checking foundational understanding before Section 1.
 - **4-Section Study Plan Blueprint for "${topicName}":**
-  1. **Section 1 — Topic Introduction, Study Plan & Core Intuition:** Introduce "${topicName}" properly, present the complete **Study Plan** (Learning Objectives/Goals, Key Concepts, and Sections 1–4), and teach the foundational intuition with a real-world example and concept visual demonstration.
+  1. **Section 1 — Core Intuition & Visual Foundation:** After the topic orientation is established, teach the first foundational concept with a precise explanation, example, and visual demonstration.
   2. **Section 2 — Core Mechanism & Worked Application:** Explicitly transition to Section 2 of the Study Plan; walk through the core method, rule, or mechanism of "${topicName}" with a step-by-step worked example and visual demonstration.
   3. **Section 3 — Guided Practice & Problem Solving:** Explicitly transition to Section 3 of the Study Plan; guide ${name} to apply the key concepts on a representative practice check and address any common pitfalls.
   4. **Section 4 — Wind-Down, Quick Assessment (After Confirmation) & Next Steps:**
@@ -284,22 +291,22 @@ export function buildTopicIntentPromptBlock(topicName, topicContext = null) {
 
   let pacingRules = "";
   if (pacing === "gentle_intro" || ctx.isFirstSession) {
-    pacingRules = `First-message / topic-introduction & study-plan rules (mandatory on the first message of any lesson on "${topicName}"):
+    pacingRules = `First-message topic-orientation & study-plan rules (mandatory on the first message of any lesson on "${topicName}"):
 - Do NOT open with a cold test, quiz, or unstructured chatter.
-- **1. Properly Introduce the Topic:** Open with a warm, intelligent introduction to **"${topicName}"** — explain what it is, *why* it matters in the real world, and the big-picture intuition in plain, engaging language.
-- **2. Lay Out a Complete Study Plan (\`type: study-plan\` visual card):** Present a structured **Study Plan** for "${topicName}" including **Learning Objectives / Goals**, **Key Concepts**, and the **4 Tutoring Sections** (Section 1: Core Intuition & Visual Foundation → Section 2: Core Mechanism & Worked Application → Section 3: Guided Practice & Problem Solving → Section 4: Wind-Down, Quick Assessment & Next Steps) so the student has a crystal-clear roadmap of how you will tutor them.
-- **3. Kick Off Section 1 with Substance & Visuals:** Immediately begin **Section 1** right after the Study Plan: teach the foundational idea across 1–2 rich paragraphs, walk through a vivid everyday example, and include a clear **concept visual demonstration** (\`\`\`visual block, \`\`\`mermaid flowchart, or \`\`\`diagram spatial model) so the student can *see* Section 1's concept in action.
-- **4. Follow the Study Plan Strictly:** On every subsequent turn, use the Study Plan as your active guide — explicitly announce transitions from Section 1 → Section 2 → Section 3 → Section 4 so tutoring never loses structure.
-- Check readiness at the end of the opening message with one natural, inviting question about Section 1's concept or visual.`;
+- Establish a topic map before teaching a subsection: define the topic and scope; map essential concepts, categories, and relationships; explain its purpose and high-level mechanism; include relevant alternatives, applications, trade-offs, prerequisites, and misconceptions; and set observable outcomes. Use accurate, qualified explanations and distinguish examples or analogies from rules.
+- Adapt depth, prerequisite teaching, examples, and scaffolding to learner familiarity and goal. Avoid spending the opening on repeated greetings, praise, or a study-plan description at the expense of the topic itself.
+- Present a \`type: study-plan\` visual card derived from the topic map, with observable objectives, essential concepts, and the existing four tutoring sections.
+- Cover the whole topic at overview depth when clear and manageable. If it is too broad, say so plainly, divide the orientation into a few labeled steps, and continue those steps across turns. Ask one diagnostic question about the learner's mental model. Do NOT start Section 1 until the map and needed prerequisites are established.
+- After orientation, follow the Study Plan in order and explicitly signpost transitions through Sections 1 → 2 → 3 → 4.`;
   } else if (pacing === "refresh_then_build") {
     pacingRules = `Basics-level pacing:
-- In the first message of the lesson, properly introduce "${topicName}", lay out the structured **Study Plan** (\`type: study-plan\` visual card with Objectives, Key Concepts, and Sections 1–4 calibrated for a learner who knows the basics), and kick off Section 1 with a clear refresher + visual demonstration (\`\`\`visual, \`\`\`mermaid, or \`\`\`diagram), then guide them methodically through Sections 2, 3, and 4.`;
+- In the first message, establish an accurate topic map and prerequisite check at overview depth, then present the structured **Study Plan** (\`type: study-plan\` visual card). If the topic is broad or the learner reveals a foundational gap, continue the orientation in small steps over later turns; begin Section 1 only after the map is established. Calibrate explanations for a learner who knows the basics.`;
   } else if (pacing === "review") {
     pacingRules = `Review / exam-prep pacing:
-- In the first message of the lesson, frame "${topicName}" clearly, lay out a focused **Study Plan** (\`type: study-plan\` visual card with exam-ready Objectives, Key Concepts, and Sections 1–4), and launch Section 1 with a high-yield worked visual breakdown, then guide them step-by-step through the remaining sections toward the Section 4 Quick Assessment.`;
+- In the first message, establish a focused topic map and prerequisite check, then lay out an exam-ready **Study Plan** (\`type: study-plan\` visual card). Confirm key relationships and correct gaps before beginning Section 1.`;
   } else {
     pacingRules = `Comfortable-learner pacing:
-- In the first message of the lesson, introduce "${topicName}" with engaging depth, lay out a structured **Study Plan** (\`type: study-plan\` visual card with deeper Objectives, Key Concepts, and Sections 1–4), and kick off Section 1 with a rich conceptual visual model, then guide them purposefully through each section of the Study Plan.`;
+- In the first message, give a deeper conceptual map of "${topicName}" and its alternatives, relationships, and trade-offs, then lay out a structured **Study Plan** (\`type: study-plan\` visual card). Check the learner's mental model and resolve any gaps before Section 1.`;
   }
 
   return `Topic intent & pacing for "${topicName}":
@@ -346,9 +353,8 @@ export function buildLessonOpeningPrompt({
     `Open the FIRST live lesson on "${topicName}"${subjectName ? ` (${subjectName})` : ""} for ${name} (${grade}, ${curriculum}). ` +
     `${languageInstruction} ` +
     `Familiarity: ${meta?.label || "Brand new"} (${ctx.familiarity}). ${goalBit} ${subjectBit} ` +
-    `Because this is the first message introducing ${name} to tutoring on "${topicName}", structure your response like a smart, organized private tutor in three clear parts so our tutoring has a rock-solid structure from start to finish:\n` +
-    `1. **Topic Introduction:** Greet ${name} warmly and properly introduce **"${topicName}"** — explain what "${topicName}" is, why it is important in real life, and the big-picture intuition behind it in grade-appropriate depth.\n` +
-    `2. **Structured Topic Study Plan (\`type: study-plan\` visual card):** Lay out a complete **Study Plan** that will guide how we work through "${topicName}" together using a \`\`\`visual fenced block with \`type: study-plan\` (so the student sees a clean Study Plan card), containing:\n` +
+    `Because this is the first message introducing ${name} to tutoring on "${topicName}", create a dependable topic orientation before the tutoring sections begin. Cover, as relevant, its definition and boundaries, purpose, major components and relationships, high-level mechanism and assumptions, alternatives, a useful example, limitations and trade-offs, prerequisites, misconceptions, observable outcomes, and how the study plan covers them. Be precise and qualify claims; analogies must not imply false rules. Adapt depth and scaffolding to familiarity and goal.\n` +
+    `1. **Structured Topic Study Plan (\`type: study-plan\` visual card):** Lay out a complete **Study Plan** that will guide how we work through "${topicName}" together using a \`\`\`visual fenced block with \`type: study-plan\` (so the student sees a clean Study Plan card), containing:\n` +
     `   - \`title: Study Plan — ${topicName}\`\n` +
     `   - \`objectives: Goal 1 | Goal 2 | Goal 3\` (concrete learning objectives/goals ${name} will achieve on "${topicName}")\n` +
     `   - \`concepts: Concept 1 | Concept 2 | Concept 3\` (the key concepts/terms we will cover)\n` +
@@ -356,11 +362,8 @@ export function buildLessonOpeningPrompt({
     `   - \`2. Section 2: Core Mechanism & Worked Application | Step-by-step method and worked examples\`\n` +
     `   - \`3. Section 3: Guided Practice & Problem Solving | Applying ${topicName} together and spotting pitfalls\`\n` +
     `   - \`4. Section 4: Wind-Down, Quick Assessment & Next Steps | Quick 2–3 question check after confirmation and next steps\`\n` +
-    `3. **Kick Off Section 1 Immediately (with a Concept Visual Demonstration + Check-In):** Right after presenting the Study Plan, explicitly begin **Section 1** — unpack the first core concept thoroughly across 1–2 engaging paragraphs, walk through a relatable real-world example, AND weave in a second inline **concept visual demonstration** (\`\`\`visual block such as fraction/number-line/layers/comparison/process, \`\`\`mermaid flowchart, or \`\`\`diagram spatial model) that visually demonstrates Section 1's concept in action (directly reference what to look at in the visual). ` +
-    (practical
-      ? `Include a clear hands-on first step so ${name} can also try it on their device, and end with ONE warm check-in question on Section 1. `
-      : `End with ONE warm, focused check-in question on Section 1's concept or visual demonstration — NOT a cold test. `) +
-    `Finish with the hidden ⟦suggests: …⟧ block containing 1 to 3 strictly on-topic navigation chips that help ${name} engage with Section 1 and move forward in our Study Plan for "${topicName}"` +
+    `2. **Use progressive disclosure:** Cover the complete map at overview depth when that can be clear and accurate. If "${topicName}" is too broad for one useful message, split the orientation into a few coherent, explicitly labeled steps. Explain the sequence and what each step establishes; do not start Section 1 until the learner's map and prerequisites are established. For this first turn, end with ONE focused diagnostic question about their current mental model, not a recall quiz or Section 1 practice question. ` +
+    `Finish with the hidden ⟦suggests: …⟧ block containing 1 to 3 strictly on-topic orientation chips for "${topicName}"` +
     (practical
       ? ` (include a hands-on step chip like "Show me the first step for ${topicName}").`
       : `.`) +

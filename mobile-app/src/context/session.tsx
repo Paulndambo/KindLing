@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 
-import { apiRequest, getStudentProfile, type StudentProfile, type UserSession } from '@/services/api';
+import { apiRequest, getStudentProfile, unregisterPushDevice, type StudentProfile, type StudentProfileInput, type UserSession } from '@/services/api';
+import { getStoredPushToken } from '@/services/notifications';
 import { deleteSecret, getSecret, setSecret } from '@/services/storage';
 
 type SessionContextValue = {
@@ -10,7 +11,7 @@ type SessionContextValue = {
   profile: StudentProfile | null;
   signIn: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  finishOnboarding: (name: string, grade: string) => Promise<void>;
+  finishOnboarding: (profile: StudentProfileInput) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<StudentProfile | null>;
 };
@@ -93,9 +94,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
     await acceptAuth(result);
   }, [acceptAuth]);
 
-  const finishOnboarding = useCallback(async (name: string, grade: string) => {
+  const finishOnboarding = useCallback(async (profileInput: StudentProfileInput) => {
     const saved = await apiRequest<StudentProfile>('/api/students/me/', {
-      method: 'PUT', json: { name: name.trim(), grade, avatar: 'sparkles', learningStyle: 'visual', isOnboarded: true },
+      method: 'PUT', json: profileInput,
     });
     setProfile(saved);
     const stored = await getSecret(SESSION_KEY);
@@ -103,6 +104,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      const token = await getStoredPushToken();
+      if (token) await unregisterPushDevice(token);
+    } catch {
+      // Ignore network error during sign out
+    }
     await deleteSecret(SESSION_KEY);
     await deleteSecret('kindling.access-token');
     setSession(null);

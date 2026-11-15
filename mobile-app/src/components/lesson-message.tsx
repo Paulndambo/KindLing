@@ -10,6 +10,9 @@ import {
   type TextStyle,
 } from 'react-native';
 
+import { parseBlocks } from './lesson-markdown';
+import { LessonVisual } from './lesson-visual';
+
 import {
   languageDisplayName,
   TOKEN_COLORS,
@@ -17,194 +20,11 @@ import {
   tokensToLines,
 } from './code-highlight';
 
-type Block =
-  | { type: 'paragraph'; text: string }
-  | { type: 'heading'; text: string; level: number }
-  | { type: 'list'; text: string; ordered: boolean; number?: string }
-  | { type: 'blockquote'; text: string }
-  | { type: 'code'; text: string; lang: string }
-  | { type: 'visual'; text: string; lang: string }
-  | { type: 'table'; headers: string[]; rows: string[][] }
-  | { type: 'hr' };
-
-const VISUAL_FENCE_LANGS = new Set([
-  'visual',
-  'visual-demo',
-  'diagram',
-  'mermaid',
-  'flowchart',
-  'ascii',
-  'chart',
-  'fraction-visual',
-  'number-line',
-  'plot',
-  'geometry',
-  'study-plan',
-  'studyplan',
-  'lesson-plan',
-  'roadmap',
-]);
-
 const monospaceFont = Platform.select({
   ios: 'Menlo',
   android: 'monospace',
   default: 'monospace',
 });
-
-function cleanMachineTags(raw: string): string {
-  return String(raw || '')
-    .replace(/⟦\s*(?:suggests?|check|visual|step)\b[^⟧]*⟧/gi, '')
-    .replace(/\[\[\s*(?:suggests?|lesson-image)\s*:?[^\]]*\]\]/gi, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-function parseTableCells(line: string): string[] {
-  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
-  return trimmed.split('|').map((cell) => cell.trim());
-}
-
-function isTableSeparator(line: string): boolean {
-  return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(line);
-}
-
-function parseBlocks(markdown: string): Block[] {
-  const blocks: Block[] = [];
-  let paragraph: string[] = [];
-  let quoteLines: string[] = [];
-  let tableLines: string[] = [];
-  let code: string[] = [];
-  let inCode = false;
-  let fenceLang = '';
-
-  const flushParagraph = () => {
-    if (paragraph.length) {
-      blocks.push({ type: 'paragraph', text: paragraph.join('\n') });
-      paragraph = [];
-    }
-  };
-
-  const flushQuote = () => {
-    if (quoteLines.length) {
-      blocks.push({ type: 'blockquote', text: quoteLines.join('\n') });
-      quoteLines = [];
-    }
-  };
-
-  const flushTable = () => {
-    if (!tableLines.length) return;
-    if (tableLines.length >= 2 && isTableSeparator(tableLines[1])) {
-      const headers = parseTableCells(tableLines[0]);
-      const rows = tableLines.slice(2).map(parseTableCells);
-      blocks.push({ type: 'table', headers, rows });
-    } else {
-      blocks.push({ type: 'paragraph', text: tableLines.join('\n') });
-    }
-    tableLines = [];
-  };
-
-  const flushAllText = () => {
-    flushParagraph();
-    flushQuote();
-    flushTable();
-  };
-
-  const cleaned = cleanMachineTags(markdown);
-  for (const line of cleaned.replace(/\r\n?/g, '\n').split('\n')) {
-    const fenceMatch = /^\s*```([\w+-]*)/.exec(line);
-    if (fenceMatch) {
-      flushAllText();
-      if (inCode) {
-        const lower = fenceLang.toLowerCase();
-        const isVisual = VISUAL_FENCE_LANGS.has(lower);
-        blocks.push({
-          type: isVisual ? 'visual' : 'code',
-          text: code.join('\n').replace(/\n+$/, ''),
-          lang: fenceLang,
-        });
-        fenceLang = '';
-      } else {
-        fenceLang = (fenceMatch[1] || '').trim();
-      }
-      code = [];
-      inCode = !inCode;
-      continue;
-    }
-
-    if (inCode) {
-      code.push(line);
-      continue;
-    }
-
-    if (!line.trim()) {
-      flushAllText();
-      continue;
-    }
-
-    // Table rows
-    if (/^\s*\|.+\|\s*$/.test(line)) {
-      flushParagraph();
-      flushQuote();
-      tableLines.push(line);
-      continue;
-    } else if (tableLines.length) {
-      flushTable();
-    }
-
-    // Blockquote
-    const quoteMatch = /^\s*>\s?(.*)$/.exec(line);
-    if (quoteMatch) {
-      flushParagraph();
-      quoteLines.push(quoteMatch[1]);
-      continue;
-    } else if (quoteLines.length) {
-      flushQuote();
-    }
-
-    const heading = line.match(/^\s*(#{1,6})\s+(.+)$/);
-    if (heading) {
-      flushAllText();
-      blocks.push({
-        type: 'heading',
-        text: heading[2].trim(),
-        level: heading[1].length,
-      });
-      continue;
-    }
-
-    const listItem = line.match(/^\s*(?:(\d+)[.)]|([*+-]))\s+(.+)$/);
-    if (listItem) {
-      flushAllText();
-      blocks.push({
-        type: 'list',
-        text: listItem[3],
-        ordered: Boolean(listItem[1]),
-        number: listItem[1],
-      });
-      continue;
-    }
-
-    if (/^\s*(?:---+|\*\*\*+|___+)\s*$/.test(line)) {
-      flushAllText();
-      blocks.push({ type: 'hr' });
-      continue;
-    }
-
-    paragraph.push(line);
-  }
-
-  flushAllText();
-  if (inCode && code.length) {
-    const lower = fenceLang.toLowerCase();
-    const isVisual = VISUAL_FENCE_LANGS.has(lower);
-    blocks.push({
-      type: isVisual ? 'visual' : 'code',
-      text: code.join('\n').replace(/\n+$/, ''),
-      lang: fenceLang,
-    });
-  }
-  return blocks;
-}
 
 function inlineParts(text: string, isDarkBubble = false): ReactNode[] {
   const tokens = text.split(
@@ -310,7 +130,7 @@ function MobileCodeBlock({ code, lang }: { code: string; lang: string }) {
 
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
+        showsHorizontalScrollIndicator nestedScrollEnabled
         contentContainerStyle={styles.codeScrollContent}
       >
         <View style={styles.codeLinesWrap}>
@@ -397,7 +217,7 @@ export function LessonMessageContent({
             <ScrollView
               key={index}
               horizontal
-              showsHorizontalScrollIndicator={false}
+              showsHorizontalScrollIndicator nestedScrollEnabled
               style={styles.tableWrap}
             >
               <View style={styles.tableInner}>
@@ -436,15 +256,7 @@ export function LessonMessageContent({
                   <Text style={styles.visualBadge}>VISUAL DEMONSTRATION</Text>
                 </View>
               </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.visualScroll}
-              >
-                <Text selectable style={styles.visualText}>
-                  {block.text}
-                </Text>
-              </ScrollView>
+              <LessonVisual source={block.text} language={block.lang} />
             </View>
           );
         }
@@ -476,7 +288,7 @@ export function LessonMessageContent({
 }
 
 const styles = StyleSheet.create({
-  content: { alignSelf: 'stretch', gap: 10 },
+  content: { alignSelf: 'stretch', minWidth: 0, gap: 10 },
   blockText: { flexShrink: 1 },
   bold: { fontWeight: '700' },
   italic: { fontStyle: 'italic' },
@@ -542,6 +354,8 @@ const styles = StyleSheet.create({
   },
   /* Code blocks */
   codeWrap: {
+    width: '100%',
+    minWidth: 0,
     borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: '#16241F',
@@ -621,6 +435,7 @@ const styles = StyleSheet.create({
     color: 'rgba(246, 242, 233, 0.28)',
   },
   codeLineText: {
+    flexShrink: 0,
     fontFamily: monospaceFont,
     fontSize: 13,
     lineHeight: 20,
@@ -656,15 +471,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.7,
     color: '#286B6D',
-  },
-  visualScroll: {
-    minWidth: '100%',
-  },
-  visualText: {
-    fontFamily: monospaceFont,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#1F3A34',
   },
   /* Tables */
   tableWrap: {

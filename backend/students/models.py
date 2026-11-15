@@ -52,6 +52,12 @@ class StudentProfile(models.Model):
         default="",
         help_text="Where to send digests; falls back to account email when blank.",
     )
+    # Mobile push notification preferences
+    push_enabled = models.BooleanField(default=True)
+    daily_reminder_enabled = models.BooleanField(default=True)
+    streak_reminder_enabled = models.BooleanField(default=True)
+    reminder_hour = models.PositiveSmallIntegerField(default=17)
+    reminder_minute = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -69,6 +75,28 @@ class StudentProfile(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.user.email})"
+
+
+class StudentPushDevice(models.Model):
+    """Registered Expo push token for a student's mobile device."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="push_devices",
+    )
+    expo_push_token = models.CharField(max_length=255, unique=True)
+    platform = models.CharField(max_length=32, blank=True, default="")
+    device_name = models.CharField(max_length=120, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-last_seen_at"]
+
+    def __str__(self):
+        return f"{self.user.email} · {self.platform or 'device'} ({self.expo_push_token[:28]})"
 
 
 def get_student_profile(user) :

@@ -235,6 +235,7 @@ CORS_ALLOWED_ORIGINS: List[str] = env_list("CORS_ALLOWED_ORIGINS", [
     "http://localhost:5173", "http://127.0.0.1:5173",
     "http://localhost:4173", "http://127.0.0.1:4173",
     "http://localhost:3000", "http://127.0.0.1:3000",
+    "https://kindus.vercel.app", "https://www.kindus.vercel.app"
 ])
 CSRF_TRUSTED_ORIGINS: List[str] = env_list("CSRF_TRUSTED_ORIGINS")
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

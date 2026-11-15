@@ -13,7 +13,10 @@ export default function SparkChallengeCard({
   if (!candidate) return null;
 
   const label =
-    candidate.skillLabel || candidate.shortLabel || candidate.topic || "a skill";
+    candidate.skillLabel ||
+    candidate.shortLabel ||
+    candidate.topic ||
+    "a skill";
   const n = candidate.target || target || SPARK_CHALLENGE_TARGET;
   const metaBits = [
     candidate.topic && candidate.topic !== label ? candidate.topic : null,
@@ -39,8 +42,8 @@ export default function SparkChallengeCard({
         </div>
       </div>
       <p className="spark-challenge-body">
-        Optional short push — no badges, just skill sparks and stick-with-it energy.
-        Skip anytime.
+        Put one skill into practice with a short, focused challenge. Work
+        through it at your own pace, and pause whenever you need.
       </p>
       <div className="spark-challenge-row">
         <div className="spark-challenge-meta">

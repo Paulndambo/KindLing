@@ -1,13 +1,16 @@
 export const Brand = {
-  pine: '#1F3A34',
-  pineLight: '#2C5048',
-  parchment: '#F6F2E9',
+  pine: '#132D27',
+  pineLight: '#23483E',
+  parchment: '#F7F8FA',
   card: '#FFFFFF',
-  teal: '#286B6D',
-  tealPale: '#E1EFEE',
-  gold: '#E4A32A',
-  ink: '#26302C',
-  muted: '#5C6B63',
-  line: '#E4E7E2',
-  error: '#A33B32',
-};
+  teal: '#17634D',
+  tealPale: '#EAF3EF',
+  gold: '#B7E4C7',
+  ink: '#17211E',
+  muted: '#626D68',
+  line: '#E3E7E5',
+  subtle: '#F0F3F2',
+  error: '#B33A37',
+} as const;
+
+export const Radius = { control: 12, card: 16, hero: 20 } as const;

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Lock, LogIn, LogOut, Edit3, Menu, X, Sparkles } from "lucide-react";
 import { NAV } from "../../constants/navigation";
 import { AVATAR_OPTIONS } from "../../constants/onboarding";
@@ -22,12 +22,23 @@ export default function TopNav({
   const AvatarIcon = selectedAvatar.Icon;
   const displayName = student?.name?.trim() || "Student";
   const isOnboarded = Boolean(student?.isOnboarded);
+  const isPublicHome = !isLoggedIn && screen === "overview";
+  const publicLinks = [
+    { href: "#learning-method", label: "Why Kindling" },
+    { href: "#explore-subjects", label: "Subjects" },
+    { href: "#learning-plans", label: "Pricing" },
+  ];
 
-  const setMobileOpen = (next) => {
-    if (typeof onMobileOpenChange === "function") {
-      onMobileOpenChange(typeof next === "function" ? next(mobileOpen) : next);
-    }
-  };
+  const setMobileOpen = useCallback(
+    (next) => {
+      if (typeof onMobileOpenChange === "function") {
+        onMobileOpenChange(
+          typeof next === "function" ? next(mobileOpen) : next,
+        );
+      }
+    },
+    [onMobileOpenChange, mobileOpen],
+  );
 
   const handleNav = (id) => {
     onNavigate(id);
@@ -42,7 +53,7 @@ export default function TopNav({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mobileOpen]);
+  }, [mobileOpen, setMobileOpen]);
 
   // Lock body scroll while drawer open
   useEffect(() => {
@@ -57,145 +68,162 @@ export default function TopNav({
   return (
     <>
       <header>
-      <nav className="topnav" aria-label="Primary">
-        <BrandLogo onClick={() => handleNav("overview")} />
+        <nav
+          className={`topnav${isPublicHome ? " topnav-marketing" : ""}`}
+          aria-label="Primary"
+        >
+          <BrandLogo onClick={() => handleNav("overview")} />
 
-        {/* Desktop tabs */}
-        <div className="navtabs navtabs-desktop" aria-label="Main sections">
-          {NAV.map((item) => {
-            const active = screen === item.id;
-            const lessonMissingSubject =
-              item.id === "lesson" && isLoggedIn && !hasSubjects;
-            const showLock =
-              (item.protected && !isLoggedIn) || lessonMissingSubject;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-current={active ? "page" : undefined}
-                className={`${active ? "active" : ""}${
-                  lessonMissingSubject ? " is-locked" : ""
-                }`.trim()}
-                disabled={lessonMissingSubject}
-                title={
-                  lessonMissingSubject
-                    ? "Add a subject in My Subjects before starting a lesson"
-                    : undefined
-                }
-                onClick={() => onNavigate(item.id)}
-              >
-                {item.label}
-                {showLock && (
-                  <Lock size={11} className="lock-icon" aria-hidden />
-                )}
-              </button>
-            );
-          })}
-        </div>
+          {/* Desktop tabs */}
+          <div className="navtabs navtabs-desktop" aria-label="Main sections">
+            {isPublicHome
+              ? publicLinks.map((link) => (
+                  <a key={link.href} href={link.href}>
+                    {link.label}
+                  </a>
+                ))
+              : NAV.map((item) => {
+                  const active = screen === item.id;
+                  const lessonMissingSubject =
+                    item.id === "lesson" && isLoggedIn && !hasSubjects;
+                  const showLock =
+                    (item.protected && !isLoggedIn) || lessonMissingSubject;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-current={active ? "page" : undefined}
+                      className={`${active ? "active" : ""}${
+                        lessonMissingSubject ? " is-locked" : ""
+                      }`.trim()}
+                      disabled={lessonMissingSubject}
+                      title={
+                        lessonMissingSubject
+                          ? "Add a subject in My Subjects before starting a lesson"
+                          : undefined
+                      }
+                      onClick={() => onNavigate(item.id)}
+                    >
+                      {item.label}
+                      {showLock && (
+                        <Lock size={11} className="lock-icon" aria-hidden />
+                      )}
+                    </button>
+                  );
+                })}
+          </div>
 
-        {/* Desktop actions */}
-        <div className="topnav-actions topnav-actions-desktop">
-          {isLoggedIn ? (
-            <>
+          {/* Desktop actions */}
+          <div className="topnav-actions topnav-actions-desktop">
+            {isLoggedIn ? (
+              <>
+                <button
+                  type="button"
+                  className="student-badge"
+                  onClick={onOpenOnboarding}
+                  title={
+                    isOnboarded
+                      ? `Edit profile (${student?.schoolName || "School"})`
+                      : "Complete your profile"
+                  }
+                >
+                  <div className="avatar-icon" aria-hidden>
+                    <AvatarIcon size={14} />
+                  </div>
+                  <div className="badge-details">
+                    <span className="badge-name">
+                      {student?.countryFlag ? `${student.countryFlag} ` : ""}
+                      {displayName}
+                    </span>
+                    <span className="badge-grade">
+                      {isOnboarded
+                        ? student?.grade || "Student"
+                        : "Finish setup"}
+                    </span>
+                  </div>
+                  <Edit3
+                    size={13}
+                    style={{ marginLeft: 2, opacity: 0.7 }}
+                    aria-hidden
+                  />
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost topnav-logout"
+                  onClick={onLogout}
+                  title="Log out"
+                  aria-label="Log out"
+                >
+                  <LogOut size={15} aria-hidden />
+                  <span className="topnav-logout-label">Log out</span>
+                </button>
+                <button
+                  type="button"
+                  className="cta-btn"
+                  disabled={!hasSubjects}
+                  title={
+                    !hasSubjects
+                      ? "Add a subject in My Subjects before starting a lesson"
+                      : undefined
+                  }
+                  onClick={() => onNavigate("lesson")}
+                >
+                  Start a lesson
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn-ghost topnav-auth-btn"
+                  onClick={onOpenLogin}
+                >
+                  <LogIn size={15} aria-hidden /> Log in
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary topnav-auth-btn"
+                  onClick={onGetStarted}
+                >
+                  <Sparkles size={15} aria-hidden /> Get started
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile right side */}
+          <div className="topnav-mobile-right">
+            {isLoggedIn && (
               <button
                 type="button"
-                className="student-badge"
+                className="student-badge student-badge-compact"
                 onClick={onOpenOnboarding}
-                title={
-                  isOnboarded
-                    ? `Edit profile (${student?.schoolName || "School"})`
-                    : "Complete your profile"
-                }
+                title={isOnboarded ? "Edit profile" : "Complete your profile"}
               >
                 <div className="avatar-icon" aria-hidden>
                   <AvatarIcon size={14} />
                 </div>
-                <div className="badge-details">
-                  <span className="badge-name">
-                    {student?.countryFlag ? `${student.countryFlag} ` : ""}
-                    {displayName}
-                  </span>
-                  <span className="badge-grade">
-                    {isOnboarded
-                      ? student?.grade || "Student"
-                      : "Finish setup"}
-                  </span>
-                </div>
-                <Edit3 size={13} style={{ marginLeft: 2, opacity: 0.7 }} aria-hidden />
+                <span className="badge-name" style={{ fontSize: 13 }}>
+                  {displayName}
+                </span>
               </button>
-              <button
-                type="button"
-                className="btn-ghost topnav-logout"
-                onClick={onLogout}
-                title="Log out"
-                aria-label="Log out"
-              >
-                <LogOut size={15} aria-hidden />
-                <span className="topnav-logout-label">Log out</span>
-              </button>
-              <button
-                type="button"
-                className="cta-btn"
-                disabled={!hasSubjects}
-                title={
-                  !hasSubjects
-                    ? "Add a subject in My Subjects before starting a lesson"
-                    : undefined
-                }
-                onClick={() => onNavigate("lesson")}
-              >
-                Start a lesson
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="btn-ghost topnav-auth-btn"
-                onClick={onOpenLogin}
-              >
-                <LogIn size={15} aria-hidden /> Log in
-              </button>
-              <button
-                type="button"
-                className="btn-primary topnav-auth-btn"
-                onClick={onGetStarted}
-              >
-                <Sparkles size={15} aria-hidden /> Get started
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Mobile right side */}
-        <div className="topnav-mobile-right">
-          {isLoggedIn && (
+            )}
             <button
               type="button"
-              className="student-badge student-badge-compact"
-              onClick={onOpenOnboarding}
-              title={isOnboarded ? "Edit profile" : "Complete your profile"}
+              className="mobile-menu-btn"
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-drawer"
+              onClick={() => setMobileOpen((o) => !o)}
             >
-              <div className="avatar-icon" aria-hidden>
-                <AvatarIcon size={14} />
-              </div>
-              <span className="badge-name" style={{ fontSize: 13 }}>
-                {displayName}
-              </span>
+              {mobileOpen ? (
+                <X size={22} aria-hidden />
+              ) : (
+                <Menu size={22} aria-hidden />
+              )}
             </button>
-          )}
-          <button
-            type="button"
-            className="mobile-menu-btn"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-nav-drawer"
-            onClick={() => setMobileOpen((o) => !o)}
-          >
-            {mobileOpen ? <X size={22} aria-hidden /> : <Menu size={22} aria-hidden />}
-          </button>
-        </div>
-      </nav>
+          </div>
+        </nav>
       </header>
 
       {/* Mobile drawer overlay */}
@@ -230,35 +258,46 @@ export default function TopNav({
             </button>
           </div>
           <div className="mobile-nav-section">
-            {NAV.map((item) => {
-              const active = screen === item.id;
-              const lessonMissingSubject =
-                item.id === "lesson" && isLoggedIn && !hasSubjects;
-              const showLock =
-                (item.protected && !isLoggedIn) || lessonMissingSubject;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`mobile-nav-item${active ? " active" : ""}${
-                    lessonMissingSubject ? " is-locked" : ""
-                  }`}
-                  aria-current={active ? "page" : undefined}
-                  disabled={lessonMissingSubject}
-                  title={
-                    lessonMissingSubject
-                      ? "Add a subject in My Subjects before starting a lesson"
-                      : undefined
-                  }
-                  onClick={() => handleNav(item.id)}
-                >
-                  {item.label}
-                  {showLock && (
-                    <Lock size={12} className="lock-icon" aria-hidden />
-                  )}
-                </button>
-              );
-            })}
+            {isPublicHome
+              ? publicLinks.map((link) => (
+                  <a
+                    className="mobile-nav-item"
+                    href={link.href}
+                    key={link.href}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                ))
+              : NAV.map((item) => {
+                  const active = screen === item.id;
+                  const lessonMissingSubject =
+                    item.id === "lesson" && isLoggedIn && !hasSubjects;
+                  const showLock =
+                    (item.protected && !isLoggedIn) || lessonMissingSubject;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`mobile-nav-item${active ? " active" : ""}${
+                        lessonMissingSubject ? " is-locked" : ""
+                      }`}
+                      aria-current={active ? "page" : undefined}
+                      disabled={lessonMissingSubject}
+                      title={
+                        lessonMissingSubject
+                          ? "Add a subject in My Subjects before starting a lesson"
+                          : undefined
+                      }
+                      onClick={() => handleNav(item.id)}
+                    >
+                      {item.label}
+                      {showLock && (
+                        <Lock size={12} className="lock-icon" aria-hidden />
+                      )}
+                    </button>
+                  );
+                })}
           </div>
 
           <div className="mobile-drawer-actions">
