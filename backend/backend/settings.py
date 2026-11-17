@@ -68,7 +68,7 @@ if not SECRET_KEY:
     SECRET_KEY = "django-insecure-local-development-only"
 PLATFORM_GEMINI_API_KEY: str = os.environ.get("PLATFORM_GEMINI_API_KEY", "").strip()
 SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "").strip()
-ALLOWED_HOSTS: List[str] = env_list("ALLOWED_HOSTS", ["localhost", "127.0.0.1", "[::1]"])
+ALLOWED_HOSTS: List[str] = ["https://logical-useful-shad.ngrok-free.app", "logical-useful-shad.ngrok-free.app", "127.0.0.1", "localhost"]
 ALLOW_SELF_SERVICE_PLAN_ACTIVATION = env_bool(
     "ALLOW_SELF_SERVICE_PLAN_ACTIVATION", DEBUG
 )
