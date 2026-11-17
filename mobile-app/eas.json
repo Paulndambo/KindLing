@@ -4,13 +4,20 @@
   },
   "build": {
     "development": {
+      "environment": "development",
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_MODE": "test",
+        "EXPO_PUBLIC_REVENUECAT_TEST_API_KEY": "test_fZjmZvPdUliuCFbHZhXKkkUcSYw"
+      }
     },
     "preview": {
+      "environment": "preview",
       "distribution": "internal",
       "env": {
+        "EXPO_PUBLIC_REVENUECAT_MODE": "live",
         "EXPO_PUBLIC_API_URL": "https://logical-useful-shad.ngrok-free.app"
       },
       "android": {
@@ -19,6 +26,10 @@
       "channel": "preview"
     },
     "production": {
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_MODE": "live"
+      },
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"

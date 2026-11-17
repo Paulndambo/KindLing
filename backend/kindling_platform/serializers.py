@@ -52,7 +52,7 @@ class SubscriptionSelectSerializer(serializers.Serializer):
 
 
 class InvoiceRequestSerializer(serializers.Serializer):
-    plan = serializers.ChoiceField(choices=(PlanId.EMBER, PlanId.FORGE))
+    plan = serializers.ChoiceField(choices=(PlanId.PREMIUM,))
     billing_cycle = serializers.ChoiceField(
         choices=BillingCycle.choices, default=BillingCycle.MONTHLY
     )

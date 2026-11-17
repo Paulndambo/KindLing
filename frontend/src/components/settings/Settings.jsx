@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  BadgeCheck,
-  Check,
   CreditCard,
-  Flame,
   KeyRound,
   LifeBuoy,
   Loader2,
@@ -11,7 +8,6 @@ import {
   RefreshCw,
   Settings2,
   Shield,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { usePlatformSettings } from "../../hooks/usePlatformSettings";
@@ -19,6 +15,7 @@ import { PROVIDERS, getProvider, modelsForProvider } from "../../services/ai";
 import { ROUTING_MODES } from "../../constants/subscription";
 import ProviderKeyCard from "./ProviderKeyCard";
 import SupportPanel from "./SupportPanel";
+import RevenueCatSubscription from "./RevenueCatSubscription";
 
 const TABS = [
   { id: "subscription", label: "Subscription", Icon: CreditCard },
@@ -26,53 +23,21 @@ const TABS = [
   { id: "support", label: "Help & feedback", Icon: LifeBuoy },
 ];
 
-function PlanIcon({ planId }) {
-  if (planId === "forge") return <Zap size={18} />;
-  if (planId === "ember") return <Flame size={18} />;
-  return <Sparkles size={18} />;
-}
-
-function formatPrice(plan, cycle) {
-  if (!plan) return { main: "—", sub: "" };
-  const monthly = plan.priceMonthly ?? 0;
-  const yearly = plan.priceYearly ?? 0;
-  if (!monthly) {
-    const days = plan.trialDays || 30;
-    return { main: "Free", sub: `${days}-day trial` };
-  }
-  if (cycle === "yearly" && yearly) {
-    return {
-      main: `$${yearly}/yr`,
-      sub: `$${monthly}/mo billed yearly`,
-    };
-  }
-  return { main: `$${monthly}/mo`, sub: yearly ? `or $${yearly}/yr` : "" };
-}
-
-export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscription" }) {
+export default function Settings({ isLoggedIn, onOpenLogin, purchases, initialTab = "subscription" }) {
   const [tab, setTab] = useState(initialTab);
-  const [billingCycle, setBillingCycle] = useState("monthly");
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const {
-    plans,
     subscription,
-    invoices,
-    invoiceNotice,
-    activePlan,
     entitlements,
     preferences,
     keyStatuses,
     runtime,
     loading,
-    saving,
     error,
     setError,
     testResult,
     testing,
-    selectPlan,
-    createInvoiceRequest,
-    setCancelAtPeriodEnd,
     updatePreferences,
     saveProviderKey,
     deleteProviderKey,
@@ -94,19 +59,6 @@ export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscr
     // Spark: Gemini + one other for testing high-level mode
     return PROVIDERS.filter((p) => p.id === "gemini" || p.id === "openai");
   }, [multiProvider]);
-
-  const handleSelectPlan = async (planId) => {
-    try {
-      const plan = plans.find((item) => item.id === planId);
-      if (plan?.priceMonthly > 0) {
-        await createInvoiceRequest(planId, billingCycle);
-      } else {
-        await selectPlan(planId, billingCycle);
-      }
-    } catch {
-      /* error state set in hook */
-    }
-  };
 
   return (
     <div className="settings-page">
@@ -134,11 +86,11 @@ export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscr
           <div>
             <strong>Browsing as guest</strong>
             <p>
-              Plans and keys save on this device.{" "}
+              AI provider keys save on this device.{" "}
               <button type="button" className="linkish" onClick={onOpenLogin}>
                 Log in
               </button>{" "}
-              to sync subscription and routing preferences to your account.
+              to subscribe and sync routing preferences to your account.
             </p>
           </div>
         </div>
@@ -178,161 +130,13 @@ export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscr
         </button>
       </div>
 
-      {tab === "subscription" && (
-        <section className="settings-section">
-          <div className="settings-section-head">
-            <div>
-              <h2>Subscription</h2>
-              <p>
-                Current plan:{" "}
-                <strong>{activePlan?.name || "Spark"}</strong>
-                {subscription?.status ? (
-                  <span className="settings-status-pill">{subscription.status}</span>
-                ) : null}
-              </p>
-            </div>
-            <div className="billing-toggle" role="group" aria-label="Billing cycle">
-              <button
-                type="button"
-                className={billingCycle === "monthly" ? "active" : ""}
-                onClick={() => setBillingCycle("monthly")}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                className={billingCycle === "yearly" ? "active" : ""}
-                onClick={() => setBillingCycle("yearly")}
-              >
-                Yearly
-              </button>
-            </div>
-          </div>
-
-          <div className="plan-grid">
-            {plans.map((plan) => {
-              const selected = (subscription?.plan || "spark") === plan.id;
-              const price = formatPrice(plan, billingCycle);
-              return (
-                <article
-                  key={plan.id}
-                  className={`plan-card${plan.highlight ? " highlight" : ""}${
-                    selected ? " selected" : ""
-                  }`}
-                >
-                  {plan.highlight && (
-                    <span className="plan-badge">Most popular</span>
-                  )}
-                  <div className="plan-card-top">
-                    <span className="plan-icon">
-                      <PlanIcon planId={plan.id} />
-                    </span>
-                    <div>
-                      <h3>{plan.name}</h3>
-                      <p className="plan-tagline">{plan.tagline}</p>
-                    </div>
-                  </div>
-                  <div className="plan-price">
-                    <span className="plan-price-main">{price.main}</span>
-                    {price.sub ? (
-                      <span className="plan-price-sub">{price.sub}</span>
-                    ) : null}
-                  </div>
-                  <ul className="plan-features">
-                    {(plan.features || []).map((f) => (
-                      <li key={f}>
-                        <Check size={14} />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    className={selected ? "btn-ghost plan-cta" : "btn-primary plan-cta"}
-                    disabled={saving || selected || (plan.priceMonthly > 0 && !isLoggedIn)}
-                    onClick={() => handleSelectPlan(plan.id)}
-                  >
-                    {saving ? (
-                      <Loader2 size={15} className="spin" />
-                    ) : selected ? (
-                      <>
-                        <BadgeCheck size={15} /> Current plan
-                      </>
-                    ) : plan.priceMonthly === 0 ? (
-                      "Start free trial"
-                    ) : (
-                      `Request ${plan.name} invoice`
-                    )}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-
-          {invoiceNotice && (
-            <div className="panel settings-panel-soft" role="status" style={{ marginTop: 14 }}>
-              <p className="settings-muted">{invoiceNotice}</p>
-            </div>
-          )}
-
-          {subscription?.platform_ai_daily_usage?.limit > 0 && (
-            <p className="settings-muted" style={{ marginTop: 12 }}>
-              Platform AI today: {subscription.platform_ai_daily_usage.used} of {subscription.platform_ai_daily_usage.limit} requests used; resets at midnight UTC.
-              {` Estimated tokens: ${subscription.platform_ai_daily_usage.estimatedTokensUsed.toLocaleString()} of ${subscription.platform_ai_daily_usage.estimatedTokenLimit.toLocaleString()}.`}
-              {subscription.platform_ai_daily_usage.softWarning ? " You’re nearing today’s allowance." : ""}
-            </p>
-          )}
-
-          {invoices?.some((invoice) => invoice.status === "requested") && (
-            <div className="panel settings-panel-soft" style={{ marginTop: 14 }}>
-              <div className="dash-panel-head"><h3>Invoice requests</h3></div>
-              {invoices.filter((invoice) => invoice.status === "requested").map((invoice) => (
-                <p className="settings-muted" key={invoice.id}>
-                  {invoice.invoice_number} · {invoice.plan_name} · ${invoice.amount} {invoice.currency} · awaiting payment confirmation
-                </p>
-              ))}
-            </div>
-          )}
-
-          <div className="panel settings-panel-soft">
-            <div className="dash-panel-head">
-              <h3>Billing notes</h3>
-            </div>
-            <p className="settings-muted">
-              Paid plans use per-student invoices. After you request one, the Kindling team confirms payment and activates that seat. You rent Kindling&apos;s teaching algorithm.{" "}
-              <strong>Ember</strong> includes platform AI tokens (monthly
-              envelope). <strong>Forge</strong> is algorithm rent only—you pay
-              model usage through your own keys. Spark includes capped platform
-              AI. Daily platform-AI request caps apply; BYOK usage is billed by
-              your AI provider.
-            </p>
-            {subscription?.current_period_end && (
-              <p className="settings-muted" style={{ marginTop: 8 }}>
-                Period ends{" "}
-                {new Date(subscription.current_period_end).toLocaleDateString()}
-                {subscription.cancel_at_period_end
-                  ? " · cancellation scheduled"
-                  : ""}
-              </p>
-            )}
-            {(subscription?.plan || "spark") !== "spark" && (
-              <button
-                type="button"
-                className="btn-ghost"
-                style={{ marginTop: 14 }}
-                disabled={saving}
-                onClick={() =>
-                  setCancelAtPeriodEnd(!subscription?.cancel_at_period_end)
-                }
-              >
-                {subscription?.cancel_at_period_end
-                  ? "Resume plan"
-                  : "Cancel at period end"}
-              </button>
-            )}
-          </div>
-        </section>
-      )}
+      {tab === "subscription" && <>
+        <RevenueCatSubscription purchases={purchases} onOpenLogin={onOpenLogin} />
+        {subscription?.platform_ai_daily_usage?.limit > 0 ? <p className="settings-muted">
+          Platform AI today: {subscription.platform_ai_daily_usage.used} of {subscription.platform_ai_daily_usage.limit} requests used; resets at midnight UTC.
+          {` Estimated tokens: ${subscription.platform_ai_daily_usage.estimatedTokensUsed.toLocaleString()} of ${subscription.platform_ai_daily_usage.estimatedTokenLimit.toLocaleString()}.`}
+        </p> : null}
+      </>}
 
       {tab === "ai" && (
         <section className="settings-section">
@@ -457,7 +261,7 @@ export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscr
                   className="linkish"
                   onClick={() => setAdvancedOpen((o) => !o)}
                 >
-                  {advancedOpen ? "Hide" : "Show"} per-task routing (Forge)
+                  {advancedOpen ? "Hide" : "Show"} per-task routing (Premium)
                 </button>
                 {advancedOpen && (
                   <div className="settings-task-routes">
@@ -599,9 +403,9 @@ export default function Settings({ isLoggedIn, onOpenLogin, initialTab = "subscr
 
           {!multiProvider && (
             <p className="settings-muted" style={{ marginTop: 12 }}>
-              Upgrade to <strong>Ember</strong> or <strong>Forge</strong> to
-              unlock every provider and advanced per-task routing. Spark still
-              lets you test BYOK with Gemini and OpenAI.
+              Upgrade to <strong>Premium</strong> to unlock every provider and
+              advanced per-task routing. Spark still lets you use BYOK with
+              Gemini and OpenAI.
             </p>
           )}
         </section>

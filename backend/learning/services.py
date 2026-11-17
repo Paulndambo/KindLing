@@ -1076,7 +1076,15 @@ def build_dashboard(student: StudentProfile | None) -> Dict[str, Any]:
                 )
 
     recent = []
-    for s in sessions[:8]:
+    seen_recent_topics: set[tuple[str, str]] = set()
+    for s in sessions:
+        subj_clean = (s.subject or "Lesson").strip()
+        topic_clean = (s.topic or "Session").strip()
+        key = (subj_clean.lower(), topic_clean.lower())
+        if key in seen_recent_topics:
+            continue
+        seen_recent_topics.add(key)
+
         when = _relative_when(s.started_at)
         tone = "good"
         if s.accuracy is not None and s.accuracy < 0.5:
@@ -1085,17 +1093,21 @@ def build_dashboard(student: StudentProfile | None) -> Dict[str, Any]:
         if s.accuracy is not None:
             detail_parts.append(f"Accuracy ~{int(s.accuracy * 100)}%")
         if s.turn_count:
-            detail_parts.append(f"{s.turn_count} exchanges")
+            detail_parts.append(
+                f"{s.turn_count} {'exchange' if s.turn_count == 1 else 'exchanges'}"
+            )
         recent.append(
             {
                 "id": s.session_id,
                 "when": when,
-                "subject": s.subject or "Lesson",
-                "title": s.topic or "Session",
-                "detail": " · ".join(detail_parts) or "Completed a lesson session.",
+                "subject": subj_clean,
+                "title": topic_clean,
+                "detail": " · ".join(detail_parts) or "Explored lesson introduction",
                 "tone": tone,
             }
         )
+        if len(recent) >= 6:
+            break
 
     strengths = (profile.strengths if profile else None) or []
     focus_areas = (profile.focus_areas if profile else None) or []
@@ -1137,7 +1149,7 @@ def build_dashboard(student: StudentProfile | None) -> Dict[str, Any]:
     if profile:
         insights = build_personalization_insights(profile)
 
-    week_plan = _build_week_plan(student, focus_areas, mastery_map)
+    week_plan = _build_week_plan(student, focus_areas, mastery_map, recent)
     totals = (profile.totals if profile else None) or deepcopy(DEFAULT_TOTALS)
     session_count = LessonSession.objects.filter(student=student).count()
     has_data = bool(
@@ -1247,79 +1259,96 @@ def _pad_series(values: list, length: int, default: int = 40) -> list:
     return series[-length:]
 
 
-def _build_week_plan(student, focus_areas: list, mastery_map: list) -> List[Dict[str, Any]]:
-    """Suggest next lessons from focus areas, low mastery, or curriculum topics."""
+def _build_week_plan(
+    student,
+    focus_areas: list,
+    mastery_map: list,
+    recent_activity: list | None = None,
+) -> List[Dict[str, Any]]:
+    """Suggest distinct next lessons from focus areas, low mastery, or curriculum subtopics."""
     days = ["Mon", "Wed", "Fri"]
     candidates: List[Dict[str, Any]] = []
+    seen_titles: set[str] = set()
+    recent_titles = {
+        (item.get("title") or "").strip().lower()
+        for item in (recent_activity or [])
+        if item.get("title")
+    }
 
-    for f in focus_areas or []:
-        topic = f.get("topic")
-        if not topic:
-            continue
+    def add_candidate(title: str, tag: str, text: str, duration: str = "20 min") -> bool:
+        clean = (title or "").strip()
+        if not clean:
+            return False
+        norm = clean.lower()
+        if norm in seen_titles:
+            return False
+        seen_titles.add(norm)
         candidates.append(
             {
-                "title": topic,
-                "tag": f.get("subject") or "Lesson",
-                "text": (
-                    f"Guided practice on {topic} — smaller steps and more "
-                    "scaffolds until confidence climbs."
-                ),
-                "duration": "20 min",
+                "title": clean,
+                "tag": (tag or "Lesson").strip(),
+                "text": text,
+                "duration": duration,
             }
+        )
+        return True
+
+    for f in focus_areas or []:
+        topic = f.get("topic") or f.get("label")
+        if not topic:
+            continue
+        add_candidate(
+            topic,
+            f.get("subject") or "Lesson",
+            f"Guided practice on {topic} — step by step until it clicks.",
+            "20 min",
         )
 
     for m in mastery_map or []:
-        if m.get("level", 100) >= 55:
+        if m.get("level", 100) >= 65:
             continue
         skill = m.get("skill")
-        if not skill or any(c["title"] == skill for c in candidates):
+        if not skill:
             continue
-        candidates.append(
-            {
-                "title": skill,
-                "tag": m.get("subject") or "Lesson",
-                "text": f"Build {skill} with visual models, then number-only checks.",
-                "duration": "20 min",
-            }
+        add_candidate(
+            skill,
+            m.get("subject") or "Lesson",
+            f"Build confidence in {skill} with examples and a quick check.",
+            "20 min",
         )
 
-    # Fall back to the student's curriculum topics
-    if len(candidates) < 3 and student:
-        for subject in student.subjects.prefetch_related("topics").all()[:4]:
-            for topic in subject.topics.all()[:3]:
-                if any(c["title"] == topic.name for c in candidates):
-                    continue
-                candidates.append(
-                    {
-                        "title": topic.name,
-                        "tag": subject.name,
-                        "text": (
-                            f"Continue {topic.name} in {subject.name} at "
-                            f"{student.name}'s pace."
-                        ),
-                        "duration": "25 min",
-                    }
-                )
-                if len(candidates) >= 3:
+    # Pull distinct upcoming lessons from the student's curriculum (preferring topics not just visited)
+    if len(candidates) < len(days) and student:
+        subjects_qs = student.subjects.prefetch_related("topics__subtopics").all()[:4]
+        for skip_recent in (True, False):
+            for subject in subjects_qs:
+                for topic in subject.topics.all()[:5]:
+                    subtopics = list(topic.subtopics.all()[:4])
+                    leaf_items = subtopics if subtopics else [topic]
+                    for leaf in leaf_items:
+                        leaf_name = (leaf.name or "").strip()
+                        if not leaf_name:
+                            continue
+                        if skip_recent and leaf_name.lower() in recent_titles:
+                            continue
+                        add_candidate(
+                            leaf_name,
+                            subject.name,
+                            f"Explore {leaf_name} in {subject.name} at your own pace.",
+                            "20 min",
+                        )
+                        if len(candidates) >= len(days):
+                            break
+                    if len(candidates) >= len(days):
+                        break
+                if len(candidates) >= len(days):
                     break
-            if len(candidates) >= 3:
+            if len(candidates) >= len(days):
                 break
 
     plan = []
-    for i, day in enumerate(days):
-        if i < len(candidates):
-            item = candidates[i]
-            plan.append({"day": day, **item})
-        else:
-            plan.append(
-                {
-                    "day": day,
-                    "title": "Open lesson",
-                    "tag": "Kindling",
-                    "text": "Start any subject to generate a personalized plan.",
-                    "duration": "20 min",
-                }
-            )
+    for i, item in enumerate(candidates[: len(days)]):
+        plan.append({"day": days[i], **item})
     return plan
 
 

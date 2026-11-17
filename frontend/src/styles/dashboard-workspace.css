@@ -1267,13 +1267,6 @@
   }
 }
 @media (max-width: 760px) {
-  .kdl .app-main.is-dashboard.has-workspace-sidebar {
-    display: block;
-    background: #f5f7f3;
-  }
-  .kdl .app-main.is-dashboard > .dash-sidebar {
-    display: none;
-  }
   .kdl #dashboard.dashboard-workspace .dash-wrap {
     padding: 20px 18px 45px;
   }

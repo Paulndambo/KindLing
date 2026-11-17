@@ -34,6 +34,8 @@ export default function WorkspaceSidebar({
   dashboardPage,
   onDashboardPageChange,
   onNavigate,
+  isLoggedIn = false,
+  hasSubjects = false,
 }) {
   return (
     <aside className="dash-sidebar" aria-label="Workspace navigation">
@@ -43,13 +45,19 @@ export default function WorkspaceSidebar({
           const active = page
             ? screen === "dashboard" && dashboardPage === id
             : screen === id;
+          const lessonLocked = id === "lesson" && isLoggedIn && !hasSubjects;
           return (
             <button
               key={id}
               type="button"
               className={`dash-sidebar-link${active ? " active" : ""}`}
               aria-current={active ? "page" : undefined}
-              title={label}
+              disabled={lessonLocked}
+              title={
+                lessonLocked
+                  ? "Add a subject in My subjects before starting a lesson"
+                  : label
+              }
               aria-label={label}
               onClick={() =>
                 page

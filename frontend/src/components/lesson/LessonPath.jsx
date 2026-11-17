@@ -1,4 +1,4 @@
-import { Check, PanelLeftClose, Sparkles, Lock, ChevronDown } from "lucide-react";
+import { Check, PanelLeftClose, Sparkles, Lock, ChevronDown, ArrowLeft } from "lucide-react";
 import {
   buildLocalSkillPath,
   topicSkillScore,
@@ -63,6 +63,7 @@ export default function LessonPath({
   activeSkillPath = null,
   recommendedNext = null,
   lessonGoals = null,
+  onNavigate = null,
 }) {
   const studentName = student?.name?.trim() || "Student";
   const activeUnit = units[activeUnitIdx] || null;
@@ -79,6 +80,27 @@ export default function LessonPath({
     <aside className="lesson-side" aria-label="Lesson path">
       {/* Top: fixed chrome (does not scroll over lessons) */}
       <div className="lesson-side-top">
+        {onNavigate && (
+          <div className="lesson-side-nav">
+            <button
+              type="button"
+              className="lesson-side-back"
+              onClick={() => onNavigate("subjects")}
+              title="Back to My subjects"
+            >
+              <ArrowLeft size={14} aria-hidden />
+              <span>Subjects</span>
+            </button>
+            <button
+              type="button"
+              className="lesson-side-back"
+              onClick={() => onNavigate("dashboard")}
+              title="Open Dashboard"
+            >
+              <span>Dashboard</span>
+            </button>
+          </div>
+        )}
         <div className="lesson-side-header">
           <div className="lesson-side-titles">
             <p className="lesson-side-eyebrow">Lesson path</p>

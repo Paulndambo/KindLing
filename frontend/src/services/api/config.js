@@ -7,6 +7,18 @@ export const API_BASE_URL = (
 ).replace(/\/$/, "");
 
 export const TOKEN_STORAGE_KEY = "kindling_auth_tokens";
+export const AUTH_TOKENS_CHANGED = "kindling:auth-tokens-changed";
+export const SESSION_EXPIRED_EVENT = "kindling:session-expired";
+
+export function subscribeAuthTokens(callback) {
+  const onStorage = (event) => { if (event.key === TOKEN_STORAGE_KEY || event.key === null) callback(); };
+  window.addEventListener(AUTH_TOKENS_CHANGED, callback);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(AUTH_TOKENS_CHANGED, callback);
+    window.removeEventListener("storage", onStorage);
+  };
+}
 
 export function getStoredTokens() {
   try {
@@ -24,6 +36,7 @@ export function setStoredTokens(tokens) {
     } else {
       localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
     }
+    window.dispatchEvent(new Event(AUTH_TOKENS_CHANGED));
   } catch (err) {
     console.warn("Failed to persist auth tokens:", err);
   }

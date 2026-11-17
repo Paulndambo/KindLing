@@ -759,7 +759,7 @@ export function useChatSession({
 
       let chat;
       try {
-        chat = createChatSession(greetingSystemPrompt, []);
+        chat = createChatSession(greetingSystemPrompt, [], { logRequestBody: true });
         chatRef.current = chat;
       } catch (err) {
         console.error(err);
@@ -1223,7 +1223,7 @@ export function useChatSession({
           code: distress.code,
           copy,
         });
-        const ageBand = resolveAgeBand(studentRef.current?.grade);
+        const ageBand = resolveAgeBand(studentRef.current?.grade, studentRef.current?.dateOfBirth);
         void reportSafetyEvent({
           category: distress.category,
           code: distress.code,

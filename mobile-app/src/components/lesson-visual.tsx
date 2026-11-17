@@ -36,6 +36,26 @@ export function LessonVisual({ source, language }: { source: string; language: s
             </View>
           ));
         })() : null}
+        {model.kind === 'study-plan' ? <>
+          {model.objectives.length ? <View style={s.planGroup}>
+            <Text style={s.planLabel}>Learning objectives</Text>
+            {model.objectives.map((objective, index) => <Text key={index} style={s.caption}>✓  {objective}</Text>)}
+          </View> : null}
+          {model.concepts.length ? <View style={s.planGroup}>
+            <Text style={s.planLabel}>Key concepts</Text>
+            <Text style={s.caption}>{model.concepts.join(' · ')}</Text>
+          </View> : null}
+          {model.modules.length ? <View style={s.planGroup}>
+            <Text style={s.planLabel}>Curriculum modules</Text>
+            {model.modules.map((module, index) => <View key={index} style={s.step}>
+              <Text style={s.stepNumber}>{index + 1}</Text>
+              <View style={s.flex}>
+                <Text style={s.body}>{module.title}</Text>
+                {module.detail ? <Text style={s.caption}>{module.detail}</Text> : null}
+              </View>
+            </View>)}
+          </View> : null}
+        </> : null}
         {model.kind === 'steps' ? model.steps.map((step, index) => (
           <Fragment key={index}>
             <View style={s.step}>
@@ -98,6 +118,8 @@ export function LessonVisual({ source, language }: { source: string; language: s
 
 const s = StyleSheet.create({
   content: { gap: 10, minWidth: 0 },
+  planGroup: { gap: 6, paddingTop: 4 },
+  planLabel: { color: Brand.teal, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   title: { fontSize: 16, fontWeight: '700', color: Brand.ink },
   body: { fontSize: 14, lineHeight: 21, color: Brand.ink, fontWeight: '600', flexShrink: 1 },
   caption: { color: Brand.muted, fontSize: 13, lineHeight: 20 },

@@ -5,7 +5,11 @@
  * Separate from open chat; offline-capable via assessmentBank.
  */
 
-import { questionsForTopic, getAssessmentQuestion } from "./assessmentBank";
+import {
+  filterQuestionsForCoveredLesson,
+  questionsForTopic,
+  getAssessmentQuestion,
+} from "./assessmentBank";
 
 export const ASSESSMENT_DEFAULT_COUNT = 5;
 
@@ -31,6 +35,7 @@ export const AssessmentPhase = {
  * @param {string} [opts.form] Optional Math Foundations parallel form (A/B)
  * @param {string} [opts.purpose] practice | pre | post
  * @param {object|null} [opts.baseline] Completed before-check summary for post form
+ * @param {string} [opts.coveredText] Tutor transcript to restrict lesson checks
  */
 export function createAssessmentSession({
   subject = "",
@@ -46,6 +51,7 @@ export function createAssessmentSession({
   purpose = "practice",
   baseline = null,
   questions: providedQuestions = null,
+  coveredText = undefined,
 } = {}) {
   const n = Math.min(10, Math.max(3, Number(count) || ASSESSMENT_DEFAULT_COUNT));
   const slugs = [
@@ -53,15 +59,25 @@ export function createAssessmentSession({
       [...(Array.isArray(skillSlugs) ? skillSlugs : []), skillSlug].filter(Boolean)
     ),
   ];
-  const questions = (Array.isArray(providedQuestions) && providedQuestions.length
-    ? providedQuestions.slice(0, n)
+  const candidateQuestions = Array.isArray(providedQuestions)
+    ? providedQuestions
     : questionsForTopic(subject, topic, {
         skillSlug: slugs[0] || "",
         skillSlugs: slugs,
         unit,
         limit: n,
         form,
-      })).map((q) => ({
+        ...(typeof coveredText === "string" ? { coveredText } : {}),
+      });
+  const relevantQuestions = typeof coveredText === "string"
+    ? filterQuestionsForCoveredLesson(candidateQuestions, {
+        subject,
+        topic,
+        coveredText,
+        limit: n,
+      })
+    : candidateQuestions.slice(0, n);
+  const questions = relevantQuestions.map((q) => ({
     ...q,
     // freeze options snapshot
     options: (q.options || []).map((o) => ({ ...o })),

@@ -1436,6 +1436,62 @@ export function skillSlugsForLessonTopic(topic = "") {
     .map((s) => s.slug);
 }
 
+function normalizeAssessmentText(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function compatibleAssessmentSubject(questionSubject, subject) {
+  const q = normalizeAssessmentText(questionSubject);
+  const s = normalizeAssessmentText(subject);
+  if (!q || !s || q === "general") return false;
+  if (q === s) return true;
+  if (q === "science" && /\b(science|biology|physics|chemistry)\b/.test(s)) return true;
+  if (q === "math foundations" && /\b(math|mathematics)\b/.test(s)) return true;
+  if (q === "computer science" && /\b(computer science|computing|ict)\b/.test(s)) return true;
+  return false;
+}
+
+function tutorCoveredConcept(question, coveredText) {
+  const concept = normalizeAssessmentText(question?.concept);
+  if (!concept || typeof coveredText !== "string") return false;
+  const prose = String(coveredText)
+    .replace(/```visual\s*\r?\ntype\s*:\s*(?:study-plan|studyplan|lesson-plan|roadmap)[\s\S]*?```/gi, " ")
+    .replace(/⟦suggests:[\s\S]*?⟧/g, " ");
+  const terms = concept.split(" ").filter((word) => word.length > 2 && !["and", "the", "for", "with", "from"].includes(word));
+  if (!terms.length) return false;
+  return prose.split(/\n\s*\n/).some((paragraph) => {
+    const normalized = normalizeAssessmentText(paragraph);
+    return terms.every((term) => normalized.includes(term));
+  });
+}
+
+/** Only return exact-topic items whose concept appears in tutor teaching text. */
+export function filterQuestionsForCoveredLesson(
+  questions = [],
+  { subject = "", topic = "", coveredText = "", limit = 10 } = {}
+) {
+  const expectedTopic = normalizeAssessmentText(topic);
+  if (!expectedTopic || typeof coveredText !== "string" || !coveredText.trim()) return [];
+  return (Array.isArray(questions) ? questions : [])
+    .filter((question) => {
+      const topicTags = Array.isArray(question?.topics) ? question.topics : [];
+      const exactTopic = topicTags.some(
+        (tag) => normalizeAssessmentText(tag) === expectedTopic
+      );
+      return (
+        exactTopic &&
+        compatibleAssessmentSubject(question?.subject, subject) &&
+        tutorCoveredConcept(question, coveredText)
+      );
+    })
+    .slice(0, Math.max(0, Number(limit) || 0));
+}
+
 /**
  * Match questions to the active lesson subject + subtopic (and skills).
  * Prefers current-concept items so quick check gauges understanding of
@@ -1474,6 +1530,8 @@ export function questionsForTopic(subject = "", topic = "", opts = {}) {
   const excludeTransfer = Boolean(opts.excludeTransfer);
   const preferTransfer = Boolean(opts.preferTransfer);
   const form = String(opts.form || "").toUpperCase();
+  const coveredText = opts.coveredText;
+  const enforceCoveredLesson = typeof coveredText === "string";
 
   const belongsToForm = (question) => {
     if (!form) return true;
@@ -1491,6 +1549,10 @@ export function questionsForTopic(subject = "", topic = "", opts = {}) {
 
   const scored = ASSESSMENT_QUESTIONS.map((q) => {
     if (!belongsToForm(q)) return { q, score: -999 };
+    if (
+      enforceCoveredLesson &&
+      !filterQuestionsForCoveredLesson([q], { subject, topic, coveredText, limit: 1 }).length
+    ) return { q, score: -999 };
     if (transferOnly && !q.transfer) return { q, score: -999 };
     if (excludeTransfer && q.transfer) return { q, score: -999 };
     let score = 0;
@@ -1538,6 +1600,10 @@ export function questionsForTopic(subject = "", topic = "", opts = {}) {
   if (picked.length < Math.min(3, limit) && !transferOnly) {
     const relaxed = ASSESSMENT_QUESTIONS.map((q) => {
       if (!belongsToForm(q)) return { q, score: -999 };
+      if (
+        enforceCoveredLesson &&
+        !filterQuestionsForCoveredLesson([q], { subject, topic, coveredText, limit: 1 }).length
+      ) return { q, score: -999 };
       if (excludeTransfer && q.transfer) return { q, score: -999 };
       // re-score lightly already done — take score >= 3 from full map
       const qSkill = String(q.skillSlug || "").toLowerCase();
@@ -1593,7 +1659,7 @@ export function questionsForTopic(subject = "", topic = "", opts = {}) {
   }
 
   // Last resort: generic study items (never preferred over on-topic CS)
-  if (!picked.length && !form) {
+  if (!picked.length && !form && !enforceCoveredLesson) {
     picked = ASSESSMENT_QUESTIONS.filter((q) =>
       (q.topics || []).includes("*")
     );

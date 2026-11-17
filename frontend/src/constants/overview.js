@@ -375,8 +375,8 @@ export const OVERVIEW_FAQS = [
     a: "Kindling detects struggle signals (repeated misses, long hesitation, or frustration cues) and gently offers its 4-rung Help Ladder: (1) a surgical Micro-Hint, (2) a curated Parallel Worked Example, (3) an interactive Multi-Step Guide, or (4) a Prerequisite Reset / breather. The learner is always in control and can escalate or exit help at any time.",
   },
   {
-    q: "How do the Spark, Forge, and Ember plans work?",
-    a: "Every seat is for one individual learner. Spark gives you a full 30-day free trial with platform AI included. After your trial, choose Forge ($30/mo) to rent the Kindling teaching engine while bringing your own API keys (Gemini, OpenAI, Anthropic, Groq, or OpenRouter), or Ember ($99/mo—about the cost of a single hour with a human tutor) with nightly platform AI included.",
+    q: "How do the Spark and Premium plans work?",
+    a: "Every seat is for one individual learner. Spark is free and includes the adaptive tutor with a daily platform AI limit. Premium ($25/mo) adds a larger AI allowance, every provider, advanced routing, homework photo help, guardian digests, and priority support.",
   },
   {
     q: "How do parents or guardians follow along?",

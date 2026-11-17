@@ -1,3 +1,5 @@
+import { ageFromDateOfBirth } from '../../utils/learner-age.js';
+
 /**
  * Derive a coarse age band from Kindling grade labels.
  * Used for tutor policy (not precise age verification).
@@ -15,7 +17,9 @@
  * @param {string | null | undefined} grade
  * @returns {AgeBand}
  */
-export function resolveAgeBand(grade) {
+export function resolveAgeBand(grade, dateOfBirth) {
+  const age = ageFromDateOfBirth(dateOfBirth);
+  if (age !== null) return age < 13 ? 'child' : age < 18 ? 'teen' : 'adult';
   if (!grade || typeof grade !== "string") return "unknown";
   const g = grade.toLowerCase().trim();
 

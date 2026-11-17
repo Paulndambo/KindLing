@@ -6,24 +6,22 @@
 
 export const PLAN_IDS = {
   SPARK: "spark",
-  EMBER: "ember",
-  FORGE: "forge",
+  PREMIUM: "premium",
 };
 
 export const PLAN_CATALOG = [
   {
     id: PLAN_IDS.SPARK,
     name: "Spark",
-    tagline: "30-day trial of Kindling's adaptive tutor",
+    tagline: "Free access to Kindling's adaptive tutor",
     priceMonthly: 0,
     priceYearly: 0,
     highlight: false,
-    trialDays: 30,
     features: [
-      "Full teaching system for 30 days",
+      "Kindling's adaptive teaching system, free",
       "Live adaptive lessons (daily platform-AI request and usage cap)",
       "Student dashboard & mastery pulse",
-      "Then choose Forge or Ember to continue",
+      "Bring your own AI keys for additional providers",
     ],
     entitlements: {
       platformAi: true,
@@ -38,36 +36,11 @@ export const PLAN_CATALOG = [
     },
   },
   {
-    id: PLAN_IDS.FORGE,
-    name: "Forge",
-    tagline: "Rent the algorithm — bring your own AI keys",
-    priceMonthly: 30,
-    priceYearly: 300,
-    highlight: false,
-    features: [
-      "Kindling teaching system (algorithm rent)",
-      "You pay AI tokens via your own keys (BYOK)",
-      "Multi-provider routing (Gemini, OpenAI, Anthropic, Groq, OpenRouter)",
-      "Per-task model routing · homework photo · digests",
-    ],
-    entitlements: {
-      platformAi: false,
-      byok: true,
-      multiProvider: true,
-      advancedRouting: true,
-      familyDigest: true,
-      prioritySupport: false,
-      dailyLessonSoftCap: null,
-      dailyPlatformAiRequests: 0,
-      dailyPlatformAiTokens: 0,
-    },
-  },
-  {
-    id: PLAN_IDS.EMBER,
-    name: "Ember",
-    tagline: "Nightly tutoring with platform AI included",
-    priceMonthly: 99,
-    priceYearly: 990,
+    id: PLAN_IDS.PREMIUM,
+    name: "Premium",
+    tagline: "More AI and advanced learning tools",
+    priceMonthly: 25,
+    priceYearly: 250,
     highlight: true,
     features: [
       "Everything in the teaching system",

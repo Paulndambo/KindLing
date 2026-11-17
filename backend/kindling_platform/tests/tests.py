@@ -22,7 +22,7 @@ class PlatformApiTests(APITestCase):
         res = self.client.get("/api/platform/plans/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = {p["id"] for p in res.data["plans"]}
-        self.assertEqual(ids, {"spark", "ember", "forge"})
+        self.assertEqual(ids, {"spark", "premium"})
 
     def test_subscription_requires_auth(self):
         res = self.client.get("/api/platform/subscription/")
@@ -39,11 +39,11 @@ class PlatformApiTests(APITestCase):
         self.client.force_authenticate(self.user)
         res = self.client.post(
             "/api/platform/subscription/",
-            {"plan": "forge", "billing_cycle": "yearly"},
+            {"plan": "premium", "billing_cycle": "yearly"},
             format="json",
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data["plan"], "forge")
+        self.assertEqual(res.data["plan"], "premium")
         self.assertTrue(res.data["entitlements"]["advancedRouting"])
         sub = PlatformSubscription.objects.get(user=self.user)
         self.assertEqual(sub.billing_cycle, "yearly")

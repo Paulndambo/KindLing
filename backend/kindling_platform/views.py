@@ -10,6 +10,8 @@ from urllib.request import Request, urlopen
 from django.conf import settings
 from django.http import StreamingHttpResponse
 from django.utils import timezone
+from students.models import get_student_profile
+from students.age import age_guidance
 from rest_framework import permissions, throttling
 from rest_framework.negotiation import DefaultContentNegotiation
 from rest_framework.renderers import JSONRenderer
@@ -263,6 +265,19 @@ class PlatformGeminiView(APIView):
                 payload["systemInstruction"] = system_instruction
             else:
                 return Response({"detail": "Invalid Gemini system instruction."}, status=400)
+        student = get_student_profile(request.user)
+        age_context = age_guidance(student.date_of_birth) if student else ""
+        if age_context:
+            instruction = payload.setdefault("systemInstruction", {"parts": []})
+            instruction["parts"] = [*instruction["parts"], {"text": age_context}]
+        if data.get("logRequestBody") is True:
+            # The lesson-opening call opts in so developers can inspect the exact
+            # JSON forwarded to Gemini. Keep this out of normal chat requests.
+            print(
+                "[Kindling AI opening request body]\n"
+                + json.dumps(payload, ensure_ascii=False, indent=2),
+                flush=True,
+            )
         request_body = json.dumps(payload).encode("utf-8")
         if len(request_body) > self.max_body_bytes:
             return Response({"detail": "AI request is too large."}, status=413)

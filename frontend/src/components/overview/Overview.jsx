@@ -74,8 +74,8 @@ const FAQS = [
     "Yes. You can upload a photo or PDF of a problem and work through it with the tutor. The focus is on understanding the steps and the ideas behind them.",
   ],
   [
-    "How does the free trial work?",
-    "Spark includes 30 days of the adaptive tutor with platform AI, subject to daily usage limits. After the trial, choose Forge with your own AI keys or Ember with platform AI included. Each account is for one learner.",
+    "What is included in the free Spark plan?",
+    "Spark is free and includes the adaptive tutor with platform AI, subject to daily usage limits. Premium adds a larger AI allowance, every provider, advanced routing, homework photo help, and guardian digests. Each account is for one learner.",
   ],
 ];
 
@@ -264,7 +264,7 @@ export default function Overview({
           </div>
           <div className="rl-trial-note">
             <Check size={14} />
-            30-day free trial<span>·</span>No credit card needed
+            Free plan<span>·</span>No credit card needed
           </div>
           {isLoggedIn && (
             <div className="rl-account-links">
@@ -532,7 +532,7 @@ export default function Overview({
             </div>
             <div>
               <p>
-                Start with 30 days to find your rhythm.
+                Start free and find your rhythm.
                 <br />
                 Then choose the setup that works for you.
               </p>
@@ -567,18 +567,14 @@ export default function Overview({
                 <p className="rl-plan-description">
                   {plan.id === "spark"
                     ? "Your first step toward something clicking."
-                    : plan.id === "forge"
-                      ? "Your tutor. Your choice of AI provider."
-                      : "A complete learning space, ready for you."}
+                    : "A complete learning space with more AI and advanced tools."}
                 </p>
                 <div className="rl-price">
-                  ${annual ? plan.priceYearly : plan.priceMonthly}
+                  {plan.priceMonthly === 0
+                    ? "Free"
+                    : "$" + (annual ? plan.priceYearly : plan.priceMonthly)}
                   <span>
-                    {plan.id === "spark"
-                      ? "/ 30 days"
-                      : annual
-                        ? "/ year"
-                        : "/ month"}
+                    {plan.id === "spark" ? "" : annual ? "/ year" : "/ month"}
                   </span>
                 </div>
                 <button
@@ -587,7 +583,7 @@ export default function Overview({
                   onClick={isLoggedIn ? () => goTo("settings") : onGetStarted}
                 >
                   {plan.id === "spark"
-                    ? "Start your free trial"
+                    ? "Start for free"
                     : `Explore ${plan.name}`}
                   <ArrowRight size={15} />
                 </button>

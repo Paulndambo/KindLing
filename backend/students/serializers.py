@@ -1,10 +1,22 @@
 from rest_framework import serializers
 
 from .models import StudentProfile, StudentPushDevice
+from .age import age_from_date_of_birth
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
     """API shape aligned with frontend student profile keys (camelCase via source)."""
+
+    dateOfBirth = serializers.DateField(source="date_of_birth", required=False, allow_null=True)
+    age = serializers.SerializerMethodField()
+
+    def get_age(self, obj):
+        return age_from_date_of_birth(obj.date_of_birth)
+
+    def validate_dateOfBirth(self, value):
+        if value is not None and age_from_date_of_birth(value) is None:
+            raise serializers.ValidationError("Enter a valid date of birth within the past 120 years.")
+        return value
 
     countryFlag = serializers.CharField(
         source="country_flag", required=False, allow_blank=True
@@ -69,6 +81,8 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
+            "dateOfBirth",
+            "age",
             "grade",
             "avatar",
             "country",

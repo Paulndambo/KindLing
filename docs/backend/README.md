@@ -244,7 +244,7 @@ Authorization: Bearer <access_token>
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/plans/` | public | Plan catalog (Spark / Ember / Forge) |
+| GET | `/plans/` | public | Plan catalog (Spark / Premium) |
 | GET | `/subscription/` | JWT | Current subscription + entitlements |
 | POST | `/subscription/` | JWT | Activate/change plan (pilot checkout) |
 | PATCH | `/subscription/` | JWT | Cancel at period end / resume |

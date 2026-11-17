@@ -54,6 +54,7 @@ export function createGeminiChat(
     model,
     config: { systemInstruction },
     history: safeHistory,
+    logRequestBody: Boolean(options.logRequestBody),
   });
   let usedPlatformFallback = false;
 
@@ -80,6 +81,7 @@ export function createGeminiChat(
             model,
             config: { systemInstruction },
             history: safeHistory,
+            logRequestBody: Boolean(options.logRequestBody),
           });
           const retryResponse = await activeChat.sendMessageStream({ message });
           for await (const chunk of retryResponse) {

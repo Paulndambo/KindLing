@@ -4,7 +4,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppScreen, BodyText, BrandMark, Button, Field, Heading } from '@/components/mobile-ui';
 import { Brand } from '@/constants/brand';
-import { COUNTRIES, CURRICULUM_HINTS, GRADE_OPTIONS, LEARNING_STYLES, profileOptions, isHigherEducation } from '@/constants/learner-profile';
+import { COUNTRIES, CURRICULUM_HINTS, GRADE_OPTIONS, LEARNING_STYLES, profileOptions, isHigherEducation, normalizeProgrammeTrack } from '@/constants/learner-profile';
+import { ageFromDateOfBirth } from '@/services/learner-age';
 import { useSession } from '@/context/session';
 
 const AVATARS = [
@@ -18,12 +19,17 @@ const AVATARS = [
 export default function OnboardingScreen() {
   const { session, profile, finishOnboarding } = useSession();
   const [name, setName] = useState(profile?.name || session?.name || '');
-  const [grade, setGrade] = useState(profile?.grade || '');
+  const [grade, setGrade] = useState(profile?.grade === "Graduate / Master's" ? 'Masters' : profile?.grade || '');
+  const [birthYear, setBirthYear] = useState(profile?.dateOfBirth?.split('-')[0] || '');
+  const [birthMonth, setBirthMonth] = useState(profile?.dateOfBirth?.split('-')[1] || '');
+  const [birthDay, setBirthDay] = useState(profile?.dateOfBirth?.split('-')[2] || '');
+  const dateOfBirth = birthYear || birthMonth || birthDay ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}` : '';
+  const age = ageFromDateOfBirth(dateOfBirth);
   const [avatar, setAvatar] = useState(profile?.avatar || 'sparkles');
   const [country, setCountry] = useState(profile?.country || '');
   const [preferredLanguage, setPreferredLanguage] = useState(profile?.preferredLanguage || '');
   const [schoolName, setSchoolName] = useState(profile?.schoolName || '');
-  const [curriculum, setCurriculum] = useState(profile?.curriculum || '');
+  const [curriculum, setCurriculum] = useState(normalizeProgrammeTrack(profile?.curriculum || ''));
   const [learningStyle, setLearningStyle] = useState(profile?.learningStyle || 'visual');
   const [interests, setInterests] = useState<string[]>(Array.isArray(profile?.interests) ? profile.interests : []);
   const [goal, setGoal] = useState(profile?.goal || '');
@@ -58,10 +64,11 @@ export default function OnboardingScreen() {
   const save = async () => {
     if (name.trim().length < 2) { setError('Enter the learner’s name.'); return; }
     if (!grade) { setError('Choose a grade or study level.'); return; }
+    if (dateOfBirth && age === null) { setError('Enter a valid date of birth within the past 120 years.'); return; }
     setBusy(true); setError('');
     try {
       await finishOnboarding({
-        name: name.trim(), grade, avatar, country, countryFlag, preferredLanguage: preferredLanguage.trim(),
+        name: name.trim(), dateOfBirth: dateOfBirth || null, grade, avatar, country, countryFlag, preferredLanguage: preferredLanguage.trim(),
         schoolName: schoolName.trim(), schoolType: profile?.schoolType || '', curriculum,
         academicTarget: profile?.academicTarget || '', learningStyle, interests,
         focusSubjects: profile?.focusSubjects || [], goal,
@@ -81,6 +88,16 @@ export default function OnboardingScreen() {
       <BodyText>Personalize how Kindling teaches. You can update these details at any time.</BodyText>
 
       <Field label="Learner name" value={name} onChangeText={setName} placeholder="Name" autoCapitalize="words" autoComplete="name" />
+      <View style={styles.group}>
+        <Text style={styles.label}>Date of birth · optional</Text>
+        <View style={styles.customRow}>
+          <View style={{ flex: 1 }}><Field label="Day" value={birthDay} onChangeText={(value) => setBirthDay(value.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={2} placeholder="DD" /></View>
+          <View style={{ flex: 1 }}><Field label="Month" value={birthMonth} onChangeText={(value) => setBirthMonth(value.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={2} placeholder="MM" /></View>
+          <View style={{ flex: 1.4 }}><Field label="Year" value={birthYear} onChangeText={(value) => setBirthYear(value.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={4} placeholder="YYYY" /></View>
+        </View>
+        <Text style={styles.hint}>{age !== null ? `Age ${age} · ` : ''}Used for relatable examples and age-appropriate explanations.</Text>
+        {dateOfBirth && age === null ? <Text style={styles.error}>Enter a valid day, month, and year within the past 120 years.</Text> : null}
+      </View>
       <ChoiceGroup label="Grade or study level" options={GRADE_OPTIONS} value={grade} onChange={chooseGrade} />
 
       <View style={styles.group}>
@@ -96,7 +113,7 @@ export default function OnboardingScreen() {
       <View style={styles.group}>
         <Text style={styles.label}>{higherEd ? 'Programme track' : 'Curriculum'}</Text>
         <Text style={styles.hint}>Optional · choose a pathway or leave as standard.</Text>
-        <View style={styles.choices}>{curricula.map((item) => <Choice key={item} label={item} selected={curriculum === item} onPress={() => setCurriculum((current) => current === item ? '' : item)} />)}</View>
+        <View style={styles.choices}>{(curriculum && !curricula.includes(curriculum) ? [...curricula, curriculum] : curricula).map((item) => <Choice key={item} label={item} selected={curriculum === item} onPress={() => setCurriculum((current) => current === item ? '' : item)} />)}</View>
       </View>
 
       <Field label="Tutoring language" value={preferredLanguage} onChangeText={setPreferredLanguage} placeholder="e.g. English, Español" maxLength={80} />
@@ -114,7 +131,7 @@ export default function OnboardingScreen() {
         {interests.filter((item) => !interestOptions.includes(item)).map((item) => <Choice key={item} label={`${item}  ×`} selected onPress={() => toggleInterest(item)} />)}
       </View>
 
-      <ChoiceGroup label="Main goal · optional" options={goals} value={goal} onChange={(item) => setGoal((current) => current === item ? '' : item)} />
+      <ChoiceGroup label="Main goal · optional" options={goal && !goals.includes(goal) ? [...goals, goal] : goals} value={goal} onChange={(item) => setGoal((current) => current === item ? '' : item)} />
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
       <Button busy={busy} onPress={() => void save()}>{profile?.isOnboarded ? 'Save profile changes' : 'Save learner profile'}</Button>
       {profile?.isOnboarded ? <Button variant="plain" disabled={busy} onPress={() => router.back()}>Cancel</Button> : null}

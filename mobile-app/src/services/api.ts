@@ -7,6 +7,8 @@ export type UserSession = { id: number; email: string; name: string };
 export type StudentProfile = {
   id: number;
   name: string;
+  dateOfBirth?: string | null;
+  age?: number | null;
   grade: string;
   avatar: string;
   country: string;
@@ -32,9 +34,9 @@ export type StudentProfile = {
   reminderHour?: number;
   reminderMinute?: number;
 };
-export type StudentProfileInput = Omit<StudentProfile, 'id'>;
-export type LessonItem = { id: number | null; name: string; learningGoal?: string; unitName?: string };
-export type Subject = { id: number; name: string; learningGoal?: string; topics: { id: number | null; name: string; subtopics: LessonItem[] }[] };
+export type StudentProfileInput = Omit<StudentProfile, 'id' | 'age'>;
+export type LessonItem = { id: number | null; name: string; learningGoal?: string; familiarity?: string; unitName?: string };
+export type Subject = { id: number; name: string; learningGoal?: string; topics: { id: number | null; name: string; learningGoal?: string; familiarity?: string; subtopics: LessonItem[] }[] };
 export type LearningDashboard = {
   hasData?: boolean;
   weekStats?: Record<string, { sessions?: { value?: string; cap?: string }; time?: { value?: string; cap?: string }; streak?: { value?: string; cap?: string }; focus?: { value?: string; cap?: string }; questions?: string; masteryDelta?: string }> | null;
@@ -183,9 +185,11 @@ export async function listSubjects(): Promise<Subject[]> {
         return {
           id: topic.id == null ? null : Number(topic.id),
           name: String(topic.name || 'Topic'),
+          learningGoal: String(topic.learning_goal || ''),
+          familiarity: String(topic.familiarity || 'unknown'),
           subtopics: subtopics.map((sub) => {
             const leaf = sub as Record<string, unknown>;
-            return { id: leaf.id == null ? null : Number(leaf.id), name: String(leaf.name || topic.name || 'Lesson'), learningGoal: String(leaf.learning_goal || topic.learning_goal || ''), unitName: String(topic.name || '') };
+            return { id: leaf.id == null ? null : Number(leaf.id), name: String(leaf.name || topic.name || 'Lesson'), learningGoal: String(leaf.learning_goal || topic.learning_goal || ''), familiarity: String(leaf.familiarity || topic.familiarity || 'unknown'), unitName: String(topic.name || '') };
           }),
         };
       }),
@@ -297,7 +301,7 @@ export type PlanEntitlements = {
 };
 
 export type PlanCatalogItem = {
-  id: 'spark' | 'forge' | 'ember' | string;
+  id: 'spark' | 'premium' | string;
   name: string;
   tagline: string;
   priceMonthly: number;
@@ -321,7 +325,7 @@ export type DailyAiUsage = {
 };
 
 export type PlatformSubscription = {
-  plan: 'spark' | 'forge' | 'ember' | string;
+  plan: 'spark' | 'premium' | string;
   planName: string;
   planDetail: PlanCatalogItem;
   status: 'active' | 'trialing' | 'past_due' | 'canceled' | string;
@@ -366,7 +370,7 @@ export async function listBillingInvoices(): Promise<BillingInvoiceItem[]> {
   }
 }
 
-export async function requestPlanInvoice(plan: 'forge' | 'ember', billingCycle: 'monthly' | 'yearly') {
+export async function requestPlanInvoice(plan: 'premium', billingCycle: 'monthly' | 'yearly') {
   return apiRequest<BillingInvoiceItem>('/api/platform/invoices/', {
     method: 'POST',
     json: { plan, billing_cycle: billingCycle },

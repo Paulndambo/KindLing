@@ -1,0 +1,500 @@
+    6  cd ../../
+    7  clear
+    8  cd AfterQuery/
+    9  ls
+   10  cd mobile-money-reconciliation
+   11  ls
+   12  echo "# Mobile-Money-Reconciliation" >> README.md
+   13  git init
+   14  git add README.md
+   15  git commit -m "first commit"
+   16  git branch -M main
+   17  git remote add origin https://github.com/Paulndambo/Mobile-Money-Reconciliation.git
+   18  git push -u origin main
+   19  git add .
+   20  git add .
+   21  git commit -m"Transactions reconciliation logic"
+   22  git push origin main
+   23  clear
+   24  cd ..
+   25  ls
+   26  cd expenses-api
+   27  ls
+   28  git add .
+   29  git init
+   30  git add .
+   31  git commit -m"Expenses transactions monitioring logic added"
+   32  git remote add origin https://github.com/Paulndambo/Expenses-API.git
+   33  git push origin main -f
+   34  clear
+   35  cd ../
+   36  ls
+   37  cd jobs/
+   38  ls
+   39  cd 2026-05-25__15-22-13/
+   40  ls
+   41  cd ../../
+   42  ls
+   43  cd ..
+   44  clear
+   45  ls
+   46  cd ResearchCenter/
+   47  ls
+   48  cd ErrandRunner/
+   49  ls
+   50  git add .
+   51  git commit -m"Logic added"
+   52  git push origin main
+   53  clear
+   54  cd ..
+   55  ls
+   56  cd PDFExtractor/
+   57  ls
+   58  cd ../PIDvsHPA/
+   59  ls
+   60  clear
+   61  echo "# PIDvsHPA" >> README.md
+   62  git init
+   63  git add README.md
+   64  git commit -m "first commit"
+   65  git branch -M main
+   66  git remote add origin https://github.com/Paulndambo/PIDvsHPA.git
+   67  git push -u origin main
+   68  clear
+   69  git status
+   70  git add .
+   71  git commit -m"Logic added"
+   72  git push origin main
+   73  clear
+   74  cd ..
+   75  ls
+   76  cd DjangoCloud/
+   77  ls
+   78  echo "# Django-Cloud" >> README.md
+   79  git init
+   80  git add README.md
+   81  git commit -m "first commit"
+   82  git branch -M main
+   83  git remote add origin https://github.com/Paulndambo/Django-Cloud.git
+   84  git push -u origin main
+   85  git add .
+   86  git rm --cached backend/builds/school-mgmt-system-a88a4f8e-4
+   87  git rm --cached backend/builds/school-mgmt-system-a88a4f8e-4 -f
+   88  git add .
+   89  git commit -m"Fixes"
+   90  git push origin main
+   91  clear
+   92  cd ../
+   93  ls
+   94  cd MAPE-K\ \&\ LLMS/
+   95  ls
+   96  echo "# MAPE-K-LLMs" >> README.md
+   97  git init
+   98  git add README.md
+   99  git commit -m "first commit"
+  100  git branch -M main
+  101  git remote add origin https://github.com/Paulndambo/MAPE-K-LLMs.git
+  102  git push -u origin main
+  103  git add .
+  104  git commit -m"Fixes"
+  105  git push origin main
+  106  clear
+  107  cd ..
+  108  ls
+  109  cd ../
+  110  ls
+  111  cd RPA/
+  112  ls
+  113  cd txt_reader/
+  114  ls
+  115  cd ../
+  116  cd ..
+  117  clear
+  118  ls
+  119  cd ArtificialIntelligence/
+  120  ls
+  121  cd FirstPersonSecondBrain/
+  122  git status
+  123  git add .
+  124  git commit -m"More items added"
+  125  git push origin main
+  126  clear
+  127  cd ..
+  128  ls
+  129  cd ResearchAssistant/
+  130  ls
+  131  cat main.py 
+  132  cd ../
+  133  clear
+  134  ls
+  135  cd embeddings/
+  136  ls
+  137  cd gemini/
+  138  cd ../
+  139  cd geminill
+  140  cd ../geminillms/
+  141  ls
+  142  cd ../../
+  143  ls
+  144  cd LLM-Engineering/
+  145  ls
+  146  cd website_summarizer/
+  147  ls
+  148  cd ../
+  149  cd ../
+  150  clear
+  151  ls
+  152  cd cd RPA/
+  153  cd RPA/
+  154  ls
+  155  cd ../
+  156  clear
+  157  ls
+  158  cd XAi/
+  159  ls
+  160  cd poe-engine/
+  161  ls
+  162  git status
+  163  git push origin main
+  164  ls
+  165  cd ../
+  166  cd ../
+  167  clear
+  168  cd SoftwareDevelopment/
+  169  ls
+  170  cd DjangoDeploy/
+  171  ls
+  172  echo "# Django-Deploy" >> README.md
+  173  git init
+  174  git add README.md
+  175  git commit -m "first commit"
+  176  git branch -M main
+  177  git remote add origin https://github.com/Paulndambo/Django-Deploy.git
+  178  git push -u origin main
+  179  git add .
+  180  git commit -m"Fixes"
+  181  git push origin main
+  182  clear
+  183  cd ../
+  184  ls
+  185  cd LandShare/
+  186  ls
+  187  cd mobile-app/
+  188  ls
+  189  echo "# Land-Share" >> README.md
+  190  git init
+  191  git add README.md
+  192  git commit -m "first commit"
+  193  git branch -M main
+  194  git remote add origin https://github.com/Paulndambo/Land-Share.git
+  195  git push -u origin main
+  196  git add .
+  197  git commit -m"Fixes"
+  198  git push origin main
+  199  cd ../../
+  200  clear
+  201  ls
+  202  cd AiNativeRPAForBanks/
+  203  ls
+  204  echo "# Ai-Native-RPA-For-Banks" >> README.md
+  205  git init
+  206  git add README.md
+  207  git commit -m "first commit"
+  208  git branch -M main
+  209  git remote add origin https://github.com/Paulndambo/Ai-Native-RPA-For-Banks.git
+  210  git push -u origin main
+  211  git add .
+  212  git commit -m"Fixes"
+  213  git push origin main
+  214  cd ../
+  215  clear
+  216  ls
+  217  cd KANISACLOUD\[WEB\ \&\ MOBILE\]/
+  218  LS
+  219  cd kanisa-cloud/
+  220  ls
+  221  echo "# Kanisa-Cloud-App" >> README.md
+  222  git init
+  223  git add README.md
+  224  git commit -m "first commit"
+  225  git branch -M main
+  226  git remote add origin https://github.com/Paulndambo/Kanisa-Cloud-App.git
+  227  git push -u origin main
+  228  git add .
+  229  git commit -m"Fixe"
+  230  git push origin main
+  231  cd ../../
+  232  ls
+  233  cd Cluely/
+  234  ls
+  235  git status
+  236  git remote v
+  237  git remote -v
+  238  cd ../
+  239  clear
+  240  ls
+  241  cd ABSAMomentum/
+  242  ls
+  243  echo "# Youth-Banking-App" >> README.md
+  244  git init
+  245  git add README.md
+  246  git commit -m "first commit"
+  247  git branch -M main
+  248  git remote add origin https://github.com/Paulndambo/Youth-Banking-App.git
+  249  git push -u origin main
+  250  git add .
+  251  git push origin main
+  252  git commit -m"More files added"
+  253  git push origin main
+  254  clear
+  255  cd ..
+  256  ls
+  257  cd AuroraDB/
+  258  ls
+  259  echo "# Aurora-DB" >> README.md
+  260  git init
+  261  git add README.md
+  262  git commit -m "first commit"
+  263  git branch -M main
+  264  git remote add origin https://github.com/Paulndambo/Aurora-DB.git
+  265  git push -u origin main
+  266  git add .
+  267  git commit -m"Edge DB implementation"
+  268  git push origin main
+  269  deactivate
+  270  cd ../
+  271  mkdir Revlinix
+  272  cd Revlinix/
+  273  cd Desktop/SoftwareDevelopment/
+  274  source projectsenv/Scripts/activate
+  275  cd PrimarySchool/
+  276  python manage.py runserver
+  277  cd Desktop/SoftwareDevelopment/Kindling/
+  278  git add .
+  279  git commit -m"Improvements"
+  280  git push origin main
+  281  claude
+  282  cd Desktop/SoftwareDevelopment/Kindling/mobile-app/
+  283  npm run web
+  284  cd Desktop/SoftwareDevelopment/Kindling/frontend/
+  285  npm run dev
+  286  cd ../
+  287  git status
+  288  git add .
+  289  git commit -m"Landing page ui/ux improvement"
+  290  git push origin main
+  291  cd Desktop/SoftwareDevelopment/
+  292  source projectsenv/Scripts/activate
+  293  cd Kindling/backend/
+  294  python manage.py runserver
+  295  cd Desktop/SoftwareDevelopment/Kindling/mobile-app/
+  296  npm install
+  297  npx eas-cli@latest login
+  298  npx eas-cli@latest init
+  299  npm run build:android:apk
+  300  adb
+  301  cd Desktop/SoftwareDevelopment/Kindling/mobile-app/
+  302  npx eas-cli build --platform android --profile preview
+  303  npm run web
+  304  clear
+  305  npm install expo@^58.0.0
+  306  clear
+  307  npx expo install --fix && npx expo-doctor
+  308  cd Desktop/SoftwareDevelopment/Kindling/mobile-app/
+  309  npx expo install --fix
+  310  clear
+  311  npx expo install
+  312  npx expo install --fix && npx expo-doctor
+  313  npx expo install --check
+  314  npx eas-cli build --platform android --profile preview
+  315  npm run web
+  316  clear
+  317  npm install
+  318  npm run web
+  319  clear
+  320  npx eas-cli build --platform android --profile preview
+  321  cd ../../ErrandHub/errands/
+  322  ls
+  323  npm run web
+  324  cd Desktop/SoftwareDevelopment/Kindling/frontend/
+  325  npm run dev
+  326  npm run dev
+  327  cd ../../ErrandHub/errands/
+  328  npx eas-cli@latest build --platform android --profile preview
+  329  npx eas-cli@latest build --platform android --profile preview
+  330  npx eas-cli@latest build --platform android --profile preview
+  331  npm run web
+  332  clear
+  333  npx eas-cli@latest build --platform android --profile preview
+  334  npx eas-cli@latest build --platform android --profile preview
+  335  cd Desktop/SoftwareDevelopment/
+  336  source projectsenv/Scripts/activate
+  337  cd Kindling/backend/
+  338  python manage.py runserver
+  339  python manage.py makemigrations
+  340  python manage.py migrate
+  341  python manage.py runserver
+  342  clear
+  343  python manage.py runserver
+  344  python manage.py migrate
+  345  python manage.py runserver
+  346  python manage.py migrate
+  347  python manage.py makemigrations
+  348  clear
+  349  python manage.py runserver
+  350  source projectsenv/Scripts/activate
+  351  code .
+  352  python activity_lab.py 
+  353  python activity_lab.py automation-notepad --minutes 1
+  354  clear
+  355  cd ../
+  356  source ../../Desktop/SoftwareDevelopment/projectsenv/Scripts/activate
+  357  ls
+  358  cd desktop_activity_lab/
+  359  pip install -r requirements.txt 
+  360  clear
+  361  python activity_lab.py automation-notepad --minutes 1
+  362  python main.py 
+  363  python main.py 
+  364  python main.py 
+  365  cd
+  366  cd Desktop/SoftwareDevelopment/
+  367  mkdir DesktopAutomation
+  368  cd DesktopAutomation/
+  369  code .
+  370  clear
+  371  pip install -r requirements.txt
+  372  python workflow.py
+  373  cd Desktop/SoftwareDevelopment/ErrandHub/errands/
+  374  npx eas-cli@latest build --platform android --profile preview
+  375  cd Desktop/SoftwareDevelopment/ErrandHub/
+  376  npx create-expo-app@latest
+  377  cd nitume/
+  378  npm run web
+  379  npm run web
+  380  cd Desktop/SoftwareDevelopment/DesktopAutomation/
+  381  code .
+  382  python workflow.py 
+  383  source ../projectsenv/Scripts/activate
+  384  python workflow.py 
+  385  cd Desktop/SoftwareDevelopment/ErrandHub/errands/
+  386  clear
+  387  npx eas-cli@latest build --platform android --profile preview
+  388  npm run web
+  389  clear
+  390  npx expo start --clear
+  391  npx eas-cli@latest build --platform android --profile preview
+  392  clear
+  393  npx eas-cli@latest build --platform android --profile preview
+  394  npx eas-cli@latest build --platform android --profile preview
+  395  clear
+  396  cd ../
+  397  cd ../DesktopAutomation/
+  398  python workflow.py 
+  399  source ../projectsenv/Scripts/activate
+  400  python workflow.py 
+  401  deactivate
+  402  cd ../ErrandHub/errands/
+  403  clear
+  404  npx expo install expo-updates
+  405  npx eas-cli@latest update:configure
+  406  npx eas-cli@latest build --platform android --profile preview
+  407  cd ../
+  408  cd ../DesktopAutomation/
+  409  source ../projectsenv/Scripts/activate
+  410  clear
+  411  python workflow.py 
+  412  cd ../ErrandHub/errands/
+  413  clear
+  414  npx eas-cli@latest build --platform android --profile preview
+  415  npx eas-cli@latest build --platform android --profile preview
+  416  clear
+  417  cd ../nitume/
+  418  npm run web
+  419  cd ../errands/
+  420  npm run web
+  421  clear
+  422  npx eas-cli@latest build --platform android --profile preview
+  423  cd Desktop/SoftwareDevelopment/ErrandHub/nitume/
+  424  npm run web
+  425  cd Desktop/SoftwareDevelopment/
+  426  source projectsenv/Scripts/activate
+  427  cd DesktopAutomation/
+  428  python workflow.py
+  429  cd Desktop/SoftwareDevelopment/ErrandHub/Tutam/
+  430  npm run web
+  431  cd Desktop/SoftwareDevelopment/
+  432  cd ErrandHub/
+  433  npx create-expo-app@latest
+  434  npm install -g create-expo
+  435  cd nitume/
+  436  npm run web
+  437  npm run web
+  438  cd ../Tutam/
+  439  npm run web
+  440  cd ../nitume/
+  441  npm run web
+  442  cd Desktop/SoftwareDevelopment/Kindling/mobile-app/
+  443  clear
+  444  npm run web
+  445  clear
+  446  npx expo start --clear
+  447  clear
+  448  npx expo install --check
+  449  npm audit fix
+  450  npm audit fix --force
+  451  npm audit fix --force
+  452  npm audit fix --force
+  453  clear
+  454  npx expo start --clear
+  455  cd ..
+  456  cd ../
+  457  git clone https://github.com/Paulndambo/Nutun-Backend.git
+  458  cd Kindling/mobile-app/
+  459  clear
+  460  expo start --clear
+  461  npm run web
+  462  cd ../../ErrandHub/dart_board/
+  463  ls
+  464  npm run dev
+  465  npm run dev
+  466  cd Desktop/SoftwareDevelopment/
+  467  source projectsenv/Scripts/activate
+  468  cd DesktopAutomation/
+  469  python workflow.py 
+  470  python workflow.py 
+  471  python workflow.py 
+  472  clear
+  473  cd ../Kindling/frontend/
+  474  npm run dev
+  475  cd Desktop/SoftwareDevelopment/
+  476  source projectsenv/Scripts/activate
+  477  cd Kindling/backend/
+  478  python manage.py runserver
+  479  cd ../
+  480  git status
+  481  git add .
+  482  git commit -m"Platform improvements"
+  483  git push origin main
+  484  cd backend/
+  485  code .
+  486  clear
+  487  python manage.py runserver
+  488  cd ../
+  489  cd ..
+  490  cd DesktopAutomation/
+  491  lear
+  492  clear
+  493  python workflow.py
+  494  python workflow.py
+  495  clear
+  496  python workflow.py
+  497  python workflow.py
+  498  clear
+  499  python workflow.py
+  500  python workflow.py
+  501  cd Desktop/SoftwareDevelopment/Kindling/mobile-app/
+  502  npm run web
+  503  eas update --branch production --message "Updated app"
+  504  npx eas update --branch production --message "Updated app"
+  505  history>history.txt

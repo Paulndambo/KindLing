@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
 import { SessionProvider, useSession } from '@/context/session';
+import { PurchasesProvider } from '@/context/purchases';
 import { Brand } from '@/constants/brand';
 import {
   configureNotificationsHandler,
@@ -71,5 +72,5 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  return <SessionProvider><RootNavigator /></SessionProvider>;
+  return <SessionProvider><PurchasesProvider><RootNavigator /></PurchasesProvider></SessionProvider>;
 }

@@ -386,6 +386,30 @@
 .kdl #lesson .lesson-shell {
   height: calc(100dvh - 76px);
 }
+.kdl .lesson-side-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.kdl .lesson-side-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 550;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 150ms, color 150ms;
+}
+.kdl .lesson-side-back:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
 
 /* Cohesive app shell for the rebuilt learning experience. */
 .kdl {
@@ -788,10 +812,24 @@
   }
   .kdl .topnav {
     min-height: 68px;
-    padding-inline: 20px;
+    padding-inline: 16px;
   }
   .kdl .topnav .brand span {
-    font-size: 22px;
+    font-size: 20px;
+  }
+  .kdl .topnav-actions {
+    gap: 8px;
+  }
+  .kdl .topnav .student-badge .badge-grade,
+  .kdl .topnav .topnav-logout-label {
+    display: none;
+  }
+  .kdl .topnav .student-badge {
+    padding: 6px 10px 6px 8px;
+  }
+  .kdl .topnav-auth-btn {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
   }
   .kdl #dashboard .dash-wrap {
     padding: 24px 14px 45px;

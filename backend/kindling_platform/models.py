@@ -12,8 +12,7 @@ from django.db import models
 
 class PlanId(models.TextChoices):
     SPARK = "spark", "Spark"
-    EMBER = "ember", "Ember"
-    FORGE = "forge", "Forge"
+    PREMIUM = "premium", "Premium"
 
 
 class SubscriptionStatus(models.TextChoices):

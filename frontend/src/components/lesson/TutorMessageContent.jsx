@@ -969,7 +969,7 @@ function TutorVisualDemo({ spec }) {
       >
         <div className="tutor-visual-header">
           <span className="tutor-visual-badge is-study-plan">
-            <Eye size={12} /> Topic Study Plan
+            <Eye size={12} /> Topic Curriculum
           </span>
           <strong className="tutor-visual-title">{spec.title}</strong>
         </div>
@@ -1005,7 +1005,7 @@ function TutorVisualDemo({ spec }) {
         {spec.sections?.length ? (
           <div className="tutor-study-plan-group">
             <span className="tutor-study-plan-kicker">
-              Tutoring Sections &amp; Roadmap
+              Curriculum Modules
             </span>
             <div className="tutor-process-steps is-study-plan">
               {spec.sections.map((sec, idx) => (

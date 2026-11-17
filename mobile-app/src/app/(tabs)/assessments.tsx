@@ -11,8 +11,8 @@ import {
 import {
   AppScreen,
   BodyText,
+  BrandMark,
   Button,
-  Heading,
   SectionTitle,
   ui,
 } from '@/components/mobile-ui';
@@ -40,7 +40,7 @@ const kinds: { id: AssessmentType; label: string; detail: string; badge: string 
   {
     id: 'multiple_choice',
     label: 'Multiple choice',
-    detail: 'Choose the best answer from 4 structured choices.',
+    detail: 'Choose the best answer from 4 choices.',
     badge: 'Fast & focused',
   },
   {
@@ -52,7 +52,7 @@ const kinds: { id: AssessmentType; label: string; detail: string; badge: string 
   {
     id: 'hybrid',
     label: 'Hybrid mix',
-    detail: 'A balanced mix of multiple-choice and open-ended prompts.',
+    detail: 'A balanced mix of multiple-choice and short written answers.',
     badge: 'Recommended',
   },
 ];
@@ -88,6 +88,7 @@ export default function AssessmentsScreen() {
 
   const [assessment, setAssessment] = useState<CustomAssessment | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [currentQIndex, setCurrentQIndex] = useState(0);
   const [grade, setGrade] = useState<AssessmentGrade | null>(null);
   const [recordId, setRecordId] = useState<number | null>(null);
 
@@ -103,12 +104,13 @@ export default function AssessmentsScreen() {
   const [chatBusy, setChatBusy] = useState(false);
 
   const total = assessment?.questions.length || 0;
+  const isQuestionAnswered = (q: CustomAssessment['questions'][number]) =>
+    q.type === 'multiple_choice'
+      ? answers[q.id] !== undefined && answers[q.id] !== ''
+      : Boolean(answers[q.id]?.trim());
+
   const answered =
-    assessment?.questions.filter((q) =>
-      q.type === 'multiple_choice'
-        ? answers[q.id] !== undefined && answers[q.id] !== ''
-        : Boolean(answers[q.id]?.trim()),
-    ).length || 0;
+    assessment?.questions.filter((q) => isQuestionAnswered(q)).length || 0;
   const validCount = /^\d+$/.test(count) && Number(count) >= 5 && Number(count) <= 15;
 
   const selectedSubject = subjects.find((item) => String(item.id) === subjectId);
@@ -117,7 +119,11 @@ export default function AssessmentsScreen() {
   const availableSubtopics = selectedTopic?.subtopics || [];
   const selectedSubtopic = availableSubtopics.find((item) => String(item.id) === subtopicId);
   const selectorOptions =
-    selector === 'subject' ? subjects : selector === 'topic' ? availableTopics : availableSubtopics;
+    selector === 'subject'
+      ? subjects
+      : selector === 'topic'
+        ? availableTopics
+        : availableSubtopics;
   const selectorTitle =
     selector === 'subject'
       ? 'Choose a subject'
@@ -138,7 +144,9 @@ export default function AssessmentsScreen() {
       .catch((cause) => {
         if (active) {
           setHistoryError(
-            cause instanceof Error ? cause.message : 'Saved assessments could not be loaded.',
+            cause instanceof Error
+              ? cause.message
+              : 'Saved assessments could not be loaded.',
           );
         }
       })
@@ -159,7 +167,9 @@ export default function AssessmentsScreen() {
       .catch((cause) => {
         if (active) {
           setHistoryError(
-            cause instanceof Error ? cause.message : 'Your subjects could not be loaded.',
+            cause instanceof Error
+              ? cause.message
+              : 'Your subjects could not be loaded.',
           );
         }
       });
@@ -178,7 +188,11 @@ export default function AssessmentsScreen() {
           );
         })
         .catch((cause) =>
-          setError(cause instanceof Error ? cause.message : 'Your answers could not be saved.'),
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'Your answers could not be saved.',
+          ),
         );
     }, 700);
     return () => clearTimeout(timer);
@@ -188,12 +202,15 @@ export default function AssessmentsScreen() {
     const completed = savedAssessments.filter(
       (item) => item.status === 'completed' && item.result,
     );
-    const inProgress = savedAssessments.filter((item) => item.status !== 'completed');
+    const inProgress = savedAssessments.filter(
+      (item) => item.status !== 'completed',
+    );
     const avg = completed.length
       ? Math.round(
           completed.reduce(
             (sum, item) =>
-              sum + Number((item.result as { score?: number } | null)?.score ?? 0),
+              sum +
+              Number((item.result as { score?: number } | null)?.score ?? 0),
             0,
           ) / completed.length,
         )
@@ -209,16 +226,19 @@ export default function AssessmentsScreen() {
   const filteredAssessments = useMemo(() => {
     return savedAssessments.filter((item) => {
       if (statusFilter === 'active' && item.status === 'completed') return false;
-      if (statusFilter === 'completed' && item.status !== 'completed') return false;
+      if (statusFilter === 'completed' && item.status !== 'completed')
+        return false;
       return true;
     });
   }, [savedAssessments, statusFilter]);
 
   const generate = async () => {
-    if (!selectedSubject || !selectedTopic || !selectedSubtopic || !validCount) return;
+    if (!selectedSubject || !selectedTopic || !selectedSubtopic || !validCount)
+      return;
     setError('');
     setPhase('generating');
     setAnswers({});
+    setCurrentQIndex(0);
     setGrade(null);
     setChat([]);
     try {
@@ -247,10 +267,13 @@ export default function AssessmentsScreen() {
       setRecordId(saved.id);
       setSavedAssessments((current) => [saved, ...current]);
       setAssessment(generated);
+      setCurrentQIndex(0);
       setPhase('active');
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Kindling could not create this assessment.',
+        cause instanceof Error
+          ? cause.message
+          : 'Kindling could not create this assessment.',
       );
       setPhase('setup');
     }
@@ -263,7 +286,9 @@ export default function AssessmentsScreen() {
     try {
       const result = await scoreAssessment(assessment, answers);
       if (recordId == null) {
-        throw new Error('This assessment has not been saved yet. Please try again.');
+        throw new Error(
+          'This assessment has not been saved yet. Please try again.',
+        );
       }
       const saved = await updateAssessment(recordId, {
         answers,
@@ -277,14 +302,18 @@ export default function AssessmentsScreen() {
       setPhase('review');
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Kindling could not score this assessment.',
+        cause instanceof Error
+          ? cause.message
+          : 'Kindling could not score this assessment.',
       );
       setPhase('active');
     }
   };
 
   const send = async (textOverride?: string) => {
-    const text = (typeof textOverride === 'string' ? textOverride : draft).trim();
+    const text = (
+      typeof textOverride === 'string' ? textOverride : draft
+    ).trim();
     if (!text || !assessment || !grade || chatBusy) return;
     const next = [...chat, { role: 'user' as const, text }];
     setChat(next);
@@ -292,10 +321,16 @@ export default function AssessmentsScreen() {
     setChatBusy(true);
     setError('');
     try {
-      const response = await askTutor(next, revisionSystem(assessment, answers, grade));
-      if (recordId == null) throw new Error('The saved assessment could not be found.');
+      const response = await askTutor(
+        next,
+        revisionSystem(assessment, answers, grade),
+      );
+      if (recordId == null)
+        throw new Error('The saved assessment could not be found.');
       const transcript = [...next, { role: 'model' as const, text: response }];
-      const saved = await updateAssessment(recordId, { revisionMessages: transcript });
+      const saved = await updateAssessment(recordId, {
+        revisionMessages: transcript,
+      });
       setSavedAssessments((current) =>
         current.map((item) => (item.id === saved.id ? saved : item)),
       );
@@ -304,7 +339,9 @@ export default function AssessmentsScreen() {
       setChat((current) => current.slice(0, -1));
       if (typeof textOverride !== 'string') setDraft(text);
       setError(
-        cause instanceof Error ? cause.message : 'Kindling could not reply. Try again.',
+        cause instanceof Error
+          ? cause.message
+          : 'Kindling could not reply. Try again.',
       );
     } finally {
       setChatBusy(false);
@@ -316,6 +353,7 @@ export default function AssessmentsScreen() {
     setAssessment(null);
     setGrade(null);
     setAnswers({});
+    setCurrentQIndex(0);
     setChat([]);
     setRecordId(null);
     setError('');
@@ -327,9 +365,19 @@ export default function AssessmentsScreen() {
   };
 
   const openSavedAssessment = (saved: StudentAssessmentRecord) => {
+    const loadedAssessment = saved as unknown as CustomAssessment;
+    const loadedAnswers = saved.answers || {};
+    const firstUnansweredIdx = (loadedAssessment.questions || []).findIndex(
+      (q) =>
+        q.type === 'multiple_choice'
+          ? loadedAnswers[q.id] === undefined || loadedAnswers[q.id] === ''
+          : !loadedAnswers[q.id]?.trim(),
+    );
+
     setRecordId(saved.id);
-    setAssessment(saved as unknown as CustomAssessment);
-    setAnswers(saved.answers || {});
+    setAssessment(loadedAssessment);
+    setAnswers(loadedAnswers);
+    setCurrentQIndex(firstUnansweredIdx >= 0 ? firstUnansweredIdx : 0);
     setGrade(saved.result as unknown as AssessmentGrade | null);
     setChat(saved.revisionMessages || []);
     setSubjectId(saved.subjectId == null ? '' : String(saved.subjectId));
@@ -339,50 +387,59 @@ export default function AssessmentsScreen() {
     setKind(saved.questionType);
     setCount(String(saved.questions.length || 5));
     setError('');
-    setPhase(saved.status === 'completed' && saved.result ? 'review' : 'active');
+    setPhase(
+      saved.status === 'completed' && saved.result ? 'review' : 'active',
+    );
   };
+
+  const activeQuestion =
+    assessment?.questions[
+      Math.min(currentQIndex, Math.max(0, total - 1))
+    ] || null;
 
   return (
     <AppScreen scroll contentStyle={s.page}>
-      {/* Top navigation & context header */}
-      {phase !== 'list' ? (
+      {/* Top Header */}
+      {phase === 'list' ? (
+        <View style={s.topline}>
+          <BrandMark size={38} />
+          <View style={s.greeting}>
+            <Text style={s.eyebrow}>PRACTICE & QUIZZES</Text>
+            <Text numberOfLines={1} style={s.hello}>
+              Assessments
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={openSetup}
+            style={({ pressed }) => [
+              s.topCtaButton,
+              pressed && s.pressed,
+            ]}
+          >
+            <Text style={s.topCtaButtonText}>＋ New quiz</Text>
+          </Pressable>
+        </View>
+      ) : (
         <View style={s.topNavRow}>
           <Pressable
             accessibilityRole="button"
             onPress={backToLibrary}
-            style={s.backPill}
+            style={({ pressed }) => [s.backPill, pressed && s.pressed]}
           >
-            <Text style={s.backPillText}>← All assessments</Text>
+            <Text style={s.backPillText}>‹ All assessments</Text>
           </Pressable>
           {(phase === 'active' || phase === 'review') && (
             <Pressable
               accessibilityRole="button"
               onPress={openSetup}
-              style={s.newSmallPill}
+              style={({ pressed }) => [s.newSmallPill, pressed && s.pressed]}
             >
-              <Text style={s.newSmallPillText}>+ New</Text>
+              <Text style={s.newSmallPillText}>＋ New</Text>
             </Pressable>
           )}
         </View>
-      ) : null}
-
-      <View style={s.hero}>
-        <Text style={s.kicker}>ASSESSMENTS · LEARN BY SHOWING WHAT YOU KNOW</Text>
-        <Heading>
-          {phase === 'list'
-            ? 'Your Assessments'
-            : phase === 'review'
-              ? 'Assessment Review'
-              : phase === 'active' || phase === 'grading'
-                ? assessment?.title || 'Active Assessment'
-                : 'Build an Assessment'}
-        </Heading>
-        <BodyText>
-          {phase === 'list'
-            ? 'Review your past scores, continue an open check-in, or build a new custom assessment.'
-            : 'Choose a topic. Kindling will prepare questions, score your work, and help you revise.'}
-        </BodyText>
-      </View>
+      )}
 
       {error ? (
         <View style={s.errorBanner}>
@@ -401,37 +458,55 @@ export default function AssessmentsScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={openSetup}
-            style={s.createHeroCard}
+            style={({ pressed }) => [s.createHeroCard, pressed && s.pressed]}
           >
             <View style={s.createHeroBadge}>
-              <Text style={s.createHeroBadgeText}>✦ NEW CHECK-IN</Text>
+              <Text style={s.createHeroBadgeText}>✦ CHECK WHAT YOU KNOW</Text>
             </View>
-            <Text style={s.createHeroTitle}>Create a new assessment</Text>
+            <Text style={s.createHeroTitle}>Build a custom practice quiz</Text>
             <Text style={s.createHeroSub}>
-              Pick a subject and subtopic, choose 5–15 questions, and get instant grading with
-              1-on-1 revision.
+              Choose a topic and 5–15 questions. Work through one question at a
+              time and get instant feedback from Kindling.
             </Text>
             <View style={s.createHeroBtn}>
-              <Text style={s.createHeroBtnText}>+ Start new assessment</Text>
+              <Text style={s.createHeroBtnText}>Start new assessment →</Text>
             </View>
           </Pressable>
 
           {/* Summary KPI Grid */}
           <View style={s.kpiGrid}>
-            <View style={[s.kpiCard, s.kpiTeal]}>
-              <Text style={s.kpiLabel}>TOTAL</Text>
-              <Text style={s.kpiVal}>{stats.total}</Text>
-              <Text style={s.kpiCap}>Created</Text>
+            <View style={s.kpiCard}>
+              <Text numberOfLines={1} style={s.kpiLabel}>
+                TOTAL
+              </Text>
+              <Text numberOfLines={1} style={s.kpiVal}>
+                {stats.total}
+              </Text>
+              <Text numberOfLines={1} style={s.kpiCap}>
+                Quizzes
+              </Text>
             </View>
-            <View style={[s.kpiCard, s.kpiPine]}>
-              <Text style={s.kpiLabel}>COMPLETED</Text>
-              <Text style={s.kpiVal}>{stats.completed}</Text>
-              <Text style={s.kpiCap}>Scored</Text>
+            <View style={s.kpiCard}>
+              <Text numberOfLines={1} style={s.kpiLabel}>
+                COMPLETED
+              </Text>
+              <Text numberOfLines={1} style={s.kpiVal}>
+                {stats.completed}
+              </Text>
+              <Text numberOfLines={1} style={s.kpiCap}>
+                Scored
+              </Text>
             </View>
-            <View style={[s.kpiCard, s.kpiGold]}>
-              <Text style={s.kpiLabel}>AVG SCORE</Text>
-              <Text style={s.kpiVal}>{stats.avg != null ? `${stats.avg}%` : '—'}</Text>
-              <Text style={s.kpiCap}>Mastery</Text>
+            <View style={s.kpiCard}>
+              <Text numberOfLines={1} style={s.kpiLabel}>
+                AVG SCORE
+              </Text>
+              <Text numberOfLines={1} style={s.kpiVal}>
+                {stats.avg != null ? `${stats.avg}%` : '—'}
+              </Text>
+              <Text numberOfLines={1} style={s.kpiCap}>
+                Mastery
+              </Text>
             </View>
           </View>
 
@@ -449,7 +524,10 @@ export default function AssessmentsScreen() {
                 accessibilityRole="tab"
                 accessibilityState={{ selected: statusFilter === tab.id }}
                 onPress={() => setStatusFilter(tab.id)}
-                style={[s.filterPill, statusFilter === tab.id && s.filterPillActive]}
+                style={[
+                  s.filterPill,
+                  statusFilter === tab.id && s.filterPillActive,
+                ]}
               >
                 <Text
                   style={[
@@ -463,12 +541,16 @@ export default function AssessmentsScreen() {
             ))}
           </View>
 
-          {historyError ? <Text style={s.muted}>Saved assessments: {historyError}</Text> : null}
+          {historyError ? (
+            <Text style={s.muted}>Saved assessments: {historyError}</Text>
+          ) : null}
 
           {loadingHistory ? (
             <View style={[ui.card, s.emptyCard]}>
               <Text style={s.choiceTitle}>Loading your assessments…</Text>
-              <Text style={s.muted}>Fetching your saved practice sessions and scores.</Text>
+              <Text style={s.muted}>
+                Fetching your saved practice sessions and scores.
+              </Text>
             </View>
           ) : filteredAssessments.length === 0 ? (
             <View style={[ui.card, s.emptyCard]}>
@@ -486,16 +568,24 @@ export default function AssessmentsScreen() {
           ) : (
             <View style={s.cardList}>
               {filteredAssessments.map((saved) => {
-                const isDone = saved.status === 'completed' && Boolean(saved.result);
+                const isDone =
+                  saved.status === 'completed' && Boolean(saved.result);
                 const qLen = saved.questions?.length || 0;
                 const score = isDone
-                  ? Number((saved.result as { score?: number } | null)?.score ?? 0)
+                  ? Number(
+                      (saved.result as { score?: number } | null)?.score ?? 0,
+                    )
                   : null;
                 const correctCount = isDone
-                  ? Number((saved.result as { correct?: number } | null)?.correct ?? 0)
+                  ? Number(
+                      (saved.result as { correct?: number } | null)?.correct ??
+                        0,
+                    )
                   : 0;
                 const pathLabel = saved.subjectName
-                  ? [saved.subjectName, saved.topicName].filter(Boolean).join(' · ')
+                  ? [saved.subjectName, saved.topicName]
+                      .filter(Boolean)
+                      .join(' · ')
                   : 'Custom topic';
 
                 return (
@@ -503,10 +593,11 @@ export default function AssessmentsScreen() {
                     key={saved.id}
                     accessibilityRole="button"
                     onPress={() => openSavedAssessment(saved)}
-                    style={[
+                    style={({ pressed }) => [
                       ui.card,
                       s.assessCard,
                       isDone ? s.assessCardDone : s.assessCardActive,
+                      pressed && s.pressed,
                     ]}
                   >
                     <View style={s.assessCardTop}>
@@ -519,7 +610,9 @@ export default function AssessmentsScreen() {
                         <Text
                           style={[
                             s.statusBadgeText,
-                            isDone ? s.statusBadgeTextDone : s.statusBadgeTextActive,
+                            isDone
+                              ? s.statusBadgeTextDone
+                              : s.statusBadgeTextActive,
                           ]}
                         >
                           {isDone ? '✓ Completed' : '● In progress'}
@@ -532,9 +625,11 @@ export default function AssessmentsScreen() {
                       </View>
                     </View>
 
-                    <View style={{ gap: 4 }}>
-                      <Text style={s.cardPath}>{pathLabel}</Text>
-                      <Text style={s.cardTitle}>
+                    <View style={s.cardTitleWrap}>
+                      <Text numberOfLines={1} style={s.cardPath}>
+                        {pathLabel}
+                      </Text>
+                      <Text numberOfLines={2} style={s.cardTitle}>
                         {saved.title || saved.subtopicName || saved.topic}
                       </Text>
                     </View>
@@ -547,7 +642,7 @@ export default function AssessmentsScreen() {
                             : `${qLen} questions`}
                         </Text>
                         <Text style={s.cardScoreText}>
-                          {isDone ? `${score}% score` : 'Tap to resume'}
+                          {isDone ? `${score}% score` : 'In progress'}
                         </Text>
                       </View>
                       {isDone && score != null ? (
@@ -555,7 +650,9 @@ export default function AssessmentsScreen() {
                           <View
                             style={[
                               s.barFill,
-                              { width: `${Math.max(6, Math.min(100, score))}%` },
+                              {
+                                width: `${Math.max(6, Math.min(100, score))}%`,
+                              },
                             ]}
                           />
                         </View>
@@ -564,10 +661,11 @@ export default function AssessmentsScreen() {
 
                     <View style={s.assessCardFoot}>
                       <Text style={s.muted}>
-                        Updated {formatDateShort(saved.updatedAt || saved.createdAt)}
+                        Updated{' '}
+                        {formatDateShort(saved.updatedAt || saved.createdAt)}
                       </Text>
                       <Text style={s.openActionText}>
-                        {isDone ? 'Review details →' : 'Continue →'}
+                        {isDone ? 'Review details ›' : 'Continue ›'}
                       </Text>
                     </View>
                   </Pressable>
@@ -583,7 +681,7 @@ export default function AssessmentsScreen() {
           ==================================================================== */}
       {(phase === 'setup' || phase === 'generating') && (
         <View style={[ui.card, s.formCard]}>
-          <SectionTitle>Set up your assessment</SectionTitle>
+          <SectionTitle>Build an assessment</SectionTitle>
 
           <View style={s.fieldBlock}>
             <Text style={s.label}>Subject *</Text>
@@ -593,15 +691,20 @@ export default function AssessmentsScreen() {
               style={s.selector}
               onPress={() => setSelector('subject')}
             >
-              <Text style={selectedSubject ? s.selectorText : s.selectorPlaceholder}>
+              <Text
+                numberOfLines={1}
+                style={
+                  selectedSubject ? s.selectorText : s.selectorPlaceholder
+                }
+              >
                 {selectedSubject?.name || 'Choose a subject'}
               </Text>
-              <Text style={s.progress}>⌄</Text>
+              <Text style={s.progress}>▾</Text>
             </Pressable>
           </View>
 
           <View style={s.fieldBlock}>
-            <Text style={s.label}>Topic *</Text>
+            <Text style={s.label}>Topic unit *</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ disabled: !selectedSubject }}
@@ -609,15 +712,18 @@ export default function AssessmentsScreen() {
               disabled={!selectedSubject}
               onPress={() => setSelector('topic')}
             >
-              <Text style={selectedTopic ? s.selectorText : s.selectorPlaceholder}>
+              <Text
+                numberOfLines={1}
+                style={selectedTopic ? s.selectorText : s.selectorPlaceholder}
+              >
                 {selectedTopic?.name || 'Choose a topic'}
               </Text>
-              <Text style={s.progress}>⌄</Text>
+              <Text style={s.progress}>▾</Text>
             </Pressable>
           </View>
 
           <View style={s.fieldBlock}>
-            <Text style={s.label}>Subtopic *</Text>
+            <Text style={s.label}>Lesson / subtopic *</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ disabled: !selectedTopic }}
@@ -625,42 +731,35 @@ export default function AssessmentsScreen() {
               disabled={!selectedTopic}
               onPress={() => setSelector('subtopic')}
             >
-              <Text style={selectedSubtopic ? s.selectorText : s.selectorPlaceholder}>
+              <Text
+                numberOfLines={1}
+                style={
+                  selectedSubtopic ? s.selectorText : s.selectorPlaceholder
+                }
+              >
                 {selectedSubtopic?.name || 'Choose a subtopic'}
               </Text>
-              <Text style={s.progress}>⌄</Text>
+              <Text style={s.progress}>▾</Text>
             </Pressable>
           </View>
 
           {!subjects.length && historyError ? (
-            <Text style={s.error}>Your subjects could not be loaded: {historyError}</Text>
+            <Text style={s.error}>
+              Your subjects could not be loaded: {historyError}
+            </Text>
           ) : null}
 
           <View style={s.fieldBlock}>
-            <Text style={s.label}>
-              Focus notes <Text style={s.muted}>(optional)</Text>
-            </Text>
-            <TextInput
-              accessibilityLabel="Optional description"
-              style={[s.input, s.multiline]}
-              value={description}
-              onChangeText={setDescription}
-              maxLength={800}
-              multiline
-              textAlignVertical="top"
-              placeholder="Guide the level, concepts, curriculum, or question focus."
-              placeholderTextColor={Brand.muted}
-            />
-          </View>
-
-          <View style={s.fieldBlock}>
-            <Text style={s.label}>Number of questions (5–15)</Text>
+            <Text style={s.label}>Number of questions</Text>
             <View style={s.presetRow}>
               {COUNT_PRESETS.map((preset) => (
                 <Pressable
                   key={preset}
                   onPress={() => setCount(preset)}
-                  style={[s.presetChip, count === preset && s.presetChipActive]}
+                  style={[
+                    s.presetChip,
+                    count === preset && s.presetChipActive,
+                  ]}
                 >
                   <Text
                     style={[
@@ -682,7 +781,7 @@ export default function AssessmentsScreen() {
               />
             </View>
             {!validCount ? (
-              <Text style={s.error}>Enter a whole number from 5 to 15.</Text>
+              <Text style={s.error}>Enter a number from 5 to 15.</Text>
             ) : null}
           </View>
 
@@ -697,7 +796,7 @@ export default function AssessmentsScreen() {
                 style={[s.choice, kind === item.id && s.choiceSelected]}
               >
                 <View style={[s.radio, kind === item.id && s.radioSelected]} />
-                <View style={{ flex: 1, gap: 3 }}>
+                <View style={s.choiceCopy}>
                   <View style={s.choiceHeaderRow}>
                     <Text style={s.choiceTitle}>{item.label}</Text>
                     <View style={s.choiceBadge}>
@@ -710,20 +809,37 @@ export default function AssessmentsScreen() {
             ))}
           </View>
 
-          <Text style={s.muted}>
-            Your result will contribute to mastery for{' '}
-            {selectedSubtopic?.name || 'the selected subtopic'}.
-          </Text>
+          <View style={s.fieldBlock}>
+            <Text style={s.label}>
+              Focus notes <Text style={s.muted}>(optional)</Text>
+            </Text>
+            <TextInput
+              accessibilityLabel="Optional description"
+              style={[s.input, s.multilineSmall]}
+              value={description}
+              onChangeText={setDescription}
+              maxLength={800}
+              multiline
+              textAlignVertical="top"
+              placeholder="Any specific concepts or exam style you want to focus on?"
+              placeholderTextColor={Brand.muted}
+            />
+          </View>
 
-          <View style={{ gap: 10 }}>
+          <View style={s.setupActions}>
             <Button
               busy={phase === 'generating'}
-              disabled={!selectedSubject || !selectedTopic || !selectedSubtopic || !validCount}
+              disabled={
+                !selectedSubject ||
+                !selectedTopic ||
+                !selectedSubtopic ||
+                !validCount
+              }
               onPress={generate}
             >
               {phase === 'generating'
-                ? 'Creating your assessment…'
-                : 'Generate assessment'}
+                ? 'Creating your questions…'
+                : 'Start assessment'}
             </Button>
             <Button
               variant="secondary"
@@ -737,131 +853,217 @@ export default function AssessmentsScreen() {
       )}
 
       {/* ====================================================================
-          PHASE 3: ACTIVE ASSESSMENT
+          PHASE 3: ACTIVE ASSESSMENT (ONE-QUESTION-AT-A-TIME STEPPER)
           ==================================================================== */}
-      {(phase === 'active' || phase === 'grading') && assessment && (
-        <View style={s.sectionStack}>
-          <View style={[ui.card, s.progressHeaderCard]}>
-            <View style={s.rowBetween}>
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={s.kicker}>ACTIVE ASSESSMENT</Text>
-                <Text style={s.sectionHeading}>{assessment.topic}</Text>
-                <Text style={s.muted}>
-                  {total} questions · {formatTypeLabel(kind)}
-                </Text>
-              </View>
-              <View style={s.progressPill}>
-                <Text style={s.progressPillText}>
-                  {answered} / {total}
-                </Text>
-              </View>
-            </View>
-            <View style={s.barTrack}>
-              <View
-                style={[
-                  s.barFill,
-                  { width: `${Math.round((answered / Math.max(1, total)) * 100)}%` },
-                ]}
-              />
-            </View>
-          </View>
-
-          {assessment.questions.map((q, index) => {
-            const isAns =
-              q.type === 'multiple_choice'
-                ? answers[q.id] !== undefined && answers[q.id] !== ''
-                : Boolean(answers[q.id]?.trim());
-            return (
-              <View
-                key={q.id}
-                style={[ui.card, s.questionCard, isAns && s.questionCardAnswered]}
-              >
-                <View style={s.qTopRow}>
-                  <View style={s.qNumBadge}>
-                    <Text style={s.qNumBadgeText}>
-                      Question {index + 1} of {total}
-                    </Text>
-                  </View>
-                  <Text style={s.qTypeLabel}>
-                    {q.type === 'multiple_choice' ? 'Multiple choice' : 'Open ended'} ·{' '}
-                    {q.difficulty}
+      {(phase === 'active' || phase === 'grading') &&
+        assessment &&
+        activeQuestion && (
+          <View style={s.sectionStack}>
+            {/* Stepper Header Card */}
+            <View style={[ui.card, s.progressHeaderCard]}>
+              <View style={s.rowBetween}>
+                <View style={s.rowCopy}>
+                  <Text style={s.kicker}>
+                    QUESTION {currentQIndex + 1} OF {total}
+                  </Text>
+                  <Text numberOfLines={1} style={s.sectionHeading}>
+                    {assessment.topic}
                   </Text>
                 </View>
+                <View style={s.progressPill}>
+                  <Text style={s.progressPillText}>
+                    {answered}/{total} done
+                  </Text>
+                </View>
+              </View>
 
-                {q.concept ? <Text style={s.conceptTag}>◎ {q.concept}</Text> : null}
+              <View style={s.barTrack}>
+                <View
+                  style={[
+                    s.barFill,
+                    {
+                      width: `${Math.round(
+                        (answered / Math.max(1, total)) * 100,
+                      )}%`,
+                    },
+                  ]}
+                />
+              </View>
 
-                <Text style={s.question}>{q.prompt}</Text>
+              {/* Interactive Question Step Dots */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.stepDotsRow}
+              >
+                {assessment.questions.map((q, idx) => {
+                  const isCurrent = idx === currentQIndex;
+                  const done = isQuestionAnswered(q);
+                  return (
+                    <Pressable
+                      key={q.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Go to question ${idx + 1}`}
+                      onPress={() => setCurrentQIndex(idx)}
+                      style={[
+                        s.stepDot,
+                        done && s.stepDotDone,
+                        isCurrent && s.stepDotCurrent,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          s.stepDotText,
+                          done && s.stepDotTextDone,
+                          isCurrent && s.stepDotTextCurrent,
+                        ]}
+                      >
+                        {idx + 1}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
 
-                {q.type === 'multiple_choice' ? (
-                  <View style={{ gap: 10 }}>
-                    {q.options.map((option, optionIndex) => {
-                      const selected = answers[q.id] === String(optionIndex);
-                      return (
-                        <Pressable
-                          key={optionIndex}
-                          accessibilityRole="radio"
-                          accessibilityState={{ checked: selected }}
-                          onPress={() =>
-                            setAnswers((current) => ({
-                              ...current,
-                              [q.id]: String(optionIndex),
-                            }))
-                          }
-                          style={[s.option, selected && s.optionSelected]}
+            {/* Single Focused Question Card */}
+            <View
+              style={[
+                ui.card,
+                s.questionCard,
+                isQuestionAnswered(activeQuestion) && s.questionCardAnswered,
+              ]}
+            >
+              <View style={s.qTopRow}>
+                <View style={s.qNumBadge}>
+                  <Text style={s.qNumBadgeText}>
+                    Question {currentQIndex + 1}
+                  </Text>
+                </View>
+                <Text style={s.qTypeLabel}>
+                  {activeQuestion.type === 'multiple_choice'
+                    ? 'Multiple choice'
+                    : 'Written answer'}{' '}
+                  · {activeQuestion.difficulty}
+                </Text>
+              </View>
+
+              {activeQuestion.concept ? (
+                <Text style={s.conceptTag}>◎ {activeQuestion.concept}</Text>
+              ) : null}
+
+              <Text style={s.question}>{activeQuestion.prompt}</Text>
+
+              {activeQuestion.type === 'multiple_choice' ? (
+                <View style={s.optionsList}>
+                  {activeQuestion.options.map((option, optionIndex) => {
+                    const selected =
+                      answers[activeQuestion.id] === String(optionIndex);
+                    return (
+                      <Pressable
+                        key={optionIndex}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: selected }}
+                        onPress={() =>
+                          setAnswers((current) => ({
+                            ...current,
+                            [activeQuestion.id]: String(optionIndex),
+                          }))
+                        }
+                        style={[s.option, selected && s.optionSelected]}
+                      >
+                        <View
+                          style={[
+                            s.optionLetterBox,
+                            selected && s.optionLetterBoxSelected,
+                          ]}
                         >
-                          <View
+                          <Text
                             style={[
-                              s.optionLetterBox,
-                              selected && s.optionLetterBoxSelected,
+                              s.optionLetter,
+                              selected && s.optionLetterSelected,
                             ]}
                           >
-                            <Text
-                              style={[
-                                s.optionLetter,
-                                selected && s.optionLetterSelected,
-                              ]}
-                            >
-                              {String.fromCharCode(65 + optionIndex)}
-                            </Text>
-                          </View>
-                          <Text style={s.optionText}>{option}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : (
-                  <View style={{ gap: 6 }}>
-                    <Text style={s.boxHeaderLabel}>YOUR RESPONSE & WORKING</Text>
-                    <TextInput
-                      accessibilityLabel={`Your answer to question ${index + 1}`}
-                      style={[s.input, s.multiline]}
-                      multiline
-                      textAlignVertical="top"
-                      value={answers[q.id] || ''}
-                      onChangeText={(value) =>
-                        setAnswers((current) => ({ ...current, [q.id]: value }))
-                      }
-                      placeholder="Write your answer clearly and show your thinking…"
-                      placeholderTextColor={Brand.muted}
-                    />
-                  </View>
-                )}
-              </View>
-            );
-          })}
+                            {String.fromCharCode(65 + optionIndex)}
+                          </Text>
+                        </View>
+                        <Text style={s.optionText}>{option}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : (
+                <View style={s.writtenAnswerWrap}>
+                  <Text style={s.boxHeaderLabel}>YOUR RESPONSE & WORKING</Text>
+                  <TextInput
+                    accessibilityLabel={`Your answer to question ${currentQIndex + 1}`}
+                    style={[s.input, s.multiline]}
+                    multiline
+                    textAlignVertical="top"
+                    value={answers[activeQuestion.id] || ''}
+                    onChangeText={(value) =>
+                      setAnswers((current) => ({
+                        ...current,
+                        [activeQuestion.id]: value,
+                      }))
+                    }
+                    placeholder="Write your answer clearly and show your thinking…"
+                    placeholderTextColor={Brand.muted}
+                  />
+                </View>
+              )}
+            </View>
 
-          <Button busy={phase === 'grading'} disabled={answered !== total} onPress={submit}>
-            {phase === 'grading'
-              ? 'Scoring your work…'
-              : answered === total
-                ? 'Submit and review'
-                : `Answer ${total - answered} more to submit`}
-          </Button>
-        </View>
-      )}
+            {/* Stepper Navigation Footer */}
+            <View style={s.stepperNavRow}>
+              <Button
+                variant="secondary"
+                disabled={currentQIndex === 0 || phase === 'grading'}
+                onPress={() =>
+                  setCurrentQIndex((idx) => Math.max(0, idx - 1))
+                }
+                style={s.stepperBtn}
+              >
+                ← Previous
+              </Button>
+
+              {currentQIndex < total - 1 ? (
+                <Button
+                  onPress={() =>
+                    setCurrentQIndex((idx) => Math.min(total - 1, idx + 1))
+                  }
+                  style={s.stepperBtn}
+                >
+                  Next question →
+                </Button>
+              ) : (
+                <Button
+                  busy={phase === 'grading'}
+                  disabled={answered !== total}
+                  onPress={submit}
+                  style={s.stepperBtn}
+                >
+                  {phase === 'grading'
+                    ? 'Scoring…'
+                    : answered === total
+                      ? 'Submit & score ✓'
+                      : `${total - answered} left`}
+                </Button>
+              )}
+            </View>
+
+            {answered === total && currentQIndex < total - 1 ? (
+              <Button busy={phase === 'grading'} onPress={submit}>
+                {phase === 'grading'
+                  ? 'Scoring your work…'
+                  : 'All answered — Submit & score ✓'}
+              </Button>
+            ) : null}
+          </View>
+        )}
 
       {/* ====================================================================
-          PHASE 4: ASSESSMENT DETAILS / REVIEW SCREEN (SPACIOUS BREAKDOWN)
+          PHASE 4: ASSESSMENT DETAILS / REVIEW SCREEN
           ==================================================================== */}
       {phase === 'review' && assessment && grade && (
         <View style={s.sectionStack}>
@@ -872,7 +1074,7 @@ export default function AssessmentsScreen() {
                 <Text style={s.scoreCircleVal}>{grade.score}%</Text>
                 <Text style={s.scoreCircleSub}>SCORE</Text>
               </View>
-              <View style={{ flex: 1, gap: 6 }}>
+              <View style={s.rowCopy}>
                 <Text style={s.kicker}>ASSESSMENT COMPLETE</Text>
                 <Text style={s.sectionHeading}>
                   {grade.correct} of {total} fully correct
@@ -882,21 +1084,27 @@ export default function AssessmentsScreen() {
                 </Text>
               </View>
             </View>
-            <BodyText style={{ lineHeight: 23 }}>{grade.summary}</BodyText>
+            <BodyText style={{ lineHeight: 22 }}>{grade.summary}</BodyText>
             <View style={s.scoreActionsRow}>
-              <Button variant="secondary" onPress={backToLibrary} style={{ flex: 1 }}>
+              <Button
+                variant="secondary"
+                onPress={backToLibrary}
+                style={s.stepperBtn}
+              >
                 All assessments
               </Button>
-              <Button onPress={openSetup} style={{ flex: 1 }}>
-                New assessment
+              <Button onPress={openSetup} style={s.stepperBtn}>
+                New quiz
               </Button>
             </View>
           </View>
 
-          <SectionTitle>Question-by-question breakdown</SectionTitle>
+          <SectionTitle>Question breakdown</SectionTitle>
 
           {assessment.questions.map((q, index) => {
-            const review = grade.reviews.find((item) => item.questionId === q.id);
+            const review = grade.reviews.find(
+              (item) => item.questionId === q.id,
+            );
             const pts = review?.points ?? 0;
             const right = pts === 2;
             const partial = pts === 1;
@@ -917,11 +1125,14 @@ export default function AssessmentsScreen() {
                       : s.detailCardReview,
                 ]}
               >
-                {/* Header with question number & verdict badge */}
                 <View style={s.detailHeader}>
-                  <View style={{ flex: 1, gap: 3 }}>
+                  <View style={s.rowCopy}>
                     <Text style={s.detailQNum}>QUESTION {index + 1}</Text>
-                    {q.concept ? <Text style={s.detailConcept}>{q.concept}</Text> : null}
+                    {q.concept ? (
+                      <Text numberOfLines={1} style={s.detailConcept}>
+                        {q.concept}
+                      </Text>
+                    ) : null}
                   </View>
                   <View
                     style={[
@@ -943,15 +1154,14 @@ export default function AssessmentsScreen() {
                             : s.verdictTextFlag,
                       ]}
                     >
-                      {right ? '✓ Correct' : partial ? '◐ Partial' : '✕ Review'} · {pts}/2 pts
+                      {right ? '✓ Correct' : partial ? '◐ Partial' : '✕ Review'}{' '}
+                      · {pts}/2
                     </Text>
                   </View>
                 </View>
 
-                {/* Prompt */}
                 <Text style={s.detailPrompt}>{q.prompt}</Text>
 
-                {/* Learner's Answer Box */}
                 <View
                   style={[
                     s.answerBlock,
@@ -959,14 +1169,15 @@ export default function AssessmentsScreen() {
                   ]}
                 >
                   <Text style={s.boxHeaderLabel}>YOUR ANSWER</Text>
-                  <Text style={s.boxBodyText}>{answer || 'No answer submitted'}</Text>
+                  <Text style={s.boxBodyText}>
+                    {answer || 'No answer submitted'}
+                  </Text>
                 </View>
 
-                {/* Stronger / Expected Answer Box */}
                 {!right ? (
                   <View style={[s.answerBlock, s.answerBlockExpected]}>
                     <Text style={[s.boxHeaderLabel, { color: Brand.teal }]}>
-                      EXPECTED / MODEL ANSWER
+                      EXPECTED ANSWER
                     </Text>
                     <Text style={s.boxBodyText}>
                       {review?.expectedAnswer || q.expectedAnswer}
@@ -974,7 +1185,6 @@ export default function AssessmentsScreen() {
                   </View>
                 ) : null}
 
-                {/* Tutor Feedback Callout */}
                 {review?.feedback ? (
                   <View style={s.feedbackBlock}>
                     <Text style={[s.boxHeaderLabel, { color: Brand.teal }]}>
@@ -984,7 +1194,6 @@ export default function AssessmentsScreen() {
                   </View>
                 ) : null}
 
-                {/* Coaching: How to improve & Example */}
                 {!right && review?.improvement ? (
                   <View style={s.improveBlock}>
                     <Text style={[s.boxHeaderLabel, { color: '#9A630C' }]}>
@@ -1013,10 +1222,13 @@ export default function AssessmentsScreen() {
                       }) step by step and try a similar example?`,
                     )
                   }
-                  style={s.discussBtn}
+                  style={({ pressed }) => [
+                    s.discussBtn,
+                    pressed && s.pressed,
+                  ]}
                 >
                   <Text style={s.discussBtnText}>
-                    💬 Discuss Question {index + 1} with Kindling
+                    💬 Practice Question {index + 1} with Kindling
                   </Text>
                 </Pressable>
               </View>
@@ -1027,8 +1239,8 @@ export default function AssessmentsScreen() {
           <View style={[ui.card, s.chatCard]}>
             <SectionTitle>1-on-1 Revision with Kindling</SectionTitle>
             <Text style={s.muted}>
-              Ask about any question, request another worked example, or practise a concept you
-              missed.
+              Ask about any question, request another worked example, or
+              practice a concept you missed.
             </Text>
 
             {chat.map((message, index) => (
@@ -1043,12 +1255,14 @@ export default function AssessmentsScreen() {
               </View>
             ))}
 
-            {chatBusy ? <Text style={s.muted}>Kindling is thinking…</Text> : null}
+            {chatBusy ? (
+              <Text style={s.muted}>Kindling is thinking…</Text>
+            ) : null}
 
             <View style={{ gap: 10 }}>
               <TextInput
                 accessibilityLabel="Ask Kindling about your assessment"
-                style={[s.input, s.multiline]}
+                style={[s.input, s.multilineSmall]}
                 value={draft}
                 onChangeText={setDraft}
                 multiline
@@ -1071,7 +1285,10 @@ export default function AssessmentsScreen() {
         onRequestClose={() => setSelector(null)}
       >
         <Pressable style={s.modalBackdrop} onPress={() => setSelector(null)}>
-          <Pressable style={s.modalSheet} onPress={(event) => event.stopPropagation()}>
+          <Pressable
+            style={s.modalSheet}
+            onPress={(event) => event.stopPropagation()}
+          >
             <Text style={s.sectionHeading}>{selectorTitle}</Text>
             <ScrollView>
               {selectorOptions.map((item) => (
@@ -1107,8 +1324,53 @@ export default function AssessmentsScreen() {
 }
 
 const s = StyleSheet.create({
-  page: { gap: 20 },
-  sectionStack: { gap: 18 },
+  page: {
+    paddingTop: 14,
+    paddingBottom: 34,
+    gap: 18,
+  },
+  sectionStack: { gap: 16 },
+  rowCopy: { flex: 1, minWidth: 0, gap: 3 },
+  pressed: { opacity: 0.75 },
+
+  /* Top Header Row */
+  topline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  greeting: {
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
+  },
+  eyebrow: {
+    color: Brand.teal,
+    fontSize: 10,
+    letterSpacing: 0.85,
+    fontWeight: '700',
+  },
+  hello: {
+    fontSize: 24,
+    letterSpacing: -0.6,
+    fontWeight: '700',
+    color: Brand.pine,
+  },
+  topCtaButton: {
+    backgroundColor: Brand.pine,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  topCtaButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1116,146 +1378,172 @@ const s = StyleSheet.create({
     gap: 10,
   },
   backPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 12,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: Brand.line,
   },
-  backPillText: { color: Brand.pine, fontWeight: '700', fontSize: 14 },
+  backPillText: { color: Brand.pine, fontWeight: '700', fontSize: 13.5 },
   newSmallPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 12,
     backgroundColor: Brand.pine,
   },
   newSmallPillText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  hero: { gap: 6 },
-  kicker: { color: Brand.teal, fontSize: 11, fontWeight: '600', letterSpacing: 0.9 },
+  kicker: {
+    color: Brand.teal,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
   errorBanner: {
-    padding: 14,
+    padding: 13,
     borderRadius: 14,
     backgroundColor: '#FFF3F1',
     borderWidth: 1,
     borderColor: '#EBC2BA',
   },
-  error: { color: Brand.error, fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  error: { color: Brand.error, fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
 
   // Library View
   createHeroCard: {
-    padding: 20,
+    padding: 18,
     borderRadius: 20,
     backgroundColor: Brand.pine,
-    gap: 10,
+    gap: 9,
   },
   createHeroBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: 'rgba(243, 200, 104, 0.22)',
+    backgroundColor: 'rgba(243, 200, 104, 0.2)',
   },
   createHeroBadgeText: {
     color: Brand.gold,
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 0.8,
   },
-  createHeroTitle: { color: '#fff', fontSize: 22, fontWeight: '600' },
-  createHeroSub: { color: 'rgba(255,255,255,0.82)', fontSize: 14, lineHeight: 21 },
+  createHeroTitle: { color: '#fff', fontSize: 21, fontWeight: '700' },
+  createHeroSub: {
+    color: '#D2E2DC',
+    fontSize: 13.5,
+    lineHeight: 20,
+  },
   createHeroBtn: {
     marginTop: 4,
     alignSelf: 'flex-start',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderRadius: 12,
     backgroundColor: Brand.gold,
   },
-  createHeroBtnText: { color: Brand.pine, fontWeight: '600', fontSize: 14 },
+  createHeroBtnText: { color: Brand.pine, fontWeight: '700', fontSize: 13.5 },
 
   kpiGrid: { flexDirection: 'row', gap: 10 },
   kpiCard: {
     flex: 1,
-    padding: 14,
-    borderRadius: 18,
+    minWidth: 0,
+    padding: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 3,
+    borderColor: Brand.line,
+    backgroundColor: Brand.card,
+    gap: 2,
   },
-  kpiTeal: { backgroundColor: Brand.card, borderColor: Brand.line },
-  kpiPine: { backgroundColor: Brand.card, borderColor: Brand.line },
-  kpiGold: { backgroundColor: Brand.card, borderColor: Brand.line },
-  kpiLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.7, color: Brand.muted },
-  kpiVal: { fontSize: 22, fontWeight: '600', color: Brand.ink },
-  kpiCap: { fontSize: 12, color: Brand.muted },
+  kpiLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: Brand.muted,
+  },
+  kpiVal: { fontSize: 20, fontWeight: '700', color: Brand.ink },
+  kpiCap: { fontSize: 11, color: Brand.muted },
 
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   filterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: Brand.line,
   },
   filterPillActive: { backgroundColor: Brand.pine, borderColor: Brand.pine },
-  filterPillText: { fontSize: 13, fontWeight: '700', color: Brand.muted },
-  filterPillTextActive: { color: '#fff' },
+  filterPillText: { fontSize: 12.5, fontWeight: '600', color: Brand.muted },
+  filterPillTextActive: { color: '#fff', fontWeight: '700' },
 
-  emptyCard: { alignItems: 'center', padding: 28, gap: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: Brand.ink, textAlign: 'center' },
+  emptyCard: { alignItems: 'center', padding: 24, gap: 8 },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Brand.ink,
+    textAlign: 'center',
+  },
   emptySub: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13.5,
+    lineHeight: 20,
     color: Brand.muted,
     textAlign: 'center',
   },
 
-  cardList: { gap: 14 },
-  assessCard: { padding: 20, gap: 14, borderLeftWidth: 5 },
-  assessCardDone: { borderLeftColor: '#2F8A5F' },
-  assessCardActive: { borderLeftColor: Brand.gold },
+  cardList: { gap: 12 },
+  assessCard: { padding: 16, gap: 12, borderLeftWidth: 4 },
+  assessCardDone: { borderLeftColor: Brand.teal },
+  assessCardActive: { borderLeftColor: Brand.amber },
   assessCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  statusBadge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 },
   statusBadgeDone: { backgroundColor: '#DEF3E7' },
-  statusBadgeActive: { backgroundColor: '#FDEFCF' },
-  statusBadgeText: { fontSize: 11.5, fontWeight: '600' },
+  statusBadgeActive: { backgroundColor: Brand.amberPale },
+  statusBadgeText: { fontSize: 11, fontWeight: '700' },
   statusBadgeTextDone: { color: '#1C6644' },
   statusBadgeTextActive: { color: '#96600E' },
   typeBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: '#F1F5F3',
+    backgroundColor: Brand.subtle,
   },
-  typeBadgeText: { fontSize: 11.5, fontWeight: '700', color: Brand.muted },
+  typeBadgeText: { fontSize: 11, fontWeight: '600', color: Brand.muted },
+  cardTitleWrap: { gap: 3, minWidth: 0 },
   cardPath: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.6,
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: Brand.teal,
   },
-  cardTitle: { fontSize: 18, fontWeight: '600', color: Brand.ink, lineHeight: 24 },
+  cardTitle: {
+    fontSize: 16.5,
+    fontWeight: '700',
+    color: Brand.ink,
+    lineHeight: 22,
+  },
   cardStatsBox: {
-    padding: 12,
+    padding: 11,
     borderRadius: 12,
-    backgroundColor: '#F8FBF9',
+    backgroundColor: '#F8FAF9',
     borderWidth: 1,
     borderColor: '#E6ECE8',
-    gap: 8,
+    gap: 7,
   },
   cardStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
-  cardScoreText: { fontSize: 13, fontWeight: '600', color: Brand.ink },
+  cardScoreText: { fontSize: 12.5, fontWeight: '700', color: Brand.ink },
   barTrack: {
     height: 7,
     borderRadius: 999,
@@ -1269,108 +1557,167 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: '#ECEFEA',
+    borderTopColor: '#EEF2EF',
   },
-  openActionText: { fontSize: 13.5, fontWeight: '600', color: Brand.pine },
+  openActionText: { fontSize: 13, fontWeight: '700', color: Brand.pine },
 
   // Setup Form
-  formCard: { padding: 22, gap: 18 },
-  fieldBlock: { gap: 8 },
-  label: { color: Brand.ink, fontSize: 14, fontWeight: '700' },
-  muted: { color: Brand.muted, fontSize: 13, lineHeight: 19 },
+  formCard: { padding: 18, gap: 16 },
+  fieldBlock: { gap: 7 },
+  label: { color: Brand.ink, fontSize: 13.5, fontWeight: '700' },
+  muted: { color: Brand.muted, fontSize: 12.5, lineHeight: 18 },
   input: {
-    minHeight: 50,
-    borderRadius: 14,
+    minHeight: 48,
+    borderRadius: 12,
     borderColor: Brand.line,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
     color: Brand.ink,
     backgroundColor: '#fff',
     fontSize: 15,
   },
   selector: {
-    minHeight: 50,
-    borderRadius: 14,
+    minHeight: 48,
+    borderRadius: 12,
     borderColor: Brand.line,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
     backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
+    minWidth: 0,
   },
-  selectorText: { color: Brand.ink, fontSize: 15, fontWeight: '600' },
-  selectorPlaceholder: { color: Brand.muted, fontSize: 15 },
+  selectorText: {
+    flex: 1,
+    minWidth: 0,
+    color: Brand.ink,
+    fontSize: 14.5,
+    fontWeight: '600',
+  },
+  selectorPlaceholder: { flex: 1, minWidth: 0, color: Brand.muted, fontSize: 14.5 },
   disabled: { opacity: 0.5 },
-  presetRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  presetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   presetChip: {
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: Brand.line,
     backgroundColor: '#fff',
   },
   presetChipActive: { backgroundColor: Brand.pine, borderColor: Brand.pine },
-  presetChipText: { fontSize: 13.5, fontWeight: '700', color: Brand.muted },
+  presetChipText: { fontSize: 13, fontWeight: '700', color: Brand.muted },
   presetChipTextActive: { color: '#fff' },
-  countInput: { width: 72, textAlign: 'center', minHeight: 42, paddingVertical: 8 },
-  multiline: { minHeight: 96 },
+  countInput: {
+    width: 68,
+    textAlign: 'center',
+    minHeight: 40,
+    paddingVertical: 6,
+  },
+  multiline: { minHeight: 104 },
+  multilineSmall: { minHeight: 78 },
   choice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    borderRadius: 16,
+    gap: 11,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: Brand.line,
-    padding: 15,
+    padding: 13,
     backgroundColor: '#fff',
   },
-  choiceSelected: { borderColor: Brand.teal, backgroundColor: '#F0F9F8' },
+  choiceSelected: { borderColor: Brand.teal, backgroundColor: '#F2F9F6' },
+  choiceCopy: { flex: 1, minWidth: 0, gap: 3 },
   choiceHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  choiceTitle: { fontSize: 15, fontWeight: '700', color: Brand.ink },
+  choiceTitle: { fontSize: 14.5, fontWeight: '700', color: Brand.ink },
   choiceBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 999,
     backgroundColor: Brand.tealPale,
   },
-  choiceBadgeText: { fontSize: 10.5, fontWeight: '600', color: Brand.teal },
+  choiceBadgeText: { fontSize: 10, fontWeight: '700', color: Brand.teal },
   radio: {
     width: 18,
     height: 18,
     marginTop: 2,
-    borderRadius: 10,
+    borderRadius: 9,
     borderWidth: 2,
     borderColor: Brand.muted,
+    flexShrink: 0,
   },
   radioSelected: { borderColor: Brand.teal, backgroundColor: Brand.teal },
+  setupActions: { gap: 10, marginTop: 4 },
 
-  // Active Assessment
-  progressHeaderCard: { padding: 20, gap: 14 },
+  // Active Assessment Stepper
+  progressHeaderCard: { padding: 15, gap: 12 },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 10,
+    minWidth: 0,
   },
   progressPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
     backgroundColor: Brand.tealPale,
+    flexShrink: 0,
   },
-  progressPillText: { color: Brand.teal, fontWeight: '600', fontSize: 13 },
-  sectionHeading: { color: Brand.pine, fontSize: 20, fontWeight: '600' },
-  progress: { color: Brand.teal, fontWeight: '600' },
-  questionCard: { padding: 22, gap: 14 },
+  progressPillText: { color: Brand.pine, fontWeight: '700', fontSize: 12 },
+  sectionHeading: { color: Brand.pine, fontSize: 18, fontWeight: '700' },
+  progress: { color: Brand.teal, fontWeight: '700' },
+  stepDotsRow: {
+    gap: 7,
+    paddingTop: 2,
+  },
+  stepDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepDotDone: {
+    backgroundColor: Brand.tealPale,
+    borderColor: Brand.teal,
+  },
+  stepDotCurrent: {
+    backgroundColor: Brand.pine,
+    borderColor: Brand.pine,
+  },
+  stepDotText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Brand.muted,
+  },
+  stepDotTextDone: {
+    color: Brand.pine,
+  },
+  stepDotTextCurrent: {
+    color: '#FFFFFF',
+  },
+
+  questionCard: { padding: 18, gap: 14 },
   questionCardAnswered: { borderColor: '#9ED3B7' },
   qTopRow: {
     flexDirection: 'row',
@@ -1386,155 +1733,205 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: '#E6F0EC',
+    backgroundColor: Brand.tealPale,
   },
-  qNumBadgeText: { fontSize: 11.5, fontWeight: '600', color: Brand.pine },
-  qTypeLabel: { fontSize: 11.5, fontWeight: '700', color: Brand.muted },
-  conceptTag: { fontSize: 12.5, fontWeight: '700', color: Brand.teal },
-  question: { color: Brand.ink, fontWeight: '700', fontSize: 17, lineHeight: 25 },
+  qNumBadgeText: { fontSize: 11, fontWeight: '700', color: Brand.pine },
+  qTypeLabel: { fontSize: 11.5, fontWeight: '600', color: Brand.muted },
+  conceptTag: { fontSize: 12, fontWeight: '700', color: Brand.teal },
+  question: {
+    color: Brand.ink,
+    fontWeight: '700',
+    fontSize: 16.5,
+    lineHeight: 24,
+  },
+  optionsList: { gap: 9 },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
+    gap: 11,
+    padding: 13,
+    borderRadius: 13,
     borderColor: Brand.line,
     borderWidth: 1.5,
     backgroundColor: '#fff',
+    minWidth: 0,
   },
-  optionSelected: { borderColor: Brand.teal, backgroundColor: '#ECF8F7' },
+  optionSelected: { borderColor: Brand.teal, backgroundColor: '#F0F9F6' },
   optionLetterBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Brand.tealPale,
+    flexShrink: 0,
   },
   optionLetterBoxSelected: { backgroundColor: Brand.teal },
-  optionLetter: { color: Brand.teal, fontWeight: '600', fontSize: 13 },
+  optionLetter: { color: Brand.pine, fontWeight: '700', fontSize: 12.5 },
   optionLetterSelected: { color: '#fff' },
-  optionText: { flex: 1, color: Brand.ink, fontSize: 15, lineHeight: 22 },
+  optionText: {
+    flex: 1,
+    minWidth: 0,
+    color: Brand.ink,
+    fontSize: 14.5,
+    lineHeight: 21,
+  },
+  writtenAnswerWrap: { gap: 6 },
+  stepperNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepperBtn: {
+    flex: 1,
+  },
 
   // Review / Details Screen
-  scoreBanner: { padding: 22, gap: 16 },
-  scoreTopRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  scoreBanner: { padding: 18, gap: 14 },
+  scoreTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   scoreCircle: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    borderWidth: 5,
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    borderWidth: 4,
     borderColor: Brand.teal,
-    backgroundColor: '#F0F9F8',
+    backgroundColor: Brand.tealPale,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  scoreCircleVal: { fontSize: 22, fontWeight: '600', color: Brand.ink },
-  scoreCircleSub: { fontSize: 9, fontWeight: '600', letterSpacing: 1, color: Brand.teal },
+  scoreCircleVal: { fontSize: 20, fontWeight: '700', color: Brand.pine },
+  scoreCircleSub: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: Brand.teal,
+  },
   scoreActionsRow: { flexDirection: 'row', gap: 10 },
 
   detailCard: {
     backgroundColor: '#fff',
-    padding: 22,
-    borderRadius: 20,
+    padding: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderLeftWidth: 5,
-    gap: 14,
+    borderLeftWidth: 4,
+    gap: 12,
   },
-  detailCardCorrect: { borderLeftColor: '#2F8A5F' },
-  detailCardPartial: { borderLeftColor: '#D79A36' },
+  detailCardCorrect: { borderLeftColor: Brand.teal },
+  detailCardPartial: { borderLeftColor: Brand.amber },
   detailCardReview: { borderLeftColor: '#CF5656' },
   detailHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 10,
-    paddingBottom: 12,
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: Brand.line,
   },
-  detailQNum: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.7, color: Brand.pine },
-  detailConcept: { fontSize: 13, fontWeight: '700', color: Brand.teal },
-  verdictBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
+  detailQNum: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: Brand.pine,
+  },
+  detailConcept: { fontSize: 12.5, fontWeight: '600', color: Brand.teal },
+  verdictBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    flexShrink: 0,
+  },
   verdictGood: { backgroundColor: '#DEF3E7' },
-  verdictPartial: { backgroundColor: '#FDEFCF' },
+  verdictPartial: { backgroundColor: Brand.amberPale },
   verdictFlag: { backgroundColor: '#FDE5E4' },
-  verdictText: { fontSize: 11.5, fontWeight: '600' },
+  verdictText: { fontSize: 11, fontWeight: '700' },
   verdictTextGood: { color: '#1C6644' },
   verdictTextPartial: { color: '#96600E' },
   verdictTextFlag: { color: '#A9383B' },
 
-  detailPrompt: { color: Brand.ink, fontWeight: '700', fontSize: 17, lineHeight: 25 },
+  detailPrompt: {
+    color: Brand.ink,
+    fontWeight: '700',
+    fontSize: 15.5,
+    lineHeight: 22,
+  },
   answerBlock: {
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    gap: 5,
+    gap: 4,
   },
   answerBlockGood: { backgroundColor: '#F2FBF6', borderColor: '#BFE5D0' },
   answerBlockFlag: { backgroundColor: '#FFFAF0', borderColor: Brand.line },
   answerBlockExpected: { backgroundColor: '#F0F9F8', borderColor: '#BFE0DE' },
   feedbackBlock: {
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     backgroundColor: '#EEF8F7',
     borderWidth: 1,
     borderColor: Brand.line,
-    gap: 5,
+    gap: 4,
   },
   improveBlock: {
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     backgroundColor: '#FFFCF5',
     borderWidth: 1,
     borderColor: '#F2DEC0',
-    gap: 5,
+    gap: 4,
   },
   exampleBlock: {
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     backgroundColor: '#F8F7FE',
     borderWidth: 1,
     borderColor: '#DDD9F6',
-    gap: 5,
+    gap: 4,
   },
   boxHeaderLabel: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    letterSpacing: 0.8,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.7,
     color: Brand.muted,
   },
-  boxBodyText: { color: Brand.ink, fontSize: 14.5, lineHeight: 22 },
+  boxBodyText: { color: Brand.ink, fontSize: 14, lineHeight: 20 },
   discussBtn: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#F3F7F5',
+    backgroundColor: Brand.subtle,
     borderWidth: 1,
     borderColor: Brand.line,
   },
-  discussBtnText: { fontSize: 12.5, fontWeight: '700', color: Brand.pine },
+  discussBtnText: { fontSize: 12, fontWeight: '700', color: Brand.pine },
 
-  chatCard: { padding: 22, gap: 14 },
+  chatCard: { padding: 18, gap: 12 },
   userBubble: {
     alignSelf: 'flex-end',
-    maxWidth: '90%',
-    padding: 14,
-    borderRadius: 16,
+    maxWidth: '88%',
+    padding: 12,
+    borderRadius: 14,
     backgroundColor: Brand.tealPale,
-    gap: 4,
+    gap: 3,
   },
   tutorBubble: {
     alignSelf: 'flex-start',
     maxWidth: '94%',
-    padding: 14,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 14,
     backgroundColor: Brand.parchment,
-    gap: 4,
+    gap: 3,
   },
-  bubbleLabel: { color: Brand.teal, fontWeight: '600', fontSize: 11, letterSpacing: 0.6 },
+  bubbleLabel: {
+    color: Brand.teal,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 0.6,
+  },
 
   modalBackdrop: {
     flex: 1,
@@ -1544,14 +1941,14 @@ const s = StyleSheet.create({
   modalSheet: {
     maxHeight: '75%',
     gap: 14,
-    padding: 20,
-    paddingBottom: 30,
+    padding: 18,
+    paddingBottom: 28,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     backgroundColor: '#fff',
   },
   modalOption: {
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: Brand.line,
   },

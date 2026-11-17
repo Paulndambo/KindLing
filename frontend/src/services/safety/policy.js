@@ -3,7 +3,7 @@
  * Age-aware; never mentions scoring or surveillance.
  */
 
-import { resolveAgeBand, useChildSafeDefaults, ageBandLabel } from "./ageBand";
+import { resolveAgeBand, useChildSafeDefaults as childSafeDefaults, ageBandLabel } from "./ageBand";
 
 /**
  * Core content rules for all learners.
@@ -27,13 +27,13 @@ CHILD SAFETY & CONTENT POLICY (non-negotiable — always follow):
  * @param {string | null | undefined} grade
  * @param {string} [studentName]
  */
-export function buildAgeAwarePolicyBlock(grade, studentName = "the student") {
-  const band = resolveAgeBand(grade);
+export function buildAgeAwarePolicyBlock(grade, studentName = "the student", dateOfBirth) {
+  const band = resolveAgeBand(grade, dateOfBirth);
   const label = ageBandLabel(band);
   const name = studentName || "the student";
-  const strictChild = useChildSafeDefaults(band);
+  const strictChild = childSafeDefaults(band);
 
-  let ageSpecific = "";
+  let ageSpecific;
   if (band === "child" || band === "unknown") {
     ageSpecific = `
 Age band: ${label} (treat as a child — strictest safe mode).
@@ -70,12 +70,12 @@ ${ageSpecific}${unknownNote}`;
  * Compact server-aligned policy summary for debugging / export.
  * @param {string | null | undefined} grade
  */
-export function getSafetyPolicySummary(grade) {
-  const band = resolveAgeBand(grade);
+export function getSafetyPolicySummary(grade, dateOfBirth) {
+  const band = resolveAgeBand(grade, dateOfBirth);
   return {
     ageBand: band,
     label: ageBandLabel(band),
-    childSafeDefaults: useChildSafeDefaults(band),
+    childSafeDefaults: childSafeDefaults(band),
     rules: [
       "educational_tutor_only",
       "no_sexual_content",

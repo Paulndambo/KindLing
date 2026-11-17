@@ -22,7 +22,9 @@ import {
   getCurriculumOptions,
   getInterestOptions,
   getGoalOptions,
+  normalizeProgrammeTrack,
 } from "../../constants/onboarding";
+import { ageFromDateOfBirth, localDateValue } from "../../utils/learner-age";
 
 export default function OnboardingModal({
   initialProfile,
@@ -36,14 +38,16 @@ export default function OnboardingModal({
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState(seed.name || "");
-  const [grade, setGrade] = useState(seed.grade || "");
+  const [grade, setGrade] = useState(seed.grade === "Graduate / Master's" ? "Masters" : seed.grade || "");
+  const [dateOfBirth, setDateOfBirth] = useState(seed.dateOfBirth || "");
+  const age = ageFromDateOfBirth(dateOfBirth);
   const [avatar, setAvatar] = useState(seed.avatar || "sparkles");
   const [country, setCountry] = useState(seed.country || "");
   const [preferredLanguage, setPreferredLanguage] = useState(
     seed.preferredLanguage || ""
   );
   const [schoolName, setSchoolName] = useState(seed.schoolName || "");
-  const [curriculum, setCurriculum] = useState(seed.curriculum || "");
+  const [curriculum, setCurriculum] = useState(normalizeProgrammeTrack(seed.curriculum || ""));
   const [learningStyle, setLearningStyle] = useState(
     seed.learningStyle || "visual"
   );
@@ -68,14 +72,21 @@ export default function OnboardingModal({
 
   const totalSteps = ONBOARDING_STEPS.length;
   const higherEd = isHigherEducation(grade);
-  const curriculumOptions = useMemo(() => getCurriculumOptions(grade), [grade]);
+  const curriculumOptions = useMemo(() => {
+    const options = getCurriculumOptions(grade);
+    return curriculum && !options.some((item) => item.label === curriculum)
+      ? [...options, { id: 'previous', label: curriculum, desc: 'Your previous selection' }] : options;
+  }, [grade, curriculum]);
   const interestOptions = useMemo(() => getInterestOptions(grade), [grade]);
-  const goalOptions = useMemo(() => getGoalOptions(grade), [grade]);
+  const goalOptions = useMemo(() => {
+    const options = getGoalOptions(grade);
+    return goal && !options.includes(goal) ? [...options, goal] : options;
+  }, [grade, goal]);
 
   const countryObj =
     COUNTRY_OPTIONS.find((c) => c.name === country) || null;
 
-  const step1Ready = Boolean(name.trim() && grade);
+  const step1Ready = Boolean(name.trim() && grade && (!dateOfBirth || age !== null));
   const canJumpTo = (n) => n < step || n === step || (isEditMode && n <= totalSteps);
 
   const selectGrade = (nextGrade) => {
@@ -123,7 +134,7 @@ export default function OnboardingModal({
       setLocalError(
         !name.trim()
           ? "Please enter your name."
-          : "Please pick your grade or level of study."
+          : !grade ? "Please pick your grade or level of study." : "Enter a valid date of birth."
       );
       return;
     }
@@ -147,9 +158,15 @@ export default function OnboardingModal({
       setStep(1);
       return;
     }
+    if (dateOfBirth && age === null) {
+      setLocalError("Enter a valid date of birth within the past 120 years.");
+      setStep(1);
+      return;
+    }
     try {
       await onSave({
         name: name.trim(),
+        dateOfBirth: dateOfBirth || null,
         grade: grade || "",
         avatar,
         country: country || "",
@@ -249,7 +266,7 @@ export default function OnboardingModal({
           <div>
             <h3 id="onboard-title">Who&apos;s learning?</h3>
             <p className="modal-sub">
-              Just your name and level so Kindling pitches explanations right.
+              Your name, study level, and optional date of birth help Kindling pitch explanations right.
             </p>
 
             <div className="field-block">
@@ -265,6 +282,13 @@ export default function OnboardingModal({
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={onKeyContinue}
               />
+            </div>
+
+            <div className="field-block">
+              <label className="field-label" htmlFor="onboard-birth-date">Date of birth <span className="field-label-meta">optional</span></label>
+              <input id="onboard-birth-date" className="modal-input" type="date" value={dateOfBirth} max={localDateValue()} onChange={(event) => setDateOfBirth(event.target.value)} />
+              <p className="modal-sub">{age !== null ? `Age ${age} · ` : ''}Used for relatable examples and age-appropriate explanations.</p>
+              {dateOfBirth && age === null ? <p className="onboard-error" role="alert">Enter a valid date of birth within the past 120 years.</p> : null}
             </div>
 
             <div className="field-block">

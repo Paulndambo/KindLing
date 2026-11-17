@@ -28,6 +28,7 @@ export function useAssessment({
   studentId,
   subjectName,
   topicName,
+  coveredText = "",
   getSessionId = () => null,
   /** optional: feed each graded item into mastery / profile */
   onGradedItem = null,
@@ -36,11 +37,15 @@ export function useAssessment({
   const [offer, setOffer] = useState(null);
   const [offeredThisTopic, setOfferedThisTopic] = useState(false);
   const [prePostBaseline, setPrePostBaseline] = useState(null);
-  const [availableCount, setAvailableCount] = useState(() =>
-    questionsForTopic(subjectName, topicName, { limit: 10 }).length
+  const availableCount = useMemo(
+    () => questionsForTopic(subjectName, topicName, { limit: 10, coveredText }).length,
+    [subjectName, topicName, coveredText]
   );
-  const prePostAvailable = ["A", "B"].every((form) =>
-    questionsForTopic(subjectName, topicName, { form, limit: 10 }).length >= 2
+  const prePostAvailable = useMemo(
+    () => ["A", "B"].every((form) =>
+      questionsForTopic(subjectName, topicName, { form, limit: 10, coveredText }).length >= 2
+    ),
+    [subjectName, topicName, coveredText]
   );
 
   useEffect(() => {
@@ -48,9 +53,6 @@ export function useAssessment({
     setOffer(null);
     setOfferedThisTopic(false);
     setPrePostBaseline(null);
-    setAvailableCount(
-      questionsForTopic(subjectName, topicName, { limit: 10 }).length
-    );
   }, [subjectName, topicName]);
 
   const active =
@@ -81,7 +83,7 @@ export function useAssessment({
 
   const offerAssessment = useCallback(
     ({ reason = "ready" } = {}) => {
-      if (active || completed) return null;
+      if (active || completed || availableCount < 1) return null;
       const card = buildAssessmentOfferCard({
         topic: topicName,
         subject: subjectName,
@@ -100,7 +102,7 @@ export function useAssessment({
       });
       return card;
     },
-    [active, completed, topicName, subjectName, getSessionId]
+    [active, completed, availableCount, topicName, subjectName, getSessionId]
   );
 
   const dismissOffer = useCallback(() => {
@@ -137,11 +139,10 @@ export function useAssessment({
       purpose = "practice",
       baseline = null,
       questions = null,
-      topic = topicName,
     } = {}) => {
       const ses = createAssessmentSession({
         subject: subjectName,
-        topic,
+        topic: topicName,
         unit: unit || "",
         skillSlug,
         skillSlugs,
@@ -152,6 +153,7 @@ export function useAssessment({
         purpose,
         baseline,
         questions,
+        coveredText,
       });
       if (!ses) return null;
       setOffer(null);
@@ -181,7 +183,7 @@ export function useAssessment({
       });
       return ses;
     },
-    [subjectName, topicName, emit, getSessionId]
+    [subjectName, topicName, coveredText, emit, getSessionId]
   );
 
   const answerQuestion = useCallback(

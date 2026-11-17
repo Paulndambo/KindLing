@@ -2,6 +2,7 @@ type Step = { title: string; detail: string };
 type Base = { title: string; caption: string };
 export type VisualModel = Base & (
   | { kind: 'steps'; steps: Step[]; cycle: boolean }
+  | { kind: 'study-plan'; objectives: string[]; concepts: string[]; modules: Step[] }
   | { kind: 'fractions'; bars: { num: number; den: number; label: string; note: string }[] }
   | { kind: 'bars'; rows: { label: string; value: number; unit: string }[] }
   | { kind: 'number-line'; min: number; max: number; step: number; points: { value: number; label: string }[] }
@@ -89,6 +90,22 @@ export function parseVisual(source: string, language = ''): VisualModel | null {
     : items.some((item) => /^[^:|]+:\s*-?\d+(?:\.\d+)?\s*(?:%|[a-zA-Z]*)\s*$/.test(item)) ? 'bar-chart' : language;
   const kind = label(meta.type || inferred).toLowerCase();
   const base = { title: label(meta.title || meta.subtitle), caption: label(meta.caption) };
+  if (/^(study-plan|studyplan|lesson-plan|roadmap)$/.test(kind)) {
+    const splitList = (value: unknown) => label(value).split(/[|;]/).map(label).filter(Boolean);
+    const moduleItems = Object.entries(meta)
+      .filter(([key]) => /^section_?\d+$/.test(key))
+      .map(([, value]) => label(value))
+      .concat(items);
+    const modules = moduleItems.map((item) => {
+      const [title, ...detail] = item.replace(/^\d+[.)]\s*/, '').split('|');
+      return { title: label(title), detail: detail.map(label).join(' · ') };
+    }).filter((item) => item.title).slice(0, 6);
+    const objectives = splitList(meta.objectives).slice(0, 5);
+    const concepts = splitList(meta.concepts).slice(0, 8);
+    return objectives.length || concepts.length || modules.length
+      ? { ...base, title: base.title || 'Topic Curriculum', kind: 'study-plan', objectives, concepts, modules }
+      : null;
+  }
   if (/^(fraction|fractions|fraction-bars|fraction-compare|fraction-visual)$/.test(kind)) {
     const bars: { num: number; den: number; label: string; note: string }[] = [];
     if (Array.isArray(meta.bars)) {

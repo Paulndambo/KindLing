@@ -194,12 +194,12 @@ function enrichPlatformError(err, fallbackStatus = null, fallbackData = null) {
   return enriched;
 }
 
-async function generate({ model, contents, config, stream = false }) {
+async function generate({ model, contents, config, stream = false, logRequestBody = false }) {
   if (!stream) {
     try {
       const result = await apiRequest(ENDPOINT, {
         method: "POST",
-        json: { model, contents, config },
+        json: { model, contents, config, logRequestBody },
       });
       if (getPlatformAiCap()) clearPlatformAiCap();
       return result;
@@ -218,7 +218,7 @@ async function generate({ model, contents, config, stream = false }) {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ model, contents, config, stream: true }),
+    body: JSON.stringify({ model, contents, config, stream: true, logRequestBody }),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
@@ -263,7 +263,7 @@ export function createPlatformGeminiClient() {
       generateContent: ({ model, contents, config }) => generate({ model, contents, config }),
     },
     chats: {
-      create({ model, config = {}, history = [] }) {
+      create({ model, config = {}, history = [], logRequestBody = false }) {
         const messages = [...history];
         return {
           async *sendMessageStream({ message }) {
@@ -271,7 +271,7 @@ export function createPlatformGeminiClient() {
               role: "user",
               parts: Array.isArray(message) ? message : [{ text: String(message ?? "") }],
             }];
-            const stream = await generate({ model, contents, config, stream: true });
+            const stream = await generate({ model, contents, config, stream: true, logRequestBody });
             let responseText = "";
             for await (const chunk of stream) {
               responseText += chunk.text;

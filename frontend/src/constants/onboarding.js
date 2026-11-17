@@ -26,7 +26,8 @@ export const HIGHER_ED_GRADE_OPTIONS = [
   "College / University (Year 2)",
   "College / University (Year 3)",
   "College / University (Year 4+)",
-  "Graduate / Master's",
+  "Masters",
+  "PhD",
   "Professional / Continuing Ed",
 ];
 
@@ -137,66 +138,14 @@ export const K12_CURRICULUM_OPTIONS = [
 ];
 
 export const HIGHER_ED_CURRICULUM_OPTIONS = [
-  {
-    id: "us_undergrad",
-    label: "US Undergraduate (Bachelor's)",
-    desc: "General education + major requirements (BA / BS).",
-  },
-  {
-    id: "us_grad",
-    label: "US Graduate / Professional",
-    desc: "Master's, doctoral, or professional school coursework.",
-  },
-  {
-    id: "uk_undergrad",
-    label: "UK Undergraduate (BA / BSc)",
-    desc: "UK university degree pathway.",
-  },
-  {
-    id: "uk_postgrad",
-    label: "UK Postgraduate (MSc / MA / PhD)",
-    desc: "Taught master's, research degrees, and doctorates.",
-  },
-  {
-    id: "eu_bologna",
-    label: "European Bologna Process (BA / MA)",
-    desc: "ECTS-based bachelor's and master's programmes.",
-  },
-  {
-    id: "ib_dp_bridge",
-    label: "IB / A-Level to University Bridge",
-    desc: "Transition from advanced secondary into higher ed.",
-  },
-  {
-    id: "stem_professional",
-    label: "STEM / Engineering Professional Track",
-    desc: "Calculus-based STEM, lab sciences, and engineering majors.",
-  },
-  {
-    id: "business_professional",
-    label: "Business / Economics / Management",
-    desc: "Business school, accounting, finance, and management.",
-  },
-  {
-    id: "cs_software",
-    label: "Computer Science / Software Engineering",
-    desc: "CS, software, data, and AI-related degree tracks.",
-  },
-  {
-    id: "pre_professional",
-    label: "Pre-med / Pre-law / Health Sciences",
-    desc: "Pre-professional prerequisites and exam prep.",
-  },
-  {
-    id: "trade_cert",
-    label: "Certificate / Trade / Bootcamp",
-    desc: "Career certificates, coding bootcamps, vocational quals.",
-  },
-  {
-    id: "custom_he",
-    label: "Custom / Other Programme",
-    desc: "Self-designed or non-standard higher education path.",
-  },
+  { id: 'undergraduate', label: 'Undergraduate', desc: 'Bachelor’s degree.' },
+  { id: 'masters', label: 'Masters', desc: 'Master’s degree.' },
+  { id: 'phd', label: 'PhD', desc: 'Doctoral research.' },
+  { id: 'diploma', label: 'Diploma', desc: 'Diploma programme.' },
+  { id: 'certificate', label: 'Certificate', desc: 'Certificate programme.' },
+  { id: 'professional', label: 'Professional training', desc: 'Career and professional development.' },
+  { id: 'independent', label: 'Independent study', desc: 'Self-directed learning.' },
+  { id: 'other', label: 'Other', desc: 'Another programme or pathway.' },
 ];
 
 /** Default export kept for K-12; use getCurriculumOptions(grade) for adaptive lists. */
@@ -310,21 +259,9 @@ export const HIGHER_ED_INTEREST_OPTIONS = [
 
 export const INTEREST_OPTIONS = K12_INTEREST_OPTIONS;
 
-export const K12_GOAL_OPTIONS = [
-  "Catch up on trickier topics",
-  "Get ahead with extra challenge",
-  "Homework helper & daily practice",
-  "Prepare for upcoming tests",
-];
+export const K12_GOAL_OPTIONS = ['Learn something new', 'Understand difficult topics', 'Build confidence', 'Keep up with schoolwork', 'Homework and regular practice', 'Prepare for tests', 'Explore more challenging topics'];
 
-export const HIGHER_ED_GOAL_OPTIONS = [
-  "Ace midterms & finals",
-  "Build stronger foundations",
-  "Project / assignment support",
-  "Internship or career prep",
-  "Research paper / thesis help",
-  "Professional exam prep",
-];
+export const HIGHER_ED_GOAL_OPTIONS = ['Learn something new', 'Understand difficult topics', 'Build confidence', 'Build practical skills', 'Project and assignment support', 'Prepare for exams', 'Research and thesis support', 'Career development'];
 
 export const GOAL_OPTIONS = K12_GOAL_OPTIONS;
 
@@ -404,6 +341,7 @@ export function getInstitutionLabel(grade) {
 /** Blank profile used before onboarding — no hardcoded demo student. */
 export const EMPTY_STUDENT_PROFILE = {
   name: "",
+  dateOfBirth: null,
   grade: "",
   avatar: "sparkles",
   country: "",
@@ -428,3 +366,11 @@ export const STORAGE_KEYS = {
   userSession: "kindling_user_session",
   studentProfile: "kindling_student_profile",
 };
+
+// Normalize unambiguous legacy tracks; preserve custom or ambiguous selections.
+export function normalizeProgrammeTrack(value = '') {
+  if (/undergrad/i.test(value)) return 'Undergraduate';
+  if (/^(masters?|master[’']s|msc|ma)$/i.test(value.trim())) return 'Masters';
+  if (/^(phd|ph\.d\.?|doctoral)$/i.test(value.trim())) return 'PhD';
+  return value;
+}

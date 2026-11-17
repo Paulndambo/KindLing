@@ -3,7 +3,7 @@ export const GRADE_OPTIONS = [
   'High School (9–10)', 'High School (11–12)',
   'College / University (Year 1)', 'College / University (Year 2)',
   'College / University (Year 3)', 'College / University (Year 4+)',
-  "Graduate / Master's", 'Professional / Continuing Ed',
+  'Masters', 'PhD', 'Professional / Continuing Ed',
 ];
 
 export const COUNTRIES = [
@@ -20,14 +20,7 @@ const K12_CURRICULA = [
   'Canadian Provincial Curriculum', 'French National Curriculum', 'Custom / Other Curriculum',
 ];
 
-const HIGHER_ED_CURRICULA = [
-  "US Undergraduate (Bachelor's)", 'US Graduate / Professional',
-  'UK Undergraduate (BA / BSc)', 'UK Postgraduate (MSc / MA / PhD)',
-  'European Bologna Process (BA / MA)', 'IB / A-Level to University Bridge',
-  'STEM / Engineering Professional Track', 'Business / Economics / Management',
-  'Computer Science / Software Engineering', 'Pre-med / Pre-law / Health Sciences',
-  'Certificate / Trade / Bootcamp', 'Custom / Other Programme',
-];
+const HIGHER_ED_CURRICULA = ['Undergraduate', 'Masters', 'PhD', 'Diploma', 'Certificate', 'Professional training', 'Independent study', 'Other'];
 
 export const LEARNING_STYLES = [
   { id: 'visual', label: 'Visual & diagrams', detail: 'Pictures, charts, and spatial models' },
@@ -50,15 +43,9 @@ export const HIGHER_ED_INTERESTS = [
   '🎮 Games & Interactive Media', '📱 Product & UX', '🏛️ History & Politics', '🎵 Music & Performance',
 ];
 
-export const K12_GOALS = [
-  'Catch up on trickier topics', 'Get ahead with extra challenge',
-  'Homework helper & daily practice', 'Prepare for upcoming tests',
-];
+export const K12_GOALS = ['Learn something new', 'Understand difficult topics', 'Build confidence', 'Keep up with schoolwork', 'Homework and regular practice', 'Prepare for tests', 'Explore more challenging topics'];
 
-export const HIGHER_ED_GOALS = [
-  'Ace midterms & finals', 'Build stronger foundations', 'Project / assignment support',
-  'Internship or career prep', 'Research paper / thesis help', 'Professional exam prep',
-];
+export const HIGHER_ED_GOALS = ['Learn something new', 'Understand difficult topics', 'Build confidence', 'Build practical skills', 'Project and assignment support', 'Prepare for exams', 'Research and thesis support', 'Career development'];
 
 export function isHigherEducation(grade: string) {
   return /college|university|graduate|master|doctoral|phd|professional \/ continuing|undergrad/i.test(grade);
@@ -87,3 +74,10 @@ export const CURRICULUM_HINTS: Record<string, string> = {
   Kenya: 'Custom / Other Curriculum',
   'International / Other': 'Custom / Other Curriculum',
 };
+
+export function normalizeProgrammeTrack(value = '') {
+  if (/undergrad/i.test(value)) return 'Undergraduate';
+  if (/^(masters?|master[’']s|msc|ma)$/i.test(value.trim())) return 'Masters';
+  if (/^(phd|ph\.d\.?|doctoral)$/i.test(value.trim())) return 'PhD';
+  return value;
+}

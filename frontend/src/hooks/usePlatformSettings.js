@@ -38,7 +38,12 @@ function loadLocalSubscription() {
         source: "local",
       };
     }
-    return { ...JSON.parse(raw), source: "local" };
+    const stored = JSON.parse(raw);
+    return {
+      ...stored,
+      plan: ["ember", "forge"].includes(stored.plan) ? PLAN_IDS.PREMIUM : stored.plan,
+      source: "local",
+    };
   } catch {
     return {
       plan: PLAN_IDS.SPARK,

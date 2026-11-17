@@ -28,6 +28,7 @@ export async function saveStudentProfile(profile) {
     auth: true,
     json: {
       name: profile.name,
+      dateOfBirth: profile.dateOfBirth || null,
       grade: profile.grade || "",
       avatar: profile.avatar || "sparkles",
       country: profile.country || "",

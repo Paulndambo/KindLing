@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useSyncExternalStore } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { STORAGE_KEYS } from "../constants/onboarding";
 import {
@@ -10,6 +10,7 @@ import {
   setStoredTokens,
   ApiError,
 } from "../services/api";
+import { getAccessToken, subscribeAuthTokens, SESSION_EXPIRED_EVENT } from "../services/api/config";
 
 function formatAuthFailure(err, fallback) {
   if (err instanceof ApiError) {
@@ -55,7 +56,19 @@ export function useAuth() {
     Boolean(getStoredTokens()?.access && userSession?.isLoggedIn)
   );
 
-  const isLoggedIn = Boolean(userSession?.isLoggedIn && getStoredTokens()?.access);
+  const accessToken = useSyncExternalStore(subscribeAuthTokens, getAccessToken, () => null);
+  const isLoggedIn = Boolean(userSession?.isLoggedIn && accessToken && !bootstrapping);
+
+  useEffect(() => {
+    const onExpired = () => {
+      setUserSession(null);
+      setAuthMode("login");
+      setAuthError("Your session has expired. Please sign in again.");
+      setAuthOpen(true);
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [setUserSession]);
 
   // Validate existing tokens on mount
   useEffect(() => {
@@ -70,18 +83,20 @@ export function useAuth() {
       try {
         const user = await fetchCurrentUser();
         if (cancelled) return;
-        setUserSession((prev) => ({
+        const currentTokens = getStoredTokens();
+        if (!currentTokens?.access) return;
+        setUserSession((prev) => !prev?.isLoggedIn || prev.id !== userSession.id ? prev : ({
           ...(prev || {}),
           id: user.id,
           email: user.email,
           name: user.name || prev?.name,
           isLoggedIn: true,
-          tokens,
+          tokens: currentTokens,
         }));
-      } catch {
+      } catch (error) {
         if (cancelled) return;
-        logoutLocal();
-        setUserSession(null);
+        if (error?.status === 401 && !getStoredTokens()?.access) setUserSession(null);
+        // Temporary network/backend failures must not destroy a recoverable session.
       } finally {
         if (!cancelled) setBootstrapping(false);
       }

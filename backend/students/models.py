@@ -13,6 +13,7 @@ class StudentProfile(models.Model):
         related_name="profile",
     )
     name = models.CharField(max_length=120)
+    date_of_birth = models.DateField(null=True, blank=True)
     grade = models.CharField(max_length=40, blank=True, default="")
     avatar = models.CharField(max_length=40, blank=True, default="sparkles")
     country = models.CharField(max_length=80, blank=True, default="")

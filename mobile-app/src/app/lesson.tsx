@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
 import { BrandMark } from '@/components/mobile-ui';
 import { useSession } from '@/context/session';
+import { ageGuidance } from '@/services/learner-age';
 import { appendLessonMessage, askTutor, ensureLessonConversation, listSubjects, trackLearningEvent, type LessonConversation, type Subject } from '@/services/api';
 import { LessonMessageContent } from '@/components/lesson-message';
 import { questionsForMobileAssessment, type AssessmentQuestion } from '@/services/assessment-bank';
@@ -16,16 +17,22 @@ type MobileAssessment = { id: string; questions: AssessmentQuestion[]; index: nu
 type IdleSupportStage = 'none' | 'nudge' | 'offer';
 
 export default function LessonScreen() {
-  const params = useLocalSearchParams<{ subject?: string; topic?: string; unit?: string; goal?: string; grade?: string }>();
+  const params = useLocalSearchParams<{ subject?: string; topic?: string; unit?: string; goal?: string; grade?: string; familiarity?: string }>();
   const { profile, session } = useSession();
   const subject = String(params.subject || 'Learning');
   const [topic, setTopic] = useState(String(params.topic || subject));
   const [unit, setUnit] = useState(String(params.unit || params.topic || subject));
   const [goal, setGoal] = useState(String(params.goal || ''));
+  const [familiarity, setFamiliarity] = useState(String(params.familiarity || 'unknown'));
   const [subjectPath, setSubjectPath] = useState<Subject | null>(null);
   const [pathOpen, setPathOpen] = useState(false);
   const learnerName = profile?.name?.trim().split(/\s+/)[0] || session?.name?.trim().split(/\s+/)[0];
-  const openingRequest = `Open the FIRST live lesson on "${topic}"${unit !== topic ? ` within "${unit}"` : ''} (${subject})${goal ? `, aiming at this learning goal: "${goal}"` : ''}. Before tutoring begins, establish a dependable, age-appropriate topic map: define the topic and its boundaries, explain its purpose and high-level mechanism, map essential parts and how they relate, and cover relevant alternatives, applications, limitations, trade-offs, prerequisites, and common misconceptions. Set observable learning outcomes. Be technically accurate, qualify assumptions, and do not turn analogies into false rules. Adapt the depth, prerequisites, examples, and scaffolding to the learner. Present a concise Study Plan with objectives, key concepts, and four sections: (1) Core Intuition & Visual Foundation, (2) Core Mechanism & Worked Application, (3) Guided Practice & Problem Solving, (4) Wind-Down, Quick Assessment & Next Steps. Cover the whole topic at overview depth if that remains clear. If it is too broad, label this as Topic Orientation — Part 1, state the few steps needed to establish the map, and cover one coherent part now. Do not begin Section 1 yet. End with one diagnostic question that reveals the learner's current mental model, not a recall quiz. Keep greetings and praise brief.`;
+  const familiarityDescriptions: Record<string, string> = {
+    new: 'brand new to this topic', beginner: 'has heard of it, but is not familiar with details',
+    some: 'knows some basics', comfortable: 'fairly comfortable', reviewing: 'reviewing or preparing for an exam',
+  };
+  const familiarityDescription = familiarityDescriptions[familiarity] || 'not reported';
+  const openingRequest = `Open the FIRST live lesson on "${topic}"${unit !== topic ? ` within "${unit}"` : ''} (${subject})${goal ? `, aiming at this learning goal: "${goal}"` : ''}. Topic familiarity self-report: ${familiarityDescription}. Treat this as a starting estimate, not proof of mastery. This is a distinct teaching stage: establish a useful mental model before relying on dialogue. Give an academically useful, age-appropriate orientation—not just a greeting, definition, roadmap, or diagnostic. Explain: (1) a clear definition, scope, and relation to the discipline; (2) the problem and why the topic exists; (3) core principles and cause-and-effect mechanisms; (4) major components, their responsibilities, and how they relate; (5) a meaningful example showing how it works; (6) practical applications; (7) relevant alternatives, limitations, assumptions, and trade-offs; (8) essential vs helpful prerequisites; (9) likely misconceptions and the corrected mental model; and (10) observable learning outcomes. Explain relationships, qualify context-dependent claims, and distinguish analogies from actual mechanisms. Adapt terminology, depth, examples, and prerequisite support to the learner's grade, goals, profile, familiarity, and demonstrated knowledge; unassessed concepts are not mastered. Cover essential foundations at overview depth. If the topic is too broad, name a few coherent orientation parts and teach a meaningful first part now; do not reduce the reply to a plan. Use a visual only when it clarifies a real relationship, architecture, comparison, process, or worked example, and explain what it shows. Create a topic-specific curriculum roadmap of 2–6 modules in prerequisite order, not a generic tutoring syllabus. For each module, include an observable objective, key concepts, prerequisite(s), an application or exercise, and evidence of learning. Keep the curriculum modules distinct from the tutoring lifecycle: orientation, conceptual teaching, guided practice, independent assessment/consolidation, and progress review/next steps. Include a \`type: study-plan\` visual card with objectives, concepts, and the ordered module list. After teaching, ask ONE focused, beginner-safe question about prior experience, a familiar application, or preferred starting point; never ask the learner to explain a mechanism not yet taught. Use their answer to distinguish demonstrated knowledge, partial understanding, misconceptions, and concepts not yet assessed. Keep greeting and praise brief.`;
   const openingId = useMemo(() => newMessageId(), []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationLoading, setConversationLoading] = useState(true);
@@ -50,19 +57,18 @@ export default function LessonScreen() {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const grade = String(params.grade || profile?.grade || '');
   const system = useMemo(() => [
-    'Mobile formatting: put programming examples in fenced code blocks with a language such as python, javascript, or cpp. For process diagrams, use a fenced mermaid block beginning with flowchart TD, simple named nodes A[Label], and --> arrows (optional |edge labels|). For visual models, use a fenced visual block with type: fraction, number-line, bar-chart, process, cycle, or comparison; title: a short title; caption: an optional explanation. Fractions use rows such as 3/4 | Three quarters. Bar charts use rows such as Group A: 12. Processes use rows such as First step | Explanation. Comparisons use left: and right: labels, then rows such as Feature | Left value | Right value. Number lines use min:, max:, step:, and points: (for example 0, 0.5, 1). Use spatial ASCII art for other visual formats. Do not emit HTML, SVG, unsupported Mermaid diagram types, or executable scripts as visual demonstrations.',
+    'Mobile formatting: put programming examples in fenced code blocks with a language such as python, javascript, or cpp. For process diagrams, use a fenced mermaid block beginning with flowchart TD, simple named nodes A[Label], and --> arrows (optional |edge labels|). For visual models, use a fenced visual block with type: fraction, number-line, bar-chart, process, cycle, comparison, or study-plan; title: a short title; caption: an optional explanation. A study-plan visual has objectives: Goal 1 | Goal 2, concepts: Concept 1 | Concept 2, and 2–6 numbered topic-specific curriculum modules in prerequisite order, each as Module title | objective; concepts; prerequisites; application/exercise; evidence of learning. Fractions use rows such as 3/4 | Three quarters. Bar charts use rows such as Group A: 12. Processes use rows such as First step | Explanation. Comparisons use left: and right: labels, then rows such as Feature | Left value | Right value. Number lines use min:, max:, step:, and points: (for example 0, 0.5, 1). Use spatial ASCII art for other visual formats. Do not emit HTML, SVG, unsupported Mermaid diagram types, or executable scripts as visual demonstrations.',
     'You are Kindling, a warm, articulate, deeply knowledgeable, and highly structured private tutor whom parents trust to give their child a genuine, high-value education. Teach the learner the named lesson with substantive depth, visual demonstrations, and natural, flowing human conversation; never give clipped, robotic 1–2 sentence replies. Unpack the underlying "why" and intuition behind concepts, walk through concrete examples, and heavily invest in complementing your text with visual demonstrations (` ```diagram ` fenced blocks showing visual bars, number lines, step flows, comparisons, or spatial models) so the learner can see the idea in action. Use one focused visual when a single model captures the idea, or interleave multiple visuals right between the paragraphs they illustrate when explaining multiple stages, comparisons, or both a core concept and a worked example.',
     `Lesson focus: teach "${topic}" in the context of "${subject}" and the topic "${unit}". ${goal ? `The learning goal is: ${goal}.` : ''} Keep every explanation, visual demonstration, example, practice question, and follow-up suggestion 100% tied to this lesson.`,
-    `Structured Topic Study Plan & Section-by-Section Guidance (Critical): Never let tutoring feel scattered or keep going endlessly without a foreseeable stopping point. Every lesson on "${topic}" is governed by a 4-Section Study Plan laid out in the first message: (Section 1) Core Intuition & Visual Foundation, (Section 2) Core Mechanism & Worked Application, (Section 3) Guided Practice & Problem Solving, and (Section 4) Wind-Down, Quick Assessment (After Confirmation) & Next Steps. Follow the Study Plan strictly in order (Section 1 → Section 2 → Section 3 → Section 4), explicitly signposting section transitions. Count only exchanges spent tutoring after the orientation is established. Do not use the exchange count as proof that a section or objective was covered. When Sections 1–3 have each been substantively taught and their objectives practiced (typically after 4–5 productive tutoring exchanges, or earlier if the learner demonstrates mastery), signal that you are winding down "${topic}", briefly recap the Study Plan objectives completed, and ask for the learner's confirmation to take Section 4's Quick Assessment. Once the learner confirms, present a focused 2–3 question Quick Assessment on "${topic}" (emitting ⟦suggests: none⟧ while they answer). After they answer the Quick Assessment, review their answers warmly, celebrate completing the full Study Plan on "${topic}", and point them to concrete potential next steps.`,
-    `Topic orientation quality gate: before Section 1, establish a reliable map of "${topic}". This coverage checklist is flexible: definition and scope, purpose, conceptual structure and relationships, mechanisms and assumptions, types or alternatives, examples, limitations and trade-offs, prerequisites and misconceptions, observable learning outcomes, and a diagnostic of the learner's mental model. If the map is too broad for one clear message, split it into a few labeled orientation steps and continue across turns. Do not start Section 1 until essential concepts, relationships, and prerequisites are established.`,
-    'For the first tutor turn, give the topic orientation and a study plan, then ask one diagnostic question. Do not start Section 1 in that turn.',
-    'For later turns, engage thoughtfully with the learner’s actual response, keep tutoring anchored to the active Section of your Study Plan, and advance methodically to the next Section with rich, grade-appropriate depth paired with a concrete example and one or more inline visual demonstrations (` ```diagram ` blocks placed between paragraphs). Ask one focused question or wind-down confirmation prompt at a time at the end of your turn.',
-    `At the end of each reply, append a hidden suggestion block: ⟦suggests: option one | option two⟧ OR ⟦suggests: none⟧. Provide 0–3 chips only. Every chip must match the current orientation step or active Study Plan section for "${topic}" and the actual content of your reply; offer the immediate next action or a focused clarification. Do not recycle earlier chips, pad the list, jump ahead, introduce a side topic, or suggest a Quick Assessment before Sections 1–3 are covered. Use ⟦suggests: none⟧ for assessments and solo practice questions. When asking whether to begin the Quick Assessment, offer only 1–2 relevant confirmation choices. The block is interface metadata; never mention it.`,
+    `Tutoring lifecycle: (1) topic orientation, (2) conceptual teaching across the topic's actual modules, (3) guided practice/problem solving, (4) independent assessment and consolidation, and (5) progress review/next steps. This lifecycle describes how to teach; it is not the academic curriculum. Use the module order in the Study Plan as a map, but adapt the next step to demonstrated understanding and prerequisite gaps. Exchange count is a pacing hint, never proof of coverage or mastery. Do not force the topic into four generic sections or declare the whole curriculum complete after a short check.`,
+    `First response: teach the essential conceptual foundation before the diagnostic question, then present the topic-specific module roadmap. If the orientation needs multiple parts, continue a coherent part in the next turn while answering the learner's response. Later, engage thoughtfully with what the learner actually said, explain or revisit relevant modules, and use clear examples and meaningful visuals. Any assessment question must be answerable from a concept the tutor actually explained or practiced earlier in this lesson. A roadmap item, prior knowledge, or general topic association is not evidence that Kindling taught it. Use the examples and methods already covered; do not assess untaught or merely related concepts. If there is not enough covered material for a meaningful check, continue teaching instead. After instruction and practice, ask readiness before an assessment; report demonstrated, partial, mistaken, and unassessed knowledge accurately.`,
+    `At the end of each reply, append a hidden suggestion block: ⟦suggests: option one | option two⟧ OR ⟦suggests: none⟧. Provide 0–3 chips only. Every chip must match the current orientation step, curriculum module, or actual content of your reply; offer an immediate next action or focused clarification. Do not recycle earlier chips, pad the list, jump ahead, or introduce a side topic. Use ⟦suggests: none⟧ for assessments and solo practice questions. When asking whether to begin an assessment, offer only 1–2 relevant confirmation choices. The block is interface metadata; never mention it.`,
     'Safety: you are an educational tutor only. Never provide sexual content, instructions for self-harm, weapons, or illegal acts. If the learner expresses crisis or abuse, pause tutoring, respond kindly, and encourage them to speak to a trusted adult right away. Do not ask for passwords, addresses, or secrets.',
     `Learner grade: ${grade || 'unknown; use child-safe language'}. Subject: ${subject}. Topic: ${unit}. Lesson: ${topic}. ${goal ? `Learning goal: ${goal}.` : ''}`,
-    `Learner preferences: ${profile?.learningStyle || 'visual'} learning style; interests: ${profile?.interests?.length ? profile.interests.join(', ') : 'not specified'}; preferred tutoring language: ${profile?.preferredLanguage || 'English'}; overall learning goal: ${profile?.goal || 'build confidence'}. Adapt examples and pacing to these preferences, use the preferred language, and keep the explanation appropriate for the learner’s level.`,
+    ageGuidance(profile?.dateOfBirth),
+    `Learner preferences: ${profile?.learningStyle || 'visual'} learning style; topic familiarity self-report: ${familiarityDescription}; interests: ${profile?.interests?.length ? profile.interests.join(', ') : 'not specified'}; preferred tutoring language: ${profile?.preferredLanguage || 'English'}; overall learning goal: ${profile?.goal || 'build confidence'}. Adapt examples and pacing to these preferences, use the preferred language, and keep the explanation appropriate for the learner’s level. Familiarity is self-reported; look for demonstrated understanding before treating any concept as mastered.`,
     `Learner name: ${learnerName || 'not provided'}. Use their name naturally and sparingly; teaching the selected lesson comes first.`,
-  ].join('\n\n'), [grade, subject, topic, unit, goal, learnerName, profile]);
+  ].join('\n\n'), [grade, subject, topic, unit, goal, learnerName, profile, familiarityDescription]);
 
   useEffect(() => {
     let active = true;
@@ -72,9 +78,9 @@ export default function LessonScreen() {
     return () => { active = false; };
   }, [subject]);
 
-  const selectLesson = (nextUnit: string, nextTopic: string, nextGoal = '') => {
+  const selectLesson = (nextUnit: string, nextTopic: string, nextGoal = '', nextFamiliarity = 'unknown') => {
     if (nextTopic === topic && nextUnit === unit) { setPathOpen(false); return; }
-    setUnit(nextUnit); setTopic(nextTopic); setGoal(nextGoal); setAssessment(null); setPathOpen(false);
+    setUnit(nextUnit); setTopic(nextTopic); setGoal(nextGoal); setFamiliarity(nextFamiliarity); setAssessment(null); setPathOpen(false);
   };
 
   useEffect(() => {
@@ -239,7 +245,7 @@ export default function LessonScreen() {
       if (persistStudent) await persistMessage(studentMessage, 'child');
       const requestHistory = [...history.current, { role: 'user' as const, text: studentMessage.text }].slice(-20);
       const exchangeCount = Math.floor(history.current.length / 2);
-      const suggestionContext = `\n\nStudy Plan Pacing & Suggestion Adaptation (Exchange #${exchangeCount + 1}): Follow the Study Plan strictly. Keep every suggestion 100% anchored to "${topic}". Provide 0 to 4 suggestions based on necessity (use ⟦suggests: none⟧ when presenting a Quick Assessment or direct solo question).${exchangeCount === 0 ? ` This is the learner's first response to the orientation check. Respond to their actual answer and assess whether they understand the topic's essential map, relationships, and prerequisites. If any are missing, continue with a small, labeled orientation step, fill the gap, and ask one focused check. Do not begin Section 1 until the map is established. If their answer shows the map is established, confirm briefly and begin Section 1.` : exchangeCount >= 4 ? ` Check the actual conversation: only if Sections 1–3 and their objectives have been substantively taught and practiced, transition to Section 4 (Wind-Down), ask confirmation for a Quick Assessment, present it once confirmed, and point to Next Steps. Otherwise continue with the earliest uncovered section; orientation exchanges do not prove section coverage.` : ` Once orientation is established, use the conversation to identify the earliest uncovered section and continue it. The exchange count is only a pacing hint; orientation exchanges do not count as section coverage, and you must not skip content to match the count.`}`;
+      const suggestionContext = `\n\nCurriculum Progress & Suggestion Adaptation (Exchange #${exchangeCount + 1}): Follow the topic-specific module roadmap while adapting to the learner's answer. Keep suggestions anchored to "${topic}" and provide only useful next actions. Use ⟦suggests: none⟧ for an assessment or direct solo question.${exchangeCount === 0 ? ` This is the learner's first response to the orientation. Respond to their actual answer; distinguish demonstrated knowledge, partial understanding, misconceptions, and concepts not yet assessed. Correct any foundational gap and continue with the earliest useful module. Do not repeat the full orientation or ask the learner to explain a mechanism they have not been taught.` : exchangeCount >= 4 ? ` Check the actual conversation, not just the counter: if the relevant learning objectives have been taught and applied, recap what has been practiced and ask whether they want a brief check now or another example first. Otherwise continue with the earliest uncovered objective or prerequisite. Do not claim the topic or curriculum is complete.` : ` Continue the earliest useful curriculum module based on demonstrated understanding. Revisit a prerequisite when needed, but do not skip essential outcomes or force a transition because of the exchange count.`}`;
       const selfReport = trackedSession.current?.selfReportedAffect;
       const supportDirective = selfReport === 'hesitant' || selfReport === 'frustrated'
         ? '\n\nLearner check-in: they said they feel stuck or need a break. Validate this gently, reduce the task to one manageable next step, and do not give away the full answer.'
@@ -390,8 +396,15 @@ export default function LessonScreen() {
   };
 
   const startAssessment = () => {
-    const questions = questionsForMobileAssessment(subject, topic, 5);
-    if (!questions.length) return;
+    const coveredText = messages
+      .filter((message) => message.role === 'model' && message.text)
+      .map((message) => message.text)
+      .join('\n\n');
+    const questions = questionsForMobileAssessment(subject, topic, 5, coveredText);
+    if (!questions.length) {
+      setError(`We have not covered enough check questions on ${topic} yet. Let's work through another example first.`);
+      return;
+    }
     const id = newMessageId();
     setAssessment({ id, questions, index: 0, answers: [], selected: null, result: null, completed: false });
     const tracked = trackedSession.current;
@@ -438,43 +451,103 @@ export default function LessonScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel="Back to subjects" onPress={() => router.back()} hitSlop={8} style={styles.back}><Text style={styles.backGlyph}>‹</Text></Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Open lesson path" onPress={() => setPathOpen(true)} style={styles.headerCopy}><Text style={styles.tutorEyebrow}>KINDLING · YOUR TUTOR</Text><Text style={styles.subject}>{subject}</Text><Text numberOfLines={1} style={styles.topic}>{unit}  ·  {topic}  ▾</Text></Pressable>
-          <View style={styles.live}><View style={styles.liveDot} /><Text style={styles.liveText}>AI</Text></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open lesson path" onPress={() => setPathOpen(true)} style={styles.headerCopy}>
+            <Text numberOfLines={1} style={styles.tutorEyebrow}>{subject.toUpperCase()} · TAP FOR PATH ▾</Text>
+            <Text numberOfLines={1} style={styles.subject}>{topic}</Text>
+            {unit && unit !== topic ? <Text numberOfLines={1} style={styles.topic}>{unit}</Text> : null}
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Start lesson check"
+            disabled={conversationLoading || busy}
+            onPress={startAssessment}
+            style={({ pressed }) => [styles.checkHeaderBtn, (conversationLoading || busy) && styles.checkHeaderBtnDisabled, pressed && styles.sendPressed]}
+          >
+            <Text style={styles.checkHeaderBtnText}>✓ Check</Text>
+          </Pressable>
         </View>
 
         <ScrollView ref={scrollRef} style={styles.messages} contentContainerStyle={styles.messageContent} keyboardShouldPersistTaps="handled">
-          {!conversationLoading && !assessment?.completed && !assessment ? <View style={styles.assessmentCard}><Text style={styles.assessmentEyebrow}>LESSON CHECK</Text><Text style={styles.assessmentTitle}>Ready to check {topic}?</Text><Text style={styles.assessmentBody}>Try a few questions with instant feedback. Your scored answers help Kindling track what you’ve mastered.</Text><Pressable accessibilityRole="button" onPress={startAssessment} style={({ pressed }) => [styles.assessmentButton, pressed && styles.sendPressed]}><Text style={styles.assessmentButtonText}>Start assessment</Text></Pressable></View> : null}
-          {assessment && !assessment.completed ? (() => {
-            const question = assessment.questions[assessment.index];
-            return <View style={styles.assessmentCard}><Text style={styles.assessmentEyebrow}>ASSESSMENT · {assessment.index + 1} OF {assessment.questions.length}</Text><Text style={styles.assessmentTitle}>{question.prompt}</Text>{question.options.map((option, index) => <Pressable key={option.id} accessibilityRole="button" accessibilityState={{ disabled: Boolean(assessment.result), selected: assessment.selected === index }} disabled={Boolean(assessment.result)} onPress={() => answerAssessment(index)} style={[styles.assessmentOption, assessment.result && index === question.correctIndex && styles.assessmentOptionCorrect, assessment.result && assessment.selected === index && !assessment.result.correct && styles.assessmentOptionIncorrect]}><Text style={styles.assessmentOptionText}>{option.text}</Text></Pressable>)}{assessment.result ? <><Text style={styles.assessmentFeedback}>{assessment.result.correct ? 'That’s right!' : 'Good try — let’s review.'} {assessment.result.explanation}</Text><Pressable accessibilityRole="button" onPress={continueAssessment} style={styles.assessmentButton}><Text style={styles.assessmentButtonText}>{assessment.index + 1 === assessment.questions.length ? 'See results' : 'Next question'}</Text></Pressable></> : <Text style={styles.assessmentBody}>Choose the best answer to see a tutor explanation.</Text>}</View>;
-          })() : null}
-          {assessment?.completed ? <View style={styles.assessmentCard}><Text style={styles.assessmentEyebrow}>ASSESSMENT COMPLETE</Text><Text style={styles.assessmentTitle}>You got {assessment.answers.filter(Boolean).length} of {assessment.questions.length} correct</Text><Text style={styles.assessmentBody}>Your scored answers have been added to your learning profile.</Text><Pressable accessibilityRole="button" onPress={startAssessment} style={styles.assessmentButton}><Text style={styles.assessmentButtonText}>Try another assessment</Text></Pressable></View> : null}
-          {conversationLoading ? <View style={styles.threadStatus}><ActivityIndicator size="small" color={Brand.teal} /><Text style={styles.threadStatusText}>Preparing a focused introduction to {topic}…</Text></View> : null}
+          {conversationLoading ? <View style={styles.threadStatus}><ActivityIndicator size="small" color={Brand.teal} /><Text style={styles.threadStatusText}>Preparing your lesson on {topic}…</Text></View> : null}
           {isResumed ? <Text style={styles.resumeLabel}>PICKING UP WHERE YOU LEFT OFF</Text> : null}
           {conversationWarning ? <View style={styles.warningBox}><Text style={styles.warningText}>{conversationWarning}</Text><Pressable accessibilityRole="button" onPress={() => setRestoreAttempt((attempt) => attempt + 1)}><Text style={styles.retry}>Try to reconnect</Text></Pressable></View> : null}
-          {idleSupportStage !== 'none' && !assessment ? <View style={styles.supportCard}><Text style={styles.assessmentEyebrow}>{idleSupportStage === 'offer' ? 'HERE IF YOU NEED ME' : 'TAKE YOUR TIME'}</Text><Text style={styles.assessmentTitle}>{idleSupportStage === 'offer' ? 'Would a small hint help?' : 'Still thinking? No rush.'}</Text><Text style={styles.assessmentBody}>{idleSupportStage === 'offer' ? `I can break the next step down for ${topic}. You can also keep thinking on your own.` : 'Take the time you need. If you get stuck, Kindling can offer a small hint.'}</Text><View style={styles.supportActions}><Pressable accessibilityRole="button" onPress={() => chooseIdleSupport('hint')} style={styles.assessmentButton}><Text style={styles.assessmentButtonText}>Give me a hint</Text></Pressable><Pressable accessibilityRole="button" onPress={() => chooseIdleSupport('thinking')} style={styles.supportSecondary}><Text style={styles.supportSecondaryText}>Still thinking</Text></Pressable><Pressable accessibilityRole="button" onPress={() => chooseIdleSupport('dismiss')} style={styles.supportDismiss}><Text style={styles.supportSecondaryText}>I’m okay</Text></Pressable></View></View> : null}
-          {affectCheckInVisible && idleSupportStage === 'none' && !assessment ? <View style={styles.supportCard}><Text style={styles.assessmentEyebrow}>QUICK CHECK-IN</Text><Text style={styles.assessmentTitle}>How are you feeling about this lesson?</Text><Text style={styles.assessmentBody}>Your answer helps Kindling adjust the pace and support.</Text><View style={styles.checkInActions}>{([['great', '🌟 Feeling good'], ['okay', '🙂 Doing okay'], ['stuck', '💭 A bit stuck'], ['break', '🌿 Need a break']] as const).map(([id, label]) => <Pressable key={id} accessibilityRole="button" onPress={() => answerAffectCheckIn(id)} style={styles.supportSecondary}><Text style={styles.supportSecondaryText}>{label}</Text></Pressable>)}</View></View> : null}
           {messages.map((message, index) => (
-            <View key={`${index}-${message.role}`} style={styles.messageGroup}>
+            <View key={`${index}-${message.role}`} style={[styles.messageGroup, message.role === 'user' && styles.userMessageGroup]}>
               {message.role === 'model' ? <View style={styles.tutorAttribution}><BrandMark size={19} /><Text style={styles.tutorName}>Kindling</Text></View> : null}
               <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.tutorBubble]}>
                 <LessonMessageContent text={message.text} isUser={message.role === 'user'} textStyle={[styles.bubbleText, message.role === 'user' && styles.userText]} />
               </View>
               {message.role === 'model' && index === messages.length - 1 && !busy && (message.suggestions?.length || 0) > 0 ? (
                 <View style={styles.suggestions}>
-                  <Text style={styles.suggestionLabel}>NEXT WITH KINDLING · {topic.toUpperCase()}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionList}>
+                  <Text style={styles.suggestionLabel}>SUGGESTED REPLIES</Text>
+                  <View style={styles.suggestionWrap}>
                     {(message.suggestions || []).map((reply) => (
                       <Pressable key={reply} accessibilityRole="button" disabled={busy} onPress={() => sendMessage(reply)} style={({ pressed }) => [styles.suggestionChip, pressed && styles.sendPressed]}>
                         <Text style={styles.suggestionText}>{reply}</Text>
                       </Pressable>
                     ))}
-                  </ScrollView>
+                  </View>
                 </View>
               ) : null}
             </View>
           ))}
           {busy ? <View accessibilityLiveRegion="polite" style={[styles.bubble, styles.tutorBubble, styles.thinking]}><ActivityIndicator size="small" color={Brand.teal} /><Text style={styles.thinkingText}>Kindling is thinking…</Text></View> : null}
+          {idleSupportStage !== 'none' && !assessment ? <View style={styles.supportCard}><Text style={styles.assessmentEyebrow}>{idleSupportStage === 'offer' ? 'HERE IF YOU NEED ME' : 'TAKE YOUR TIME'}</Text><Text style={styles.assessmentTitle}>{idleSupportStage === 'offer' ? 'Would a small hint help?' : 'Still thinking? No rush.'}</Text><Text style={styles.assessmentBody}>{idleSupportStage === 'offer' ? `I can break the next step down for ${topic}. You can also keep thinking on your own.` : 'Take the time you need. If you get stuck, Kindling can offer a small hint.'}</Text><View style={styles.supportActions}><Pressable accessibilityRole="button" onPress={() => chooseIdleSupport('hint')} style={styles.assessmentButton}><Text style={styles.assessmentButtonText}>Give me a hint</Text></Pressable><Pressable accessibilityRole="button" onPress={() => chooseIdleSupport('thinking')} style={styles.supportSecondary}><Text style={styles.supportSecondaryText}>Still thinking</Text></Pressable><Pressable accessibilityRole="button" onPress={() => chooseIdleSupport('dismiss')} style={styles.supportDismiss}><Text style={styles.supportSecondaryText}>I’m okay</Text></Pressable></View></View> : null}
+          {affectCheckInVisible && idleSupportStage === 'none' && !assessment ? <View style={styles.supportCard}><Text style={styles.assessmentEyebrow}>QUICK CHECK-IN</Text><Text style={styles.assessmentTitle}>How are you feeling about this lesson?</Text><Text style={styles.assessmentBody}>Your answer helps Kindling adjust the pace and support.</Text><View style={styles.checkInActions}>{([['great', '🌟 Feeling good'], ['okay', '🙂 Doing okay'], ['stuck', '💭 A bit stuck'], ['break', '🌿 Need a break']] as const).map(([id, label]) => <Pressable key={id} accessibilityRole="button" onPress={() => answerAffectCheckIn(id)} style={styles.supportSecondary}><Text style={styles.supportSecondaryText}>{label}</Text></Pressable>)}</View></View> : null}
+          {!conversationLoading && !busy && !assessment && messages.length >= 5 ? (
+            <View style={styles.assessmentCard}>
+              <Text style={styles.assessmentEyebrow}>LESSON CHECK</Text>
+              <Text style={styles.assessmentTitle}>Ready to check {topic}?</Text>
+              <Text style={styles.assessmentBody}>Try a quick 5-question check with instant tutor feedback to lock in what you’ve practiced.</Text>
+              <Pressable accessibilityRole="button" onPress={startAssessment} style={({ pressed }) => [styles.assessmentButton, pressed && styles.sendPressed]}>
+                <Text style={styles.assessmentButtonText}>Start quick check</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {assessment && !assessment.completed ? (() => {
+            const question = assessment.questions[assessment.index];
+            return (
+              <View style={styles.assessmentCard}>
+                <View style={styles.assessmentTopRow}>
+                  <Text style={styles.assessmentEyebrow}>QUESTION {assessment.index + 1} OF {assessment.questions.length}</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Close check" onPress={() => setAssessment(null)} hitSlop={8}>
+                    <Text style={styles.assessmentDismissText}>Close ×</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.assessmentTitle}>{question.prompt}</Text>
+                {question.options.map((option, index) => (
+                  <Pressable key={option.id} accessibilityRole="button" accessibilityState={{ disabled: Boolean(assessment.result), selected: assessment.selected === index }} disabled={Boolean(assessment.result)} onPress={() => answerAssessment(index)} style={[styles.assessmentOption, assessment.result && index === question.correctIndex && styles.assessmentOptionCorrect, assessment.result && assessment.selected === index && !assessment.result.correct && styles.assessmentOptionIncorrect]}>
+                    <Text style={styles.assessmentOptionText}>{option.text}</Text>
+                  </Pressable>
+                ))}
+                {assessment.result ? (
+                  <>
+                    <Text style={styles.assessmentFeedback}>{assessment.result.correct ? '✓ That’s right!' : 'Good try — let’s review.'} {assessment.result.explanation}</Text>
+                    <Pressable accessibilityRole="button" onPress={continueAssessment} style={styles.assessmentButton}>
+                      <Text style={styles.assessmentButtonText}>{assessment.index + 1 === assessment.questions.length ? 'See results' : 'Next question →'}</Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <Text style={styles.assessmentBody}>Choose the best answer to see a tutor explanation.</Text>
+                )}
+              </View>
+            );
+          })() : null}
+          {assessment?.completed ? (
+            <View style={styles.assessmentCard}>
+              <View style={styles.assessmentTopRow}>
+                <Text style={styles.assessmentEyebrow}>CHECK COMPLETE</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Dismiss check results" onPress={() => setAssessment(null)} hitSlop={8}>
+                  <Text style={styles.assessmentDismissText}>Done</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.assessmentTitle}>You got {assessment.answers.filter(Boolean).length} of {assessment.questions.length} correct</Text>
+              <Text style={styles.assessmentBody}>Your scored answers have been added to your mastery profile.</Text>
+              <Pressable accessibilityRole="button" onPress={startAssessment} style={styles.assessmentButton}>
+                <Text style={styles.assessmentButtonText}>Try another check</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable accessibilityRole="button" onPress={() => { const lastUser = [...messages].reverse().find((item) => item.role === 'user'); if (lastUser) void ask(messages); }}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
         </ScrollView>
 
@@ -506,10 +579,10 @@ export default function LessonScreen() {
           <ScrollView style={styles.pathList} keyboardShouldPersistTaps="handled">
             {subjectPath?.topics.map((topicRow, index) => {
               const leaves = topicRow.subtopics.filter((leaf) => leaf.id !== topicRow.id || leaf.name !== topicRow.name);
-              const lessons = leaves.length ? leaves : [{ id: topicRow.id, name: topicRow.name, learningGoal: '', unitName: topicRow.name }];
+              const lessons = leaves.length ? leaves : [{ id: topicRow.id, name: topicRow.name, learningGoal: topicRow.learningGoal || '', familiarity: topicRow.familiarity || 'unknown', unitName: topicRow.name }];
               return <View key={`${topicRow.id}-${topicRow.name}`} style={styles.pathTopic}>
                 <Text style={styles.pathTopicName}>{String(index + 1).padStart(2, '0')}  {topicRow.name}</Text>
-                {lessons.map((lesson, lessonIndex) => <Pressable key={`${lesson.id}-${lesson.name}`} accessibilityRole="button" accessibilityState={{ selected: topic === lesson.name && unit === topicRow.name }} onPress={() => selectLesson(topicRow.name, lesson.name, lesson.learningGoal)} style={[styles.pathLesson, topic === lesson.name && unit === topicRow.name && styles.pathLessonActive]}><View style={[styles.pathLessonDot, topic === lesson.name && unit === topicRow.name && styles.pathLessonDotActive]}><Text style={[styles.pathLessonNumber, topic === lesson.name && unit === topicRow.name && styles.pathLessonNumberActive]}>{lessonIndex + 1}</Text></View><Text style={[styles.pathLessonText, topic === lesson.name && unit === topicRow.name && styles.pathLessonTextActive]}>{lesson.name}</Text>{topic === lesson.name && unit === topicRow.name ? <Text style={styles.pathCurrent}>CURRENT</Text> : null}</Pressable>)}
+                {lessons.map((lesson, lessonIndex) => <Pressable key={`${lesson.id}-${lesson.name}`} accessibilityRole="button" accessibilityState={{ selected: topic === lesson.name && unit === topicRow.name }} onPress={() => selectLesson(topicRow.name, lesson.name, lesson.learningGoal, lesson.familiarity)} style={[styles.pathLesson, topic === lesson.name && unit === topicRow.name && styles.pathLessonActive]}><View style={[styles.pathLessonDot, topic === lesson.name && unit === topicRow.name && styles.pathLessonDotActive]}><Text style={[styles.pathLessonNumber, topic === lesson.name && unit === topicRow.name && styles.pathLessonNumberActive]}>{lessonIndex + 1}</Text></View><Text style={[styles.pathLessonText, topic === lesson.name && unit === topicRow.name && styles.pathLessonTextActive]}>{lesson.name}</Text>{topic === lesson.name && unit === topicRow.name ? <Text style={styles.pathCurrent}>CURRENT</Text> : null}</Pressable>)}
               </View>;
             })}
             {!subjectPath?.topics.length ? <Text style={styles.pathEmpty}>Add topics and lesson subtopics from your subject workspace.</Text> : null}
@@ -652,42 +725,45 @@ function lessonFallbackSuggestions(topic: string, tutorText = '', learnerText = 
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Brand.parchment },
-  flex: { flex: 1 },
-  header: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: Brand.line, backgroundColor: Brand.parchment },
-  back: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
-  backGlyph: { color: Brand.pine, fontSize: 33, lineHeight: 36, marginTop: -3 },
-  headerCopy: { flex: 1, gap: 1 },
-  tutorEyebrow: { color: Brand.teal, fontWeight: '600', fontSize: 9, letterSpacing: 0.9 },
-  subject: { color: Brand.pine, fontWeight: '700', fontSize: 16 },
-  topic: { color: Brand.muted, fontSize: 13 },
-  live: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99, backgroundColor: Brand.tealPale },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Brand.teal },
-  liveText: { color: Brand.pine, fontSize: 10, fontWeight: '600', letterSpacing: 0.7 },
+  flex: { flex: 1, minWidth: 0 },
+  header: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Brand.line, backgroundColor: Brand.parchment },
+  back: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: Brand.line },
+  backGlyph: { color: Brand.pine, fontSize: 30, lineHeight: 33, marginTop: -2 },
+  headerCopy: { flex: 1, minWidth: 0, gap: 1 },
+  tutorEyebrow: { color: Brand.teal, fontWeight: '800', fontSize: 10, letterSpacing: 0.7 },
+  subject: { color: Brand.pine, fontWeight: '800', fontSize: 16, lineHeight: 20 },
+  topic: { color: Brand.muted, fontSize: 12, lineHeight: 16 },
+  checkHeaderBtn: { minHeight: 36, paddingHorizontal: 12, borderRadius: 99, backgroundColor: Brand.tealPale, borderWidth: 1, borderColor: '#B8DDD0', alignItems: 'center', justifyContent: 'center' },
+  checkHeaderBtnDisabled: { opacity: 0.45 },
+  checkHeaderBtnText: { color: Brand.pine, fontSize: 12, fontWeight: '800' },
   messages: { flex: 1 },
-  messageContent: { padding: 16, paddingBottom: 20, gap: 12 },
+  messageContent: { padding: 16, paddingBottom: 24, gap: 14 },
   messageGroup: { alignSelf: 'stretch', gap: 8 },
+  userMessageGroup: { alignItems: 'flex-end' },
   tutorAttribution: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   tutorName: { color: Brand.teal, fontSize: 12, fontWeight: '700' },
-  bubble: { width: '100%', maxWidth: '100%', alignSelf: 'stretch', paddingHorizontal: 16, paddingVertical: 13, borderRadius: 18 },
-  tutorBubble: { alignSelf: 'stretch', backgroundColor: '#fff', borderWidth: 1, borderColor: Brand.line },
-  userBubble: { alignSelf: 'stretch', backgroundColor: Brand.pine },
-  bubbleText: { color: Brand.ink, fontSize: 16, lineHeight: 23 },
+  bubble: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 20 },
+  tutorBubble: { width: '100%', maxWidth: '100%', alignSelf: 'stretch', backgroundColor: '#fff', borderWidth: 1, borderColor: Brand.line },
+  userBubble: { alignSelf: 'flex-end', maxWidth: '85%', backgroundColor: Brand.pine, borderBottomRightRadius: 6 },
+  bubbleText: { color: Brand.ink, fontSize: 16, lineHeight: 24 },
   userText: { color: '#fff' },
-  suggestions: { gap: 7, paddingLeft: 4 },
-  suggestionLabel: { color: Brand.muted, fontSize: 10, letterSpacing: 1, fontWeight: '600' },
-  suggestionList: { gap: 8, paddingRight: 12 },
-  suggestionChip: { minHeight: 38, paddingHorizontal: 13, borderRadius: 99, borderWidth: 1, borderColor: Brand.line, backgroundColor: '#fff', justifyContent: 'center' },
-  suggestionText: { color: Brand.pine, fontSize: 13, fontWeight: '600' },
+  suggestions: { gap: 8, paddingTop: 2 },
+  suggestionLabel: { color: Brand.muted, fontSize: 10, letterSpacing: 0.9, fontWeight: '700' },
+  suggestionWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  suggestionChip: { minHeight: 38, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: Brand.line, backgroundColor: '#fff', justifyContent: 'center' },
+  suggestionText: { color: Brand.pine, fontSize: 13, lineHeight: 18, fontWeight: '700' },
   thinking: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12 },
   thinkingText: { color: Brand.muted, fontSize: 14 },
   threadStatus: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 14 },
   threadStatusText: { color: Brand.muted, fontSize: 14 },
-  assessmentCard: { alignSelf: 'stretch', padding: 16, borderRadius: 18, backgroundColor: '#EAF4EF', borderWidth: 1, borderColor: '#C8DED2', gap: 9 },
-  assessmentEyebrow: { color: Brand.teal, fontSize: 10, fontWeight: '600', letterSpacing: 1 },
-  assessmentTitle: { color: Brand.pine, fontSize: 18, lineHeight: 24, fontWeight: '600' },
+  assessmentCard: { alignSelf: 'stretch', padding: 18, borderRadius: 20, backgroundColor: '#EAF4EF', borderWidth: 1, borderColor: '#C8DED2', gap: 10 },
+  assessmentTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  assessmentEyebrow: { color: Brand.teal, fontSize: 10, fontWeight: '800', letterSpacing: 0.9 },
+  assessmentDismissText: { color: Brand.muted, fontSize: 12, fontWeight: '700' },
+  assessmentTitle: { color: Brand.pine, fontSize: 18, lineHeight: 24, fontWeight: '800' },
   assessmentBody: { color: Brand.muted, fontSize: 13, lineHeight: 19 },
   assessmentButton: { alignSelf: 'flex-start', minHeight: 42, paddingHorizontal: 16, borderRadius: 13, backgroundColor: Brand.pine, alignItems: 'center', justifyContent: 'center', marginTop: 3 },
-  assessmentButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  assessmentButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   assessmentOption: { minHeight: 44, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Brand.line, backgroundColor: '#fff', justifyContent: 'center' },
   assessmentOptionCorrect: { borderColor: Brand.teal, backgroundColor: '#DDF0E5' },
   assessmentOptionIncorrect: { borderColor: Brand.error, backgroundColor: '#FCECE9' },
@@ -699,41 +775,41 @@ const styles = StyleSheet.create({
   supportSecondaryText: { color: Brand.pine, fontSize: 13, fontWeight: '700' },
   supportDismiss: { minHeight: 40, paddingHorizontal: 10, justifyContent: 'center' },
   checkInActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 3 },
-  resumeLabel: { color: Brand.teal, fontSize: 10, fontWeight: '600', letterSpacing: 1.1 },
+  resumeLabel: { color: Brand.teal, fontSize: 10, fontWeight: '700', letterSpacing: 1 },
   warningBox: { alignSelf: 'stretch', padding: 12, borderRadius: 13, backgroundColor: '#FFF4D9', gap: 6 },
   warningText: { color: Brand.ink, fontSize: 13, lineHeight: 19 },
   errorBox: { alignSelf: 'stretch', padding: 13, borderRadius: 14, backgroundColor: '#FCECE9', gap: 8 },
   errorText: { color: Brand.error, fontSize: 14, lineHeight: 20 },
   retry: { color: Brand.pine, fontSize: 14, fontWeight: '700' },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, borderTopWidth: 1, borderTopColor: Brand.line, padding: 12, paddingBottom: 10, backgroundColor: '#fff' },
-  voiceButton: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.parchment },
+  voiceButton: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.parchment },
   voiceButtonActive: { backgroundColor: Brand.teal },
-  voiceGlyph: { color: Brand.pine, fontSize: 20 },
+  voiceGlyph: { color: Brand.pine, fontSize: 19 },
   voiceGlyphActive: { color: '#fff' },
-  input: { flex: 1, minHeight: 48, maxHeight: 140, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, backgroundColor: Brand.parchment, color: Brand.ink, fontSize: 16, lineHeight: 21, textAlignVertical: 'top' },
-  send: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.pine },
+  input: { flex: 1, minHeight: 46, maxHeight: 140, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 16, backgroundColor: Brand.parchment, color: Brand.ink, fontSize: 16, lineHeight: 21, textAlignVertical: 'top' },
+  send: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.pine },
   sendDisabled: { backgroundColor: '#A9B2AD' },
   sendPressed: { opacity: 0.7 },
-  sendGlyph: { color: '#fff', fontSize: 26, lineHeight: 30, fontWeight: '700' },
+  sendGlyph: { color: '#fff', fontSize: 24, lineHeight: 28, fontWeight: '700' },
   pathShade: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(17,31,27,0.42)' },
   pathSheet: { maxHeight: '82%', backgroundColor: Brand.parchment, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 20, paddingHorizontal: 20, paddingBottom: 30, gap: 12 },
   pathHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  pathEyebrow: { color: Brand.teal, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
-  pathTitle: { color: Brand.pine, fontSize: 22, fontWeight: '700', marginTop: 3 },
+  pathEyebrow: { color: Brand.teal, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  pathTitle: { color: Brand.pine, fontSize: 22, fontWeight: '800', marginTop: 3 },
   pathClose: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
   pathCloseText: { color: Brand.pine, fontSize: 27, lineHeight: 30 },
   pathList: { flexGrow: 0 },
   pathTopic: { borderTopWidth: 1, borderTopColor: Brand.line, paddingTop: 14, paddingBottom: 5 },
-  pathTopicName: { color: Brand.pine, fontSize: 15, fontWeight: '600', marginBottom: 7 },
+  pathTopicName: { color: Brand.pine, fontSize: 15, fontWeight: '700', marginBottom: 7 },
   pathLesson: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 11, borderRadius: 13, paddingHorizontal: 9 },
   pathLessonActive: { backgroundColor: Brand.tealPale },
   pathLessonDot: { width: 27, height: 27, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F2EBDD' },
   pathLessonDotActive: { backgroundColor: Brand.teal },
   pathLessonNumber: { color: Brand.pine, fontSize: 12, fontWeight: '700' },
   pathLessonNumberActive: { color: '#fff' },
-  pathLessonText: { flex: 1, color: Brand.ink, fontSize: 14, fontWeight: '600' },
-  pathLessonTextActive: { color: Brand.pine, fontWeight: '600' },
-  pathCurrent: { color: Brand.teal, fontSize: 9, fontWeight: '600', letterSpacing: 0.6 },
+  pathLessonText: { flex: 1, minWidth: 0, color: Brand.ink, fontSize: 14, fontWeight: '600' },
+  pathLessonTextActive: { color: Brand.pine, fontWeight: '700' },
+  pathCurrent: { color: Brand.teal, fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
   pathEmpty: { color: Brand.muted, fontSize: 14, lineHeight: 21, paddingVertical: 16 },
 });
 

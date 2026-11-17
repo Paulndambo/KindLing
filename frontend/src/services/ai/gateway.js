@@ -53,6 +53,7 @@ export function createChatSession(systemInstruction, history = [], options = {})
     const client = createGeminiClient({ apiKey, platformProxy: route.platformProxy });
     return createGeminiChat(client, model, systemInstruction, history, {
       allowPlatformFallback: canFallbackToPlatform(route),
+      logRequestBody: Boolean(options.logRequestBody && route.platformProxy),
     });
   }
 

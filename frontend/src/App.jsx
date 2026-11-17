@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { NAV } from "./constants/navigation";
 import { useAuth } from "./hooks/useAuth";
+import { useRevenueCat } from "./hooks/useRevenueCat";
 import { useStudentProfile } from "./hooks/useStudentProfile";
 import { useSubjects } from "./hooks/useSubjects";
 import TopNav from "./components/layout/TopNav";
@@ -28,13 +29,11 @@ export default function App() {
   const [screen, setScreen] = useState("overview");
   const [activeLesson, setActiveLesson] = useState(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [workspaceSidebarCollapsed, setWorkspaceSidebarCollapsed] = useState(false);
   const [dashboardPage, setDashboardPage] = useState("overview");
 
-  // Scroll to top + close mobile nav when the primary screen changes
+  // Scroll to top when the primary screen changes
   useEffect(() => {
-    setMobileNavOpen(false);
     window.scrollTo(0, 0);
     // Move focus into main content for keyboard / screen-reader continuity
     const main = document.getElementById("main-content");
@@ -70,7 +69,10 @@ export default function App() {
     authLoading,
     authError,
     setAuthError,
+    bootstrapping,
   } = useAuth();
+
+  const purchases = useRevenueCat({ userSession, isLoggedIn, bootstrapping });
 
   const {
     student,
@@ -215,7 +217,7 @@ export default function App() {
     if (tabId === "dashboard" && page) setDashboardPage(page);
     handleNavigate(tabId);
   }, [handleNavigate]);
-  const hasWorkspaceSidebar = ["dashboard", "subjects", "settings"].includes(screen);
+  const hasWorkspaceSidebar = ["dashboard", "subjects", "settings", "support"].includes(screen);
 
   const startLesson = useCallback(
     (subjectName, topicName, opts = null) => {
@@ -265,21 +267,28 @@ export default function App() {
         Skip to main content
       </a>
       <TopNav
-        screen={screen}
         isLoggedIn={isLoggedIn}
         student={student}
-        hasSubjects={hasSubjects}
         onNavigate={handleNavigate}
         onOpenLogin={handleOpenLogin}
         onGetStarted={handleGetStarted}
         onLogout={handleLogout}
         onOpenOnboarding={handleOpenOnboarding}
-        mobileOpen={mobileNavOpen}
-        onMobileOpenChange={setMobileNavOpen}
       />
 
       <main id="main-content" className={`app-main${screen === "dashboard" ? " is-dashboard" : ""}${hasWorkspaceSidebar ? " has-workspace-sidebar" : ""}${workspaceSidebarCollapsed ? " sidebar-collapsed" : ""}`} tabIndex={-1}>
-        {hasWorkspaceSidebar && <WorkspaceSidebar collapsed={workspaceSidebarCollapsed} onToggle={() => setWorkspaceSidebarCollapsed((v) => !v)} screen={screen} dashboardPage={dashboardPage} onDashboardPageChange={setDashboardPage} onNavigate={handleWorkspaceNavigate} />}
+        {hasWorkspaceSidebar && (
+          <WorkspaceSidebar
+            collapsed={workspaceSidebarCollapsed}
+            onToggle={() => setWorkspaceSidebarCollapsed((v) => !v)}
+            screen={screen === "support" ? "settings" : screen}
+            dashboardPage={dashboardPage}
+            onDashboardPageChange={setDashboardPage}
+            onNavigate={handleWorkspaceNavigate}
+            isLoggedIn={isLoggedIn}
+            hasSubjects={hasSubjects}
+          />
+        )}
         <div className="workspace-page">
         <Suspense fallback={<ScreenFallback />}>
           {(screen === "privacy" || screen === "terms") && (
@@ -293,6 +302,7 @@ export default function App() {
             <Settings
               key={screen}
               initialTab="support"
+              purchases={purchases}
               isLoggedIn={isLoggedIn}
               onOpenLogin={handleOpenLogin}
             />
@@ -368,6 +378,7 @@ export default function App() {
             <Settings
               key={screen}
               initialTab="subscription"
+              purchases={purchases}
               isLoggedIn={isLoggedIn}
               onOpenLogin={handleOpenLogin}
             />

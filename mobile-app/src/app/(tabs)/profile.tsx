@@ -22,17 +22,17 @@ import {
   SectionTitle,
 } from '@/components/mobile-ui';
 import { Brand } from '@/constants/brand';
-import { isHigherEducation, LEARNING_STYLES } from '@/constants/learner-profile';
+import { isHigherEducation, LEARNING_STYLES, normalizeProgrammeTrack } from '@/constants/learner-profile';
+import { ageFromDateOfBirth } from '@/services/learner-age';
 import { useSession } from '@/context/session';
+import { usePurchases } from '@/context/purchases';
+import { SubscriptionCard } from '@/components/subscription-card';
 import {
   deleteAccount,
-  getLearningDashboard,
   getPlatformSubscription,
   getPushSettings,
-  listAssessments,
   listBillingInvoices,
   listPlatformPlans,
-  listSubjects,
   requestPlanInvoice,
   savePushSettings,
   type BillingInvoiceItem,
@@ -62,52 +62,32 @@ const FALLBACK_PLANS: PlanCatalogItem[] = [
   {
     id: 'spark',
     name: 'Spark',
-    tagline: "30-day trial of Kindling's adaptive tutor",
+    tagline: "Free access to Kindling's adaptive tutor",
     priceMonthly: 0,
     priceYearly: 0,
-    trialDays: 30,
     features: [
-      'Full teaching system for 30 days',
+      "Kindling's adaptive teaching system, free",
       'Live adaptive lessons (daily platform-AI request and usage cap)',
       'Student dashboard & mastery pulse',
-      'Then choose Forge or Ember to continue',
+      'Bring your own AI keys for additional providers',
     ],
     entitlements: {
       platformAi: true,
       byok: true,
+      multiProvider: false,
+      advancedRouting: false,
+      familyDigest: false,
       dailyLessonSoftCap: 4,
       dailyPlatformAiRequests: 250,
       dailyPlatformAiTokens: 1000000,
     },
   },
   {
-    id: 'forge',
-    name: 'Forge',
-    tagline: 'Rent the algorithm — bring your own AI keys',
-    priceMonthly: 30,
-    priceYearly: 300,
-    features: [
-      'Kindling teaching system (algorithm rent)',
-      'You pay AI tokens via your own keys (BYOK)',
-      'Multi-provider routing (Gemini, OpenAI, Anthropic, Groq, OpenRouter)',
-      'Per-task model routing · homework photo · digests',
-    ],
-    entitlements: {
-      platformAi: false,
-      byok: true,
-      multiProvider: true,
-      advancedRouting: true,
-      familyDigest: true,
-      dailyPlatformAiRequests: 0,
-      dailyPlatformAiTokens: 0,
-    },
-  },
-  {
-    id: 'ember',
-    name: 'Ember',
-    tagline: 'Nightly tutoring with platform AI included',
-    priceMonthly: 99,
-    priceYearly: 990,
+    id: 'premium',
+    name: 'Premium',
+    tagline: 'More AI and advanced learning tools',
+    priceMonthly: 25,
+    priceYearly: 250,
     highlight: true,
     features: [
       'Everything in the teaching system',
@@ -156,14 +136,13 @@ function resolveLearningStyle(styleId?: string | null) {
 
 function getPlanGlyph(planId?: string) {
   const key = (planId || 'spark').toLowerCase();
-  if (key === 'ember') return '🔥';
-  if (key === 'forge') return '⚒';
+  if (key === 'premium') return '🔥';
   return '✦';
 }
 
 function formatPlanPrice(plan?: PlanCatalogItem | null, cycle?: string) {
   if (!plan || plan.id === 'spark' || (plan.priceMonthly === 0 && plan.priceYearly === 0)) {
-    return 'Free · 30-day trial';
+    return 'Free';
   }
   if (cycle === 'yearly') {
     return `$${plan.priceYearly} / year`;
@@ -195,6 +174,7 @@ function formatTokenCount(tokens?: number) {
 
 export default function ProfileScreen() {
   const { profile, session, signOut, refreshProfile } = useSession();
+  const { isPremium: storePremium, ready: storeReady } = usePurchases();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -206,6 +186,7 @@ export default function ProfileScreen() {
   const [invoices, setInvoices] = useState<BillingInvoiceItem[]>([]);
   const [subLoading, setSubLoading] = useState(true);
   const [showPlansModal, setShowPlansModal] = useState(false);
+  const [showPlanFeatures, setShowPlanFeatures] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [requestingPlan, setRequestingPlan] = useState<string | null>(null);
   const [planNotice, setPlanNotice] = useState('');
@@ -228,55 +209,24 @@ export default function ProfileScreen() {
   const [pushFeedback, setPushFeedback] = useState('');
   const [pushError, setPushError] = useState('');
 
-  const [stats, setStats] = useState({
-    subjectsCount: 0,
-    assessmentsCount: 0,
-    sessionsValue: '0',
-    accuracyValue: null as number | null,
-  });
-
   const loadSnapshot = useCallback(
     async (isPull = false) => {
       if (isPull) setRefreshing(true);
       try {
         const [
-          subjectsRes,
-          assessmentsRes,
-          dashRes,
           subRes,
           plansRes,
           invoicesRes,
           pushRes,
           permRes,
         ] = await Promise.allSettled([
-          listSubjects(),
-          listAssessments(),
-          getLearningDashboard(),
           getPlatformSubscription(),
           listPlatformPlans(),
-          listBillingInvoices(),
+          Platform.OS === 'web' ? listBillingInvoices() : Promise.resolve([]),
           getPushSettings(),
           getNotificationPermissionStatus(),
           isPull ? refreshProfile() : Promise.resolve(),
         ]);
-
-        const subjectsCount =
-          subjectsRes.status === 'fulfilled' ? subjectsRes.value.length : 0;
-        const assessmentsCount =
-          assessmentsRes.status === 'fulfilled' ? assessmentsRes.value.length : 0;
-        const dash = dashRes.status === 'fulfilled' ? dashRes.value : null;
-        const sessionsValue = dash?.weekStats?.this?.sessions?.value || '0';
-        const accuracyValue =
-          dash?.insights?.stats?.accuracy != null
-            ? Math.round(dash.insights.stats.accuracy)
-            : null;
-
-        setStats({
-          subjectsCount,
-          assessmentsCount,
-          sessionsValue,
-          accuracyValue,
-        });
 
         if (subRes.status === 'fulfilled' && subRes.value) {
           setSubscription(subRes.value);
@@ -310,7 +260,7 @@ export default function ProfileScreen() {
     }, [loadSnapshot]),
   );
 
-  const handleRequestUpgrade = async (planId: 'forge' | 'ember') => {
+  const handleRequestUpgrade = async (planId: 'premium') => {
     if (requestingPlan) return;
     setRequestingPlan(planId);
     setPlanError('');
@@ -467,25 +417,11 @@ export default function ProfileScreen() {
   const higherEd = isHigherEducation(profile?.grade || '');
   const interests = Array.isArray(profile?.interests) ? profile.interests : [];
 
-  const completeness = useMemo(() => {
-    const checks = [
-      Boolean((profile?.name || session?.name)?.trim()),
-      Boolean(profile?.grade?.trim()),
-      Boolean(profile?.avatar?.trim()),
-      Boolean(profile?.country?.trim()),
-      Boolean(profile?.curriculum?.trim()),
-      Boolean(profile?.preferredLanguage?.trim()),
-      Boolean(profile?.schoolName?.trim()),
-      Boolean(profile?.learningStyle?.trim()),
-      interests.length > 0,
-      Boolean(profile?.goal?.trim()),
-    ];
-    const filled = checks.filter(Boolean).length;
-    return Math.round((filled / checks.length) * 100);
-  }, [profile, session?.name, interests.length]);
-
   // Active subscription display data
-  const activePlanId = (subscription?.plan || 'spark').toLowerCase();
+  const storedPlanId = (subscription?.plan || 'spark').toLowerCase();
+  const activePlanId = ['ember', 'forge'].includes(storedPlanId)
+    ? 'premium'
+    : storedPlanId;
   const activePlanDetail =
     subscription?.planDetail ||
     plans.find((p) => p.id === activePlanId) ||
@@ -515,10 +451,10 @@ export default function ProfileScreen() {
       >
         {/* Top Header Row */}
         <View style={styles.topline}>
-          <BrandMark size={42} />
+          <BrandMark size={40} />
           <View style={styles.greeting}>
-            <Text style={styles.eyebrow}>ACCOUNT & PERSONALIZATION</Text>
-            <Text style={styles.hello}>Your Profile</Text>
+            <Text style={styles.eyebrow}>ACCOUNT & SETTINGS</Text>
+            <Text style={styles.hello}>Profile</Text>
           </View>
           <Pressable
             accessibilityRole="button"
@@ -530,7 +466,7 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Learner Identity Hero Card */}
+        {/* Learner Identity Card */}
         <View style={styles.identityHero}>
           <View style={styles.identityTopRow}>
             <View style={styles.avatarMedallion}>
@@ -545,8 +481,8 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.heroPlanChip}>
                   <Text style={styles.heroPlanChipText}>
-                    {getPlanGlyph(activePlanId)}{' '}
-                    {(subscription?.planName || activePlanDetail.name).toUpperCase()} PLAN
+                    {getPlanGlyph(Platform.OS === 'web' ? activePlanId : storePremium ? 'premium' : 'spark')}{' '}
+                    {(Platform.OS === 'web' ? (subscription?.planName || activePlanDetail.name) : storeReady ? (storePremium ? 'Premium' : 'Spark') : 'Checking').toUpperCase()}
                   </Text>
                 </View>
                 {profile?.country ? (
@@ -560,354 +496,331 @@ export default function ProfileScreen() {
               </View>
               <Text style={styles.learnerName}>{learnerName}</Text>
               {session?.email ? (
-                <Text style={styles.learnerEmail}>{session.email}</Text>
-              ) : null}
-              {profile?.schoolName || profile?.curriculum ? (
-                <Text numberOfLines={1} style={styles.learnerSubMeta}>
-                  {[profile?.schoolName, profile?.curriculum]
-                    .filter(Boolean)
-                    .join('  ·  ')}
-                </Text>
+                <Text numberOfLines={1} style={styles.learnerEmail}>{session.email}</Text>
               ) : null}
             </View>
           </View>
 
-          {/* Profile Completeness Bar */}
-          <View style={styles.completenessBox}>
-            <View style={styles.completenessHeader}>
-              <Text style={styles.completenessLabel}>
-                PERSONALIZATION PROFILE
+          <View style={styles.goalBanner}>
+            <View style={styles.goalIconBox}>
+              <Text style={styles.goalIconGlyph}>🎯</Text>
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.goalEyebrow}>MAIN LEARNING GOAL</Text>
+              <Text style={styles.goalTitle}>
+                {profile?.goal?.trim() || 'Build confidence one lesson at a time'}
               </Text>
-              <Text style={styles.completenessPercent}>{completeness}% complete</Text>
             </View>
-            <View style={styles.completenessTrack}>
-              <View
-                style={[
-                  styles.completenessFill,
-                  { width: `${Math.max(10, completeness)}%` },
-                ]}
-              />
-            </View>
-            <Text style={styles.completenessHint}>
-              {completeness >= 90
-                ? 'Kindling has everything needed to tailor explanations and examples to you.'
-                : 'Add your interests, goal, or curriculum so Kindling can tailor examples to you.'}
-            </Text>
           </View>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/onboarding')}
-            style={({ pressed }) => [styles.heroEditBtn, pressed && styles.pressed]}
-          >
-            <Text style={styles.heroEditBtnText}>
-              Customize learner details →
-            </Text>
-          </Pressable>
         </View>
 
-        {/* 3-Card Learning Snapshot Strip */}
-        <View style={styles.kpiRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/(tabs)/learn')}
-            style={({ pressed }) => [
-              styles.kpiCard,
-              styles.kpiTeal,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.kpiLabel}>SUBJECTS</Text>
-            <Text style={styles.kpiValue}>{stats.subjectsCount}</Text>
-            <Text style={styles.kpiSub}>learning paths ›</Text>
-          </Pressable>
+        {/* Unified Learning Preferences & Academic Details */}
+        <SectionTitle
+          action={
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/onboarding')}
+              hitSlop={8}
+            >
+              <Text style={styles.sectionActionLink}>Customize ›</Text>
+            </Pressable>
+          }
+        >
+          Learning preferences
+        </SectionTitle>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/')}
-            style={({ pressed }) => [
-              styles.kpiCard,
-              styles.kpiPine,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.kpiLabel}>SESSIONS</Text>
-            <Text style={styles.kpiValue}>{stats.sessionsValue}</Text>
-            <Text style={styles.kpiSub}>this week ›</Text>
-          </Pressable>
+        <View style={styles.detailsCard}>
+          <View style={styles.teachingGrid}>
+            <View style={styles.teachingTile}>
+              <Text style={styles.teachingTileEyebrow}>EXPLANATION STYLE</Text>
+              <Text style={styles.teachingTileTitle}>{styleInfo.label}</Text>
+              <Text style={styles.teachingTileDetail}>{styleInfo.detail}</Text>
+            </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/(tabs)/assessments')}
-            style={({ pressed }) => [
-              styles.kpiCard,
-              styles.kpiGold,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.kpiLabel}>ASSESSMENTS</Text>
-            <Text style={styles.kpiValue}>{stats.assessmentsCount}</Text>
-            <Text style={styles.kpiSub}>
-              {stats.accuracyValue != null
-                ? `${stats.accuracyValue}% accuracy ›`
-                : 'practice hub ›'}
-            </Text>
-          </Pressable>
+            <View style={styles.teachingTile}>
+              <Text style={styles.teachingTileEyebrow}>TUTORING LANGUAGE</Text>
+              <Text style={styles.teachingTileTitle}>
+                {profile?.preferredLanguage?.trim() || 'English'}
+              </Text>
+              <Text style={styles.teachingTileDetail}>
+                Primary language in lessons & checks
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.interestsSection}>
+            <Text style={styles.teachingTileEyebrow}>INTERESTS & EXAMPLE THEMES</Text>
+            {interests.length > 0 ? (
+              <View style={styles.interestsWrap}>
+                {interests.map((interest) => (
+                  <View key={interest} style={styles.interestChip}>
+                    <Text style={styles.interestChipText}>{interest}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/onboarding')}
+                style={({ pressed }) => [styles.emptyInterestsPrompt, pressed && styles.pressed]}
+              >
+                <Text style={styles.emptyInterestsTitle}>
+                  + Pick interests so Kindling can tailor analogies
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          <ProfileRow
+            icon="🧭"
+            label={higherEd ? 'PROGRAMME TRACK' : 'CURRICULUM'}
+            value={normalizeProgrammeTrack(profile?.curriculum)}
+            placeholder="Standard / General curriculum"
+          />
+          <ProfileRow
+            icon="🏫"
+            label={higherEd ? 'UNIVERSITY / COLLEGE' : 'SCHOOL'}
+            value={profile?.schoolName}
+            placeholder="Not set"
+          />
+          <ProfileRow icon="🎂" label="DATE OF BIRTH" value={profile?.dateOfBirth ? `${profile.dateOfBirth} · Age ${ageFromDateOfBirth(profile.dateOfBirth) ?? 'unknown'}` : ''} placeholder="Not set · add in Edit profile" isLast />
         </View>
 
         {/* ================================================================
          * STUDENT SUBSCRIPTION & AI ALLOWANCE SECTION
          * ================================================================ */}
-        <SectionTitle
-          action={
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setPlanError('');
-                setPlanNotice('');
-                setShowPlansModal(true);
-              }}
-              hitSlop={8}
+        {Platform.OS !== 'web' ? (
+          <SubscriptionCard />
+        ) : (
+          <>
+            <SectionTitle
+              action={
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setPlanError('');
+                    setPlanNotice('');
+                    setShowPlansModal(true);
+                  }}
+                  hitSlop={8}
+                >
+                  <Text style={styles.sectionActionLink}>Compare plans ›</Text>
+                </Pressable>
+              }
             >
-              <Text style={styles.sectionActionLink}>Compare plans ›</Text>
-            </Pressable>
-          }
-        >
-          Your subscription
-        </SectionTitle>
+              Your subscription
+            </SectionTitle>
 
-        <View style={styles.subscriptionCard}>
-          {/* Top Accent Strip */}
-          <View
-            style={[
-              styles.subAccentBar,
-              activePlanId === 'ember'
-                ? styles.subAccentEmber
-                : activePlanId === 'forge'
-                  ? styles.subAccentForge
-                  : styles.subAccentSpark,
-            ]}
-          />
-
-          <View style={styles.subCardContent}>
-            {subLoading && !subscription ? (
-              <View style={styles.subLoadingRow}>
-                <ActivityIndicator size="small" color={Brand.teal} />
-                <Text style={styles.subLoadingText}>
-                  Checking your subscription plan…
-                </Text>
-              </View>
-            ) : null}
-
-            {/* Plan Header Row */}
-            <View style={styles.subHeaderRow}>
+            <View style={styles.subscriptionCard}>
               <View
                 style={[
-                  styles.subPlanIconBox,
-                  activePlanId === 'ember'
-                    ? styles.subIconEmber
-                    : activePlanId === 'forge'
-                      ? styles.subIconForge
-                      : styles.subIconSpark,
+                  styles.subAccentBar,
+                  activePlanId === 'premium'
+                    ? styles.subAccentEmber
+                    : styles.subAccentSpark,
                 ]}
-              >
-                <Text style={styles.subPlanGlyph}>{getPlanGlyph(activePlanId)}</Text>
-              </View>
+              />
 
-              <View style={styles.flex}>
-                <View style={styles.subTitleBadgeRow}>
-                  <Text style={styles.subEyebrow}>
-                    {activePlanId === 'spark'
-                      ? 'STARTER TRIAL PLAN'
-                      : activePlanId === 'forge'
-                        ? 'BYOK ALGORITHM PLAN'
-                        : 'ALL-INCLUSIVE PLAN'}
-                  </Text>
-                  <View
-                    style={[
-                      styles.subStatusPill,
-                      activeStatus === 'past_due' || activeStatus === 'canceled'
-                        ? styles.subStatusWarn
-                        : styles.subStatusActive,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.subStatusDot,
-                        activeStatus === 'past_due' || activeStatus === 'canceled'
-                          ? styles.subStatusDotWarn
-                          : styles.subStatusDotActive,
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.subStatusText,
-                        activeStatus === 'past_due' || activeStatus === 'canceled'
-                          ? styles.subStatusTextWarn
-                          : styles.subStatusTextActive,
-                      ]}
-                    >
-                      {subscription?.cancel_at_period_end
-                        ? 'ENDING SOON'
-                        : activeStatus.toUpperCase()}
+              <View style={styles.subCardContent}>
+                {subLoading && !subscription ? (
+                  <View style={styles.subLoadingRow}>
+                    <ActivityIndicator size="small" color={Brand.teal} />
+                    <Text style={styles.subLoadingText}>
+                      Checking your subscription plan…
                     </Text>
                   </View>
-                </View>
+                ) : null}
 
-                <View style={styles.subNamePriceRow}>
-                  <Text style={styles.subPlanName}>
-                    Kindling {subscription?.planName || activePlanDetail.name}
-                  </Text>
-                  <Text style={styles.subPlanPrice}>
-                    {formatPlanPrice(
-                      activePlanDetail,
-                      subscription?.billing_cycle || 'monthly',
-                    )}
-                  </Text>
-                </View>
-
-                <Text style={styles.subTagline}>{activePlanDetail.tagline}</Text>
-              </View>
-            </View>
-
-            {/* Billing Cycle & Period Meta Pills */}
-            <View style={styles.subMetaRow}>
-              <View style={styles.subMetaPill}>
-                <Text style={styles.subMetaLabel}>BILLING</Text>
-                <Text style={styles.subMetaValue}>
-                  {activePlanId === 'spark'
-                    ? '30-day complimentary trial'
-                    : subscription?.billing_cycle === 'yearly'
-                      ? 'Annual billing'
-                      : 'Monthly billing'}
-                </Text>
-              </View>
-
-              {periodEndFormatted || periodStartFormatted ? (
-                <View style={styles.subMetaPill}>
-                  <Text style={styles.subMetaLabel}>
-                    {periodEndFormatted
-                      ? subscription?.cancel_at_period_end
-                        ? 'ENDS ON'
-                        : 'RENEWS ON'
-                      : 'STARTED'}
-                  </Text>
-                  <Text style={styles.subMetaValue}>
-                    {periodEndFormatted || periodStartFormatted}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-
-            {/* Daily Platform AI Usage Meter */}
-            {dailyUsage && dailyUsage.limit > 0 ? (
-              <View
-                style={[
-                  styles.usageBox,
-                  dailyUsage.softWarning && styles.usageBoxWarn,
-                ]}
-              >
-                <View style={styles.usageTopRow}>
-                  <Text style={styles.usageLabel}>DAILY AI TUTOR ALLOWANCE</Text>
-                  <Text style={styles.usageCountText}>
-                    {dailyUsage.used} / {dailyUsage.limit} requests
-                  </Text>
-                </View>
-
-                <View style={styles.usageTrack}>
+                <View style={styles.subHeaderRow}>
                   <View
                     style={[
-                      styles.usageFill,
-                      dailyUsage.softWarning && styles.usageFillWarn,
-                      {
-                        width: `${Math.min(
-                          100,
-                          Math.max(
-                            3,
-                            Math.round((dailyUsage.used / dailyUsage.limit) * 100),
-                          ),
-                        )}%`,
-                      },
+                      styles.subPlanIconBox,
+                      activePlanId === 'premium'
+                        ? styles.subIconEmber
+                        : styles.subIconSpark,
                     ]}
-                  />
-                </View>
-
-                <View style={styles.usageBottomRow}>
-                  <Text style={styles.usageCaption}>
-                    {dailyUsage.remaining} requests left today
-                  </Text>
-                  <Text style={styles.usageCaption}>
-                    {formatTokenCount(dailyUsage.estimatedTokensUsed)} /{' '}
-                    {formatTokenCount(dailyUsage.estimatedTokenLimit)} tokens · resets{' '}
-                    {dailyUsage.resetsAt}
-                  </Text>
-                </View>
-              </View>
-            ) : activePlanId === 'forge' ? (
-              <View style={styles.byokBox}>
-                <Text style={styles.byokTitle}>
-                  ⚒ Bring Your Own Key (BYOK) Active
-                </Text>
-                <Text style={styles.byokBody}>
-                  Your Forge subscription unlocks multi-provider AI routing with your own provider API keys.
-                </Text>
-              </View>
-            ) : null}
-
-            {/* Included Plan Features */}
-            <View style={styles.subFeaturesList}>
-              <Text style={styles.subFeaturesHeading}>INCLUDED IN YOUR PLAN</Text>
-              {(activePlanDetail.features || []).map((feature) => (
-                <View key={feature} style={styles.subFeatureRow}>
-                  <View style={styles.subFeatureCheck}>
-                    <Text style={styles.subFeatureCheckText}>✓</Text>
+                  >
+                    <Text style={styles.subPlanGlyph}>{getPlanGlyph(activePlanId)}</Text>
                   </View>
-                  <Text style={styles.subFeatureText}>{feature}</Text>
-                </View>
-              ))}
-            </View>
 
-            {/* Pending Upgrade Invoice Notice */}
-            {pendingInvoice ? (
-              <View style={styles.invoiceNoticeBox}>
-                <View style={styles.invoiceNoticeHeader}>
-                  <Text style={styles.invoiceNoticeEyebrow}>
-                    UPGRADE INVOICE REQUESTED
-                  </Text>
-                  <Text style={styles.invoiceNumberText}>
-                    {pendingInvoice.invoice_number}
-                  </Text>
+                  <View style={styles.flex}>
+                    <View style={styles.subTitleBadgeRow}>
+                      <Text style={styles.subEyebrow}>
+                        {activePlanId === 'spark' ? 'FREE PLAN' : 'PREMIUM PLAN'}
+                      </Text>
+                      <View
+                        style={[
+                          styles.subStatusPill,
+                          activeStatus === 'past_due' || activeStatus === 'canceled'
+                            ? styles.subStatusWarn
+                            : styles.subStatusActive,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.subStatusDot,
+                            activeStatus === 'past_due' || activeStatus === 'canceled'
+                              ? styles.subStatusDotWarn
+                              : styles.subStatusDotActive,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.subStatusText,
+                            activeStatus === 'past_due' || activeStatus === 'canceled'
+                              ? styles.subStatusTextWarn
+                              : styles.subStatusTextActive,
+                          ]}
+                        >
+                          {subscription?.cancel_at_period_end
+                            ? 'ENDING SOON'
+                            : activeStatus.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.subNamePriceRow}>
+                      <Text style={styles.subPlanName}>
+                        Kindling {subscription?.planName || activePlanDetail.name}
+                      </Text>
+                      <Text style={styles.subPlanPrice}>
+                        {formatPlanPrice(
+                          activePlanDetail,
+                          subscription?.billing_cycle || 'monthly',
+                        )}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.subTagline}>{activePlanDetail.tagline}</Text>
+                  </View>
                 </View>
-                <Text style={styles.invoiceNoticeBody}>
-                  {pendingInvoice.plan_name} ({pendingInvoice.billing_cycle}) · $
-                  {pendingInvoice.amount} {pendingInvoice.currency} — awaiting payment confirmation.
-                </Text>
+
+                {(periodEndFormatted || periodStartFormatted) ? (
+                  <View style={styles.subMetaRow}>
+                    <View style={styles.subMetaPill}>
+                      <Text style={styles.subMetaLabel}>
+                        {periodEndFormatted
+                          ? subscription?.cancel_at_period_end
+                            ? 'ENDS ON'
+                            : 'RENEWS ON'
+                          : 'STARTED'}
+                      </Text>
+                      <Text style={styles.subMetaValue}>
+                        {periodEndFormatted || periodStartFormatted}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {dailyUsage && dailyUsage.limit > 0 ? (
+                  <View
+                    style={[
+                      styles.usageBox,
+                      dailyUsage.softWarning && styles.usageBoxWarn,
+                    ]}
+                  >
+                    <View style={styles.usageTopRow}>
+                      <Text style={styles.usageLabel}>DAILY AI ALLOWANCE</Text>
+                      <Text style={styles.usageCountText}>
+                        {dailyUsage.used} / {dailyUsage.limit} requests
+                      </Text>
+                    </View>
+
+                    <View style={styles.usageTrack}>
+                      <View
+                        style={[
+                          styles.usageFill,
+                          dailyUsage.softWarning && styles.usageFillWarn,
+                          {
+                            width: `${Math.min(
+                              100,
+                              Math.max(
+                                3,
+                                Math.round((dailyUsage.used / dailyUsage.limit) * 100),
+                              ),
+                            )}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+
+                    <View style={styles.usageBottomRow}>
+                      <Text style={styles.usageCaption}>
+                        {dailyUsage.remaining} left today
+                      </Text>
+                      <Text style={styles.usageCaption}>
+                        {formatTokenCount(dailyUsage.estimatedTokensUsed)} /{' '}
+                        {formatTokenCount(dailyUsage.estimatedTokenLimit)} tokens
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {showPlanFeatures ? (
+                  <View style={styles.subFeaturesList}>
+                    <Text style={styles.subFeaturesHeading}>INCLUDED IN YOUR PLAN</Text>
+                    {(activePlanDetail.features || []).map((feature) => (
+                      <View key={feature} style={styles.subFeatureRow}>
+                        <View style={styles.subFeatureCheck}>
+                          <Text style={styles.subFeatureCheckText}>✓</Text>
+                        </View>
+                        <Text style={styles.subFeatureText}>{feature}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setShowPlanFeatures((prev) => !prev)}
+                  style={styles.featuresToggleBtn}
+                >
+                  <Text style={styles.featuresToggleText}>
+                    {showPlanFeatures ? 'Hide plan features ▴' : 'Show included features ▾'}
+                  </Text>
+                </Pressable>
+
+                {pendingInvoice ? (
+                  <View style={styles.invoiceNoticeBox}>
+                    <View style={styles.invoiceNoticeHeader}>
+                      <Text style={styles.invoiceNoticeEyebrow}>
+                        UPGRADE INVOICE REQUESTED
+                      </Text>
+                      <Text style={styles.invoiceNumberText}>
+                        {pendingInvoice.invoice_number}
+                      </Text>
+                    </View>
+                    <Text style={styles.invoiceNoticeBody}>
+                      {pendingInvoice.plan_name} ({pendingInvoice.billing_cycle}) · $
+                      {pendingInvoice.amount} {pendingInvoice.currency} — awaiting confirmation.
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View style={styles.subActionsRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setPlanError('');
+                      setPlanNotice('');
+                      setShowPlansModal(true);
+                    }}
+                    style={({ pressed }) => [
+                      styles.subManageBtn,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text style={styles.subManageBtnText}>
+                      {activePlanId === 'spark'
+                        ? 'Upgrade to Premium →'
+                        : 'Manage or switch plan →'}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
-            ) : null}
-
-            {/* Action Footer */}
-            <View style={styles.subActionsRow}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  setPlanError('');
-                  setPlanNotice('');
-                  setShowPlansModal(true);
-                }}
-                style={({ pressed }) => [
-                  styles.subManageBtn,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.subManageBtnText}>
-                  {activePlanId === 'spark'
-                    ? 'Upgrade to Forge or Ember →'
-                    : 'Manage or switch plan →'}
-                </Text>
-              </Pressable>
             </View>
-          </View>
-        </View>
+          </>
+        )}
 
         {/* ================================================================
          * STUDY REMINDERS & PUSH NOTIFICATIONS SECTION
@@ -953,15 +866,14 @@ export default function ProfileScreen() {
         </SectionTitle>
 
         <View style={styles.pushCard}>
-          {/* Master Enable Row */}
           <View style={styles.pushMasterRow}>
             <View style={styles.pushIconBadge}>
               <Text style={styles.pushIconGlyph}>🔔</Text>
             </View>
             <View style={styles.flex}>
-              <Text style={styles.pushMasterTitle}>Push notifications</Text>
+              <Text style={styles.pushMasterTitle}>Study reminders</Text>
               <Text style={styles.pushMasterSub}>
-                Daily study nudges, streak reminders, and Expo push alerts
+                Daily study nudges and streak reminders
               </Text>
             </View>
             <Switch
@@ -984,7 +896,7 @@ export default function ProfileScreen() {
                   Allow notifications on this device
                 </Text>
                 <Text style={styles.pushPermBody}>
-                  Grant notification permission so Kindling can deliver your daily study and streak reminders.
+                  Grant notification permission so Kindling can deliver your daily reminders.
                 </Text>
               </View>
               <Pressable
@@ -1002,7 +914,6 @@ export default function ProfileScreen() {
 
           {pushSettings.pushEnabled ? (
             <>
-              {/* Toggle Rows for Daily Study & Streak Reminders */}
               <View style={styles.pushTogglesGroup}>
                 <View style={styles.pushToggleRow}>
                   <View style={styles.flex}>
@@ -1045,12 +956,11 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              {/* Customizable Daily Reminder Time Picker */}
               <View style={styles.reminderTimeBox}>
                 <View style={styles.reminderTimeHeader}>
                   <View style={styles.flex}>
                     <Text style={styles.reminderTimeEyebrow}>
-                      PREFERRED REMINDER TIME
+                      REMINDER TIME
                     </Text>
                     <Text style={styles.reminderTimeValue}>
                       {formatReminderTime(
@@ -1145,14 +1055,13 @@ export default function ProfileScreen() {
             </View>
           ) : null}
 
-          {/* Registered Devices & Test Notification Footer */}
           <View style={styles.pushFooterRow}>
             <Text style={styles.pushDeviceMetaText}>
               {pushSettings.devices.length > 0
                 ? `${pushSettings.devices.length} registered ${
                     pushSettings.devices.length === 1 ? 'device' : 'devices'
-                  } · Expo Push`
-                : 'Local & Expo Push ready'}
+                  }`
+                : 'Local & push notifications ready'}
             </Text>
 
             <Pressable
@@ -1165,159 +1074,16 @@ export default function ProfileScreen() {
               ]}
             >
               <Text style={styles.testPushBtnText}>
-                {testingPush ? 'Sending…' : 'Send test notification'}
+                {testingPush ? 'Sending…' : 'Send test alert'}
               </Text>
             </Pressable>
           </View>
-        </View>
-
-        {/* How Kindling Teaches You */}
-        <SectionTitle
-          action={
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/onboarding')}
-              hitSlop={8}
-            >
-              <Text style={styles.sectionActionLink}>Change ›</Text>
-            </Pressable>
-          }
-        >
-          Your learning preferences
-        </SectionTitle>
-
-        <View style={styles.teachingCard}>
-          {/* Main Goal Highlight */}
-          <View style={styles.goalBanner}>
-            <View style={styles.goalIconBox}>
-              <Text style={styles.goalIconGlyph}>🎯</Text>
-            </View>
-            <View style={styles.flex}>
-              <Text style={styles.goalEyebrow}>MAIN LEARNING GOAL</Text>
-              <Text style={styles.goalTitle}>
-                {profile?.goal?.trim() || 'Build confidence one lesson at a time'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.teachingGrid}>
-            <View style={styles.teachingTile}>
-              <Text style={styles.teachingTileEyebrow}>EXPLANATION STYLE</Text>
-              <Text style={styles.teachingTileTitle}>{styleInfo.label}</Text>
-              <Text style={styles.teachingTileDetail}>{styleInfo.detail}</Text>
-            </View>
-
-            <View style={styles.teachingTile}>
-              <Text style={styles.teachingTileEyebrow}>TUTORING LANGUAGE</Text>
-              <Text style={styles.teachingTileTitle}>
-                {profile?.preferredLanguage?.trim() || 'English'}
-              </Text>
-              <Text style={styles.teachingTileDetail}>
-                Primary language used in lessons and feedback
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Interests & Example Themes */}
-        <SectionTitle
-          action={
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/onboarding')}
-              hitSlop={8}
-            >
-              <Text style={styles.sectionActionLink}>
-                {interests.length > 0 ? 'Edit ›' : '＋ Add ›'}
-              </Text>
-            </Pressable>
-          }
-        >
-          Your interests
-        </SectionTitle>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionCardIntro}>
-            Kindling weaves these topics into real-world analogies and practice problems.
-          </Text>
-          {interests.length > 0 ? (
-            <View style={styles.interestsWrap}>
-              {interests.map((interest) => (
-                <View key={interest} style={styles.interestChip}>
-                  <Text style={styles.interestChipText}>{interest}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/onboarding')}
-              style={({ pressed }) => [
-                styles.emptyInterestsPrompt,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.emptyInterestsTitle}>
-                ＋ Pick up to 6 interests you enjoy
-              </Text>
-              <Text style={styles.emptyInterestsSub}>
-                Sports, space, music, coding, nature, and more
-              </Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Academic & Regional Details */}
-        <SectionTitle>Academic details</SectionTitle>
-
-        <View style={styles.detailsCard}>
-          <ProfileRow
-            icon="🎓"
-            label="GRADE OR STUDY LEVEL"
-            value={profile?.grade}
-            placeholder="Not set — tap Edit to choose your level"
-          />
-          <ProfileRow
-            icon="🧭"
-            label={higherEd ? 'PROGRAMME TRACK' : 'CURRICULUM'}
-            value={profile?.curriculum}
-            placeholder="Standard / General curriculum"
-          />
-          <ProfileRow
-            icon="🏫"
-            label={higherEd ? 'UNIVERSITY / COLLEGE' : 'SCHOOL'}
-            value={profile?.schoolName}
-            placeholder="Not set"
-          />
-          <ProfileRow
-            icon="🌍"
-            label="COUNTRY / REGION"
-            value={
-              profile?.country
-                ? `${profile.countryFlag ? `${profile.countryFlag} ` : ''}${profile.country}`
-                : ''
-            }
-            placeholder="Not set"
-          />
-          <ProfileRow
-            icon={avatarInfo.icon}
-            label="AVATAR PERSONA"
-            value={avatarInfo.label}
-            isLast
-          />
         </View>
 
         {/* Account Actions */}
         <SectionTitle>Account</SectionTitle>
 
         <View style={styles.actionsStack}>
-          <Button
-            variant="secondary"
-            onPress={() => router.push('/onboarding')}
-          >
-            Update learner details
-          </Button>
-
           <Pressable
             accessibilityRole="button"
             onPress={() => void logout()}
@@ -1325,26 +1091,25 @@ export default function ProfileScreen() {
           >
             <Text style={styles.logoutButtonText}>Log out of Kindling</Text>
           </Pressable>
-        </View>
 
-        {/* Separated Danger Zone */}
-        <View style={styles.dangerCard}>
-          <View style={styles.flex}>
-            <Text style={styles.dangerTitle}>Delete account & data</Text>
-            <Text style={styles.dangerSubtitle}>
-              Permanently remove your profile, subjects, and saved progress.
-            </Text>
+          <View style={styles.dangerCard}>
+            <View style={styles.flex}>
+              <Text style={styles.dangerTitle}>Delete account & data</Text>
+              <Text style={styles.dangerSubtitle}>
+                Permanently remove your profile, subjects, and saved progress.
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setError('');
+                setConfirmDelete(true);
+              }}
+              style={({ pressed }) => [styles.dangerButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.dangerButtonText}>Delete…</Text>
+            </Pressable>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              setError('');
-              setConfirmDelete(true);
-            }}
-            style={({ pressed }) => [styles.dangerButton, pressed && styles.pressed]}
-          >
-            <Text style={styles.dangerButtonText}>Delete…</Text>
-          </Pressable>
         </View>
       </AppScreen>
 
@@ -1352,7 +1117,7 @@ export default function ProfileScreen() {
        * MODAL 1: COMPARE & UPGRADE SUBSCRIPTION PLANS
        * ==================================================================== */}
       <Modal
-        visible={showPlansModal}
+        visible={Platform.OS === 'web' && showPlansModal}
         transparent
         animationType="slide"
         onRequestClose={() => setShowPlansModal(false)}
@@ -1374,7 +1139,6 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
 
-            {/* Billing Cycle Switcher */}
             <View style={styles.cycleToggleWrap}>
               <Pressable
                 accessibilityRole="tab"
@@ -1432,7 +1196,7 @@ export default function ProfileScreen() {
             >
               {plans.map((plan) => {
                 const isCurrent = plan.id === activePlanId;
-                const isPaid = plan.id === 'forge' || plan.id === 'ember';
+                const isPaid = plan.id === 'premium';
                 const price =
                   selectedCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
 
@@ -1475,7 +1239,7 @@ export default function ProfileScreen() {
                         </Text>
                         <Text style={styles.planPricePeriod}>
                           {price === 0
-                            ? '30 days'
+                            ? 'Free'
                             : selectedCycle === 'yearly'
                               ? '/ year'
                               : '/ month'}
@@ -1502,7 +1266,7 @@ export default function ProfileScreen() {
                         accessibilityRole="button"
                         disabled={Boolean(requestingPlan)}
                         onPress={() =>
-                          void handleRequestUpgrade(plan.id as 'forge' | 'ember')
+                          void handleRequestUpgrade(plan.id as 'premium')
                         }
                         style={({ pressed }) => [
                           styles.requestPlanBtn,
@@ -1548,6 +1312,11 @@ export default function ProfileScreen() {
             <BodyText>
               This permanently deletes your Kindling account, learner profile, subjects, lessons, and saved learning progress. You can’t undo this.
             </BodyText>
+            {Platform.OS !== 'web' ? (
+              <BodyText>
+                Deleting your account does not cancel an App Store or Google Play subscription. Cancel it in your store subscription settings before deleting your account.
+              </BodyText>
+            ) : null}
             {error ? (
               <Text accessibilityRole="alert" style={styles.error}>
                 {error}
@@ -1605,12 +1374,13 @@ function ProfileRow({
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 20,
+    paddingTop: 18,
     paddingBottom: 38,
-    gap: 24,
+    gap: 20,
   },
   flex: {
     flex: 1,
+    minWidth: 0,
   },
   pressed: {
     opacity: 0.72,
@@ -1624,216 +1394,278 @@ const styles = StyleSheet.create({
   },
   greeting: {
     flex: 1,
-    gap: 2,
+    minWidth: 0,
   },
   eyebrow: {
     color: Brand.teal,
     fontSize: 10,
-    letterSpacing: 0.8,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   hello: {
-    fontSize: 25,
-    fontWeight: '600',
     color: Brand.pine,
+    fontSize: 22,
+    fontWeight: '800',
   },
   editTopButton: {
-    backgroundColor: Brand.tealPale,
+    minHeight: 38,
     paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editTopButtonText: {
     color: Brand.pine,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
-  /* Learner Identity Hero */
+  /* Learner Identity Hero Card */
   identityHero: {
     backgroundColor: Brand.pine,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 20,
     gap: 16,
-    borderWidth: 1,
-    borderColor: Brand.pineLight,
   },
   identityTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,
+    gap: 14,
   },
   avatarMedallion: {
-    width: 66,
-    height: 66,
+    width: 60,
+    height: 60,
     borderRadius: 20,
-    backgroundColor: Brand.pineLight,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarEmoji: {
-    fontSize: 30,
+    fontSize: 28,
     color: Brand.gold,
   },
   identityCopy: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   identityBadgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    marginBottom: 2,
   },
   gradeBadge: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
     paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 99,
+    backgroundColor: 'rgba(243,200,104,0.2)',
   },
   gradeBadgeText: {
-    color: '#D7ECE6',
+    color: Brand.gold,
     fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.4,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   heroPlanChip: {
-    backgroundColor: 'rgba(106,210,182,0.18)',
     paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 99,
+    backgroundColor: 'rgba(62,135,109,0.28)',
   },
   heroPlanChipText: {
-    color: '#9FE8D3',
+    color: '#DDF0E5',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   countryBadge: {
-    backgroundColor: 'rgba(228,163,42,0.2)',
     paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 99,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   countryBadgeText: {
-    color: '#F7D288',
+    color: '#E6EFEA',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   learnerName: {
     color: '#FFFFFF',
     fontSize: 22,
-    fontWeight: '600',
-    marginTop: 2,
+    lineHeight: 28,
+    fontWeight: '800',
   },
   learnerEmail: {
-    color: '#B9DAD3',
+    color: '#C7D6CF',
     fontSize: 13,
-    fontWeight: '600',
   },
-  learnerSubMeta: {
-    color: '#D6E4DF',
-    fontSize: 12,
-    marginTop: 1,
-  },
-  completenessBox: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 16,
-    padding: 13,
-    gap: 7,
-  },
-  completenessHeader: {
+
+  /* Goal Banner inside Identity Card */
+  goalBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.09)',
+    borderRadius: 16,
+    padding: 13,
   },
-  completenessLabel: {
-    color: '#B9DAD3',
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.9,
+  goalIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(243,200,104,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  completenessPercent: {
+  goalIconGlyph: {
+    fontSize: 18,
+  },
+  goalEyebrow: {
     color: Brand.gold,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
-  completenessTrack: {
-    height: 7,
-    borderRadius: 99,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    overflow: 'hidden',
+  goalTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '700',
+    marginTop: 2,
   },
-  completenessFill: {
-    height: '100%',
-    borderRadius: 99,
-    backgroundColor: Brand.gold,
+
+  sectionActionLink: {
+    color: Brand.teal,
+    fontSize: 13,
+    fontWeight: '800',
   },
-  completenessHint: {
-    color: '#D6E4DF',
+
+  /* Unified Learning Preferences & Academic Details */
+  detailsCard: {
+    backgroundColor: Brand.card,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    padding: 16,
+    gap: 14,
+  },
+  teachingGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  teachingTile: {
+    flex: 1,
+    minWidth: 140,
+    backgroundColor: '#FAF7F0',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    padding: 13,
+    gap: 4,
+  },
+  teachingTileEyebrow: {
+    color: Brand.teal,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  teachingTileTitle: {
+    color: Brand.pine,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  teachingTileDetail: {
+    color: Brand.muted,
     fontSize: 12,
     lineHeight: 17,
   },
-  heroEditBtn: {
-    minHeight: 46,
-    backgroundColor: Brand.gold,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
+  interestsSection: {
+    borderTopWidth: 1,
+    borderTopColor: Brand.line,
+    paddingTop: 12,
+    gap: 8,
   },
-  heroEditBtnText: {
-    color: Brand.pine,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  /* 3-Card Snapshot Strip */
-  kpiRow: {
+  interestsWrap: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  kpiCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 13,
-    borderWidth: 1,
-    gap: 3,
+  interestChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+    backgroundColor: Brand.tealPale,
   },
-  kpiTeal: {
-    backgroundColor: Brand.card,
-    borderColor: Brand.line,
-  },
-  kpiPine: {
-    backgroundColor: Brand.card,
-    borderColor: Brand.line,
-  },
-  kpiGold: {
-    backgroundColor: Brand.card,
-    borderColor: Brand.line,
-  },
-  kpiLabel: {
-    color: Brand.muted,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-  },
-  kpiValue: {
+  interestChipText: {
     color: Brand.pine,
-    fontSize: 21,
-    fontWeight: '600',
-  },
-  kpiSub: {
-    color: Brand.teal,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
   },
+  emptyInterestsPrompt: {
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Brand.line,
+    backgroundColor: '#FAF7F0',
+  },
+  emptyInterestsTitle: {
+    color: Brand.pine,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Brand.line,
+  },
+  detailRowBorder: {},
+  detailIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#FAF7F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailIconText: {
+    fontSize: 17,
+  },
+  detailCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  detailLabel: {
+    color: Brand.muted,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+  },
+  detailValue: {
+    color: Brand.pine,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  detailPlaceholder: {
+    color: Brand.muted,
+    fontWeight: '500',
+  },
 
-  /* Subscription Section */
+  /* Subscription Card */
   subscriptionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: Brand.card,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: Brand.line,
     overflow: 'hidden',
@@ -1845,21 +1677,17 @@ const styles = StyleSheet.create({
   subAccentSpark: {
     backgroundColor: Brand.teal,
   },
-  subAccentForge: {
-    backgroundColor: Brand.pine,
-  },
   subAccentEmber: {
     backgroundColor: Brand.gold,
   },
   subCardContent: {
-    padding: 16,
+    padding: 18,
     gap: 14,
   },
   subLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 4,
+    gap: 8,
   },
   subLoadingText: {
     color: Brand.muted,
@@ -1868,54 +1696,50 @@ const styles = StyleSheet.create({
   subHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 13,
+    gap: 12,
   },
   subPlanIconBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   subIconSpark: {
     backgroundColor: Brand.tealPale,
   },
-  subIconForge: {
-    backgroundColor: Brand.subtle,
-  },
   subIconEmber: {
-    backgroundColor: Brand.subtle,
+    backgroundColor: Brand.amberPale,
   },
   subPlanGlyph: {
     fontSize: 22,
-    color: Brand.pine,
   },
   subTitleBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   subEyebrow: {
     color: Brand.teal,
     fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   subStatusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 9,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 99,
   },
   subStatusActive: {
-    backgroundColor: '#DDF0E5',
+    backgroundColor: Brand.tealPale,
   },
   subStatusWarn: {
-    backgroundColor: '#FCECE9',
+    backgroundColor: Brand.amberPale,
   },
   subStatusDot: {
     width: 6,
@@ -1926,18 +1750,18 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.teal,
   },
   subStatusDotWarn: {
-    backgroundColor: Brand.error,
+    backgroundColor: Brand.amber,
   },
   subStatusText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   subStatusTextActive: {
     color: Brand.pine,
   },
   subStatusTextWarn: {
-    color: Brand.error,
+    color: '#7A4D0B',
   },
   subNamePriceRow: {
     flexDirection: 'row',
@@ -1949,80 +1773,79 @@ const styles = StyleSheet.create({
   },
   subPlanName: {
     color: Brand.pine,
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 19,
+    fontWeight: '800',
   },
   subPlanPrice: {
-    color: Brand.teal,
+    color: Brand.pine,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   subTagline: {
     color: Brand.muted,
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 3,
+    marginTop: 2,
   },
   subMetaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 9,
+    gap: 8,
   },
   subMetaPill: {
-    flexGrow: 1,
-    flexBasis: '45%',
-    backgroundColor: '#F6F8F6',
-    borderRadius: 13,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: '#FAF7F0',
     borderWidth: 1,
-    borderColor: '#E5EBE7',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    gap: 2,
+    borderColor: Brand.line,
   },
   subMetaLabel: {
     color: Brand.muted,
     fontSize: 9,
-    fontWeight: '600',
-    letterSpacing: 0.8,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
   subMetaValue: {
     color: Brand.pine,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
+    marginTop: 1,
   },
   usageBox: {
-    backgroundColor: '#F2F8F7',
-    borderRadius: 16,
+    backgroundColor: '#FAF7F0',
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: '#CBE0DE',
+    borderColor: Brand.line,
     padding: 13,
     gap: 8,
   },
   usageBoxWarn: {
-    backgroundColor: '#FDF5E4',
-    borderColor: '#EBD19B',
+    backgroundColor: Brand.amberPale,
+    borderColor: '#EAD6A6',
   },
   usageTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 6,
   },
   usageLabel: {
-    color: Brand.teal,
+    color: Brand.pine,
     fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.8,
+    fontWeight: '800',
+    letterSpacing: 0.7,
   },
   usageCountText: {
     color: Brand.pine,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   usageTrack: {
-    height: 8,
+    height: 7,
     borderRadius: 99,
-    backgroundColor: '#DCEAE7',
+    backgroundColor: '#E5DDD0',
     overflow: 'hidden',
   },
   usageFill: {
@@ -2031,7 +1854,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.teal,
   },
   usageFillWarn: {
-    backgroundColor: Brand.gold,
+    backgroundColor: Brand.amber,
   },
   usageBottomRow: {
     flexDirection: 'row',
@@ -2043,45 +1866,26 @@ const styles = StyleSheet.create({
   usageCaption: {
     color: Brand.muted,
     fontSize: 11,
-    fontWeight: '600',
-  },
-  byokBox: {
-    backgroundColor: '#F2F6F4',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#CEDCD5',
-    padding: 12,
-    gap: 4,
-  },
-  byokTitle: {
-    color: Brand.pine,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  byokBody: {
-    color: Brand.muted,
-    fontSize: 12,
-    lineHeight: 17,
   },
   subFeaturesList: {
     gap: 8,
-    paddingTop: 2,
+    paddingTop: 4,
   },
   subFeaturesHeading: {
     color: Brand.muted,
     fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.9,
+    fontWeight: '800',
+    letterSpacing: 0.7,
   },
   subFeatureRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 9,
+    gap: 8,
   },
   subFeatureCheck: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: Brand.tealPale,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2090,39 +1894,44 @@ const styles = StyleSheet.create({
   subFeatureCheckText: {
     color: Brand.pine,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   subFeatureText: {
     flex: 1,
+    minWidth: 0,
     color: Brand.ink,
     fontSize: 13,
     lineHeight: 19,
-    fontWeight: '600',
+  },
+  featuresToggleBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  featuresToggleText: {
+    color: Brand.teal,
+    fontSize: 12,
+    fontWeight: '700',
   },
   invoiceNoticeBox: {
-    backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
+    backgroundColor: Brand.amberPale,
     borderRadius: 14,
     padding: 12,
     gap: 4,
   },
   invoiceNoticeHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
   invoiceNoticeEyebrow: {
-    color: Brand.teal,
+    color: '#7A4D0B',
     fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.8,
+    fontWeight: '800',
   },
   invoiceNumberText: {
     color: Brand.pine,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   invoiceNoticeBody: {
     color: Brand.ink,
@@ -2143,12 +1952,12 @@ const styles = StyleSheet.create({
   subManageBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
-  /* Push Notifications & Study Reminders Section */
+  /* Reminders & Notifications */
   pushStatusNeutral: {
-    backgroundColor: '#EEF1EE',
+    backgroundColor: '#EDE7DB',
   },
   pushStatusDotNeutral: {
     backgroundColor: Brand.muted,
@@ -2157,8 +1966,8 @@ const styles = StyleSheet.create({
     color: Brand.muted,
   },
   pushCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: Brand.card,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: Brand.line,
     padding: 16,
@@ -2170,66 +1979,62 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   pushIconBadge: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: 14,
-    backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
+    backgroundColor: Brand.tealPale,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pushIconGlyph: {
-    fontSize: 20,
+    fontSize: 18,
   },
   pushMasterTitle: {
     color: Brand.pine,
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '800',
   },
   pushMasterSub: {
     color: Brand.muted,
     fontSize: 12,
     lineHeight: 17,
-    marginTop: 2,
   },
   pushPermBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
-    borderRadius: 15,
-    padding: 13,
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: Brand.amberPale,
   },
   pushPermTitle: {
     color: Brand.pine,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '800',
   },
   pushPermBody: {
     color: Brand.muted,
     fontSize: 12,
     lineHeight: 17,
-    marginTop: 2,
   },
   pushPermBtn: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     backgroundColor: Brand.pine,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pushPermBtnText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   pushTogglesGroup: {
-    backgroundColor: '#F7FAF8',
+    backgroundColor: '#FAF7F0',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E3EAE6',
+    borderColor: Brand.line,
     paddingHorizontal: 13,
   },
   pushToggleRow: {
@@ -2240,24 +2045,23 @@ const styles = StyleSheet.create({
   },
   pushToggleDivider: {
     borderTopWidth: 1,
-    borderTopColor: '#E5ECE8',
+    borderTopColor: Brand.line,
   },
   pushToggleTitle: {
     color: Brand.pine,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   pushToggleDesc: {
     color: Brand.muted,
     fontSize: 12,
-    lineHeight: 17,
-    marginTop: 2,
+    lineHeight: 16,
   },
   reminderTimeBox: {
-    backgroundColor: Brand.card,
+    backgroundColor: '#FAF7F0',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EAE6DA',
+    borderColor: Brand.line,
     padding: 13,
     gap: 12,
   },
@@ -2265,36 +2069,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
   },
   reminderTimeEyebrow: {
     color: Brand.teal,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.8,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.7,
   },
   reminderTimeValue: {
     color: Brand.pine,
     fontSize: 20,
-    fontWeight: '600',
-    marginTop: 2,
+    fontWeight: '800',
   },
   timeStepperRow: {
     flexDirection: 'row',
     gap: 6,
   },
   timeStepBtn: {
-    backgroundColor: '#FFFFFF',
+    minHeight: 34,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Brand.line,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timeStepBtnText: {
     color: Brand.pine,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   presetTimesGrid: {
     flexDirection: 'row',
@@ -2302,40 +2108,39 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timePresetChip: {
-    flexGrow: 1,
-    flexBasis: '46%',
-    backgroundColor: '#FFFFFF',
+    flex: 1,
+    minWidth: 115,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 13,
-    paddingHorizontal: 11,
-    paddingVertical: 9,
-    gap: 2,
+    backgroundColor: '#FFFFFF',
   },
   timePresetChipActive: {
-    backgroundColor: Brand.pine,
-    borderColor: Brand.pine,
+    borderColor: Brand.teal,
+    backgroundColor: Brand.tealPale,
   },
   timePresetLabel: {
     color: Brand.pine,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
   timePresetLabelActive: {
-    color: '#FFFFFF',
+    color: Brand.pine,
+    fontWeight: '800',
   },
   timePresetSub: {
     color: Brand.muted,
     fontSize: 11,
-    fontWeight: '600',
   },
   timePresetSubActive: {
-    color: '#CFE3DC',
+    color: Brand.pine,
   },
   pushFeedbackBox: {
-    backgroundColor: '#DDF0E5',
+    padding: 10,
     borderRadius: 12,
-    padding: 11,
+    backgroundColor: Brand.tealPale,
   },
   pushFeedbackText: {
     color: Brand.pine,
@@ -2347,322 +2152,132 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#EEF1EE',
-    paddingTop: 12,
+    gap: 8,
+    paddingTop: 2,
   },
   pushDeviceMetaText: {
     color: Brand.muted,
     fontSize: 12,
-    fontWeight: '600',
   },
   testPushBtn: {
-    backgroundColor: Brand.tealPale,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderRadius: 12,
+    minHeight: 34,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    backgroundColor: '#FAF7F0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   testPushBtnText: {
     color: Brand.pine,
     fontSize: 12,
-    fontWeight: '600',
-  },
-
-  /* Section Links & Teaching Card */
-  sectionActionLink: {
-    color: Brand.teal,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  teachingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Brand.line,
-    padding: 16,
-    gap: 12,
-  },
-  goalBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
-    borderRadius: 16,
-    padding: 14,
-  },
-  goalIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: Brand.subtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goalIconGlyph: {
-    fontSize: 20,
-  },
-  goalEyebrow: {
-    color: Brand.teal,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.9,
-  },
-  goalTitle: {
-    color: Brand.pine,
-    fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 21,
-    marginTop: 2,
-  },
-  teachingGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  teachingTile: {
-    flexGrow: 1,
-    flexBasis: '46%',
-    backgroundColor: '#F5FAF9',
-    borderWidth: 1,
-    borderColor: '#D5E7E5',
-    borderRadius: 16,
-    padding: 13,
-    gap: 4,
-  },
-  teachingTileEyebrow: {
-    color: Brand.teal,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-  },
-  teachingTileTitle: {
-    color: Brand.pine,
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  teachingTileDetail: {
-    color: Brand.muted,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-
-  /* Interests Card */
-  sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Brand.line,
-    padding: 16,
-    gap: 12,
-  },
-  sectionCardIntro: {
-    color: Brand.muted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  interestsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  interestChip: {
-    backgroundColor: Brand.tealPale,
-    borderWidth: 1,
-    borderColor: Brand.line,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  interestChipText: {
-    color: Brand.pine,
-    fontSize: 13,
     fontWeight: '700',
   },
-  emptyInterestsPrompt: {
-    backgroundColor: Brand.card,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: '#C5CFCB',
-    borderRadius: 16,
-    padding: 14,
-    alignItems: 'center',
-    gap: 4,
-  },
-  emptyInterestsTitle: {
-    color: Brand.pine,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyInterestsSub: {
-    color: Brand.muted,
-    fontSize: 12,
-  },
 
-  /* Academic & Profile Details Card */
-  detailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Brand.line,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    paddingVertical: 13,
-  },
-  detailRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF1EE',
-  },
-  detailIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: '#F3F6F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  detailIconText: {
-    fontSize: 18,
-  },
-  detailCopy: {
-    flex: 1,
-    gap: 3,
-  },
-  detailLabel: {
-    color: Brand.teal,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.9,
-  },
-  detailValue: {
-    color: Brand.pine,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  detailPlaceholder: {
-    color: Brand.muted,
-    fontWeight: '500',
-    fontStyle: 'italic',
-  },
-
-  /* Account Actions & Danger Zone */
+  /* Account Actions */
   actionsStack: {
-    gap: 10,
+    gap: 12,
   },
   logoutButton: {
     minHeight: 50,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Brand.line,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
   },
   logoutButtonText: {
     color: Brand.pine,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   dangerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#FDF4F2',
-    borderWidth: 1,
-    borderColor: '#F1D0CA',
+    padding: 16,
     borderRadius: 18,
-    padding: 15,
-    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#ECC7C0',
+    backgroundColor: '#FDF4F2',
   },
   dangerTitle: {
     color: Brand.error,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   dangerSubtitle: {
-    color: '#7E4A44',
+    color: Brand.muted,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 2,
   },
   dangerButton: {
-    backgroundColor: '#FFFFFF',
+    minHeight: 38,
+    paddingHorizontal: 14,
+    borderRadius: 11,
     borderWidth: 1,
-    borderColor: '#E8B8B0',
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderRadius: 12,
+    borderColor: '#E2ADA3',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dangerButtonText: {
     color: Brand.error,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
-  /* Plans Sheet Modal */
+  /* Modals */
   sheetShade: {
     flex: 1,
-    backgroundColor: 'rgba(17,31,27,0.52)',
     justifyContent: 'flex-end',
+    backgroundColor: 'rgba(17,31,27,0.48)',
   },
   plansSheet: {
     maxHeight: '88%',
     backgroundColor: Brand.parchment,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 20,
-    paddingHorizontal: 18,
-    paddingBottom: 30,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    padding: 20,
     gap: 14,
   },
   plansSheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
   },
   plansSheetEyebrow: {
     color: Brand.teal,
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '800',
     letterSpacing: 0.8,
   },
   plansSheetTitle: {
     color: Brand.pine,
     fontSize: 22,
-    fontWeight: '600',
-    marginTop: 2,
+    fontWeight: '800',
   },
   sheetCloseBtn: {
     width: 38,
     height: 38,
     borderRadius: 13,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Brand.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sheetCloseText: {
     color: Brand.pine,
     fontSize: 24,
-    lineHeight: 26,
+    lineHeight: 28,
   },
   cycleToggleWrap: {
     flexDirection: 'row',
-    backgroundColor: Brand.subtle,
-    borderRadius: 14,
     padding: 4,
-    gap: 4,
+    borderRadius: 14,
+    backgroundColor: '#EDE7DB',
   },
   cycleTab: {
     flex: 1,
@@ -2681,12 +2296,12 @@ const styles = StyleSheet.create({
   },
   cycleTabTextActive: {
     color: Brand.pine,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   planSuccessBox: {
-    backgroundColor: '#DDF0E5',
-    borderRadius: 13,
     padding: 12,
+    borderRadius: 12,
+    backgroundColor: Brand.tealPale,
   },
   planSuccessText: {
     color: Brand.pine,
@@ -2694,13 +2309,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   planErrorBox: {
-    backgroundColor: '#FCECE9',
-    borderRadius: 13,
     padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#FCECE9',
+  },
+  error: {
+    color: Brand.error,
+    fontSize: 13,
+    lineHeight: 19,
   },
   plansScrollContent: {
     gap: 12,
-    paddingBottom: 14,
+    paddingBottom: 20,
   },
   planOptionCard: {
     backgroundColor: '#FFFFFF',
@@ -2712,157 +2332,139 @@ const styles = StyleSheet.create({
   },
   planOptionHighlight: {
     borderColor: Brand.gold,
-    borderWidth: 1.5,
   },
   planOptionCurrent: {
     borderColor: Brand.teal,
-    borderWidth: 1.5,
   },
   planOptionTop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
   },
   planOptionTitleWrap: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   planOptionBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 7,
+    gap: 6,
   },
   planOptionGlyph: {
     fontSize: 18,
   },
   planOptionName: {
     color: Brand.pine,
-    fontSize: 19,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
   },
   currentPlanBadge: {
-    backgroundColor: Brand.tealPale,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 7,
+    borderRadius: 99,
+    backgroundColor: Brand.tealPale,
   },
   currentPlanBadgeText: {
     color: Brand.pine,
     fontSize: 9,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '800',
   },
   recommendedPlanBadge: {
-    backgroundColor: Brand.subtle,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 7,
+    borderRadius: 99,
+    backgroundColor: Brand.amberPale,
   },
   recommendedPlanBadgeText: {
-    color: Brand.teal,
+    color: '#7A4D0B',
     fontSize: 9,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '800',
   },
   planOptionTagline: {
     color: Brand.muted,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
   },
   planPriceBox: {
     alignItems: 'flex-end',
   },
   planPriceAmount: {
     color: Brand.pine,
-    fontSize: 21,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '800',
   },
   planPricePeriod: {
     color: Brand.muted,
     fontSize: 11,
-    fontWeight: '600',
   },
   planOptionFeatures: {
-    gap: 5,
-    borderTopWidth: 1,
-    borderTopColor: '#EEF1EE',
-    paddingTop: 10,
+    gap: 6,
   },
   planOptionFeatureItem: {
     color: Brand.ink,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   currentPlanFooterPill: {
-    backgroundColor: '#F2F8F7',
-    borderRadius: 12,
     paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Brand.tealPale,
     alignItems: 'center',
   },
   currentPlanFooterText: {
-    color: Brand.teal,
+    color: Brand.pine,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   requestPlanBtn: {
     minHeight: 44,
-    borderRadius: 13,
+    borderRadius: 12,
     backgroundColor: Brand.pine,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
   },
   requestPlanBtnHighlight: {
-    backgroundColor: Brand.gold,
+    backgroundColor: Brand.teal,
   },
   requestPlanBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
   requestPlanBtnTextHighlight: {
-    color: Brand.pine,
+    color: '#FFFFFF',
   },
-
-  /* Delete Confirmation Modal */
   modalShade: {
     flex: 1,
-    backgroundColor: 'rgba(17,31,27,0.52)',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: 'rgba(17,31,27,0.52)',
   },
   modal: {
     backgroundColor: Brand.parchment,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 22,
     gap: 14,
-    borderWidth: 1,
-    borderColor: Brand.line,
   },
   modalWarnBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FCECE9',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 99,
+    backgroundColor: '#FCECE9',
   },
   modalWarnBadgeText: {
     color: Brand.error,
     fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.9,
+    fontWeight: '800',
+    letterSpacing: 0.7,
   },
   modalTitle: {
-    fontSize: 23,
+    fontSize: 24,
+    lineHeight: 30,
   },
   confirmDeleteBtn: {
     backgroundColor: Brand.error,
-  },
-  error: {
-    color: Brand.error,
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

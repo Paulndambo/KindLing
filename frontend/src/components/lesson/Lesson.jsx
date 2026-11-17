@@ -511,32 +511,10 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
   const independenceApiRef = useRef(null);
   const interventionStatusRef = useRef(intervention.status);
 
-  // Epic C6 — low-stakes MCQ quick check (offline-first revision)
-  const assessment = useAssessment({
-    studentId,
-    subjectName,
-    topicName,
-    getSessionId,
-    onGradedItem: (item) => {
-      void recordExchange({
-        studentText: item.studentText || "(quick check answer)",
-        tutorText: item.tutorText || "",
-        wasHintRequest: false,
-        assessmentOutcome: item,
-      });
-      if (item.correctness === "correct") {
-        assessmentStreakRef.current.correct += 1;
-        assessmentStreakRef.current.gradedCorrect += 1;
-      } else {
-        assessmentStreakRef.current.correct = 0;
-      }
-    },
-  });
   const offlinePracticePack = useMemo(
     () => offlinePracticePackFor(subjectName, topicName),
     [subjectName, topicName]
   );
-  assessmentApiRef.current = assessment;
   interventionStatusRef.current = intervention.status;
 
   // Epic L4 — no-scaffold independence twin after heavy ladder help
@@ -671,6 +649,39 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
     onAwaitingStudent: markAwaitingStudent,
     onResumeSnapshot: applyResumeSnapshot,
   });
+
+  const coveredTutorText = useMemo(
+    () => messages
+      .filter((message) => message?.role === "tutor" && message?.text)
+      .map((message) => message.text)
+      .join("\n\n"),
+    [messages]
+  );
+
+  // Only assess concepts that have actually appeared in tutor explanations in
+  // this topic conversation; a curriculum roadmap alone is not coverage.
+  const assessment = useAssessment({
+    studentId,
+    subjectName,
+    topicName,
+    coveredText: coveredTutorText,
+    getSessionId,
+    onGradedItem: (item) => {
+      void recordExchange({
+        studentText: item.studentText || "(quick check answer)",
+        tutorText: item.tutorText || "",
+        wasHintRequest: false,
+        assessmentOutcome: item,
+      });
+      if (item.correctness === "correct") {
+        assessmentStreakRef.current.correct += 1;
+        assessmentStreakRef.current.gradedCorrect += 1;
+      } else {
+        assessmentStreakRef.current.correct = 0;
+      }
+    },
+  });
+  assessmentApiRef.current = assessment;
 
   // Reset streak when topic changes
   useEffect(() => {
@@ -1312,6 +1323,7 @@ export default function Lesson({ activeLesson, student, subjects, onNavigate }) 
             insights?.stats?.recommendedNextSkill || skillPath?.recommendedNext
           }
           lessonGoals={lessonGoals}
+          onNavigate={onNavigate}
         />
 
         <ChatPanel

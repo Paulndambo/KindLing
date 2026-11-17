@@ -1,0 +1,8 @@
+.rc-subscription { display: grid; gap: 16px; }
+.rc-premium-card { display: grid; gap: 16px; width: 100%; box-sizing: border-box; }
+.rc-premium-card h3, .rc-premium-card p { margin: 0; }
+.rc-subscription-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.rc-subscription-actions a { text-decoration: none; }
+@media (max-width: 540px) {
+  .rc-subscription-actions > * { width: 100%; justify-content: center; text-align: center; }
+}

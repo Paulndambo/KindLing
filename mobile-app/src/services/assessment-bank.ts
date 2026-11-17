@@ -2304,19 +2304,34 @@ const questions: AssessmentQuestion[] = [
 
 function normalize(value: string) { return String(value || '').toLowerCase().trim(); }
 
-export function questionsForMobileAssessment(subject: string, topic: string, limit = 5) {
+function conceptWasTaught(question: AssessmentQuestion, coveredText: string) {
+  const concept = normalize(question.concept || '').replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!concept || !coveredText.trim()) return false;
+  const prose = coveredText
+    .replace(/```visual\s*\r?\ntype\s*:\s*(?:study-plan|studyplan|lesson-plan|roadmap)[\s\S]*?```/gi, ' ')
+    .replace(/⟦suggests:[\s\S]*?⟧/g, ' ');
+  const terms = concept.split(/\s+/).filter((word) => word.length > 2 && !['and', 'the', 'for', 'with', 'from'].includes(word));
+  if (!terms.length) return false;
+  return prose.split(/\n\s*\n/).some((paragraph) => {
+    const normalized = paragraph.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+    return terms.every((term) => normalized.includes(term));
+  });
+}
+
+export function questionsForMobileAssessment(subject: string, topic: string, limit = 5, coveredText = '') {
   const sub = normalize(subject);
-  const top = normalize(topic);
-  const scored = questions.map((question) => {
-    const subjectName = normalize(question.subject);
-    const subjectMatch = subjectName === sub || subjectName === 'general'
-      || (sub.includes('math') && subjectName === 'math foundations')
-      || (/(science|biology|physics|chemistry)/.test(sub) && subjectName === 'science');
-    if (!subjectMatch) return { question, score: -1 };
-    const topicMatch = question.topics.some((label) => label === '*' || top.includes(normalize(label)) || normalize(label).includes(top));
-    return { question, score: (topicMatch ? 5 : 0) + (question.subject === 'General' ? -1 : 0) };
-  }).filter((item) => item.score >= 0).sort((a, b) => b.score - a.score);
-  const matched = scored.filter((item) => item.score > 0).map((item) => item.question);
-  const available = matched.length >= 3 ? matched : scored.map((item) => item.question);
-  return available.slice(0, Math.min(5, limit));
+  const top = normalize(topic).replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!sub || !top || !coveredText.trim()) return [];
+  const compatibleSubject = (questionSubject: string) => {
+    const value = normalize(questionSubject);
+    return value === sub
+      || (value === 'science' && /\b(science|biology|physics|chemistry)\b/.test(sub))
+      || (value === 'math foundations' && /\b(math|mathematics)\b/.test(sub))
+      || (value === 'computer science' && /\b(computer science|computing|ict)\b/.test(sub));
+  };
+  return questions.filter((question) =>
+    compatibleSubject(question.subject)
+    && question.topics.some((label) => label !== '*' && normalize(label).replace(/[^a-z0-9]+/g, ' ').trim() === top)
+    && conceptWasTaught(question, coveredText)
+  ).slice(0, Math.min(5, limit));
 }
